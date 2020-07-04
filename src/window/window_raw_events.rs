@@ -543,11 +543,11 @@ impl AppWindow{
                             #[cfg(feature="mouse_cursor_icon")]
                             self.mouse_icon.update(&mut self.graphics);
 
-                            page.on_resized([size.width,size.height])
+                            page.on_window_resized([size.width,size.height])
                         }
 
                         // Сдвиг окна
-                        //GWindowEvent::Moved(pos)=>Moved([pos.x,pos.y]),
+                        GWindowEvent::Moved(pos)=>page.on_window_moved([pos.x,pos.y]),
 
                         // Сдвиг мыши (сдвиг за пределы окна игнорируется)
                         GWindowEvent::CursorMoved{position,..}=>unsafe{
@@ -621,7 +621,7 @@ impl AppWindow{
 
                         // Получение вводимых букв
                         GWindowEvent::ReceivedCharacter(character)=>if !character.is_ascii_control(){
-                            page.on_character_recieve(character)
+                            page.on_character_recieved(character)
                         }
 
                         // При потере фокуса
@@ -683,7 +683,7 @@ impl AppWindow{
                             window_height=size.height as f32;
                             window_center=[window_width/2f32,window_height/2f32];
 
-                            page.on_resized([size.width,size.height])
+                            page.on_window_resized([size.width,size.height])
                         }
 
                         GWindowEvent::CloseRequested=>{ // Остановка цикла обработки событий,
@@ -775,15 +775,17 @@ pub trait AppPage{
 
     fn on_mouse_pressed(&mut self,button:MouseButton);
     fn on_mouse_released(&mut self,button:MouseButton);
-    fn on_mouse_moved(&mut self,movement:[f32;2]);
+    fn on_mouse_moved(&mut self,position:[f32;2]);
 
 
     fn on_keyboard_pressed(&mut self,button:KeyboardButton);
     fn on_keyboard_released(&mut self,button:KeyboardButton);
 
-    fn on_character_recieve(&mut self,character:char);
+    fn on_character_recieved(&mut self,character:char);
 
-    fn on_resized(&mut self,new_size:[u32;2]);
+    fn on_window_resized(&mut self,new_size:[u32;2]);
+
+    fn on_window_moved(&mut self,position:[i32;2]);
 
     fn on_suspended(&mut self);
     fn on_resumed(&mut self);
