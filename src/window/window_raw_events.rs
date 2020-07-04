@@ -512,11 +512,6 @@ impl AppWindow{
 /// Event handlers.
 impl AppWindow{
     pub fn run<P:AppPage>(&mut self,page:&mut P){
-        self.event_listener(page)
-    }
-
-    /// Обычная функция обработки событий
-    fn event_listener<P:AppPage>(&mut self,page:&mut P){
         let el=&mut self.event_loop as *mut EventLoop<()>;
         let event_loop=unsafe{&mut *el};
 
@@ -606,15 +601,9 @@ impl AppWindow{
                             };
 
                             if input.state==ElementState::Pressed{
-                                
                                 page.on_keyboard_pressed(key)
                             }
                             else{
-                                #[cfg(feature="mouse_cursor_icon")]
-                                if key==KeyboardButton::F8{
-                                    self.switch_cursor_visibility()
-                                }
-
                                 page.on_keyboard_released(key)
                             }
                         }

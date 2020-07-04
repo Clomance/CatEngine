@@ -621,15 +621,9 @@ impl Window{
                             };
 
                             if input.state==ElementState::Pressed{
-                                
                                 KeyboardPressed(key)
                             }
                             else{
-                                #[cfg(feature="mouse_cursor_icon")]
-                                if key==KeyboardButton::F8{
-                                    self.switch_cursor_visibility()
-                                }
-
                                 KeyboardReleased(key)
                             }
                         }
