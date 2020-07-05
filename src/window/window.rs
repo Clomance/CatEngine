@@ -17,8 +17,6 @@ use super::{
     window_height,
     window_center,
     mouse_cursor,
-    // structs
-    mouse_cursor::MouseCursor,
     // enums
     WindowSettings,
     WindowEvent,
@@ -90,6 +88,7 @@ use std::{
 /// Все события обрабатываются и добавляются в очередь внешней обработки (Window.events)
 /// для работы с ними вне структуры окна.
 /// 
+/// #
 /// 
 /// All events are handled and added to the outer handling queue (Window.events)
 /// to work with them outside of the window structure.
@@ -538,8 +537,6 @@ impl Window{
         event_loop.run_return(|event,_,control_flow|{
             *control_flow=ControlFlow::Wait;
             let next_event=match event{
-                Event::NewEvents(_)=>return, // Игнорирование
-
                 // События окна
                 Event::WindowEvent{event,..}=>{
                     match event{
@@ -674,15 +671,6 @@ impl Window{
                     Draw
                 }
 
-                // После вывода кадра
-                Event::RedrawEventsCleared=>{
-                    
-                    return
-                } // Игнорирование
-
-                // Закрытия цикла обработки событий
-                Event::LoopDestroyed=>return, // Игнорирование
-
                 _=>return  // Игнорирование остальных событий
             };
 
@@ -704,10 +692,14 @@ impl Window{
                     match event{
                         GWindowEvent::Resized(size)=>unsafe{
                             *control_flow=ControlFlow::Exit;
-
+                            
                             window_width=size.width as f32;
                             window_height=size.height as f32;
                             window_center=[window_width/2f32,window_height/2f32];
+
+                            #[cfg(feature="mouse_cursor_icon")]
+                            self.mouse_icon.update(&mut self.graphics);
+
                             return
                         }
 
@@ -753,13 +745,6 @@ impl Window{
     fn gained_focus(&mut self)->WindowEvent{
         self.events_handler=Window::event_listener; // Смена фукции обработки событий
         self.display.gl_window().window().set_minimized(false);
-
-        let size=self.display.gl_window().window().inner_size();
-        unsafe{
-            window_width=size.width as f32;
-            window_height=size.height as f32;
-            window_center=[window_width/2f32,window_height/2f32];
-        }
 
         Hide(false) // Передача события во внешнее управление
     }

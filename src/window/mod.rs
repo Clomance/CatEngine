@@ -1,11 +1,23 @@
+#[cfg(not(feature="paged_format"))]
 mod window;
+#[cfg(not(feature="paged_format"))]
 pub use window::*;
+
+#[cfg(not(feature="paged_format"))]
+mod window_paged_format;
+#[cfg(not(feature="paged_format"))]
+pub use window_paged_format::{
+    Window as PagedWindow,
+    WindowPage
+};
 
 mod settings;
 pub use settings::WindowSettings;
 
-mod window_raw_events;
-pub use window_raw_events::*;
+#[cfg(feature="paged_format")]
+mod window_paged_format;
+#[cfg(feature="paged_format")]
+pub use window_paged_format::*;
 
 mod mouse_cursor;
 use mouse_cursor::MouseCursor;
@@ -59,8 +71,8 @@ pub enum WindowEvent{
     /// 
     /// The parameter is true if the window gets hidden,
     /// and false if the window gets back.
+    /// 
     /// feature = "auto_hide"
-    #[cfg(feature="auto_hide")]
     Hide(bool),
 
     /// Окно получило или потеряло фокус.
@@ -71,7 +83,6 @@ pub enum WindowEvent{
     /// and false if it has lost focus.
     /// 
     /// feature != "auto_hide"
-    #[cfg(not(feature="auto_hide"))]
     Focused(bool),
 
     /// Размера окна изменён.

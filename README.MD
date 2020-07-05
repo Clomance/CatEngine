@@ -1,10 +1,12 @@
 # ![logo](https://github.com/Clomance/CatEngine/raw/master/logo_400x400.png)
 
-# Cat Engine
+# CatEngine
 
 A 2D graphics engine with audio support.
 
 Uses OpenGL 2.0 and above.
+
+## [My own game](https://github.com/Clomance/Visual-Novel)
 
 #### Dependencies
  - Graphics - [glium](https://github.com/glium/glium)
@@ -18,7 +20,7 @@ If you use audio feature, alsa delevopment libraries are required for Linux: `li
 
 Default features = ["texture_graphics", "simple_graphics", "text_graphics"]
 
-Other features = ["audio", "mouse_cursor_icon", "auto_hide"]
+Other features = ["audio", "mouse_cursor_icon", "auto_hide", "fps_counter", "paged_format"]
 
 ### audio
 

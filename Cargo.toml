@@ -28,7 +28,7 @@ auto_hide = []
 
 fps_counter = []
 
-
+paged_format = []
 
 [package.metadata.docs.rs]
 features = ["default","audio","mouse_cursor_icon","auto_hide","fps_counter"]
