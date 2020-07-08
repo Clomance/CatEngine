@@ -1,12 +1,22 @@
 # ![logo](https://github.com/Clomance/CatEngine/raw/master/logo_400x400.png)
 
-# CatEngine
+# CatEngine [![Crate badge]][crates.io] [![Doc badge]][doc.rs]
+
+[Crate badge]:http://meritbadge.herokuapp.com/cat_engine
+[crates.io]:https://crates.io/crates/cat_engine
+
+[Doc badge]:https://img.shields.io/badge/documentation-doc.rs-green
+[doc.rs]:https://docs.rs/cat_engine/
+
 
 A 2D graphics engine with audio support.
 
 Uses OpenGL 2.0 and above.
 
 ## [My own game](https://github.com/Clomance/Visual-Novel)
+
+
+
 
 #### Dependencies
  - Graphics - [glium](https://github.com/glium/glium)
