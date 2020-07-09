@@ -81,7 +81,7 @@ use std::{
 
 /// Окно, включает в себя графические функции
 /// и обработчик событий.
-/// Window with graphic functions and an event listener included.
+/// A window with graphic functions and an event listener included.
 /// 
 /// #
 /// 
@@ -93,66 +93,26 @@ use std::{
 /// All events are handled and added to the outer handling queue (Window.events)
 /// to work with them outside of the window structure.
 /// 
-/// # feature = "mouse_cursor_icon"
-/// 
-/// Замена обычного курсора пользовательской картинкой.
-/// 
-/// Путь для картинки по умолчанию - `./mouse_cursor_icon.png`.
-/// 
-/// ImageBase для этой картинки добавляется в texture vertex buffer.
-/// Область по умочанию 4..8.
-/// 
-/// #
-/// 
-/// Replaces the default mouse cursor with user's image.
-/// 
-/// The cursor points to the center of the image.
-/// 
-/// The default path to the image is `./mouse_cursor_icon.png`.
-/// 
-/// The ImageBase for the image binds to the texture vertex buffer.
-/// The default range is 4..8.
-/// 
-/// # feature = "auto_hide"
-/// 
-/// При потере фокуса окно сворачивается,
-/// передача событий внешнему управлению прекращается
-/// (передаётся только события получения фокуса, приостановки и возобления приложения).
-/// При получении фокуса окно возвращается в исходное состояние.
-/// 
-/// #
-/// 
-/// The window gets minimized when loses focus and
-/// it stops sending outer events except gained focus and application suspended or resumed events.
-/// The window gets back when it gains focus.
-/// 
-/// # feature = "fps_counter"
-/// 
-/// Простой счётчик fps. Обновляется каждую секунду.
-/// 
-/// #
-/// 
-/// A simple fps counter. The value updates every second.
 pub struct Window{
-    display:Display,
-    graphics:Graphics2D,
+    pub (crate) display:Display,
+    pub (crate) graphics:Graphics2D,
 
-    event_loop:EventLoop<()>,
-    events:VecDeque<WindowEvent>,
+    pub (crate) event_loop:EventLoop<()>,
+    pub (crate) events:VecDeque<WindowEvent>,
 
     #[cfg(feature="auto_hide")]
-    events_handler:fn(&mut Self),
+    pub (crate) events_handler:fn(&mut Self),
 
     #[cfg(feature="fps_counter")]
-    frames_passed:u32,
+    pub (crate) frames_passed:u32,
     #[cfg(feature="fps_counter")]
-    time:Instant,
+    pub (crate) time:Instant,
 
-    alpha_channel:f32,  // Для плавных
-    smooth:f32,         // переходов
+    pub (crate) alpha_channel:f32,  // Для плавных
+    pub (crate) smooth:f32,         // переходов
 
     #[cfg(feature="mouse_cursor_icon")]
-    mouse_icon:MouseCursorIcon,
+    pub (crate) mouse_icon:MouseCursorIcon,
 }
 
 use WindowEvent::*;
@@ -276,250 +236,25 @@ impl Window{
         })
     }
 
-    #[inline(always)]
-    pub fn display(&self)->&Display{
-        &self.display
-    }
-
-    /// Возвращает графическую основу.
-    /// 
-    /// Returns graphic base.
-    #[inline(always)]
-    pub fn graphics(&mut self)->&mut Graphics2D{
-        &mut self.graphics
-    }
-
-    #[inline(always)]
-    pub fn available_monitors(&self)->impl std::iter::Iterator<Item=MonitorHandle>{
-        self.event_loop.available_monitors()
-    }
-
     /// Возвращает следующее событие окна.
     /// 
+    /// Блокирует поток, пока не получит следующее событие.
+    /// 
     /// Returns next window event.
+    /// 
+    /// Blocks the thread until it receives the next event.
     pub fn next_event(&mut self)->Option<WindowEvent>{
-        if self.events.is_empty(){
+        while self.events.is_empty(){
             #[cfg(feature="auto_hide")]
             (self.events_handler)(self); // Вызов функции обработки событий
 
             #[cfg(not(feature="auto_hide"))]
-            self.event_listener();
+            self.event_listener(); // Вызов функции обработки событий
         }
         self.events.pop_front()
     }
 }
 
-impl Window{
-    pub fn set_inner_size<S:Into<Size>>(&self,size:S){
-        self.display.gl_window().window().set_inner_size(size)
-    }
-
-    pub fn set_min_inner_size<S:Into<Size>>(&self,size:Option<S>){
-        self.display.gl_window().window().set_min_inner_size(size)
-    }
-
-    pub fn set_max_inner_size<S:Into<Size>>(&self,size:Option<S>){
-        self.display.gl_window().window().set_max_inner_size(size)
-    }
-
-    pub fn set_title(&self,title:&str){
-        self.display.gl_window().window().set_title(title)
-    }
-
-    pub fn set_visible(&self,visible:bool){
-        self.display.gl_window().window().set_visible(visible)
-    }
-
-    pub fn set_resizable(&self,resizable:bool){
-        self.display.gl_window().window().set_resizable(resizable)
-    }
-
-    pub fn choose_fullscreen_monitor(&self,monitor:usize)->Result<(),()>{
-        if let Some(m)=self.available_monitors().nth(monitor){
-            self.display.gl_window().window().set_fullscreen(Some(Fullscreen::Borderless(m)));
-            Ok(())
-        }
-        else{
-            Err(())
-        }
-    }
-
-
-    pub fn set_fullscreen(&self,fullscreen:Option<Fullscreen>){
-        self.display.gl_window().window().set_fullscreen(fullscreen)
-    }
-
-    /// Сворачивает окно.
-    /// 
-    /// Minimizes the window.
-    #[inline(always)]
-    pub fn set_minimized(&self,minimized:bool){
-        self.display.gl_window().window().set_minimized(minimized)
-    }
-
-    /// Делает окно максимального размера.
-    /// 
-    /// Maximizes the window.
-    #[inline(always)]
-    pub fn set_maximized(&self,maximized:bool){
-        self.display.gl_window().window().set_maximized(maximized)
-    }
-
-    pub fn set_decorations(&self,decorations:bool){
-        self.display.gl_window().window().set_decorations(decorations)
-    }
-
-    pub fn set_always_on_top(&self,always_on_top:bool){
-        self.display.gl_window().window().set_always_on_top(always_on_top)
-    }
-
-    #[inline(always)]
-    pub fn set_cursor_visible(&mut self,visible:bool){
-        #[cfg(feature="mouse_cursor_icon")]
-        self.mouse_icon.set_visible(visible);
-
-        #[cfg(not(feature="mouse_cursor_icon"))]
-        self.display.gl_window().window().set_cursor_visible(visible);
-    }
-
-    #[cfg(feature="mouse_cursor_icon")]
-    #[inline(always)]
-    pub fn switch_cursor_visibility(&mut self){
-        self.mouse_icon.switch_visibility()
-    }
-}
-
-/// # Версии OpenGL. OpenGL versions.
-impl Window{
-    #[inline(always)]
-    pub fn get_supported_glsl_version(&self)->Version{
-        self.display.get_supported_glsl_version()
-    }
-    #[inline(always)]
-    pub fn get_opengl_version(&self)->&Version{
-        self.display.get_opengl_version()
-    }
-}
-
-/// # Функции для сглаживания. Functions for smoothing.
-impl Window{
-    /// Set alpha channel for smooth drawing.
-    pub fn set_alpha(&mut self,alpha:f32){
-        self.alpha_channel=alpha;
-    }
-
-    /// Set smooth for smooth drawing.
-    pub fn set_smooth(&mut self,smooth:f32){
-        self.smooth=smooth
-    }
-
-    /// Set smooth and zero alpha channel
-    /// for smooth drawing.
-    pub fn set_new_smooth(&mut self,smooth:f32){
-        self.alpha_channel=0f32;
-        self.smooth=smooth
-    }
-}
-
-/// # Функции для рисования. Drawing functions.
-impl Window{
-    /// Даёт прямое управление над кадром.
-    /// 
-    /// Gives frame to raw drawing.
-    pub fn draw_raw<F:FnOnce(&mut DrawParameters,&mut Frame)>(&self,f:F){
-        let mut frame=self.display().draw();
-        let mut draw_parameters=default_draw_parameters();
-        f(&mut draw_parameters,&mut frame);
-        frame.finish();
-    }
-
-    /// Выполняет замыкание (и рисует курсор, если `feature="mouse_cursor_icon"`).
-    /// 
-    /// Executes the closure (and draws the mouse cursor if `feature="mouse_cursor_icon"`).
-    pub fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&self,f:F){
-        let mut draw_parameters=default_draw_parameters();
-
-        let mut frame=self.display().draw();
-
-        let mut g=Graphics::new(&self.graphics,&mut frame);
-
-        f(&mut draw_parameters,&mut g);
-
-        #[cfg(feature="mouse_cursor_icon")]
-        self.mouse_icon.draw(&mut draw_parameters,&mut g);
-
-        frame.finish();
-    }
-
-    /// Выполняет замыкание (и рисует курсор, если `feature="mouse_cursor_icon"`).
-    /// Выдаёт альфа-канал для рисования, возвращает следующее значение канала.
-    /// 
-    /// Нужна для плавных переходов или размытия с помощью альфа-канала.
-    /// 
-    /// Executes closure (and draws the mouse cursor if `feature="mouse_cursor_icon"`).
-    /// Gives alpha channel for drawing, returns the next value of the channel.
-    /// 
-    /// Needed for smooth drawing or smoothing with alpha channel.
-    pub fn draw_smooth<F:FnOnce(f32,&mut DrawParameters,&mut Graphics)>(&mut self,f:F)->f32{
-        let mut draw_parameters=default_draw_parameters();
-
-        let mut frame=self.display().draw();
-
-        let mut g=Graphics::new(&mut self.graphics,&mut frame);
-
-        f(self.alpha_channel,&mut draw_parameters,&mut g);
-
-        #[cfg(feature="mouse_cursor_icon")]
-        self.mouse_icon.draw(&mut draw_parameters,&mut g);
-
-        frame.finish();
-
-        self.alpha_channel+=self.smooth;
-        self.alpha_channel
-    }
-}
-
-/// # Дополнительные функции. Additional functions.
-impl Window{
-    /// Возвращает скриншот.
-    /// 
-    /// Returns a screenshot.
-    pub fn screenshot(&self)->Option<DynamicImage>{
-        // Копирование буфера окна
-        let image:RawImage2d<u8>=match self.display.read_front_buffer(){
-            Ok(t)=>t,
-            Err(_)=>return Option::None
-        };
-        // Перевод в буфер изображения
-        let image=match ImageBuffer::from_raw(image.width,image.height,image.data.into_owned()){
-            Option::Some(i)=>i,
-            Option::None=>return Option::None
-        };
-        // Перевод в изображение
-        Some(DynamicImage::ImageRgba8(image).flipv())
-    }
-    /// Сохраняет скриншот в формате png.
-    /// 
-    /// Saves a screenshot in png format.
-    pub fn save_screenshot<P:AsRef<Path>>(&self,path:P){
-        // Копирование буфера окна
-        let image:RawImage2d<u8>=match self.display.read_front_buffer(){
-            Ok(t)=>t,
-            Err(_)=>return
-        };
-        // Перевод в буфер изображения
-        let image=match ImageBuffer::from_raw(image.width,image.height,image.data.into_owned()){
-            Option::Some(i)=>i,
-            Option::None=>return
-        };
-        // Перевод в изображение
-        let image=DynamicImage::ImageRgba8(image).flipv();
-        // Сохранение
-        if let Err(_)=image.save_with_format(path,ImageFormat::Png){
-            return
-        }
-    }
-}
 
 //                         \\
 //    ЛОКАЛЬНЫЕ ФУНКЦИИ    \\
@@ -535,14 +270,13 @@ impl Window{
         let event_loop=unsafe{&mut *el};
 
         event_loop.run_return(|event,_,control_flow|{
-            *control_flow=ControlFlow::Wait;
+            *control_flow=ControlFlow::Exit;
             let next_event=match event{
                 // События окна
                 Event::WindowEvent{event,..}=>{
                     match event{
                         // Закрытие окна
                         GWindowEvent::CloseRequested=>{
-                            *control_flow=ControlFlow::Exit;
                             Exit
                         }
 
@@ -555,7 +289,7 @@ impl Window{
                             #[cfg(feature="mouse_cursor_icon")]
                             self.mouse_icon.update(&mut self.graphics);
 
-                            Resize([size.width,size.height])
+                            Resized([size.width,size.height])
                         }
 
                         // Сдвиг окна
@@ -636,7 +370,6 @@ impl Window{
                         // При потере фокуса
                         #[cfg(feature="auto_hide")]
                         GWindowEvent::Focused(f)=>if !f{
-                            *control_flow=ControlFlow::Exit;
                             self.lost_focus()
                         }
                         else{
@@ -667,7 +400,6 @@ impl Window{
                 Event::RedrawRequested(_)=>{
                     #[cfg(feature="fps_counter")]
                     self.count_fps();
-                    *control_flow=ControlFlow::Exit;
                     Draw
                 }
 
@@ -691,8 +423,6 @@ impl Window{
                 Event::WindowEvent{event,..}=>{
                     match event{
                         GWindowEvent::Resized(size)=>unsafe{
-                            *control_flow=ControlFlow::Exit;
-                            
                             window_width=size.width as f32;
                             window_height=size.height as f32;
                             window_center=[window_width/2f32,window_height/2f32];
@@ -718,8 +448,15 @@ impl Window{
                     }
                 }
 
-                Event::Suspended=>Suspended,
-                Event::Resumed=>Resumed,
+                Event::Suspended=>{
+                    *control_flow=ControlFlow::Exit;
+                    Suspended
+                }
+
+                Event::Resumed=>{
+                    *control_flow=ControlFlow::Exit;
+                    Resumed
+                }
 
                 _=>return
             };
@@ -748,40 +485,4 @@ impl Window{
 
         Hide(false) // Передача события во внешнее управление
     }
-
-    #[cfg(feature="fps_counter")]
-    fn count_fps(&mut self){
-        self.frames_passed+=1;
-        let current_time=Instant::now();
-        let time_passed=current_time.duration_since(self.time);
-
-        if Duration::from_secs(1)<time_passed{
-            unsafe{
-                fps=self.frames_passed;
-            }
-            self.frames_passed=0;
-            self.time=current_time;
-        }
-    }
-}
-
-// Обычные параметры для рисования
-fn default_draw_parameters<'a>()->DrawParameters<'a>{
-    let mut draw_parameters=DrawParameters::default();
-
-    draw_parameters.blend=Blend{
-        color:BlendingFunction::Addition{
-            source:LinearBlendingFactor::SourceAlpha,
-            destination:LinearBlendingFactor::OneMinusSourceAlpha,
-        },
-        alpha:BlendingFunction::Addition{
-            source:LinearBlendingFactor::One,
-            destination:LinearBlendingFactor::One,
-        },
-        constant_value:(0.0,0.0,0.0,0.0),
-    };
-
-    draw_parameters.backface_culling=BackfaceCullingMode::CullingDisabled;
-
-    draw_parameters
 }

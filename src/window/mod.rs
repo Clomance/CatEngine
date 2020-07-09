@@ -3,21 +3,24 @@ mod window;
 #[cfg(not(feature="paged_format"))]
 pub use window::*;
 
+mod window_new_format;
+// Переименовывание для документации.
+// Renaming for the documentation.
 #[cfg(not(feature="paged_format"))]
-mod window_paged_format;
-#[cfg(not(feature="paged_format"))]
-pub use window_paged_format::{
+pub use window_new_format::{
     Window as PagedWindow,
     WindowPage
 };
 
+#[cfg(feature="paged_format")]
+pub use window_new_format::*;
+
+mod general_window_functions;
+pub use general_window_functions::*;
+
 mod settings;
 pub use settings::WindowSettings;
 
-#[cfg(feature="paged_format")]
-mod window_paged_format;
-#[cfg(feature="paged_format")]
-pub use window_paged_format::*;
 
 mod mouse_cursor;
 use mouse_cursor::MouseCursor;
@@ -43,6 +46,10 @@ pub static mut window_center:[f32;2]=[0f32;2];
 /// Обновляется раз в секунду. Updates once a second.
 #[cfg(feature="fps_counter")]
 pub static mut fps:u32=0;
+
+pub enum InnerWindowEvent{
+    Exit,
+}
 
 /// Внешние события окна.
 /// 
@@ -90,7 +97,7 @@ pub enum WindowEvent{
     /// 
     /// The size of the window has changed.
     /// Contains the client area's new dimensions.
-    Resize([u32;2]),
+    Resized([u32;2]),
 
     /// Окно сдвинуто.
     /// Содержит новую позицию.
