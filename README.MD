@@ -31,4 +31,4 @@ If you use audio feature, alsa delevopment libraries are required for Linux: `li
 
 Default features = ["texture_graphics", "simple_graphics", "text_graphics"]
 
-Other features = ["audio", "mouse_cursor_icon", "auto_hide", "fps_counter", "paged_format"]
+Other features = ["audio", "mouse_cursor_icon", "auto_hide", "fps_counter", "paged_format", "lazy"]
