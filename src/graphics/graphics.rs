@@ -271,6 +271,7 @@ impl Graphics2D{
         index:usize,
         texture:&Texture,
         colour_filter:Colour,
+        rotation_center:[f32;2],
         angle:f32,
         draw_parameters:&mut DrawParameters,
         frame:&mut Frame
@@ -280,6 +281,7 @@ impl Graphics2D{
             index,
             texture,
             colour_filter,
+            rotation_center,
             angle,
             indices,
             draw_parameters,
@@ -416,10 +418,18 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         image_base:&ImageBase,
         texture:&Texture,
+        rotation_center:[f32;2],
         angle:f32,
         draw_parameters:&mut DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.texture.draw_rotate_image(image_base,texture,angle,self.frame,draw_parameters)
+        self.graphics.texture.draw_rotate_image(
+            image_base,
+            texture,
+            rotation_center,
+            angle,
+            self.frame,
+            draw_parameters
+        )
     }
 }
 
@@ -473,6 +483,9 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// данных из области.
     /// 
     /// Draws the image based on data from the range rotated `angle` degrees.
+    /// 
+    /// rotation_center - [x, y]
+    /// angle - radians
     #[inline(always)]
     #[cfg(feature="texture_graphics")]
     pub fn draw_rotate_range_image(
@@ -480,6 +493,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         index:usize,
         texture:&Texture,
         colour_filter:Colour,
+        rotation_center:[f32;2],
         angle:f32,
         draw_parameters:&mut DrawParameters
     )->Result<(),DrawError>{
@@ -487,6 +501,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             index,
             texture,
             colour_filter,
+            rotation_center,
             angle,
             draw_parameters,
             &mut self.frame

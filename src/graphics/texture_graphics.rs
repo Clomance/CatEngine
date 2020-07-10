@@ -150,6 +150,7 @@ impl TextureGraphics{
         &self,
         image_base:&ImageBase,
         texture:&Texture,
+        [x,y]:[f32;2],
         angle:f32,
         frame:&mut Frame,
         draw_parameters:&DrawParameters
@@ -162,6 +163,7 @@ impl TextureGraphics{
             tex:&texture.0,
             cos:cos,
             sin:sin,
+            rotation_center:unsafe{[x-window_center[0],window_center[1]-y]},
             window_center:unsafe{window_center},
             colour_filter:image_base.colour_filter,
         };
@@ -282,6 +284,7 @@ impl TextureGraphics{
         index:usize,
         texture:&Texture,
         colour_filter:Colour,
+        [x,y]:[f32;2],
         angle:f32,
         indices:I,
         draw_parameters:&DrawParameters,
@@ -296,6 +299,7 @@ impl TextureGraphics{
             tex:&texture.0,
             cos:cos,
             sin:sin,
+            rotation_center:unsafe{[x-window_center[0],window_center[1]-y]},
             window_center:unsafe{window_center},
             colour_filter:colour_filter,
         };

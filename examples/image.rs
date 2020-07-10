@@ -12,6 +12,7 @@ use cat_engine::{
 use std::path::PathBuf;
 
 pub struct Page{
+    angle:f32,
     image_base:ImageBase,
     texture:Texture,
 }
@@ -23,9 +24,14 @@ impl WindowPage for Page{
     }
 
     fn on_redraw_requested(&mut self,window:&mut Window){
+        self.angle+=0.001;
+
         window.draw(|p,g|{
             g.clear_colour([1.0;4]);
-            self.image_base.draw(&self.texture,p,g);
+            // Drawing static image
+            self.image_base.draw(&self.texture,p,g).unwrap();
+            // Drawing rotating image
+            self.image_base.draw_rotate(&self.texture,[200f32,200f32],self.angle,p,g).unwrap();
         })
     }
 
@@ -76,6 +82,7 @@ fn main(){
     let texture=Texture::from_path("logo_400x400.png",window.display()).unwrap();
 
     let mut page=Page{
+        angle:0f32,
         image_base,
         texture,
     };

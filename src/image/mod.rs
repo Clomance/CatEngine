@@ -14,7 +14,10 @@ pub use texture::{Texture,TextureCreationResult};
 
 pub use image;
 
-use glium::draw_parameters::DrawParameters;
+use glium::{
+    DrawError,
+    draw_parameters::DrawParameters
+};
 
 /// Основа для изображений (текстур). Image (texture) base.
 /// 
@@ -113,23 +116,46 @@ impl ImageBase{
     /// 
     /// Draws the image.
     #[inline(always)]
-    pub fn draw(&self,texture:&Texture,draw_parameters:&mut DrawParameters,graphics:&mut Graphics){
-        graphics.draw_image(self,texture,draw_parameters);
+    pub fn draw(
+        &self,
+        texture:&Texture,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        graphics.draw_image(self,texture,draw_parameters)
     }
 
     /// Рисует сдвинутое изображение.
     /// 
-    /// Draws shifted image.
+    /// Draws the shifted image.
+    /// 
+    /// shift - [dx, dy]
     #[inline(always)] 
-    pub fn draw_shift(&self,texture:&Texture,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics){
-        graphics.draw_shift_image(self,texture,shift,draw_parameters);
+    pub fn draw_shift(
+        &self,
+        texture:&Texture,
+        shift:[f32;2],
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        graphics.draw_shift_image(self,texture,shift,draw_parameters)
     }
 
     /// Рисует изображение под углом.
     /// 
-    /// Draws rotated image.
+    /// Draws the rotated image.
+    /// 
+    /// rotation_center - [x, y],
+    /// angle - radians
     #[inline(always)]
-    pub fn draw_rotate(&self,texture:&Texture,angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics){
-        graphics.draw_rotate_image(self,texture,angle,draw_parameters);
+    pub fn draw_rotate(
+        &self,
+        texture:&Texture,
+        rotation_center:[f32;2],
+        angle:f32,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        graphics.draw_rotate_image(self,texture,rotation_center,angle,draw_parameters)
     }
 }
