@@ -147,9 +147,9 @@ impl MouseCursorIcon{
     /// On a mouse button pressed.
     pub fn pressed(&mut self,graphics:&mut Graphics2D){
         self.image_base.x1+=d_radius;
-        self.image_base.y1-=d_radius;
+        self.image_base.y1+=d_radius;
         self.image_base.x2-=d_radius;
-        self.image_base.y2+=d_radius;
+        self.image_base.y2-=d_radius;
         graphics.rewrite_range_image(0,self.image_base.clone()).unwrap();
     }
 
@@ -158,9 +158,9 @@ impl MouseCursorIcon{
     /// On a mouse button released.
     pub fn released(&mut self,graphics:&mut Graphics2D){
         self.image_base.x1-=d_radius;
-        self.image_base.y1+=d_radius;
+        self.image_base.y1-=d_radius;
         self.image_base.x2+=d_radius;
-        self.image_base.y2-=d_radius;
+        self.image_base.y2+=d_radius;
         graphics.rewrite_range_image(0,self.image_base.clone()).unwrap();
     }
 

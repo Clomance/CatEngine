@@ -94,12 +94,12 @@ impl ImageBase{
     /// 
     /// Returns vertex array for rotating images.
     pub (crate) fn rotation_vertex_buffer(&self)->[TexturedVertex;4]{
-        let (x1,y1,x2,y2)=(
-            self.x1,
-            self.y1,
-            self.x2,
-            self.y2
-        );
+        let (x1,y1,x2,y2)=unsafe{(
+            self.x1-window_center[0],
+            window_center[1]-self.y1,
+            self.x2-window_center[0],
+            window_center[1]-self.y2
+        )};
 
         [
             TexturedVertex::new([x1,y1],[0.0,1.0]),

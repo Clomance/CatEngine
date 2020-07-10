@@ -24,7 +24,7 @@ If you use audio feature, alsa delevopment libraries are required for Linux: `li
 ## [My own game](https://github.com/Clomance/Visual-Novel)
 
 ## List of features
-[English version](./FEATURES.MD)
+[English version](FEATURES.MD)
 [Русская версия](FEATURES-RUS.MD)
 
 Default features = ["texture_graphics", "simple_graphics", "text_graphics"]

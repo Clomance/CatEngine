@@ -4,7 +4,6 @@ use cat_engine::{
     image::{ImageBase,Texture},
     Window,
     WindowPage,
-    WindowEvent,
     MouseButton,
     KeyboardButton,
     glium::glutin::event::MouseScrollDelta
@@ -65,12 +64,12 @@ impl WindowPage for Page{
 
 
 fn main(){
-    let image_base=ImageBase::new([1.0;4],unsafe{[
+    let image_base=ImageBase::new([1.0;4],[
         100f32,
         100f32,
         400f32,
         400f32
-    ]});
+    ]);
 
     let mut window=Window::new(|_,_|{}).unwrap();
 

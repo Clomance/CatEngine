@@ -10,8 +10,13 @@ documentation = "https://docs.rs/cat_engine/"
 license = "MIT"
 readme = "README.md"
 keywords = ["graphics","opengl","audio","playback"]
-exclude = ["logo_400x400.png","logo.png"]
-
+exclude = [
+    "logo_400x400.png",
+    "logo.png",
+    "examples",
+    "FEATURE.MD",
+    "FEATURE-RUS.MD"
+]
 
 [features]
 default = ["text_graphics","simple_graphics","texture_graphics"]
@@ -33,7 +38,13 @@ paged_format = []
 # lazy = ["paged_format"]
 
 [package.metadata.docs.rs]
-features = ["default","audio","mouse_cursor_icon","auto_hide","fps_counter"]
+features = [
+    "default",
+    "audio",
+    "mouse_cursor_icon",
+    "auto_hide",
+    "fps_counter",
+]
 
 [dependencies]
 image = "0.23.6"
