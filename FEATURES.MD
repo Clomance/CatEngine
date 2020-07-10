@@ -12,9 +12,15 @@ Enables to use audio output.
 
 ##### texture_graphics
 
+Enables to use functions to work with textures.
+
 ##### text_graphics
 
+Enables to use functions to work with text.
+
 ##### simple_graphics
+
+Enables to use functions to work with plain objects.
 
 
 
@@ -53,10 +59,14 @@ Adds a simple fps counter. The value updates every second.
 
 Replaces the default window structure with the new format one.
 
+
+
 # The default window structure
 
 All events are handled and added to the outer handling queue (Window.events)
 to work with them outside of the window structure.
+
+
 
 # The new format window structure
 
