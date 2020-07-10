@@ -38,6 +38,7 @@ impl WindowPage for Page{
     fn on_keyboard_pressed(&mut self,window:&mut Window,button:KeyboardButton){
         match button{
             KeyboardButton::Escape=>{
+                // break out of the page
                 let _=window.stop_events();
             }
             _=>{}

@@ -1,4 +1,4 @@
-#![allow(unused_mut)]
+#![allow(unused_mut,dead_code)]
 
 use crate::{
     Colour,

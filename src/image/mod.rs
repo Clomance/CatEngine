@@ -23,16 +23,12 @@ use glium::draw_parameters::DrawParameters;
 /// Цветовой фильтр - [red, green, blue, alpha].
 /// Цвет = цвет * фильтр.
 /// 
-/// Изменённая система координат - начало в центре окна, ось Y инвертирована.
-/// 
 /// #
 /// 
 /// Rectangle with vertexes: (x1, y1), (x1, y2), (x2, y1), (x2, y2).
 /// 
 /// Colour filter - [red, green, blue, alpha].
 /// Colour = colour * filter.
-/// 
-/// The coordinate system is changed: the origin is at the center of the window, the Y axe is reversed.
 #[derive(Clone)]
 pub struct ImageBase{
     pub x1:f32,
@@ -43,27 +39,23 @@ pub struct ImageBase{
 }
 
 impl ImageBase{
-    /// rect with the common coordinate system- [x,y,width,height]
+    /// rect - [x,y,width,height]
     pub fn new(colour_filter:Colour,rect:[f32;4])->ImageBase{
-        let x=unsafe{rect[0]-window_center[0]};
-        let y=unsafe{window_center[1]-rect[1]};
         Self{
-            x1:x,
-            y1:y,
-            x2:x+rect[2],
-            y2:y-rect[3],
+            x1:rect[0],
+            y1:rect[1],
+            x2:rect[0]+rect[2],
+            y2:rect[1]+rect[3],
             colour_filter,
         }
     }
 
-    /// rect with the common coordinate system - [x,y,width,height]
+    /// rect - [x,y,width,height]
     pub fn set_rect(&mut self,rect:[f32;4]){
-        let x=unsafe{rect[0]-window_center[0]};
-        let y=unsafe{window_center[1]-rect[1]};
-        self.x1=x;
-        self.y1=y;
-        self.x2=x+rect[2];
-        self.y2=y-rect[3];
+        self.x1=rect[0];
+        self.y1=rect[1];
+        self.x2=rect[0]+rect[2];
+        self.y2=rect[1]+rect[3];
     }
 
     /// Сдвигает координаты.
@@ -71,22 +63,22 @@ impl ImageBase{
     /// Shifts coordinates.
     pub fn shift(&mut self,[dx,dy]:[f32;2]){
         self.x1+=dx;
-        self.y1-=dy;
+        self.y1+=dy;
         self.x2+=dx;
-        self.y2-=dy;
+        self.y2+=dy;
     }
 
     /// Массив координат
     /// для невращающихся изображений.
     /// 
-    /// Returns vertex array for static images.
+    /// Returns vertex array for non-rotating images.
     pub (crate) fn vertex_buffer(&self)->[TexturedVertex;4]{
         let (x1,y1,x2,y2)=unsafe{(
-            self.x1/window_center[0],
-            self.y1/window_center[1],
+            self.x1/window_center[0]-1f32,
+            1f32-self.y1/window_center[1],
 
-            self.x2/window_center[0],
-            self.y2/window_center[1]
+            self.x2/window_center[0]-1f32,
+            1f32-self.y2/window_center[1]
         )};
 
         [
