@@ -78,3 +78,7 @@ and handled immediately after emited.
 ### Working with closures
 
 All the events are handled in a closure.
+
+### lazy
+
+The drawing event is emitted only when some action is happend.

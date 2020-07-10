@@ -301,7 +301,15 @@ impl Window{
         let mut close_flag=false;
 
         event_loop.run_return(|event,_,control_flow|{
-            *control_flow=ControlFlow::Poll;
+            #[cfg(not(feature="lazy"))]{
+                // Endless cycling checking events.
+                *control_flow=ControlFlow::Poll;
+            }
+            
+            #[cfg(feature="lazy")]{
+                // Waiting for any event except redraw event.
+                *control_flow=ControlFlow::Wait;
+            }
 
             let next_event=match event{
                 Event::UserEvent(event)=>match event{
@@ -517,7 +525,16 @@ impl Window{
         let mut close_flag=false;
 
         event_loop.run_return(|event,_,control_flow|{
-            *control_flow=ControlFlow::Poll;
+            #[cfg(not(feature="lazy"))]{
+                // Endless cycling checking events.
+                *control_flow=ControlFlow::Poll;
+            }
+            
+            #[cfg(feature="lazy")]{
+                // Waiting for any event except redraw event.
+                *control_flow=ControlFlow::Wait;
+            }
+
             match event{
                 Event::UserEvent(event)=>match event{
                     InnerWindowEvent::Exit=>{
