@@ -43,10 +43,10 @@ The window gets minimized when loses focus.
 It gets back when gains focus.
 
 Only the next event are able in minimized state:
-- получение фокуса, `WindowEvent::Focused(true)`
- - приостановка или возобновление приложения,
+ - gaining focus, `WindowEvent::Focused(true)`
+ - suspending or resuming the application,
  `WindowEvent::Suspended` и `WindowEvent::Resumed`
- - закрытие окна, `WindowEvent::Exit`
+ - closing the window, `WindowEvent::Exit`
 
 
 ##### fps_counter
