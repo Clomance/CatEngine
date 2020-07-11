@@ -57,6 +57,10 @@ Adds a simple fps counter. The value updates every second.
 
 Replaces the default window structure with the new format one.
 
+##### alpha_smoothing
+
+Adds functions for drawing with changing alpha channel.
+
 
 
 # The default window structure

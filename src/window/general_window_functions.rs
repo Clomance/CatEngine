@@ -115,6 +115,7 @@ impl Window{
         self.display.gl_window().window().set_resizable(resizable)
     }
 
+
     pub fn choose_fullscreen_monitor(&self,monitor:usize)->Result<(),()>{
         if let Some(m)=self.available_monitors().nth(monitor){
             self.display.gl_window().window().set_fullscreen(Some(Fullscreen::Borderless(m)));
@@ -182,19 +183,21 @@ impl Window{
     }
 }
 
-/// # Функции для сглаживания. Functions for smoothing.
+
+/// # feature = "alpha_smoothing"
+#[cfg(feature="alpha_smoothing")]
 impl Window{
-    /// Set alpha channel for smooth drawing.
+    /// Sets alpha channel for smooth drawing.
     pub fn set_alpha(&mut self,alpha:f32){
         self.alpha_channel=alpha;
     }
 
-    /// Set smooth for smooth drawing.
+    /// Sets smooth for smooth drawing.
     pub fn set_smooth(&mut self,smooth:f32){
         self.smooth=smooth
     }
 
-    /// Set smooth and zero alpha channel
+    /// Sets smooth and zero alpha channel
     /// for smooth drawing.
     pub fn set_new_smooth(&mut self,smooth:f32){
         self.alpha_channel=0f32;
@@ -214,9 +217,9 @@ impl Window{
         frame.finish();
     }
 
-    /// Выполняет замыкание (и рисует курсор, если `feature="mouse_cursor_icon"`).
+    /// Выполняет замыкание (и рисует курсор, если `feature = "mouse_cursor_icon"`).
     /// 
-    /// Executes the closure (and draws the mouse cursor if `feature="mouse_cursor_icon"`).
+    /// Executes the closure (and draws the mouse cursor if `feature = "mouse_cursor_icon"`).
     pub fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&self,f:F){
         let mut draw_parameters=default_draw_parameters();
 
@@ -232,15 +235,18 @@ impl Window{
         frame.finish();
     }
 
-    /// Выполняет замыкание (и рисует курсор, если `feature="mouse_cursor_icon"`).
-    /// Выдаёт альфа-канал для рисования, возвращает следующее значение канала.
+    /// Выполняет замыкание (и рисует курсор, если `feature = "mouse_cursor_icon"`).
+    /// Выдаёт альфа-канал, возвращает его следующее значение.
     /// 
-    /// Нужна для плавных переходов или размытия с помощью альфа-канала.
+    /// Нужна для рисования с изменяющимся альфа-канала.
     /// 
-    /// Executes closure (and draws the mouse cursor if `feature="mouse_cursor_icon"`).
-    /// Gives alpha channel for drawing, returns the next value of the channel.
+    /// Executes closure (and draws the mouse cursor if `feature = "mouse_cursor_icon"`).
+    /// Gives alpha channel, returns it's next value.
     /// 
-    /// Needed for smooth drawing or smoothing with alpha channel.
+    /// Needed for drawing with changing alpha channel.
+    /// 
+    /// feature = "alpha_smoothing"
+    #[cfg(feature="alpha_smoothing")]
     pub fn draw_smooth<F:FnOnce(f32,&mut DrawParameters,&mut Graphics)>(&mut self,f:F)->f32{
         let mut draw_parameters=default_draw_parameters();
 

@@ -108,9 +108,9 @@ pub struct Window{
     #[cfg(feature="fps_counter")]
     pub (crate) time:Instant,
 
-    // #[cfg(feature="alpha_smoothing")]
+    #[cfg(feature="alpha_smoothing")]
     pub (crate) alpha_channel:f32,
-    // #[cfg(feature="alpha_smoothing")]
+    #[cfg(feature="alpha_smoothing")]
     pub (crate) smooth:f32,
 
     #[cfg(feature="mouse_cursor_icon")]
@@ -230,7 +230,9 @@ impl Window{
             #[cfg(feature="auto_hide")]
             events_handler:Window::event_listener,
 
+            #[cfg(feature="alpha_smoothing")]
             alpha_channel:0f32,
+            #[cfg(feature="alpha_smoothing")]
             smooth:0f32,
         })
     }

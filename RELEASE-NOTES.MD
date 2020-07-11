@@ -9,6 +9,10 @@ For the `auto_hide` feature:
  the current event listener is for the window minimized state 
  the next page will be opened with the same listener.
 
+### Features
+
+Alpha smoothing functions are now able only with the `alpha_smoothing` feature.
+
 # Version 0.1.3
 
 Now all drawing functions return the result of drawing.
