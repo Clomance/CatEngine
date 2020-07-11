@@ -39,17 +39,15 @@ The default range is 4..8.
 
 ##### auto_hide
 
-###### The default window structure (see below)
+The window gets minimized when loses focus.
+It gets back when gains focus.
 
-The window gets minimized when loses focus and
-it stops sending outer events except gained focus and application suspended or resumed events.
-The window gets back when it gains focus.
+Only the next event are able in minimized state:
+- получение фокуса, `WindowEvent::Focused(true)`
+ - приостановка или возобновление приложения,
+ `WindowEvent::Suspended` и `WindowEvent::Resumed`
+ - закрытие окна, `WindowEvent::Exit`
 
-###### The new format window structure (see below)
-
-The window gets minimized when loses focus and
-the `on_focused` function is called.
-The window gets back when it gains focus (the `on_focused` function is called, too).
 
 ##### fps_counter
 
@@ -81,4 +79,4 @@ All the events are handled in a closure.
 
 ### lazy
 
-The drawing event is emitted only when some action is happend.
+The drawing event is emitted only when any action is happend.

@@ -108,8 +108,10 @@ pub struct Window{
     #[cfg(feature="fps_counter")]
     pub (crate) time:Instant,
 
-    pub (crate) alpha_channel:f32,  // Для плавных
-    pub (crate) smooth:f32,         // переходов
+    // #[cfg(feature="alpha_smoothing")]
+    pub (crate) alpha_channel:f32,
+    // #[cfg(feature="alpha_smoothing")]
+    pub (crate) smooth:f32,
 
     #[cfg(feature="mouse_cursor_icon")]
     pub (crate) mouse_icon:MouseCursorIcon,
@@ -118,11 +120,9 @@ pub struct Window{
 use WindowEvent::*;
 
 impl Window{
-    //pub fn new_settings(settigs:WindowSettings)->Result<Window,DisplayCreationError>{}
-
     /// Создаёт окно. Принимает функцию для настройки.
     ///
-    /// Creates the window. 
+    /// Creates the window.
     pub fn new<F>(setting:F)->Result<Window,DisplayCreationError>
             where F:FnOnce(Vec<MonitorHandle>,&mut WindowSettings){
         let event_loop=EventLoop::new();
@@ -166,8 +166,7 @@ impl Window{
         window
     }
 
-    /// mouse_cursor_icon_path - feature = "mouse_cursor_icon"
-    /// mouse_cursor_icon_range - feature = "mouse_cursor_icon"
+    /// mouse_cursor_icon_path, mouse_cursor_icon_range - feature = "mouse_cursor_icon"
     pub fn raw<P:AsRef<Path>>(
         window_builder:WindowBuilder,
         context_builder:ContextBuilder<NotCurrent>,

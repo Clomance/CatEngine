@@ -71,21 +71,8 @@ use std::{
     time::{Instant,Duration},
 };
 
-/*
-    EventLoop - минимум четыре шага:
-    1) NewEvent
-    (Основные события)
-    2) MainEventsCleared
-    (RedrawRequested)
-    3) RedrawEventsCleared
-    (проверяется ControlFlow)
-    4) LoopDestroyed
-*/
-
-/// Окно, включает в себя графические функции
-/// и обработчик событий.
-/// A window with graphic functions
-/// and an event listener included.
+/// Окно, заменяет собой обычное окно.
+/// A window replaces the default one. feature = "paged_format"
 /// 
 /// #
 /// 
@@ -101,6 +88,7 @@ pub struct Window{
     pub (crate) display:Display,
     pub (crate) graphics:Graphics2D,
 
+    minimized:bool,
     pub (crate) event_loop:EventLoop<InnerWindowEvent>,
     pub (crate) event_loop_proxy:EventLoopProxy<InnerWindowEvent>,
 
@@ -109,8 +97,10 @@ pub struct Window{
     #[cfg(feature="fps_counter")]
     pub (crate) time:Instant,
 
-    pub (crate) alpha_channel:f32,  // Для плавных
-    pub (crate) smooth:f32,         // переходов
+    // #[cfg(feature="alpha_smoothing")]
+    pub (crate) alpha_channel:f32,
+    // #[cfg(feature="alpha_smoothing")]
+    pub (crate) smooth:f32,
 
     #[cfg(feature="mouse_cursor_icon")]
     pub (crate) mouse_icon:MouseCursorIcon,
@@ -118,8 +108,6 @@ pub struct Window{
 
 
 impl Window{
-    //pub fn new_settings(settigs:WindowSettings)->Result<Window,DisplayCreationError>{}
-
     /// Создаёт окно. Принимает функцию для настройки.
     ///
     /// Creates the window. 
@@ -166,8 +154,7 @@ impl Window{
         window
     }
 
-    /// mouse_cursor_icon_path - feature = "mouse_cursor_icon"
-    /// mouse_cursor_icon_range - feature = "mouse_cursor_icon"
+    /// mouse_cursor_icon_path, mouse_cursor_icon_range - feature = "mouse_cursor_icon"
     pub fn raw<P:AsRef<Path>>(
         window_builder:WindowBuilder,
         context_builder:ContextBuilder<NotCurrent>,
@@ -222,6 +209,7 @@ impl Window{
             graphics,
             display,
 
+            minimized:false,
             event_loop,
             event_loop_proxy:proxy,
 
@@ -249,12 +237,24 @@ impl Window{
         self.closure_event_listener(event_loop,&mut handler);
 
         #[cfg(feature="auto_hide")]
-        loop{
-            if self.closure_event_listener(event_loop,&mut handler){
-                break
+        if self.minimized{
+            loop{
+                if self.closure_wait_until_focused(event_loop,&mut handler){
+                    break
+                }
+                if self.closure_event_listener(event_loop,&mut handler){
+                    break
+                }
             }
-            if self.closure_wait_until_focused(event_loop,&mut handler){
-                break
+        }
+        else{
+            loop{
+                if self.closure_event_listener(event_loop,&mut handler){
+                    break
+                }
+                if self.closure_wait_until_focused(event_loop,&mut handler){
+                    break
+                }
             }
         }
     }
@@ -270,12 +270,24 @@ impl Window{
         self.paged_event_listener(event_loop,page);
 
         #[cfg(feature="auto_hide")]
-        loop{
-            if self.paged_event_listener(event_loop,page){
-                break
+        if self.minimized{
+            loop{
+                if self.paged_wait_until_focused(event_loop,page){
+                    break
+                }
+                if self.paged_event_listener(event_loop,page){
+                    break
+                }
             }
-            if self.paged_wait_until_focused(event_loop,page){
-                break
+        }
+        else{
+            loop{
+                if self.paged_event_listener(event_loop,page){
+                    break
+                }
+                if self.paged_wait_until_focused(event_loop,page){
+                    break
+                }
             }
         }
     }
@@ -337,7 +349,8 @@ impl Window{
 
                             #[cfg(feature="mouse_cursor_icon")]
                             self.mouse_icon.update(&mut self.graphics);
-                            return
+
+                            Resized([size.width,size.height])
                         }
 
                         // Сдвиг окна
@@ -419,6 +432,7 @@ impl Window{
                         #[cfg(feature="auto_hide")]
                         GWindowEvent::Focused(f)=>if !f{
                             *control_flow=ControlFlow::Exit;
+                            self.minimized=true;
                             self.display.gl_window().window().set_minimized(true); // Сворацивание окна
                             return
                         }
@@ -481,6 +495,14 @@ impl Window{
 
                 Event::WindowEvent{event,..}=>{
                     match event{
+                         // Запрос на закрытие окна
+                         // Остановка цикла обработки событий
+                         GWindowEvent::CloseRequested=>{
+                            *control_flow=ControlFlow::Exit;
+                            close_flag=true;
+                            Exit
+                        }
+
                         GWindowEvent::Resized(size)=>unsafe{
                             window_width=size.width as f32;
                             window_height=size.height as f32;
@@ -489,19 +511,17 @@ impl Window{
                             #[cfg(feature="mouse_cursor_icon")]
                             self.mouse_icon.update(&mut self.graphics);
 
-                            Resized([size.width,size.height])
-                        }
-
-                        GWindowEvent::CloseRequested=>{ // Остановка цикла обработки событий,
-                            *control_flow=ControlFlow::Exit;
-                            close_flag=true;
-                            Exit
+                            return
                         }
 
                         // При получении фокуса
                         GWindowEvent::Focused(f)=>{
                             *control_flow=ControlFlow::Exit;
+                            self.minimized=false;
                             self.display.gl_window().window().set_minimized(false);
+
+
+
                             Focused(f)
                         }
 
@@ -642,6 +662,7 @@ impl Window{
                         #[cfg(feature="auto_hide")]
                         GWindowEvent::Focused(f)=>if !f{
                             *control_flow=ControlFlow::Exit;
+                            self.minimized=true;
                             self.display.gl_window().window().set_minimized(true); // Сворацивание окна
                             page.on_window_focused(self,f);
                         }
@@ -722,6 +743,7 @@ impl Window{
                         GWindowEvent::Focused(f)=>{
                             *control_flow=ControlFlow::Exit;
                             self.display.gl_window().window().set_minimized(false);
+                            self.minimized=false;
                             page.on_window_focused(self,f);
                         }
 

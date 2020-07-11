@@ -47,12 +47,13 @@ pub static mut window_center:[f32;2]=[0f32;2];
 #[cfg(feature="fps_counter")]
 pub static mut fps:u32=0;
 
+/// Внутренние события для управления окном.
+/// Inner events to operate the window.
 pub enum InnerWindowEvent{
     Exit,
 }
 
 /// Внешние события окна.
-/// 
 /// Outer window events.
 #[derive(Clone,Debug)]
 pub enum WindowEvent{
