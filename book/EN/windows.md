@@ -1,7 +1,8 @@
 # WindowBase
 
-A window with graphic functions included.
+A window base with graphic functions included.
 
+You can create you own window with it.
 
 # DefaultWindow
 

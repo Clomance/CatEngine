@@ -70,7 +70,7 @@ pub struct PagedWindow{
 
 
 impl PagedWindow{
-    /// Создаёт окно. Принимает функцию для настройки.
+    /// Создаёт окно.
     ///
     /// Creates the window.
     pub fn new<F>(setting:F)->Result<PagedWindow,DisplayCreationError>

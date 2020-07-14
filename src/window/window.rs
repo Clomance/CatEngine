@@ -37,7 +37,7 @@ use image::DynamicImage;
 use std::path::{Path,PathBuf};
 
 /// Типаж для создания страниц окна.
-/// Trait for implementing window pages.
+/// A trait for implementing window pages.
 pub trait WindowPage<'a>{
     type Window:Window;
 
@@ -66,6 +66,8 @@ pub trait WindowPage<'a>{
     fn on_file_hovered_canceled(&mut self,window:&mut Self::Window);
 }
 
+/// Типаж, помогающий создать более сложное окно на базе `WindowBase`.
+/// A trait that helps to create more a complex window based on `WindowBase`.
 pub trait Window:Sized{
     type UserEvent:'static;
 

@@ -364,6 +364,8 @@ impl<'a> DynamicWindow<'a>{
     fn wait_until_focused(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>)->bool{
         let mut close_flag=false;
 
+        // Проверка, есть ли 'страница', чтобы установить,
+        // и установка, если имеется
         let mut taken_page=if let PageState::SetNew(page)=&mut self.page{
             page.take()
         }
@@ -374,12 +376,14 @@ impl<'a> DynamicWindow<'a>{
         event_loop.run_return(|event,_,control_flow|{
             *control_flow=ControlFlow::Wait;
 
-            // Проверка, есть ли 'страницы', чтобы заменить текущую,
+            // Проверка, есть ли 'страница', чтобы заменить текущую,
             // и замена, если есть такая
             if let PageState::SetNew(page)=&mut self.page{
-                let take_old=taken_page.take();
-                taken_page=page.take();
-                self.page=PageState::TakeOld(take_old);
+                if let Some(_)=page{
+                    let take_old=taken_page.take();
+                    taken_page=page.take();
+                    self.page=PageState::TakeOld(take_old);
+                }
             }
 
             let page=if let Some(page)=&mut taken_page{
