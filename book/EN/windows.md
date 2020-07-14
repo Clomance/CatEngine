@@ -27,4 +27,5 @@ All the events are handled with a closure.
 All the events are implemented with `WindowPage` trait
 and handled immediately after emited.
 
-The window uses trait objects so you can change a 'page' while running another 'page'.
+The window that uses 'pages' as `WindowPage` trait objects,
+so you can change one while running another.

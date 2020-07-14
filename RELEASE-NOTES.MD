@@ -8,10 +8,11 @@ New settings for user's mouse cursor icon.
 
 ### Added
 
-New window types are `DynamicWindow` - a window that uses 'pages' as `WindowPage` trait objects,
+The new window types are `DynamicWindow` - a window that uses 'pages' as `WindowPage` trait objects,
 and `WindowBase` - a window base without event handlers.
 
-A trait for windows. You can create easily your own window with `WindowBase`.
+`Window` - a trait for windows. You can create easily your own window with `WindowBase`.
+All the windows are implemented with it except `WindowBase`.
 
 ### Deleted
 
