@@ -14,8 +14,11 @@
 //! 
 //! #
 //! 
+//! 
+//! 
 //! ```
 //! use cat_engine::{
+//!     DefaultWindow,
 //!     Window,
 //!     WindowEvent
 //! };
@@ -30,13 +33,15 @@
 //!             WindowEvent::Draw=>{
 //!                 window.draw(|_,g|{
 //!                     g.clear_colour([1.0,0.0,0.0,0.0]);
-//!                 })
+//!                 }).unwrap();
 //!             }
 //!             _=>{}
 //!         }
 //!     }
 //! }
 //! ```
+//! 
+//! 
 //! 
 //! Modifying the window.
 //! ```

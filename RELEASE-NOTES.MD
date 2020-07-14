@@ -8,10 +8,10 @@ New settings for user's mouse cursor icon.
 
 ### Added
 
-New window types are `DynamicWindow` - a windpw uses 'pages' as a trait object,
+New window types are `DynamicWindow` - a window that uses 'pages' as `WindowPage` trait objects,
 and `WindowBase` - a window base without event handlers.
 
-A trait for windows. You can create
+A trait for windows. You can create easily your own window with `WindowBase`.
 
 ### Deleted
 
@@ -29,6 +29,8 @@ w.set_visible(false);
 ### Other changes
 
 The window of the default window format is now named `DefaultWindow`.
+
+The `WindowPage` trait got the `type Window` field and a life parameter.
 
 # Version 0.1.4
 

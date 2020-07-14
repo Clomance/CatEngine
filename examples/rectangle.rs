@@ -1,5 +1,3 @@
-// The paged window format \\
-// The default window format is below \\
 use cat_engine::{
     PagedWindow,
     Window,
@@ -16,7 +14,7 @@ pub struct Page{
     rect:cat_engine::graphics::Rectangle,
 }
 
-impl WindowPage for Page{
+impl WindowPage<'static> for Page{
     type Window=PagedWindow;
 
     fn on_close_requested(&mut self,_window:&mut PagedWindow){
@@ -100,33 +98,4 @@ fn main(){
             _=>{}
         }
     });
-}
-
-#[cfg(feature="a")]
-// The default window format \\
-use cat_engine::{
-    DefaultWindow,
-    WindowEvent,
-};
-
-#[cfg(feature="a")]
-fn main(){
-    let mut window=DefaultWindow::new(|_,_|{}).unwrap();
-
-    let rect=cat_engine::graphics::Rectangle::new([100.0;4],[1.0,0.0,0.0,1.0]);
-
-    while let Some(event)=window.next_event(){
-        match event{
-            WindowEvent::Exit=>{
-                break
-            }
-            WindowEvent::Draw=>{
-                window.draw(|p,g|{
-                    g.clear_colour([1.0;4]);
-                    rect.draw(p,g).unwrap();
-                })
-            }
-            _=>{}
-        }
-    }
 }

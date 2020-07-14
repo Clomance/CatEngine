@@ -10,8 +10,8 @@ pub use default_window::DefaultWindow;
 mod paged_window;
 pub use paged_window::PagedWindow;
 
-// mod dynamic_window;
-// pub use dynamic_window::DynamicWindow;
+mod dynamic_window;
+pub use dynamic_window::DynamicWindow;
 
 mod settings;
 pub use settings::*;

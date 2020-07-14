@@ -38,7 +38,7 @@ use std::path::{Path,PathBuf};
 
 /// Типаж для создания страниц окна.
 /// Trait for implementing window pages.
-pub trait WindowPage{
+pub trait WindowPage<'a>{
     type Window:Window;
 
     fn on_close_requested(&mut self,window:&mut Self::Window);

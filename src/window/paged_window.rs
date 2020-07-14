@@ -46,9 +46,8 @@ use glium::glutin::{
 
 use std::path::PathBuf;
 
-/// Окно, включает в себя графические функции
-/// и обработчик событий.
-/// A window with graphic functions and an event listener included.
+/// Окно, использует 'страницы' и замыкания для обработки событий.
+/// A window usee 'pages' and closures to handle events.
 /// 
 /// #
 /// 
@@ -116,7 +115,7 @@ impl PagedWindow{
     /// Запускает данную страницу.
     /// 
     /// Starts the given page.
-    pub fn run_page<P:WindowPage<Window=PagedWindow>>(&mut self,page:&mut P){
+    pub fn run_page<P:WindowPage<'static,Window=PagedWindow>>(&mut self,page:&mut P){
         let el=&mut self.base.event_loop as *mut EventLoop<InnerWindowEvent>;
         let event_loop=unsafe{&mut *el};
 
@@ -396,7 +395,7 @@ impl PagedWindow{
     }
 
     fn paged_event_listener<P>(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>,page:&mut P)->bool
-            where P:WindowPage<Window=PagedWindow>{
+            where P:WindowPage<'static,Window=PagedWindow>{
         let mut close_flag=false;
 
         event_loop.run_return(|event,_,control_flow|{
@@ -559,7 +558,7 @@ impl PagedWindow{
 
     /// Функция ожидания получения фокуса - перехватывает управление до получения окном фокуса
     #[cfg(feature="auto_hide")]
-    fn paged_wait_until_focused<P:WindowPage<Window=PagedWindow>>(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>,page:&mut P)->bool{
+    fn paged_wait_until_focused<P:WindowPage<'static,Window=PagedWindow>>(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>,page:&mut P)->bool{
         let mut close_flag=false;
 
         event_loop.run_return(|event,_,control_flow|{

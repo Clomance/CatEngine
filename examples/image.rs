@@ -17,7 +17,7 @@ pub struct Page{
 }
 
 
-impl WindowPage for Page{
+impl WindowPage<'static> for Page{
     type Window=PagedWindow;
 
     fn on_close_requested(&mut self,_window:&mut PagedWindow){

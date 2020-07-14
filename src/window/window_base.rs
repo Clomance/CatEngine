@@ -63,16 +63,21 @@ pub struct WindowBase<E:'static>{
     pub graphics:Graphics2D,
     pub event_loop:EventLoop<E>,
 
+    /// feature = "fps_counter"
     #[cfg(feature="fps_counter")]
     pub frames_passed:u32,
+    /// feature = "fps_counter"
     #[cfg(feature="fps_counter")]
     pub time:Instant,
 
+    /// feature = "alpha_smoothing"
     #[cfg(feature="alpha_smoothing")]
     pub alpha_channel:f32,
+    /// feature = "alpha_smoothing"
     #[cfg(feature="alpha_smoothing")]
     pub smooth:f32,
 
+    /// feature = "mouse_cursor_icon"
     #[cfg(feature="mouse_cursor_icon")]
     pub mouse_icon:MouseCursorIcon,
 }

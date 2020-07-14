@@ -25,6 +25,8 @@ If you use audio feature, alsa delevopment libraries are required for Linux: `li
 
 ## [Release notes](RELEASE-NOTES.MD)
 
+## [Book](book/)
+
 ## List of features
 [English version](book/EN/FEATURES.MD)
 [Русская версия](book/RUS/FEATURES.MD)
@@ -39,6 +41,5 @@ Other features:
  - "mouse_cursor_icon"
  - "auto_hide"
  - "fps_counter"
- - "paged_format"
  - "lazy"
  - "alpha_smoothing"

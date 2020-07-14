@@ -80,7 +80,7 @@ pub struct DefaultWindow{
 use WindowEvent::*;
 
 impl DefaultWindow{
-    /// Создаёт окно. Принимает функцию для настройки.
+    /// Создаёт окно.
     ///
     /// Creates the window.
     pub fn new<F>(setting:F)->Result<DefaultWindow,DisplayCreationError>
