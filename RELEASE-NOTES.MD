@@ -1,3 +1,8 @@
+# Version 0.2.0
+
+Now all the windows are compatible.
+You can convert one into another, except `DynamicWindow` - you can only convert into it.
+
 # Version 0.1.5
 
 ### User's mouse cursor icon (feature = "mouse_cursor_icon")

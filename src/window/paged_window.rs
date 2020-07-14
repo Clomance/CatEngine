@@ -19,11 +19,14 @@ use super::{
     KeyboardButton,
     WindowEvent,
     InnerWindowEvent,
+    PageState,
     // traits
     Window,
     WindowPage,
     // structs
-    WindowBase
+    WindowBase,
+    DefaultWindow,
+    DynamicWindow,
 };
 
 use glium::backend::glutin::DisplayCreationError;
@@ -44,7 +47,10 @@ use glium::glutin::{
 };
 
 
-use std::path::PathBuf;
+use std::{
+    collections::VecDeque,
+    path::PathBuf
+};
 
 /// Окно, использует 'страницы' и замыкания для обработки событий.
 /// A window usee 'pages' and closures to handle events.
@@ -60,12 +66,12 @@ use std::path::PathBuf;
 /// and handled immediately after emited.
 /// 
 pub struct PagedWindow{
-    base:WindowBase<InnerWindowEvent>,
+    pub (crate) base:WindowBase<InnerWindowEvent>,
 
-    event_loop_proxy:EventLoopProxy<InnerWindowEvent>,
-    
+    pub (crate) event_loop_proxy:EventLoopProxy<InnerWindowEvent>,
+
     #[cfg(feature="auto_hide")]
-    minimized:bool,
+    pub (crate) minimized:bool,
 }
 
 
@@ -154,6 +160,35 @@ impl PagedWindow{
     /// if it's running.
     pub fn stop_events(&self)->Result<(),EventLoopClosed<InnerWindowEvent>>{
         self.event_loop_proxy.send_event(InnerWindowEvent::Exit)
+    }
+
+    /// Converts into `DefaultWindow`.
+    /// 
+    /// Ignores the 'auto_hide' feature state (the window hidden or not).
+    pub fn into_default_window(self)->DefaultWindow{
+        DefaultWindow{
+            base:self.base,
+
+            events:VecDeque::with_capacity(32),
+
+            #[cfg(feature="auto_hide")]
+            events_handler:DefaultWindow::event_listener,
+        }
+    }
+
+    /// Converts into `DynamicWindow`.
+    /// 
+    /// Ignores the 'auto_hide' feature state (the window hidden or not).
+    pub fn into_dynamic_window<'a>(self)->DynamicWindow<'a>{
+        let proxy=self.base.event_loop.create_proxy();
+
+        DynamicWindow{
+            base:self.base,
+
+            event_loop_proxy:proxy,
+
+            page:PageState::<'a>::SetNew(None),
+        }
     }
 }
 

@@ -5,13 +5,13 @@ mod window;
 pub use window::*;
 
 mod default_window;
-pub use default_window::DefaultWindow;
+pub use default_window::*;
 
 mod paged_window;
 pub use paged_window::PagedWindow;
 
 mod dynamic_window;
-pub use dynamic_window::DynamicWindow;
+pub use dynamic_window::*;
 
 mod settings;
 pub use settings::*;

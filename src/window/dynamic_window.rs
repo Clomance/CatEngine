@@ -43,7 +43,7 @@ use glium::glutin::{
 
 use std::path::PathBuf;
 
-enum PageState<'a>{
+pub (crate) enum PageState<'a>{
     SetNew(Option<&'a mut dyn WindowPage<'a,Window=DynamicWindow<'a>>>),
     TakeOld(Option<&'a mut dyn WindowPage<'a,Window=DynamicWindow<'a>>>),
 }
@@ -63,11 +63,11 @@ enum PageState<'a>{
 /// 
 /// If no page is set, all the events are ignored.
 pub struct DynamicWindow<'a>{
-    base:WindowBase<InnerWindowEvent>,
+    pub (crate) base:WindowBase<InnerWindowEvent>,
 
-    event_loop_proxy:EventLoopProxy<InnerWindowEvent>,
+    pub (crate) event_loop_proxy:EventLoopProxy<InnerWindowEvent>,
 
-    page:PageState<'a>,
+    pub (crate) page:PageState<'a>,
 }
 
 

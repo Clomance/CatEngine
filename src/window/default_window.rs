@@ -17,10 +17,14 @@ use super::{
     WindowEvent,
     MouseButton,
     KeyboardButton,
+    InnerWindowEvent,
+    PageState,
     // traits
     Window,
     // structs
     WindowBase,
+    PagedWindow,
+    DynamicWindow,
 };
 
 use glium::backend::glutin::DisplayCreationError;
@@ -69,12 +73,12 @@ use std::{
 /// All events are handled and added to the outer handling queue (DefaultWindow.events)
 /// to work with them outside of the window structure.
 pub struct DefaultWindow{
-    base:WindowBase<()>,
+    pub (crate) base:WindowBase<InnerWindowEvent>,
 
-    events:VecDeque<WindowEvent>,
+    pub (crate) events:VecDeque<WindowEvent>,
 
     #[cfg(feature="auto_hide")]
-    events_handler:fn(&mut Self),
+    pub (crate) events_handler:fn(&mut Self),
 }
 
 use WindowEvent::*;
@@ -106,6 +110,50 @@ impl DefaultWindow{
         }
         self.events.pop_front()
     }
+
+    /// Converts into `PagedWindow`.
+    /// 
+    /// Saves the 'auto_hide' feature state (the window hidden or not).
+    pub fn into_paged_window(self)->PagedWindow{
+        let proxy=self.base.event_loop.create_proxy();
+
+        #[cfg(feature="auto_hide")]
+        let minimized=if self.events_handler
+            as *const fn(&mut DefaultWindow)
+            ==
+            DefaultWindow::event_listener
+            as *const fn(&mut DefaultWindow)
+        {
+            true
+        }
+        else{
+            false
+        };
+
+        PagedWindow{
+            base:self.base,
+
+            event_loop_proxy:proxy,
+
+            #[cfg(feature="auto_hide")]
+            minimized,
+        }
+    }
+
+    /// Converts into `DynamicWindow`.
+    /// 
+    /// Ignores the 'auto_hide' feature state (the window hidden or not).
+    pub fn into_dynamic_window<'a>(self)->DynamicWindow<'a>{
+        let proxy=self.base.event_loop.create_proxy();
+
+        DynamicWindow{
+            base:self.base,
+
+            event_loop_proxy:proxy,
+
+            page:PageState::<'a>::SetNew(None),
+        }
+    }
 }
 
 
@@ -118,8 +166,9 @@ impl DefaultWindow{
 /// Event handlers.
 impl DefaultWindow{
     /// Обычная функция обработки событий
-    fn event_listener(&mut self){
-        let el=&mut self.base.event_loop as *mut EventLoop<()>;
+    pub (crate) fn event_listener(&mut self){
+        let el=&mut self.base.event_loop as *mut EventLoop<InnerWindowEvent>;
+
         let event_loop=unsafe{&mut *el};
 
         event_loop.run_return(|event,_,control_flow|{
@@ -266,7 +315,8 @@ impl DefaultWindow{
     /// Функция ожидания получения фокуса - перехватывает управление до получения окном фокуса
     #[cfg(feature="auto_hide")]
     fn wait_until_focused(&mut self){
-        let el=&mut self.base.event_loop as *mut EventLoop<()>;
+        let el=&mut self.base.event_loop as *mut EventLoop<InnerWindowEvent>;
+
         let event_loop=unsafe{&mut *el};
 
         event_loop.run_return(|event,_,control_flow|{
@@ -341,7 +391,7 @@ impl DefaultWindow{
 }
 
 impl Window for DefaultWindow{
-    type UserEvent=();
+    type UserEvent=InnerWindowEvent;
 
     fn window_base(&self)->&WindowBase<Self::UserEvent>{
         &self.base
@@ -355,7 +405,7 @@ impl Window for DefaultWindow{
         window_builder:WindowBuilder,
         context_builder:ContextBuilder<NotCurrent>,
         graphics_settings:GraphicsSettings,
-        event_loop:EventLoop<()>,
+        event_loop:EventLoop<Self::UserEvent>,
         initial_colour:Option<Colour>,
 
         #[cfg(feature="mouse_cursor_icon")]
