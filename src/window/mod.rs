@@ -1,25 +1,20 @@
-#[cfg(not(feature="paged_format"))]
+mod window_base;
+pub use window_base::WindowBase;
+
 mod window;
-#[cfg(not(feature="paged_format"))]
 pub use window::*;
 
-mod window_new_format;
-// Переименовывание для документации.
-// Renaming for the documentation.
-#[cfg(not(feature="paged_format"))]
-pub use window_new_format::{
-    Window as PagedWindow,
-    WindowPage
-};
+mod default_window;
+pub use default_window::DefaultWindow;
 
-#[cfg(feature="paged_format")]
-pub use window_new_format::*;
+mod paged_window;
+pub use paged_window::PagedWindow;
 
-mod general_window_functions;
-pub use general_window_functions::*;
+// mod dynamic_window;
+// pub use dynamic_window::DynamicWindow;
 
 mod settings;
-pub use settings::WindowSettings;
+pub use settings::*;
 
 
 mod mouse_cursor;

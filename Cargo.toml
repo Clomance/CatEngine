@@ -1,6 +1,6 @@
 [package]
 name = "cat_engine"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
 homepage = "https://github.com/Clomance/CatEngine"
@@ -14,8 +14,7 @@ exclude = [
     "logo_400x400.png",
     "logo.png",
     "examples",
-    "FEATURES.MD",
-    "FEATURES-RUS.MD",
+    "book",
     "RELEASE-NOTES.MD"
 ]
 
@@ -34,11 +33,11 @@ auto_hide = []
 
 fps_counter = []
 
-paged_format = []
-
-lazy = ["paged_format"]
+lazy = []
 
 alpha_smoothing = []
+
+window_compatibility = []
 
 [package.metadata.docs.rs]
 features = [

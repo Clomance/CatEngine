@@ -1,7 +1,3 @@
-use super::{
-    Window
-};
-
 use crate::{
     Colour,
     graphics::{Graphics2D,Graphics,GraphicsSettings},
@@ -9,6 +5,8 @@ use crate::{
 
 #[cfg(feature="mouse_cursor_icon")]
 use super::mouse_cursor::MouseCursorIcon;
+#[cfg(feature="mouse_cursor_icon")]
+use super::MouseCursorIconSettings;
 
 #[cfg(feature="fps_counter")]
 use super::fps;
@@ -18,12 +16,6 @@ use super::{
     window_width,
     window_height,
     window_center,
-    mouse_cursor,
-    // enums
-    WindowSettings,
-    WindowEvent,
-    MouseButton,
-    KeyboardButton,
 };
 
 use glium::{
@@ -39,23 +31,15 @@ use glium::{
         BackfaceCullingMode,
     },
     texture::RawImage2d,
-    backend::glutin::DisplayCreationError
+    backend::glutin::DisplayCreationError,
+    SwapBuffersError
 };
 
 use glium::glutin::{
     ContextBuilder,
     NotCurrent,
-    monitor::MonitorHandle,
-    event_loop::{ControlFlow,EventLoop},
-    event::{
-        Event,
-        WindowEvent as GWindowEvent,
-        MouseButton as GMouseButton,
-        ElementState,
-    },
-    window::{Fullscreen,WindowBuilder},
-    platform::desktop::EventLoopExtDesktop,
-    dpi::Size,
+    event_loop::EventLoop,
+    window::WindowBuilder,
 };
 
 use image::{
@@ -64,166 +48,125 @@ use image::{
     DynamicImage
 };
 
-use std::{
-    collections::VecDeque,
-    path::{Path,PathBuf},
-    ops::Range,
-    time::{Instant,Duration},
-};
-impl Window{
-    #[inline(always)]
-    pub fn display(&self)->&Display{
-        &self.display
-    }
+#[cfg(feature="fps_counter")]
+use std::time::{Instant,Duration};
 
-    /// Возвращает графическую основу.
-    /// 
-    /// Returns graphic base.
-    #[inline(always)]
-    pub fn graphics(&mut self)->&mut Graphics2D{
-        &mut self.graphics
-    }
+use std::path::Path;
 
-    #[inline(always)]
-    pub fn available_monitors(&self)->impl std::iter::Iterator<Item=MonitorHandle>{
-        self.event_loop.available_monitors()
-    }
-}
+#[cfg(feature="mouse_cursor_icon")]
+use std::path::PathBuf;
 
-impl Window{
-    pub fn set_inner_size<S:Into<Size>>(&self,size:S){
-        self.display.gl_window().window().set_inner_size(size)
-    }
+/// Окно, включает в себя графические функции.
+/// A window with graphic functions included.
+pub struct WindowBase<E:'static>{
+    pub display:Display,
+    pub graphics:Graphics2D,
+    pub event_loop:EventLoop<E>,
 
-    pub fn set_min_inner_size<S:Into<Size>>(&self,size:Option<S>){
-        self.display.gl_window().window().set_min_inner_size(size)
-    }
+    #[cfg(feature="fps_counter")]
+    pub frames_passed:u32,
+    #[cfg(feature="fps_counter")]
+    pub time:Instant,
 
-    pub fn set_max_inner_size<S:Into<Size>>(&self,size:Option<S>){
-        self.display.gl_window().window().set_max_inner_size(size)
-    }
-
-    pub fn set_title(&self,title:&str){
-        self.display.gl_window().window().set_title(title)
-    }
-
-    pub fn set_visible(&self,visible:bool){
-        self.display.gl_window().window().set_visible(visible)
-    }
-
-    pub fn set_resizable(&self,resizable:bool){
-        self.display.gl_window().window().set_resizable(resizable)
-    }
-
-
-    pub fn choose_fullscreen_monitor(&self,monitor:usize)->Result<(),()>{
-        if let Some(m)=self.available_monitors().nth(monitor){
-            self.display.gl_window().window().set_fullscreen(Some(Fullscreen::Borderless(m)));
-            Ok(())
-        }
-        else{
-            Err(())
-        }
-    }
-
-
-    pub fn set_fullscreen(&self,fullscreen:Option<Fullscreen>){
-        self.display.gl_window().window().set_fullscreen(fullscreen)
-    }
-
-    /// Сворачивает окно.
-    /// 
-    /// Minimizes the window.
-    #[inline(always)]
-    pub fn set_minimized(&self,minimized:bool){
-        self.display.gl_window().window().set_minimized(minimized)
-    }
-
-    /// Делает окно максимального размера.
-    /// 
-    /// Maximizes the window.
-    #[inline(always)]
-    pub fn set_maximized(&self,maximized:bool){
-        self.display.gl_window().window().set_maximized(maximized)
-    }
-
-    pub fn set_decorations(&self,decorations:bool){
-        self.display.gl_window().window().set_decorations(decorations)
-    }
-
-    pub fn set_always_on_top(&self,always_on_top:bool){
-        self.display.gl_window().window().set_always_on_top(always_on_top)
-    }
-
-    #[inline(always)]
-    pub fn set_cursor_visible(&mut self,visible:bool){
-        #[cfg(feature="mouse_cursor_icon")]
-        self.mouse_icon.set_visible(visible);
-
-        #[cfg(not(feature="mouse_cursor_icon"))]
-        self.display.gl_window().window().set_cursor_visible(visible);
-    }
+    #[cfg(feature="alpha_smoothing")]
+    pub alpha_channel:f32,
+    #[cfg(feature="alpha_smoothing")]
+    pub smooth:f32,
 
     #[cfg(feature="mouse_cursor_icon")]
-    #[inline(always)]
-    pub fn switch_cursor_visibility(&mut self){
-        self.mouse_icon.switch_visibility()
+    pub mouse_icon:MouseCursorIcon,
+}
+
+impl<E:'static> WindowBase<E>{
+    pub fn raw(
+        window_builder:WindowBuilder,
+        context_builder:ContextBuilder<NotCurrent>,
+        graphics_settings:GraphicsSettings,
+        event_loop:EventLoop<E>,
+        initial_colour:Option<Colour>,
+
+        #[cfg(feature="mouse_cursor_icon")]
+        mouse_cursor_icon_settings:MouseCursorIconSettings<PathBuf>,
+    )->Result<WindowBase<E>,DisplayCreationError>{
+        // Создание окна и привязывание графической библиотеки
+        let display=Display::new(window_builder,context_builder,&event_loop)?;
+
+        let size=display.gl_window().window().inner_size();
+        unsafe{
+            window_width=size.width as f32;
+            window_height=size.height as f32;
+            window_center=[window_width/2f32,window_height/2f32];
+        }
+
+        // Опреление поддерживаемой версии GLSL
+        let Version(..,m,l)=display.get_supported_glsl_version();
+        let glsl=match m{
+            1 if l<3 =>{
+                120
+            }
+            _=>{
+                140
+            }
+        };
+
+        if let Some([r,g,b,a])=initial_colour{
+            let mut frame=display.draw();   //
+            frame.clear_color(r,g,b,a);     // Заполнение окна
+            frame.finish().unwrap();        //
+        }
+
+        // Отлючение курсора системы
+        // Замена его собственным
+        #[cfg(feature="mouse_cursor_icon")]
+        display.gl_window().window().set_cursor_visible(false);
+
+        #[cfg(feature="mouse_cursor_icon")]
+        let mut graphics=Graphics2D::new(&display,graphics_settings,glsl);
+
+        #[cfg(not(feature="mouse_cursor_icon"))]
+        let graphics=Graphics2D::new(&display,graphics_settings,glsl);
+
+        Ok(Self{
+            #[cfg(feature="mouse_cursor_icon")]
+            mouse_icon:MouseCursorIcon::new(mouse_cursor_icon_settings,&display,&mut graphics),
+
+            graphics,
+            display,
+
+            event_loop,
+
+            #[cfg(feature="fps_counter")]
+            frames_passed:0u32,
+            #[cfg(feature="fps_counter")]
+            time:Instant::now(),
+
+            #[cfg(feature="alpha_smoothing")]
+            alpha_channel:0f32,
+            #[cfg(feature="alpha_smoothing")]
+            smooth:0f32,
+        })
     }
 }
 
-/// # Версии OpenGL. OpenGL versions.
-impl Window{
-    #[inline(always)]
-    pub fn get_supported_glsl_version(&self)->Version{
-        self.display.get_supported_glsl_version()
-    }
-    #[inline(always)]
-    pub fn get_opengl_version(&self)->&Version{
-        self.display.get_opengl_version()
-    }
-}
-
-
-/// # feature = "alpha_smoothing"
-#[cfg(feature="alpha_smoothing")]
-impl Window{
-    /// Sets alpha channel for smooth drawing.
-    pub fn set_alpha(&mut self,alpha:f32){
-        self.alpha_channel=alpha;
-    }
-
-    /// Sets smooth for smooth drawing.
-    pub fn set_smooth(&mut self,smooth:f32){
-        self.smooth=smooth
-    }
-
-    /// Sets smooth and zero alpha channel
-    /// for smooth drawing.
-    pub fn set_new_smooth(&mut self,smooth:f32){
-        self.alpha_channel=0f32;
-        self.smooth=smooth
-    }
-}
-
-/// # Функции для рисования. Drawing functions.
-impl Window{
+/// Функции для рисования. Drawing functions.
+impl<E:'static> WindowBase<E>{
     /// Даёт прямое управление над кадром.
     /// 
     /// Gives frame to raw drawing.
-    pub fn draw_raw<F:FnOnce(&mut DrawParameters,&mut Frame)>(&self,f:F){
-        let mut frame=self.display().draw();
+    pub fn draw_raw<F:FnOnce(&mut DrawParameters,&mut Frame)>(&self,f:F)->Result<(),SwapBuffersError>{
+        let mut frame=self.display.draw();
         let mut draw_parameters=default_draw_parameters();
         f(&mut draw_parameters,&mut frame);
-        frame.finish();
+        frame.finish()
     }
 
     /// Выполняет замыкание (и рисует курсор, если `feature = "mouse_cursor_icon"`).
     /// 
     /// Executes the closure (and draws the mouse cursor if `feature = "mouse_cursor_icon"`).
-    pub fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&self,f:F){
+    pub fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&self,f:F)->Result<(),SwapBuffersError>{
         let mut draw_parameters=default_draw_parameters();
 
-        let mut frame=self.display().draw();
+        let mut frame=self.display.draw();
 
         let mut g=Graphics::new(&self.graphics,&mut frame);
 
@@ -232,7 +175,7 @@ impl Window{
         #[cfg(feature="mouse_cursor_icon")]
         self.mouse_icon.draw(&mut draw_parameters,&mut g);
 
-        frame.finish();
+        frame.finish()
     }
 
     /// Выполняет замыкание (и рисует курсор, если `feature = "mouse_cursor_icon"`).
@@ -247,10 +190,10 @@ impl Window{
     /// 
     /// feature = "alpha_smoothing"
     #[cfg(feature="alpha_smoothing")]
-    pub fn draw_smooth<F:FnOnce(f32,&mut DrawParameters,&mut Graphics)>(&mut self,f:F)->f32{
+    pub fn draw_smooth<F:FnOnce(f32,&mut DrawParameters,&mut Graphics)>(&mut self,f:F)->Result<f32,SwapBuffersError>{
         let mut draw_parameters=default_draw_parameters();
 
-        let mut frame=self.display().draw();
+        let mut frame=self.display.draw();
 
         let mut g=Graphics::new(&mut self.graphics,&mut frame);
 
@@ -259,15 +202,31 @@ impl Window{
         #[cfg(feature="mouse_cursor_icon")]
         self.mouse_icon.draw(&mut draw_parameters,&mut g);
 
-        frame.finish();
-
         self.alpha_channel+=self.smooth;
-        self.alpha_channel
+        
+        match frame.finish(){
+            Ok(())=>Ok(self.alpha_channel),
+            Err(e)=>Err(e),
+        }
     }
 }
 
 /// # Дополнительные функции. Additional functions.
-impl Window{
+impl<E:'static> WindowBase<E>{
+    /// feature = "mouse_cursor_icon
+    #[cfg(feature="mouse_cursor_icon")]
+    #[inline(always)]
+    pub fn set_user_cursor_visible(&mut self,visible:bool){
+        self.mouse_icon.set_visible(visible);
+    }
+
+    /// feature = "mouse_cursor_icon
+    #[cfg(feature="mouse_cursor_icon")]
+    #[inline(always)]
+    pub fn switch_cursor_visibility(&mut self){
+        self.mouse_icon.switch_visibility()
+    }
+
     /// Возвращает скриншот.
     /// 
     /// Returns a screenshot.
@@ -285,6 +244,7 @@ impl Window{
         // Перевод в изображение
         Some(DynamicImage::ImageRgba8(image).flipv())
     }
+
     /// Сохраняет скриншот в формате png.
     /// 
     /// Saves a screenshot in png format.
@@ -308,7 +268,32 @@ impl Window{
     }
 }
 
-impl Window{
+
+/// # feature = "alpha_smoothing"
+#[cfg(feature="alpha_smoothing")]
+impl<E:'static> WindowBase<E>{
+    /// Sets alpha channel for smooth drawing.
+    pub fn set_alpha(&mut self,alpha:f32){
+        self.alpha_channel=alpha;
+    }
+
+    /// Sets smooth for smooth drawing.
+    pub fn set_smooth(&mut self,smooth:f32){
+        self.smooth=smooth
+    }
+
+    /// Sets smooth and zero alpha channel
+    /// for smooth drawing.
+    pub fn set_new_smooth(&mut self,smooth:f32){
+        self.alpha_channel=0f32;
+        self.smooth=smooth
+    }
+}
+
+//                     \\
+//  ЛОКАЛЬНЫЕ ФУНКЦИИ  \\
+//                     \\
+impl<E:'static> WindowBase<E>{
     #[cfg(feature="fps_counter")]
     pub (crate) fn count_fps(&mut self){
         self.frames_passed+=1;
@@ -325,7 +310,6 @@ impl Window{
     }
 }
 
-// Обычные параметры для рисования
 fn default_draw_parameters<'a>()->DrawParameters<'a>{
     let mut draw_parameters=DrawParameters::default();
 

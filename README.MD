@@ -26,8 +26,8 @@ If you use audio feature, alsa delevopment libraries are required for Linux: `li
 ## [Release notes](RELEASE-NOTES.MD)
 
 ## List of features
-[English version](FEATURES.MD)
-[Русская версия](FEATURES-RUS.MD)
+[English version](book/EN/FEATURES.MD)
+[Русская версия](book/RUS/FEATURES.MD)
 
 Default features:
  - "texture_graphics"

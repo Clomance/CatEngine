@@ -31,22 +31,10 @@ pub struct WindowSettings{
     /// The default is None.
     pub initial_colour:Option<Colour>,
 
-    /// The path for the mouse cursor icon.
-    /// 
-    /// The default is `./mouse_cursor_icon.png`.
-    /// 
-    /// feature = "mouse_cursor_icon"
-    #[cfg(feature="mouse_cursor_icon")]
-    pub mouse_cursor_icon_path:PathBuf,
 
-    /// The range of the texture vertex buffer to save
-    /// the mouse cursor vertexes.
-    /// 
-    /// The default is 4..8.
-    /// 
     /// feature = "mouse_cursor_icon"
     #[cfg(feature="mouse_cursor_icon")]
-    pub mouse_cursor_icon_range:Range<usize>,
+    pub mouse_cursor_icon_settings:MouseCursorIconSettings<PathBuf>,
 
     //--Window attributes--\\
 
@@ -243,10 +231,7 @@ impl WindowSettings{
             initial_colour:None,
 
             #[cfg(feature="mouse_cursor_icon")]
-            mouse_cursor_icon_path:path,
-
-            #[cfg(feature="mouse_cursor_icon")]
-            mouse_cursor_icon_range:4..8,
+            mouse_cursor_icon_settings:MouseCursorIconSettings::<PathBuf>::new(),
 
             //--Window attributes--\\
             inner_size:None,
@@ -294,7 +279,67 @@ impl WindowSettings{
         }
     }
 
-    pub (crate) fn devide<'a>(self)->(WindowBuilder,ContextBuilder<'a,NotCurrent>,GraphicsSettings){
+    #[cfg(feature="mouse_cursor_icon")]
+    pub (crate) fn devide<'a,P:AsRef<Path>>(self)->(
+        WindowBuilder,
+        ContextBuilder<'a,NotCurrent>,
+        GraphicsSettings,
+        MouseCursorIconSettings<PathBuf>
+    ){
+        let window_attributes=WindowAttributes{
+            inner_size:self.inner_size,
+            min_inner_size:self.min_inner_size,
+            max_inner_size:self.max_inner_size,
+            resizable:self.resizable,
+            fullscreen:self.fullscreen,
+            title:self.title,
+            maximized:self.maximized,
+            visible:self.visible,
+            transparent:self.transparent,
+            decorations:self.decorations,
+            always_on_top:self.always_on_top,
+            window_icon:self.window_icon,
+        };
+
+        let mut window_builder=WindowBuilder::default();
+        window_builder.window=window_attributes;
+
+        let mut context_builder=ContextBuilder::new();
+        context_builder.gl_attr.vsync=self.vsync;
+        context_builder.gl_attr.debug=self.debug;
+
+        context_builder.pf_reqs.hardware_accelerated=self.hardware_accelerated;
+        context_builder.pf_reqs.color_bits=self.color_bits;
+        context_builder.pf_reqs.float_color_buffer=self.float_color_buffer;
+        context_builder.pf_reqs.alpha_bits=self.alpha_bits;
+        context_builder.pf_reqs.depth_bits=self.depth_bits;
+        context_builder.pf_reqs.stencil_bits=self.stencil_bits;
+        context_builder.pf_reqs.double_buffer=self.double_buffer;
+        context_builder.pf_reqs.multisampling=self.multisampling;
+        context_builder.pf_reqs.stereoscopy=self.stereoscopy;
+        context_builder.pf_reqs.srgb=self.srgb;
+        context_builder.pf_reqs.release_behavior=self.release_behavior;
+        
+        let graphics_settings=GraphicsSettings{
+            #[cfg(feature="texture_graphics")]
+            texture_vertex_buffer_size:self.texture_vertex_buffer_size,
+            #[cfg(feature="simple_graphics")]
+            simple_vertex_buffer_size:self.simple_vertex_buffer_size,
+            #[cfg(feature="text_graphics")]
+            text_vertex_buffer_size:self.text_vertex_buffer_size,
+        };
+
+        let mouse_cursor_icon_settings=self.mouse_cursor_icon_settings;
+
+        (window_builder,context_builder,graphics_settings,mouse_cursor_icon_settings)
+    }
+
+    #[cfg(not(feature="mouse_cursor_icon"))]
+    pub (crate) fn devide<'a>(self)->(
+        WindowBuilder,
+        ContextBuilder<'a,NotCurrent>,
+        GraphicsSettings,
+    ){
         let window_attributes=WindowAttributes{
             inner_size:self.inner_size,
             min_inner_size:self.min_inner_size,
@@ -339,5 +384,46 @@ impl WindowSettings{
         };
 
         (window_builder,context_builder,graphics_settings)
+    }
+}
+
+
+use std::path::Path;
+
+#[derive(Clone,Debug)]
+pub struct MouseCursorIconSettings<P:AsRef<Path>>{
+    /// The icon size.
+    /// 
+    /// The default is [30f32;2].
+    pub size:[f32;2],
+
+    /// The icon position = mouse cursor position + shift
+    /// 
+    /// The default is [-15f32;2].
+    pub shift:[f32;2],
+
+    /// The path to the icon.
+    /// 
+    /// The default is `./mouse_cursor_icon.png`.
+    pub path:P,
+
+    /// The range of the texture vertex buffer to save
+    /// the icon vertexes.
+    /// 
+    /// The default is 4..8.
+    pub range:Range<usize>,
+}
+
+impl MouseCursorIconSettings<PathBuf>{
+    pub fn new()->MouseCursorIconSettings<PathBuf>{
+        let mut path=PathBuf::new();
+        path.push("./mouse_cursor_icon.png");
+
+        Self{
+            size:[30f32;2],
+            shift:[-15f32;2],
+            path:path,
+            range:4..8
+        }
     }
 }

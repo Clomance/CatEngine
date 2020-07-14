@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use super::sample_rate::SampleRateConverter;
 use super::sample::Sample;
 

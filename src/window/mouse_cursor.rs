@@ -1,6 +1,3 @@
-#![allow(unused_imports)]
-
-#[cfg(feature="mouse_cursor_icon")]
 use crate::{
     graphics::{Graphics,Graphics2D},
     image::{ImageBase,Texture}
@@ -8,17 +5,16 @@ use crate::{
 
 use super::{
     mouse_cursor,
-    window_center
+    window_center,
+    MouseCursorIconSettings
 };
 
-#[cfg(feature="mouse_cursor_icon")]
 use glium::{
     Display,
     DrawParameters,
 };
 
 use std::path::Path;
-use core::ops::Range;
 
 /// Положение курсора мыши.
 /// The mouse cursor position.
@@ -92,44 +88,40 @@ impl MouseCursor{
     }
 }
 
-#[cfg(feature="mouse_cursor_icon")]
-const radius:f32=30f32;
-#[cfg(feature="mouse_cursor_icon")]
+
 const d_radius:f32=5f32;
 
 /// Иконка курсора мышки.
 /// 
 /// Загружает картинку из папки ресурсов.
-#[cfg(feature="mouse_cursor_icon")]
 pub struct MouseCursorIcon{
     image_base:ImageBase,
     texture:Texture,
     visible:bool,
 }
 
-#[cfg(feature="mouse_cursor_icon")]
 impl MouseCursorIcon{
-    pub fn new<P:AsRef<Path>>(path:P,range:Range<usize>,display:&Display,graphics:&mut Graphics2D)->MouseCursorIcon{
+    pub fn new<P:AsRef<Path>>(settings:MouseCursorIconSettings<P>,display:&Display,graphics:&mut Graphics2D)->MouseCursorIcon{
         let image_base=ImageBase::new([1f32;4],
             unsafe{[
-                window_center[0]-radius/2f32,
-                window_center[1]-radius/2f32,
-                radius,
-                radius
+                window_center[0]+settings.shift[0],
+                window_center[1]+settings.shift[1],
+                settings.size[0],
+                settings.size[1]
             ]}
         );
 
-        graphics.bind_image(range,image_base.clone()).unwrap();
+        graphics.bind_image(settings.range,image_base.clone()).expect("Mouse curcor image binging error");
 
         Self{
             image_base,
-            texture:Texture::from_path(path,display).unwrap(),
+            texture:Texture::from_path(settings.path,display).expect("Loading mouse curcor image error"),
             visible:true,
         }
     }
 
     pub fn update(&self,graphics:&mut Graphics2D){
-        graphics.rewrite_range_image(0,self.image_base.clone()).unwrap();
+        graphics.rewrite_range_image(0,self.image_base.clone()).expect("Mouse curcor image update error");
     }
 
     #[inline(always)]
@@ -150,7 +142,7 @@ impl MouseCursorIcon{
         self.image_base.y1+=d_radius;
         self.image_base.x2-=d_radius;
         self.image_base.y2-=d_radius;
-        graphics.rewrite_range_image(0,self.image_base.clone()).unwrap();
+        graphics.rewrite_range_image(0,self.image_base.clone()).expect("Mouse curcor image update error");
     }
 
     /// При освобождении кнопки мыши.
@@ -161,14 +153,14 @@ impl MouseCursorIcon{
         self.image_base.y1-=d_radius;
         self.image_base.x2+=d_radius;
         self.image_base.y2+=d_radius;
-        graphics.rewrite_range_image(0,self.image_base.clone()).unwrap();
+        graphics.rewrite_range_image(0,self.image_base.clone()).expect("Mouse curcor update error");
     }
 
     #[inline(always)]
     pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics){
         if self.visible{
             let shift=unsafe{mouse_cursor.center_radius()};
-            graphics.draw_shift_range_image(0,&self.texture,[1f32;4],shift,draw_parameters).unwrap();
+            graphics.draw_shift_range_image(0,&self.texture,[1f32;4],shift,draw_parameters).expect("Mouse curcor drawing error");
         }
     }
 }

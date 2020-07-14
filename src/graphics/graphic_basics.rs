@@ -284,9 +284,9 @@ impl Line{
         self.y2+=dy;
     }
 
-    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics){
+    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
         draw_parameters.line_width=Some(self.radius);
-        graphics.draw_simple(self,draw_parameters);
+        graphics.draw_simple(self,draw_parameters)
     }
 }
 

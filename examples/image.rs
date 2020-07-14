@@ -1,12 +1,11 @@
-#![cfg(feature="paged_format")]
-
 use cat_engine::{
     image::{ImageBase,Texture},
     Window,
+    PagedWindow,
     WindowPage,
     MouseButton,
     KeyboardButton,
-    glium::glutin::event::MouseScrollDelta
+    glium::glutin::event::MouseScrollDelta,
 };
 
 use std::path::PathBuf;
@@ -19,11 +18,13 @@ pub struct Page{
 
 
 impl WindowPage for Page{
-    fn on_close_requested(&mut self,_window:&mut Window){
+    type Window=PagedWindow;
+
+    fn on_close_requested(&mut self,_window:&mut PagedWindow){
         println!("Closing");
     }
 
-    fn on_redraw_requested(&mut self,window:&mut Window){
+    fn on_redraw_requested(&mut self,window:&mut PagedWindow){
         self.angle+=0.001;
 
         window.draw(|p,g|{
@@ -32,15 +33,15 @@ impl WindowPage for Page{
             self.image_base.draw(&self.texture,p,g).unwrap();
             // Drawing rotating image
             self.image_base.draw_rotate(&self.texture,[200f32,200f32],self.angle,p,g).unwrap();
-        })
+        }).unwrap();
     }
 
-    fn on_mouse_pressed(&mut self,_window:&mut Window,_button:MouseButton){}
-    fn on_mouse_released(&mut self,_window:&mut Window,_button:MouseButton){}
-    fn on_mouse_moved(&mut self,_window:&mut Window,_:[f32;2]){}
-    fn on_mouse_scrolled(&mut self,_window:&mut Window,_:MouseScrollDelta){}
+    fn on_mouse_pressed(&mut self,_window:&mut PagedWindow,_button:MouseButton){}
+    fn on_mouse_released(&mut self,_window:&mut PagedWindow,_button:MouseButton){}
+    fn on_mouse_moved(&mut self,_window:&mut PagedWindow,_:[f32;2]){}
+    fn on_mouse_scrolled(&mut self,_window:&mut PagedWindow,_:MouseScrollDelta){}
 
-    fn on_keyboard_pressed(&mut self,window:&mut Window,button:KeyboardButton){
+    fn on_keyboard_pressed(&mut self,window:&mut PagedWindow,button:KeyboardButton){
         match button{
             KeyboardButton::Escape=>{
                 // break out of the page
@@ -50,22 +51,22 @@ impl WindowPage for Page{
         }
     }
 
-    fn on_keyboard_released(&mut self,_window:&mut Window,_button:KeyboardButton){}
+    fn on_keyboard_released(&mut self,_window:&mut PagedWindow,_button:KeyboardButton){}
 
-    fn on_character_recieved(&mut self,_window:&mut Window,_character:char){}
+    fn on_character_recieved(&mut self,_window:&mut PagedWindow,_character:char){}
 
-    fn on_window_resized(&mut self,_window:&mut Window,_new_size:[u32;2]){}
+    fn on_window_resized(&mut self,_window:&mut PagedWindow,_new_size:[u32;2]){}
 
-    fn on_suspended(&mut self,_window:&mut Window){}
-    fn on_resumed(&mut self,_window:&mut Window){}
+    fn on_suspended(&mut self,_window:&mut PagedWindow){}
+    fn on_resumed(&mut self,_window:&mut PagedWindow){}
 
-    fn on_window_moved(&mut self,_window:&mut Window,_:[i32;2]){}
+    fn on_window_moved(&mut self,_window:&mut PagedWindow,_:[i32;2]){}
 
-    fn on_window_focused(&mut self,_window:&mut Window,_:bool){}
+    fn on_window_focused(&mut self,_window:&mut PagedWindow,_:bool){}
 
-    fn on_file_dropped(&mut self,_:&mut Window,_:PathBuf){}
-    fn on_file_hovered(&mut self,_:&mut Window,_:PathBuf){}
-    fn on_file_hovered_canceled(&mut self,_:&mut Window){}
+    fn on_file_dropped(&mut self,_:&mut PagedWindow,_:PathBuf){}
+    fn on_file_hovered(&mut self,_:&mut PagedWindow,_:PathBuf){}
+    fn on_file_hovered_canceled(&mut self,_:&mut PagedWindow){}
 }
 
 
@@ -77,7 +78,7 @@ fn main(){
         400f32
     ]);
 
-    let mut window=Window::new(|_,_|{}).unwrap();
+    let mut window=PagedWindow::new(|_,_|{}).unwrap();
 
     let texture=Texture::from_path("logo_400x400.png",window.display()).unwrap();
 

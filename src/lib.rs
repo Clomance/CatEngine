@@ -1,4 +1,4 @@
-#![allow(non_upper_case_globals,unused_must_use,unused_imports)]
+#![allow(non_upper_case_globals,unused_must_use,unused_imports,dead_code)]
 
 //! # 2D графический движок с поддержкой аудио. A 2D graphics engine with audio support.
 //! 
@@ -36,6 +36,14 @@
 //!         }
 //!     }
 //! }
+//! ```
+//! 
+//! Modifying the window.
+//! ```
+//! let wi=window.display().gl_window();
+//! let w=wi.window();
+//! w.set_minimized(false);
+//! w.set_visible(false);
 //! ```
 
 pub use glium; // reimports

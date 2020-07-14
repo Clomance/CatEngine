@@ -10,7 +10,7 @@ use super::{
     Character,
 };
 
-use glium::DrawParameters;
+use glium::{DrawParameters,DrawError};
 
 const text_pixel_size:f32=1f32; // Размер одной точки (можно сделать текст жирнее)
 
@@ -85,34 +85,35 @@ impl TextBase{
     /// 
     /// Draws already built character.
     #[inline(always)] 
-    pub fn draw_character(&self,character:&Character,draw_parameters:&mut DrawParameters,graphics:&mut Graphics){
-        graphics.draw_character(self.colour,character,draw_parameters);
+    pub fn draw_character(&self,character:&Character,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_character(self.colour,character,draw_parameters)
     }
 
     /// Строит и выводит один символ.
     /// 
     /// Builds and draws a character.
-    pub fn draw_char(&self,character:char,draw_parameters:&mut DrawParameters,graphics:&mut Graphics,glyphs:&Glyphs){
+    pub fn draw_char(&self,character:char,draw_parameters:&mut DrawParameters,graphics:&mut Graphics,glyphs:&Glyphs)->Result<(),DrawError>{
         let position=self.position;
 
         let character=glyphs.character_positioned(character,self.font_size,position);
 
         draw_parameters.point_size=Some(text_pixel_size);
-        graphics.draw_character(self.colour,&character,draw_parameters);
+        graphics.draw_character(self.colour,&character,draw_parameters)
     }
 
     /// Выводит весь текст в строчку.
     /// 
     /// Draws a string.
-    pub fn draw(&self,text:&str,draw_parameters:&mut DrawParameters,graphics:&mut Graphics,glyphs:&Glyphs){
+    pub fn draw(&self,text:&str,draw_parameters:&mut DrawParameters,graphics:&mut Graphics,glyphs:&Glyphs)->Result<(),DrawError>{
         let mut position=self.position;
         draw_parameters.point_size=Some(text_pixel_size);
         for c in text.chars(){
             let character=glyphs.character_positioned(c,self.font_size,position);
-            graphics.draw_character(self.colour,&character,draw_parameters);
+            graphics.draw_character(self.colour,&character,draw_parameters)?;
 
             position[0]+=character.width();
         }
+        Ok(())
     }
 
     /// Выводит часть текста в строчку.
@@ -120,7 +121,7 @@ impl TextBase{
     /// 
     /// Draws a part of the string.
     /// Returns true, if the whole string was drawn.
-    pub fn draw_part(&self,text:&str,chars:usize,draw_parameters:&mut DrawParameters,graphics:&mut Graphics,glyphs:&Glyphs)->bool{
+    pub fn draw_part(&self,text:&str,chars:usize,draw_parameters:&mut DrawParameters,graphics:&mut Graphics,glyphs:&Glyphs)->Result<bool,DrawError>{
         let mut position=self.position;
         draw_parameters.point_size=Some(text_pixel_size);
 
@@ -135,11 +136,11 @@ impl TextBase{
             // Создание символа с заданной позицией
             let character=glyphs.character_positioned(c,self.font_size,position);
 
-            graphics.draw_character(self.colour,&character,draw_parameters);
+            graphics.draw_character(self.colour,&character,draw_parameters)?;
 
             position[0]+=character.width(); // Сдвиг дальше по линии
         }
 
-        whole
+        Ok(whole)
     }
 }

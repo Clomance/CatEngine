@@ -1,15 +1,11 @@
-#![allow(unused_mut,dead_code)]
-
 use crate::{
     Colour,
-    graphics::{Graphics2D,Graphics,GraphicsSettings},
+    graphics::GraphicsSettings,
 };
 
 #[cfg(feature="mouse_cursor_icon")]
-use super::mouse_cursor::MouseCursorIcon;
+use super::MouseCursorIconSettings;
 
-#[cfg(feature="fps_counter")]
-use super::fps;
 
 use super::{
     // statics
@@ -23,23 +19,14 @@ use super::{
     KeyboardButton,
     WindowEvent,
     InnerWindowEvent,
+    // traits
+    Window,
+    WindowPage,
+    // structs
+    WindowBase
 };
 
-use glium::{
-    Display,
-    Surface,
-    Frame,
-    Version,
-    draw_parameters::{
-        DrawParameters,
-        Blend,
-        BlendingFunction,
-        LinearBlendingFactor,
-        BackfaceCullingMode,
-    },
-    texture::RawImage2d,
-    backend::glutin::DisplayCreationError
-};
+use glium::backend::glutin::DisplayCreationError;
 
 use glium::glutin::{
     ContextBuilder,
@@ -51,28 +38,17 @@ use glium::glutin::{
         WindowEvent as GWindowEvent,
         MouseButton as GMouseButton,
         ElementState,
-        ModifiersState,
-        MouseScrollDelta
     },
-    window::{Fullscreen,WindowBuilder},
+    window::WindowBuilder,
     platform::desktop::EventLoopExtDesktop,
-    dpi::Size,
 };
 
-use image::{
-    ImageFormat,
-    ImageBuffer,
-    DynamicImage
-};
 
-use std::{
-    path::{Path,PathBuf},
-    ops::Range,
-    time::{Instant,Duration},
-};
+use std::path::PathBuf;
 
-/// Окно, заменяет собой обычное окно.
-/// A window replaces the default one. feature = "paged_format"
+/// Окно, включает в себя графические функции
+/// и обработчик событий.
+/// A window with graphic functions and an event listener included.
 /// 
 /// #
 /// 
@@ -84,155 +60,31 @@ use std::{
 /// All the events are implemented with `WindowPage`
 /// and handled immediately after emited.
 /// 
-pub struct Window{
-    pub (crate) display:Display,
-    pub (crate) graphics:Graphics2D,
+pub struct PagedWindow{
+    base:WindowBase<InnerWindowEvent>,
 
+    event_loop_proxy:EventLoopProxy<InnerWindowEvent>,
+    
+    #[cfg(feature="auto_hide")]
     minimized:bool,
-    pub (crate) event_loop:EventLoop<InnerWindowEvent>,
-    pub (crate) event_loop_proxy:EventLoopProxy<InnerWindowEvent>,
-
-    #[cfg(feature="fps_counter")]
-    pub (crate) frames_passed:u32,
-    #[cfg(feature="fps_counter")]
-    pub (crate) time:Instant,
-
-    #[cfg(feature="alpha_smoothing")]
-    pub (crate) alpha_channel:f32,
-    #[cfg(feature="alpha_smoothing")]
-    pub (crate) smooth:f32,
-
-    #[cfg(feature="mouse_cursor_icon")]
-    pub (crate) mouse_icon:MouseCursorIcon,
 }
 
 
-impl Window{
+impl PagedWindow{
     /// Создаёт окно. Принимает функцию для настройки.
     ///
-    /// Creates the window. 
-    pub fn new<F>(setting:F)->Result<Window,DisplayCreationError>
+    /// Creates the window.
+    pub fn new<F>(setting:F)->Result<PagedWindow,DisplayCreationError>
             where F:FnOnce(Vec<MonitorHandle>,&mut WindowSettings){
-        let event_loop=EventLoop::<InnerWindowEvent>::with_user_event();
-        let monitors=event_loop.available_monitors().collect();
 
-        let mut window_settings=WindowSettings::new();
-
-
-        // Настройка
-        setting(monitors,&mut window_settings);
-
-        let initial_colour=window_settings.initial_colour;
-        #[cfg(feature="mouse_cursor_icon")]
-        let mouse_cursor_icon_path=window_settings.mouse_cursor_icon_path.clone();
-        #[cfg(feature="mouse_cursor_icon")]
-        let mouse_cursor_icon_range=window_settings.mouse_cursor_icon_range.clone();
-
-        let (window_builder,context_builder,graphics_settings)
-                =window_settings.devide();
-
-        #[cfg(feature="mouse_cursor_icon")]
-        let window=Window::raw(
-            window_builder,
-            context_builder,
-            graphics_settings,
-            event_loop,
-            initial_colour,
-            mouse_cursor_icon_path,
-            mouse_cursor_icon_range,
-        );
-
-        #[cfg(not(feature="mouse_cursor_icon"))]
-        let window=Window::raw::<PathBuf>(
-            window_builder,
-            context_builder,
-            graphics_settings,
-            event_loop,
-            initial_colour,
-        );
-
-        window
-    }
-
-    /// mouse_cursor_icon_path, mouse_cursor_icon_range - feature = "mouse_cursor_icon"
-    pub fn raw<P:AsRef<Path>>(
-        window_builder:WindowBuilder,
-        context_builder:ContextBuilder<NotCurrent>,
-        graphics_settings:GraphicsSettings,
-        event_loop:EventLoop<InnerWindowEvent>,
-        initial_colour:Option<Colour>,
-        #[cfg(feature="mouse_cursor_icon")]
-        mouse_cursor_icon_path:P,
-        #[cfg(feature="mouse_cursor_icon")]
-        mouse_cursor_icon_range:Range<usize>,
-    )->Result<Window,DisplayCreationError>{
-        // Создание окна и привязывание графической библиотеки
-        let display=Display::new(window_builder,context_builder,&event_loop)?;
-
-        let size=display.gl_window().window().inner_size();
-        unsafe{
-            window_width=size.width as f32;
-            window_height=size.height as f32;
-            window_center=[window_width/2f32,window_height/2f32];
-        }
-
-        // Опреление поддерживаемой версии GLSL
-        let Version(..,m,l)=display.get_supported_glsl_version();
-        let glsl=match m{
-            1 if l<3 =>{
-                120
-            }
-            _=>{
-                140
-            }
-        };
-
-        if let Some([r,g,b,a])=initial_colour{
-            let mut frame=display.draw();   //
-            frame.clear_color(r,g,b,a);     // Заполнение окна
-            frame.finish().unwrap();        //
-        }
-
-        // Отлючение курсора системы
-        // Замена его собственным
-        #[cfg(feature="mouse_cursor_icon")]
-        display.gl_window().window().set_cursor_visible(false);
-
-        let mut graphics=Graphics2D::new(&display,graphics_settings,glsl);
-
-        let proxy=event_loop.create_proxy();
-
-        Ok(Self{
-            #[cfg(feature="mouse_cursor_icon")]
-            mouse_icon:MouseCursorIcon::new(mouse_cursor_icon_path,mouse_cursor_icon_range,&display,&mut graphics),
-
-            graphics,
-            display,
-
-            minimized:false,
-            event_loop,
-            event_loop_proxy:proxy,
-
-            #[cfg(feature="fps_counter")]
-            frames_passed:0u32,
-            #[cfg(feature="fps_counter")]
-            time:Instant::now(),
-
-            // #[cfg(feature="auto_hide")]
-            // events_handler:Window::event_listener,
-
-            #[cfg(feature="alpha_smoothing")]
-            alpha_channel:0f32,
-            #[cfg(feature="alpha_smoothing")]
-            smooth:0f32,
-        })
+        Window::new::<F>(setting)
     }
 
     /// Запускает обработку событий с помощью данного замыкания.
     /// 
     /// Starts event handling with the given closure.
-    pub fn run<F:FnMut(&mut Window,WindowEvent)>(&mut self,mut handler:F){
-        let el=&mut self.event_loop as *mut EventLoop<InnerWindowEvent>;
+    pub fn run<F:FnMut(&mut PagedWindow,WindowEvent)>(&mut self,mut handler:F){
+        let el=&mut self.base.event_loop as *mut EventLoop<InnerWindowEvent>;
         let event_loop=unsafe{&mut *el};
 
         #[cfg(not(feature="auto_hide"))]
@@ -264,8 +116,8 @@ impl Window{
     /// Запускает данную страницу.
     /// 
     /// Starts the given page.
-    pub fn run_page<P:WindowPage>(&mut self,page:&mut P){
-        let el=&mut self.event_loop as *mut EventLoop<InnerWindowEvent>;
+    pub fn run_page<P:WindowPage<Window=PagedWindow>>(&mut self,page:&mut P){
+        let el=&mut self.base.event_loop as *mut EventLoop<InnerWindowEvent>;
         let event_loop=unsafe{&mut *el};
 
         #[cfg(not(feature="auto_hide"))]
@@ -309,8 +161,8 @@ impl Window{
 /// Функции обработки событий.
 /// 
 /// Event handlers.
-impl Window{
-    fn closure_event_listener<F:FnMut(&mut Window,WindowEvent)>(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>,mut handler:F)->bool{
+impl PagedWindow{
+    fn closure_event_listener<F:FnMut(&mut PagedWindow,WindowEvent)>(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>,mut handler:F)->bool{
         use WindowEvent::*;
         let mut close_flag=false;
 
@@ -350,7 +202,7 @@ impl Window{
                             window_center=[window_width/2f32,window_height/2f32];
 
                             #[cfg(feature="mouse_cursor_icon")]
-                            self.mouse_icon.update(&mut self.graphics);
+                            self.base.mouse_icon.update(&mut self.base.graphics);
 
                             Resized([size.width,size.height])
                         }
@@ -381,7 +233,7 @@ impl Window{
                                 match button{
                                     GMouseButton::Left=>{
                                         #[cfg(feature="mouse_cursor_icon")]
-                                        self.mouse_icon.pressed(&mut self.graphics);
+                                        self.base.mouse_icon.pressed(&mut self.base.graphics);
 
                                         MousePressed(MouseButton::Left)
                                     }
@@ -394,7 +246,7 @@ impl Window{
                                 match button{
                                     GMouseButton::Left=>{
                                         #[cfg(feature="mouse_cursor_icon")]
-                                        self.mouse_icon.released(&mut self.graphics);
+                                        self.base.mouse_icon.released(&mut self.base.graphics);
 
                                         MouseReleased(MouseButton::Left)
                                     }
@@ -435,7 +287,7 @@ impl Window{
                         GWindowEvent::Focused(f)=>if !f{
                             *control_flow=ControlFlow::Exit;
                             self.minimized=true;
-                            self.display.gl_window().window().set_minimized(true); // Сворацивание окна
+                            self.base.display.gl_window().window().set_minimized(true); // Сворацивание окна
                             return
                         }
                         else{
@@ -458,14 +310,14 @@ impl Window{
 
                 // Запрос на рендеринг
                 Event::MainEventsCleared=>{
-                    self.display.gl_window().window().request_redraw();
+                    self.base.display.gl_window().window().request_redraw();
                     return
                 }
 
                 // Рендеринг
                 Event::RedrawRequested(_)=>{
                     #[cfg(feature="fps_counter")]
-                    self.count_fps();
+                    self.base.count_fps();
                     Draw
                 }
 
@@ -479,7 +331,7 @@ impl Window{
     }
 
     #[cfg(feature="auto_hide")]
-    fn closure_wait_until_focused<F:FnMut(&mut Window,WindowEvent)>(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>,mut handler:F)->bool{
+    fn closure_wait_until_focused<F:FnMut(&mut PagedWindow,WindowEvent)>(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>,mut handler:F)->bool{
         use WindowEvent::*;
         let mut close_flag=false;
 
@@ -511,7 +363,7 @@ impl Window{
                             window_center=[window_width/2f32,window_height/2f32];
 
                             #[cfg(feature="mouse_cursor_icon")]
-                            self.mouse_icon.update(&mut self.graphics);
+                            self.base.mouse_icon.update(&mut self.base.graphics);
 
                             return
                         }
@@ -520,7 +372,7 @@ impl Window{
                         GWindowEvent::Focused(f)=>{
                             *control_flow=ControlFlow::Exit;
                             self.minimized=false;
-                            self.display.gl_window().window().set_minimized(false);
+                            self.base.display.gl_window().window().set_minimized(false);
 
 
 
@@ -543,7 +395,8 @@ impl Window{
         close_flag
     }
 
-    fn paged_event_listener<P:WindowPage>(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>,page:&mut P)->bool{
+    fn paged_event_listener<P>(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>,page:&mut P)->bool
+            where P:WindowPage<Window=PagedWindow>{
         let mut close_flag=false;
 
         event_loop.run_return(|event,_,control_flow|{
@@ -583,7 +436,7 @@ impl Window{
                             window_center=[window_width/2f32,window_height/2f32];
 
                             #[cfg(feature="mouse_cursor_icon")]
-                            self.mouse_icon.update(&mut self.graphics);
+                            self.base.mouse_icon.update(&mut self.base.graphics);
 
                             page.on_window_resized(self,[size.width,size.height])
                         }
@@ -614,7 +467,7 @@ impl Window{
                                 match button{
                                     GMouseButton::Left=>{
                                         #[cfg(feature="mouse_cursor_icon")]
-                                        self.mouse_icon.pressed(&mut self.graphics);
+                                        self.base.mouse_icon.pressed(&mut self.base.graphics);
 
                                         page.on_mouse_pressed(self,MouseButton::Left)
                                     }
@@ -627,7 +480,7 @@ impl Window{
                                 match button{
                                     GMouseButton::Left=>{
                                         #[cfg(feature="mouse_cursor_icon")]
-                                        self.mouse_icon.released(&mut self.graphics);
+                                        self.base.mouse_icon.released(&mut self.base.graphics);
 
                                         page.on_mouse_released(self,MouseButton::Left)
                                     }
@@ -665,7 +518,7 @@ impl Window{
                         GWindowEvent::Focused(f)=>if !f{
                             *control_flow=ControlFlow::Exit;
                             self.minimized=true;
-                            self.display.gl_window().window().set_minimized(true); // Сворацивание окна
+                            self.base.display.gl_window().window().set_minimized(true); // Сворацивание окна
                             page.on_window_focused(self,f);
                         }
 
@@ -685,13 +538,13 @@ impl Window{
 
                 // Запрос на рендеринг
                 Event::MainEventsCleared=>{
-                    self.display.gl_window().window().request_redraw();
+                    self.base.display.gl_window().window().request_redraw();
                 }
 
                 // Рендеринг
                 Event::RedrawRequested(_)=>{
                     #[cfg(feature="fps_counter")]
-                    self.count_fps();
+                    self.base.count_fps();
 
                     page.on_redraw_requested(self);
                 }
@@ -704,10 +557,9 @@ impl Window{
     }
 
 
-
     /// Функция ожидания получения фокуса - перехватывает управление до получения окном фокуса
     #[cfg(feature="auto_hide")]
-    fn paged_wait_until_focused<P:WindowPage>(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>,page:&mut P)->bool{
+    fn paged_wait_until_focused<P:WindowPage<Window=PagedWindow>>(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>,page:&mut P)->bool{
         let mut close_flag=false;
 
         event_loop.run_return(|event,_,control_flow|{
@@ -730,7 +582,7 @@ impl Window{
                             window_center=[window_width/2f32,window_height/2f32];
 
                             #[cfg(feature="mouse_cursor_icon")]
-                            self.mouse_icon.update(&mut self.graphics);
+                            self.base.mouse_icon.update(&mut self.base.graphics);
 
                             page.on_window_resized(self,[size.width,size.height])
                         }
@@ -744,7 +596,7 @@ impl Window{
                         // При получении фокуса
                         GWindowEvent::Focused(f)=>{
                             *control_flow=ControlFlow::Exit;
-                            self.display.gl_window().window().set_minimized(false);
+                            self.base.display.gl_window().window().set_minimized(false);
                             self.minimized=false;
                             page.on_window_focused(self,f);
                         }
@@ -764,30 +616,60 @@ impl Window{
     }
 }
 
-/// Типаж для создания страниц окна.
-/// Trait for implementing window pages.
-pub trait WindowPage{
-    fn on_close_requested(&mut self,window:&mut Window);
-    fn on_redraw_requested(&mut self,window:&mut Window);
+impl Window for PagedWindow{
+    type UserEvent=InnerWindowEvent;
 
-    fn on_mouse_pressed(&mut self,window:&mut Window,button:MouseButton);
-    fn on_mouse_released(&mut self,window:&mut Window,button:MouseButton);
-    fn on_mouse_scrolled(&mut self,window:&mut Window,scroll:MouseScrollDelta);
-    fn on_mouse_moved(&mut self,window:&mut Window,position:[f32;2]);
+    fn window_base(&self)->&WindowBase<Self::UserEvent>{
+        &self.base
+    }
 
-    fn on_keyboard_pressed(&mut self,window:&mut Window,button:KeyboardButton);
-    fn on_keyboard_released(&mut self,window:&mut Window,button:KeyboardButton);
-    fn on_character_recieved(&mut self,window:&mut Window,character:char);
+    fn window_base_mut(&mut self)->&mut WindowBase<Self::UserEvent>{
+        &mut self.base
+    }
 
-    fn on_window_resized(&mut self,window:&mut Window,new_size:[u32;2]);
-    fn on_window_moved(&mut self,window:&mut Window,position:[i32;2]);
+    fn raw(
+        window_builder:WindowBuilder,
+        context_builder:ContextBuilder<NotCurrent>,
+        graphics_settings:GraphicsSettings,
+        event_loop:EventLoop<InnerWindowEvent>,
+        initial_colour:Option<Colour>,
+        
+        #[cfg(feature="mouse_cursor_icon")]
+        mouse_cursor_icon_settings:MouseCursorIconSettings<PathBuf>,
+    )->Result<PagedWindow,DisplayCreationError>{
 
-    fn on_window_focused(&mut self,window:&mut Window,focused:bool);
+        #[cfg(not(feature="mouse_cursor_icon"))]
+        let base=WindowBase::<InnerWindowEvent>::raw(window_builder,
+            context_builder,
+            graphics_settings,
+            event_loop,
+            initial_colour
+        );
 
-    fn on_suspended(&mut self,window:&mut Window);
-    fn on_resumed(&mut self,window:&mut Window);
+        #[cfg(feature="mouse_cursor_icon")]
+        let base=WindowBase::<InnerWindowEvent>::raw(window_builder,
+            context_builder,
+            graphics_settings,
+            event_loop,
+            initial_colour,
+            mouse_cursor_icon_settings
+        );
 
-    fn on_file_dropped(&mut self,window:&mut Window,path:PathBuf);
-    fn on_file_hovered(&mut self,window:&mut Window,path:PathBuf);
-    fn on_file_hovered_canceled(&mut self,window:&mut Window);
+        match base{
+            Ok(w)=>{
+                let proxy=w.event_loop.create_proxy();
+
+                Ok(Self{
+                    base:w,
+
+                    event_loop_proxy:proxy,
+
+                    #[cfg(feature="auto_hide")]
+                    minimized:false,
+
+                })
+            }
+            Err(e)=>Err(e)
+        }
+    }
 }
