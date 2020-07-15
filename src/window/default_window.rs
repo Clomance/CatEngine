@@ -314,7 +314,7 @@ impl DefaultWindow{
 
     /// Функция ожидания получения фокуса - перехватывает управление до получения окном фокуса
     #[cfg(feature="auto_hide")]
-    fn wait_until_focused(&mut self){
+    pub (crate) fn wait_until_focused(&mut self){
         let el=&mut self.base.event_loop as *mut EventLoop<InnerWindowEvent>;
 
         let event_loop=unsafe{&mut *el};

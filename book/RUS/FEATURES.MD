@@ -57,7 +57,7 @@ ImageBase для этой картинки сохраняется как обл�
 
 
 
-# PagedWindow
+# PagedWindow и DynamicWindow
 
 ### lazy
 

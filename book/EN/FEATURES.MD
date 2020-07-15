@@ -57,7 +57,7 @@ Adds functions for drawing with changing alpha channel.
 
 
 
-# PagedWindow
+# PagedWindow and DynamicWindow
 
 ### lazy
 

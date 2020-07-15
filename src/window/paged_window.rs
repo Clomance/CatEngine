@@ -164,15 +164,23 @@ impl PagedWindow{
 
     /// Converts into `DefaultWindow`.
     /// 
-    /// Ignores the 'auto_hide' feature state (the window hidden or not).
+    /// Saves the 'auto_hide' feature state (the window hidden or not).
     pub fn into_default_window(self)->DefaultWindow{
+        #[cfg(feature="auto_hide")]
+        let _fn=if self.minimized{
+            DefaultWindow::wait_until_focused
+        }
+        else{
+            DefaultWindow::event_listener
+        };
+
         DefaultWindow{
             base:self.base,
 
             events:VecDeque::with_capacity(32),
 
             #[cfg(feature="auto_hide")]
-            events_handler:DefaultWindow::event_listener,
+            events_handler:_fn,
         }
     }
 
