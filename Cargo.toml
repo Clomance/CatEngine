@@ -11,6 +11,8 @@ license = "MIT"
 readme = "README.md"
 keywords = ["graphics","opengl","audio","playback"]
 exclude = [
+    "LICENSE",
+    ".gitignore",
     "Cargo.lock",
     "logo_400x400.png",
     "logo.png",
