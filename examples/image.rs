@@ -19,14 +19,18 @@ pub struct Page{
 
 impl WindowPage<'static> for Page{
     type Window=PagedWindow;
+    type Output=();
 
     fn on_close_requested(&mut self,_window:&mut PagedWindow){
         println!("Closing");
     }
 
-    fn on_redraw_requested(&mut self,window:&mut PagedWindow){
+    #[cfg(not(feature="lazy"))]
+    fn on_update_requested(&mut self,_window:&mut PagedWindow){
         self.angle+=0.001;
+    }
 
+    fn on_redraw_requested(&mut self,window:&mut PagedWindow){
         window.draw(|p,g|{
             g.clear_colour([1.0;4]);
             // Drawing static image
@@ -67,6 +71,8 @@ impl WindowPage<'static> for Page{
     fn on_file_dropped(&mut self,_:&mut PagedWindow,_:PathBuf){}
     fn on_file_hovered(&mut self,_:&mut PagedWindow,_:PathBuf){}
     fn on_file_hovered_canceled(&mut self,_:&mut PagedWindow){}
+
+    fn on_event_loop_closed(&mut self,_:&mut PagedWindow){}
 }
 
 

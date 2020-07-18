@@ -1,3 +1,33 @@
+# Version 0.2.1
+
+### Added
+
+Update events. You can configure update frequency in the `WindowSettings` (`GeneralSettings`).
+
+`WindowEvent::EventLoopClosed` and `WindowEvent::Update` events.
+
+A `type Output` field and new functions (`on_update_requested()`, `on_event_loop_closed()->Output`) for the `WindowPage` trait. The function `run_page()` of the `PagedWindow` now return the `Output`.
+
+A type defenition `PageRef<'a>` for `WindowPage` trait objects.
+
+### Deleted
+
+The `WindowEvent::Hide(bool)` event. Now only the `WindowEvent::Focused(bool)` event is available.
+
+### Fixed
+
+The `auto_hide` feature now works fine with the `DynamicWindow`.
+
+### Other
+
+Replaced the local `MouseButton` enum with `glutin` one.
+
+The `WindowBase` has got a `event_loop_proxy` field with `EventLoopProxy<InnerWindowEvent>` type
+and the `event_loop` field type changed to `EventLoop<InnerWindowEvent>`.
+
+The `initial_colour` field has been moved to the `GeneralSettings`.
+
+
 # Version 0.2.0
 
 Now all the windows are compatible.

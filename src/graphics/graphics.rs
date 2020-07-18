@@ -68,7 +68,7 @@ impl GraphicsSettings{
 
 
 
-/// Графическая основа. Graphic base.
+/// Графическая основа. A graphics base.
 /// 
 /// # Области. Ranges.
 /// 

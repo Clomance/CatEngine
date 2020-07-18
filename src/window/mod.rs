@@ -1,26 +1,33 @@
+#[macro_use]
 mod window_base;
+
 pub use window_base::WindowBase;
 
 mod window;
 pub use window::*;
 
 mod default_window;
-pub use default_window::*;
+pub use default_window::DefaultWindow;
 
 mod paged_window;
 pub use paged_window::PagedWindow;
 
 mod dynamic_window;
-pub use dynamic_window::*;
+pub (crate) use dynamic_window::PageState;
+pub use dynamic_window::{DynamicWindow,PageRef};
 
 mod settings;
 pub use settings::*;
 
 
 mod mouse_cursor;
-use mouse_cursor::MouseCursor;
+use mouse_cursor::*;
 
-use glium::glutin::event::{ModifiersState,MouseScrollDelta};
+use glium::glutin::event::{
+    ModifiersState,
+    MouseScrollDelta,
+    MouseButton,
+};
 
 use std::path::PathBuf;
 
@@ -44,18 +51,34 @@ pub static mut fps:u32=0;
 
 /// Внутренние события для управления окном.
 /// Inner events to operate the window.
+#[derive(Clone,Debug)]
 pub enum InnerWindowEvent{
-    Exit,
+    /// Emitted with `stop_events()` function.
+    EventLoopCloseRequested,
+    Update,
 }
 
 /// Внешние события окна.
 /// Outer window events.
 #[derive(Clone,Debug)]
 pub enum WindowEvent{
+    /// feature != "lazy"
+    #[cfg(not(feature="lazy"))]
+    Update,
+
     /// Кадр окна можно обновить.
     /// 
-    /// Emitted when when the window should be redrawn.
+    /// The window should be redrawn.
     Draw,
+
+    /// The window has been requested to close.
+    Exit,
+
+    /// Event loop has been stopped.
+    /// 
+    /// For the `DefaultWindow` means nothing,
+    /// for the others means that a page (closure) will be closed.
+    EventLoopClosed,
 
     /// Приложение приостановлено.
     /// 
@@ -66,26 +89,12 @@ pub enum WindowEvent{
     /// Emitted when the application has been resumed.
     Resumed,
 
-    /// Окно свёрнуто.
-    /// 
-    /// True - окно сворачивается, false - разворачивается.
-    /// 
-    /// The window minimized.
-    /// 
-    /// The parameter is true if the window gets hidden,
-    /// and false if the window gets back.
-    /// 
-    /// feature = "auto_hide"
-    Hide(bool),
-
     /// Окно получило или потеряло фокус.
     /// True - получило, false - потеряло.
     /// 
     /// The window gained or lost focus.
     /// The parameter is true if the window has gained focus,
     /// and false if it has lost focus.
-    /// 
-    /// feature != "auto_hide"
     Focused(bool),
 
     /// Размера окна изменён.
@@ -132,19 +141,6 @@ pub enum WindowEvent{
     /// There will be a single HoveredFileCancelled event triggered even
     /// if multiple files were hovered.
     HoveredFileCancelled,
-
-
-    Exit,
-}
-
-/// Кнопки мыши, без дополнительных кнопок.
-/// 
-/// Mouse buttons without additional buttons.
-#[derive(Clone,Debug)]
-pub enum MouseButton{
-    Left,
-    Middle,
-    Right,
 }
 
 #[derive(Clone,PartialEq,Debug)]

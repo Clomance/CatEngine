@@ -1,3 +1,5 @@
+# General
+
 # WindowBase
 
 A window base with graphic functions included.

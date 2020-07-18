@@ -1,4 +1,4 @@
-//! # Простая аудио система. Simple audio system. `feature = "audio"`.
+//! # Простая аудио система. A simple audio system. `feature = "audio"`.
 //! 
 //! Аудио система имеет свой поток для работы со звуком.
 //! Он контролируется через канал `std::sync::mpsc::channel()`.

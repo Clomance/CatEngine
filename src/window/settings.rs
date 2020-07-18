@@ -25,12 +25,7 @@ use std::{
 #[allow(dead_code)]
 pub struct WindowSettings{
     //--General attributes--\\
-
-    /// Whether the window should be filled with given colour upon creation.
-    /// 
-    /// The default is None.
-    pub initial_colour:Option<Colour>,
-
+    pub general:GeneralSettings,
 
     /// feature = "mouse_cursor_icon"
     #[cfg(feature="mouse_cursor_icon")]
@@ -228,7 +223,7 @@ impl WindowSettings{
 
         Self{
             //--General attributes--\\
-            initial_colour:None,
+            general:GeneralSettings::new(),
 
             #[cfg(feature="mouse_cursor_icon")]
             mouse_cursor_icon_settings:MouseCursorIconSettings::<PathBuf>::new(),
@@ -284,6 +279,7 @@ impl WindowSettings{
         WindowBuilder,
         ContextBuilder<'a,NotCurrent>,
         GraphicsSettings,
+        GeneralSettings,
         MouseCursorIconSettings<PathBuf>
     ){
         let window_attributes=WindowAttributes{
@@ -331,7 +327,13 @@ impl WindowSettings{
 
         let mouse_cursor_icon_settings=self.mouse_cursor_icon_settings;
 
-        (window_builder,context_builder,graphics_settings,mouse_cursor_icon_settings)
+        (
+            window_builder,
+            context_builder,
+            graphics_settings,
+            self.general,
+            mouse_cursor_icon_settings,
+        )
     }
 
     #[cfg(not(feature="mouse_cursor_icon"))]
@@ -339,6 +341,7 @@ impl WindowSettings{
         WindowBuilder,
         ContextBuilder<'a,NotCurrent>,
         GraphicsSettings,
+        GeneralSettings,
     ){
         let window_attributes=WindowAttributes{
             inner_size:self.inner_size,
@@ -383,10 +386,36 @@ impl WindowSettings{
             text_vertex_buffer_size:self.text_vertex_buffer_size,
         };
 
-        (window_builder,context_builder,graphics_settings)
+        (
+            window_builder,
+            context_builder,
+            graphics_settings,
+            self.general,
+        )
     }
 }
 
+#[derive(Clone,Debug)]
+pub struct GeneralSettings{
+    /// Whether the window should be filled with given colour upon creation.
+    /// 
+    /// The default is None.
+    pub initial_colour:Option<Colour>,
+
+    /// The amount of update events per second.
+    /// 
+    /// The default is 50.
+    pub updates_per_second:u32,
+}
+
+impl GeneralSettings{
+    pub fn new()->GeneralSettings{
+        Self{
+            initial_colour:None,
+            updates_per_second:50u32,
+        }
+    }
+}
 
 use std::path::Path;
 

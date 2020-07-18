@@ -1,8 +1,7 @@
-use crate::{
-    Colour,
-    graphics::GraphicsSettings,
-};
+use crate::graphics::GraphicsSettings;
 
+#[cfg(feature="mouse_cursor_icon")]
+use super::MouseCursorIconSettings;
 
 use super::{
     // statics
@@ -11,8 +10,6 @@ use super::{
     window_center,
     mouse_cursor,
     // enums
-    WindowSettings,
-    MouseButton,
     KeyboardButton,
     InnerWindowEvent,
     // traits
@@ -20,7 +17,8 @@ use super::{
     WindowPage,
     // structs
     WindowBase,
-    MouseCursorIconSettings,
+    WindowSettings,
+    GeneralSettings,
 };
 
 use glium::backend::glutin::DisplayCreationError;
@@ -29,11 +27,11 @@ use glium::glutin::{
     ContextBuilder,
     NotCurrent,
     monitor::MonitorHandle,
-    event_loop::{ControlFlow,EventLoop,EventLoopProxy,EventLoopClosed},
+    event_loop::{ControlFlow,EventLoop,EventLoopClosed},
     event::{
         Event,
         WindowEvent as GWindowEvent,
-        MouseButton as GMouseButton,
+        MouseButton,
         ElementState,
     },
     window::WindowBuilder,
@@ -41,21 +39,30 @@ use glium::glutin::{
 };
 
 
-use std::path::PathBuf;
+use std::{
+    path::PathBuf,
+    time::Instant,
+};
 
-pub (crate) enum PageState<'a>{
-    SetNew(Option<&'a mut dyn WindowPage<'a,Window=DynamicWindow<'a>>>),
-    TakeOld(Option<&'a mut dyn WindowPage<'a,Window=DynamicWindow<'a>>>),
+/// Ссылка на типаж-объект для `DynamicWindow`.
+/// A trait object reference for a `DynamicWindow`.
+pub type PageRef<'a>=&'a mut dyn WindowPage<'a,Window=DynamicWindow<'a>,Output=()>;
+
+pub enum PageState<'a>{
+    SetNew(Option<PageRef<'a>>),
+    TakeOld(Option<PageRef<'a>>),
 }
 
-/// Окно, использует 'страницы' как типажи-объекты.
-/// A window uses 'pages' as trait-objects.
+/// Окно, которое использует 'страницы' как типажи-объекты для обработки событий.
+/// A window that uses 'pages' as trait objects to handle the events.
+/// 
 /// #
 /// 
 /// Все события прописываются с помощь типажа `WindowPage`
 /// и обработываются сразу же после их появления.
 /// 
-/// Если страница не установлена, то все собития игнорируются.
+/// Если страница не установлена, то все события игнорируются.
+/// 
 /// #
 /// 
 /// All the events are implemented with `WindowPage`
@@ -63,9 +70,7 @@ pub (crate) enum PageState<'a>{
 /// 
 /// If no page is set, all the events are ignored.
 pub struct DynamicWindow<'a>{
-    pub (crate) base:WindowBase<InnerWindowEvent>,
-
-    pub (crate) event_loop_proxy:EventLoopProxy<InnerWindowEvent>,
+    pub (crate) base:WindowBase,
 
     pub (crate) page:PageState<'a>,
 }
@@ -88,7 +93,7 @@ impl<'a> DynamicWindow<'a>{
     /// Sets the page.
     /// 
     /// It starts to operate with the next event.
-    pub fn set_page(&mut self,page:&'a mut dyn WindowPage<'a,Window=Self>){
+    pub fn set_page(&mut self,page:PageRef<'a>){
         if let PageState::SetNew(page)=&mut self.page{
             page.take()
         }
@@ -109,7 +114,7 @@ impl<'a> DynamicWindow<'a>{
     /// It starts to operate with the next event.
     /// 
     /// Returns the last page.
-    pub fn change_page(&mut self,page:&'a mut dyn WindowPage<'a,Window=Self>)->Option<&'a mut dyn WindowPage<'a,Window=DynamicWindow<'a>>>{
+    pub fn change_page(&mut self,page:PageRef<'a>)->Option<PageRef<'a>>{
         let old=if let PageState::SetNew(page)=&mut self.page{
             page.take()
         }
@@ -123,7 +128,7 @@ impl<'a> DynamicWindow<'a>{
     /// Возвращает прошлую страницу.
     /// 
     /// Returns the last page.
-    pub fn take_old_page(&mut self)->Option<&'a mut dyn WindowPage<'a,Window=DynamicWindow<'a>>>{
+    pub fn take_old_page(&mut self)->Option<PageRef<'a>>{
         if let PageState::TakeOld(page)=&mut self.page{
             page.take()
         }
@@ -139,40 +144,6 @@ impl<'a> DynamicWindow<'a>{
         let el=&mut self.base.event_loop as *mut EventLoop<InnerWindowEvent>;
         let event_loop=unsafe{&mut *el};
 
-        #[cfg(not(feature="auto_hide"))]
-        self.event_listener(event_loop);
-
-        #[cfg(feature="auto_hide")]
-        loop{
-            if self.event_listener(event_loop){
-                break
-            }
-
-            if self.wait_until_focused(event_loop){
-                break
-            }
-        }
-    }
-
-    /// Останавливает обработку событий,
-    /// отправляя событие для остановки,
-    /// если она запущена.
-    /// 
-    /// Stops the event listener
-    /// by sending the stopping event
-    /// if it's running.
-    pub fn stop_events(&self)->Result<(),EventLoopClosed<InnerWindowEvent>>{
-        self.event_loop_proxy.send_event(InnerWindowEvent::Exit)
-    }
-}
-
-// Функции обработки событий.
-//
-// Event handlers.
-impl<'a> DynamicWindow<'a>{
-    fn event_listener(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>)->bool{
-        let mut close_flag=false;
-
         // Проверка, есть ли 'страница', чтобы установить,
         // и установка, если имеется
         let mut taken_page=if let PageState::SetNew(page)=&mut self.page{
@@ -182,14 +153,62 @@ impl<'a> DynamicWindow<'a>{
             None
         };
 
+        #[cfg(not(feature="auto_hide"))]
+        self.event_listener(event_loop,&mut taken_page);
+
+        #[cfg(feature="auto_hide")]
+        loop{
+            if self.event_listener(event_loop,&mut taken_page){
+                break
+            }
+
+            if self.wait_until_focused(event_loop,&mut taken_page){
+                break
+            }
+        }
+    }
+
+    /// Останавливает обработку событий,
+    /// отправляя событие для остановки.
+    /// 
+    /// Возвращает `Err`, если обработчик уже остановлен.
+    /// 
+    /// Stops the event listener
+    /// by sending the stopping event.
+    /// 
+    /// Returns `Err` if the listener has been already stopped.
+    pub fn stop_events(&self)->Result<(),EventLoopClosed<InnerWindowEvent>>{
+        self.base.request_event_loop_close()
+    }
+}
+
+// Функции обработки событий.
+//
+// Event handlers.
+impl<'a> DynamicWindow<'a>{
+    fn event_listener(
+        &mut self,
+        event_loop:&mut EventLoop<InnerWindowEvent>,
+        taken_page:&mut Option<PageRef<'a>>
+    )->bool{
+        let mut close_flag=false;
+
         event_loop.run_return(|event,_,control_flow|{
             #[cfg(not(feature="lazy"))]{
-                // Endless cycling checking events.
+                let now=Instant::now();
+                if self.base.next_update<now{
+                    self.base.event_loop_proxy
+                            .send_event(InnerWindowEvent::Update)
+                                    .expect("Dead event loop");
+
+                    self.base.next_update+=self.base.update_interval;
+                }
+                // Endless cycling checking events
                 *control_flow=ControlFlow::Poll;
             }
             
             #[cfg(feature="lazy")]{
-                // Waiting for any event except redraw event.
+                // Waiting for any event except redraw event
                 *control_flow=ControlFlow::Wait;
             }
 
@@ -198,14 +217,14 @@ impl<'a> DynamicWindow<'a>{
             if let PageState::SetNew(page)=&mut self.page{
                 if let Some(_)=page{
                     let take_old=taken_page.take();
-                    taken_page=page.take();
+                    *taken_page=page.take();
                     self.page=PageState::TakeOld(take_old);
                 }
             }
 
             // Выбор текущей 'страницы' для обработки событий
             // либо их игнорирование, если нет 'страницы'
-            let page=if let Some(page)=&mut taken_page{
+            let page=if let Some(page)=taken_page{
                 page
             }
             else{
@@ -214,11 +233,21 @@ impl<'a> DynamicWindow<'a>{
 
             match event{
                 Event::UserEvent(event)=>match event{
-                    InnerWindowEvent::Exit=>{
+                    // Прерывает цикл
+                    InnerWindowEvent::EventLoopCloseRequested=>{
                         *control_flow=ControlFlow::Exit;
                         close_flag=true;
                         return
                     }
+
+                    #[cfg(not(feature="lazy"))]
+                    InnerWindowEvent::Update=>{
+                        self.base.next_update+=self.base.update_interval;
+                        page.on_update_requested(self);
+                    }
+
+                    #[cfg(feature="lazy")]
+                    _=>{}
                 }
 
                 // События окна
@@ -232,88 +261,26 @@ impl<'a> DynamicWindow<'a>{
                         }
 
                         // Изменение размера окна
-                        GWindowEvent::Resized(size)=>unsafe{
-                            window_width=size.width as f32;
-                            window_height=size.height as f32;
-                            window_center=[window_width/2f32,window_height/2f32];
-
-                            #[cfg(feature="mouse_cursor_icon")]
-                            self.base.mouse_icon.update(&mut self.base.graphics);
-
-                            page.on_window_resized(self,[size.width,size.height])
-                        }
+                        GWindowEvent::Resized(size)=>window_resized!(size,page,self),
 
                         // Сдвиг окна
                         GWindowEvent::Moved(pos)=>page.on_window_moved(self,[pos.x,pos.y]),
 
                         // Сдвиг мыши (сдвиг за пределы окна игнорируется)
-                        GWindowEvent::CursorMoved{position,..}=>unsafe{
-                            let last_position=mouse_cursor.position();
-
-                            let position=[position.x as f32,position.y as f32];
-
-                            let dx=position[0]-last_position[0];
-                            let dy=position[1]-last_position[1];
-
-                            mouse_cursor.set_position(position);
-
-                            page.on_mouse_moved(self,[dx,dy])
-                        }
+                        GWindowEvent::CursorMoved{position,..}=>cursor_moved!(position,page,self),
 
                         // Прокрутка колёсика мыши
                         GWindowEvent::MouseWheel{delta,..}=>page.on_mouse_scrolled(self,delta),
 
-                        // Обработка действий с кнопками мыши (только стандартные кнопки)
-                        GWindowEvent::MouseInput{button,state,..}=>{
-                            if state==ElementState::Pressed{
-                                match button{
-                                    GMouseButton::Left=>{
-                                        #[cfg(feature="mouse_cursor_icon")]
-                                        self.base.mouse_icon.pressed(&mut self.base.graphics);
-
-                                        page.on_mouse_pressed(self,MouseButton::Left)
-                                    }
-                                    GMouseButton::Middle=>page.on_mouse_pressed(self,MouseButton::Middle),
-                                    GMouseButton::Right=>page.on_mouse_pressed(self,MouseButton::Right),
-                                    GMouseButton::Other(_)=>{}
-                                }
-                            }
-                            else{
-                                match button{
-                                    GMouseButton::Left=>{
-                                        #[cfg(feature="mouse_cursor_icon")]
-                                        self.base.mouse_icon.released(&mut self.base.graphics);
-
-                                        page.on_mouse_released(self,MouseButton::Left)
-                                    }
-                                    GMouseButton::Middle=>page.on_mouse_released(self,MouseButton::Middle),
-                                    GMouseButton::Right=>page.on_mouse_released(self,MouseButton::Right),
-                                    GMouseButton::Other(_)=>{}
-                                }
-                            }
-                        }
+                        // Обработка действий с кнопками мыши
+                        GWindowEvent::MouseInput{button,state,..}=>mouse_input!(button,state,page,self),
 
                         // Обработка действий с клавишами клавиатуры
-                        GWindowEvent::KeyboardInput{input,..}=>{
-                            let key=if let Some(key)=input.virtual_keycode{
-                                unsafe{std::mem::transmute(key)}
-                            }
-                            else{
-                                KeyboardButton::Unknown
-                            };
-
-                            if input.state==ElementState::Pressed{
-                                page.on_keyboard_pressed(self,key)
-                            }
-                            else{
-                                page.on_keyboard_released(self,key)
-                            }
-                        }
+                        GWindowEvent::KeyboardInput{input,..}=>keyboard_input!(input,page,self),
 
                         // Получение вводимых букв
-                        GWindowEvent::ReceivedCharacter(character)=>if !character.is_ascii_control(){
-                            page.on_character_recieved(self,character)
-                        }
+                        GWindowEvent::ReceivedCharacter(character)
+                                if !character.is_ascii_control()=>page.on_character_recieved(self,character),
 
                         // При потере фокуса
                         #[cfg(feature="auto_hide")]
@@ -361,17 +328,12 @@ impl<'a> DynamicWindow<'a>{
 
     /// Функция ожидания получения фокуса - перехватывает управление до получения окном фокуса
     #[cfg(feature="auto_hide")]
-    fn wait_until_focused(&mut self,event_loop:&mut EventLoop<InnerWindowEvent>)->bool{
+    fn wait_until_focused(
+        &mut self,
+        event_loop:&mut EventLoop<InnerWindowEvent>,
+        taken_page:&mut Option<PageRef<'a>>
+    )->bool{
         let mut close_flag=false;
-
-        // Проверка, есть ли 'страница', чтобы установить,
-        // и установка, если имеется
-        let mut taken_page=if let PageState::SetNew(page)=&mut self.page{
-            page.take()
-        }
-        else{
-            None
-        };
 
         event_loop.run_return(|event,_,control_flow|{
             *control_flow=ControlFlow::Wait;
@@ -381,12 +343,12 @@ impl<'a> DynamicWindow<'a>{
             if let PageState::SetNew(page)=&mut self.page{
                 if let Some(_)=page{
                     let take_old=taken_page.take();
-                    taken_page=page.take();
+                    *taken_page=page.take();
                     self.page=PageState::TakeOld(take_old);
                 }
             }
 
-            let page=if let Some(page)=&mut taken_page{
+            let page=if let Some(page)=taken_page{
                 page
             }
             else{
@@ -395,37 +357,28 @@ impl<'a> DynamicWindow<'a>{
 
             match event{
                 Event::UserEvent(event)=>match event{
-                    InnerWindowEvent::Exit=>{
+                    // Прерывает ожидание и выходит из цикла
+                    InnerWindowEvent::EventLoopCloseRequested=>{
                         *control_flow=ControlFlow::Exit;
                         close_flag=true;
                         return
                     }
+                    _=>{}
                 }
 
                 Event::WindowEvent{event,..}=>{
                     match event{
-                        GWindowEvent::Resized(size)=>unsafe{
-                            window_width=size.width as f32;
-                            window_height=size.height as f32;
-                            window_center=[window_width/2f32,window_height/2f32];
-
-                            #[cfg(feature="mouse_cursor_icon")]
-                            self.base.mouse_icon.update(&mut self.base.graphics);
-
-                            page.on_window_resized(self,[size.width,size.height])
-                        }
-
                         GWindowEvent::CloseRequested=>{ // Остановка цикла обработки событий,
                             *control_flow=ControlFlow::Exit;
                             close_flag=true;
                             page.on_close_requested(self)
                         }
 
+                        GWindowEvent::Resized(size)=>window_resized!(size,page,self),
+
                         // При получении фокуса
                         GWindowEvent::Focused(f)=>{
                             *control_flow=ControlFlow::Exit;
-                            self.base.display.gl_window().window().set_minimized(false);
-
                             page.on_window_focused(self,f);
                         }
 
@@ -445,13 +398,11 @@ impl<'a> DynamicWindow<'a>{
 }
 
 impl<'a> Window for DynamicWindow<'a>{
-    type UserEvent=InnerWindowEvent;
-
-    fn window_base_mut(&mut self)->&mut WindowBase<InnerWindowEvent>{
+    fn window_base_mut(&mut self)->&mut WindowBase{
         &mut self.base
     }
 
-    fn window_base(&self)->&WindowBase<InnerWindowEvent>{
+    fn window_base(&self)->&WindowBase{
         &self.base
     }
 
@@ -460,39 +411,27 @@ impl<'a> Window for DynamicWindow<'a>{
         context_builder:ContextBuilder<NotCurrent>,
         graphics_settings:GraphicsSettings,
         event_loop:EventLoop<InnerWindowEvent>,
-        initial_colour:Option<Colour>,
+        general_settings:GeneralSettings,
         
         #[cfg(feature="mouse_cursor_icon")]
         mouse_cursor_icon_settings:MouseCursorIconSettings<PathBuf>,
     )->Result<DynamicWindow<'a>,DisplayCreationError>{
 
-        #[cfg(not(feature="mouse_cursor_icon"))]
-        let base=WindowBase::<InnerWindowEvent>::raw(window_builder,
+        let base=WindowBase::raw(window_builder,
             context_builder,
             graphics_settings,
             event_loop,
-            initial_colour
-        );
-
-        #[cfg(feature="mouse_cursor_icon")]
-        let base=WindowBase::<InnerWindowEvent>::raw(window_builder,
-            context_builder,
-            graphics_settings,
-            event_loop,
-            initial_colour,
+            general_settings,
+            #[cfg(feature="mouse_cursor_icon")]
             mouse_cursor_icon_settings
         );
 
         match base{
             Ok(w)=>{
-                let proxy=w.event_loop.create_proxy();
-
                 Ok(Self{
                     base:w,
 
                     page:PageState::SetNew(None),
-
-                    event_loop_proxy:proxy,
                 })
             }
             Err(e)=>Err(e)

@@ -1,18 +1,17 @@
-use crate::{
-    Colour,
-    graphics::{Graphics2D,Graphics,GraphicsSettings},
-};
+use crate::graphics::{Graphics2D,Graphics,GraphicsSettings};
 
 #[cfg(feature="mouse_cursor_icon")]
 use super::MouseCursorIconSettings;
 
 use super::{
     // enums
-    WindowSettings,
     MouseButton,
     KeyboardButton,
+    InnerWindowEvent,
     // structs
     WindowBase,
+    GeneralSettings,
+    WindowSettings,
 };
 
 use glium::{
@@ -39,9 +38,18 @@ use std::path::{Path,PathBuf};
 /// Типаж для создания страниц окна.
 /// A trait for implementing window pages.
 pub trait WindowPage<'a>{
-    type Window:Window;
+    type Window:Window+'a;
 
+    /// The return type of output when the loop is closed.
+    type Output;
+
+    /// Called when the window has been requested to close.
     fn on_close_requested(&mut self,window:&mut Self::Window);
+
+    /// feature != "lazy"
+    #[cfg(not(feature="lazy"))]
+    fn on_update_requested(&mut self,window:&mut Self::Window);
+
     fn on_redraw_requested(&mut self,window:&mut Self::Window);
 
     fn on_mouse_pressed(&mut self,window:&mut Self::Window,button:MouseButton);
@@ -64,22 +72,25 @@ pub trait WindowPage<'a>{
     fn on_file_dropped(&mut self,window:&mut Self::Window,path:PathBuf);
     fn on_file_hovered(&mut self,window:&mut Self::Window,path:PathBuf);
     fn on_file_hovered_canceled(&mut self,window:&mut Self::Window);
+
+    /// Event loop has been stopped.
+    /// 
+    /// The page closes after this function is called.
+    fn on_event_loop_closed(&mut self,window:&mut Self::Window)->Self::Output;
 }
 
 /// Типаж, помогающий создать более сложное окно на базе `WindowBase`.
-/// A trait that helps to create more a complex window based on `WindowBase`.
+/// A trait that helps to create a more complex window based on a `WindowBase`.
 pub trait Window:Sized{
-    type UserEvent:'static;
-
-    fn window_base(&self)->&WindowBase<Self::UserEvent>;
-    fn window_base_mut(&mut self)->&mut WindowBase<Self::UserEvent>;
+    fn window_base(&self)->&WindowBase;
+    fn window_base_mut(&mut self)->&mut WindowBase;
 
     fn raw(
         window_builder:WindowBuilder,
         context_builder:ContextBuilder<NotCurrent>,
         graphics_settings:GraphicsSettings,
-        event_loop:EventLoop<Self::UserEvent>,
-        initial_colour:Option<Colour>,
+        event_loop:EventLoop<InnerWindowEvent>,
+        general_settings:GeneralSettings,
 
         #[cfg(feature="mouse_cursor_icon")]
         mouse_cursor_icon_settings:MouseCursorIconSettings<PathBuf>,
@@ -87,7 +98,7 @@ pub trait Window:Sized{
 
     fn new<F>(setting:F)->Result<Self,DisplayCreationError>
             where F:FnOnce(Vec<MonitorHandle>,&mut WindowSettings){
-        let event_loop=EventLoop::<Self::UserEvent>::with_user_event();
+        let event_loop=EventLoop::<InnerWindowEvent>::with_user_event();
         let monitors=event_loop.available_monitors().collect();
 
         let mut window_settings=WindowSettings::new();
@@ -96,14 +107,12 @@ pub trait Window:Sized{
         // Настройка
         setting(monitors,&mut window_settings);
 
-        let initial_colour=window_settings.initial_colour;
-
         #[cfg(feature="mouse_cursor_icon")]
-        let (window_builder,context_builder,graphics_settings,mouse_cursor_icon_settings)
+        let (window_builder,context_builder,graphics_settings,general_settings,mouse_cursor_icon_settings)
                 =window_settings.devide::<PathBuf>();
 
         #[cfg(not(feature="mouse_cursor_icon"))]
-        let (window_builder,context_builder,graphics_settings)
+        let (window_builder,context_builder,graphics_settings,general_settings)
                 =window_settings.devide();
 
 
@@ -113,7 +122,7 @@ pub trait Window:Sized{
             context_builder,
             graphics_settings,
             event_loop,
-            initial_colour,
+            general_settings,
             mouse_cursor_icon_settings,
         );
 
@@ -123,7 +132,7 @@ pub trait Window:Sized{
             context_builder,
             graphics_settings,
             event_loop,
-            initial_colour,
+            general_settings,
         );
 
         window
@@ -136,15 +145,15 @@ pub trait Window:Sized{
 
     /// Возвращает графическую основу.
     /// 
-    /// Returns graphics base.
+    /// Returns the graphics base.
     #[inline(always)]
     fn graphics(&mut self)->&mut Graphics2D{
         &mut self.window_base_mut().graphics
     }
 
-    /// Даёт прямое управление над кадром.
+    /// Даёт кадр для рисования.
     /// 
-    /// Gives frame to raw drawing.
+    /// Gives a frame for drawing.
     #[inline(always)]
     fn draw_raw<F:FnOnce(&mut DrawParameters,&mut Frame)>(&self,f:F)->Result<(),SwapBuffersError>{
         self.window_base().draw_raw(f)

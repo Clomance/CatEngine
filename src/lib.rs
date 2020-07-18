@@ -51,7 +51,12 @@
 //! w.set_visible(false);
 //! ```
 
-pub use glium; // reimports
+// re-exports
+pub use glium::{
+    self,
+    glutin::event::MouseButton
+};
+
 
 #[cfg(feature="audio")]
 pub mod audio;

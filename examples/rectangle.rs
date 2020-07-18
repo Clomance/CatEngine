@@ -16,10 +16,14 @@ pub struct Page{
 
 impl WindowPage<'static> for Page{
     type Window=PagedWindow;
+    type Output=();
 
     fn on_close_requested(&mut self,_window:&mut PagedWindow){
         println!("Closing");
     }
+
+    #[cfg(not(feature="lazy"))]
+    fn on_update_requested(&mut self,_window:&mut PagedWindow){}
 
     fn on_redraw_requested(&mut self,window:&mut PagedWindow){
         window.draw(|p,g|{
@@ -59,6 +63,8 @@ impl WindowPage<'static> for Page{
     fn on_file_dropped(&mut self,_:&mut PagedWindow,_:PathBuf){}
     fn on_file_hovered(&mut self,_:&mut PagedWindow,_:PathBuf){}
     fn on_file_hovered_canceled(&mut self,_:&mut PagedWindow){}
+
+    fn on_event_loop_closed(&mut self,_:&mut PagedWindow){}
 }
 
 fn main(){
@@ -73,7 +79,7 @@ fn main(){
     window.run_page(&mut page);
 
     // or another
-    let rect=cat_engine::graphics::Rectangle::new([100.0;4],[1.0,0.0,0.0,1.0]);
+    let rect=cat_engine::graphics::Rectangle::new([100.0;4],[0.0,0.0,0.0,1.0]);
 
     window.run(|window,event|{
         match event{
@@ -90,8 +96,7 @@ fn main(){
             WindowEvent::KeyboardPressed(button)=>match button{
                 KeyboardButton::Escape=>{
                     // I'm gonna break ya, break ya, break ya, break ya
-                    // break out of the loop
-                    let _=window.stop_events();
+                    let _=window.stop_events(); // break out of the loop
                 }
                 _=>{}
             }

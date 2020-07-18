@@ -14,20 +14,24 @@ pub struct Page<'a>{
     angle:f32,
     image_base:ImageBase,
     texture:Texture,
-    page2:Option<&'a mut dyn WindowPage<'a,Window=DynamicWindow<'a>>>,
+    page2:Option<&'a mut dyn WindowPage<'a,Window=DynamicWindow<'a>,Output=()>>,
 }
 
 
 impl<'a> WindowPage<'a> for Page<'a>{
     type Window=DynamicWindow<'a>;
+    type Output=();
 
     fn on_close_requested(&mut self,_window:&mut DynamicWindow<'a>){
         println!("Closing");
     }
 
-    fn on_redraw_requested(&mut self,window:&mut DynamicWindow<'a>){
+    #[cfg(not(feature="lazy"))]
+    fn on_update_requested(&mut self,_window:&mut DynamicWindow<'a>){
         self.angle+=0.001;
+    }
 
+    fn on_redraw_requested(&mut self,window:&mut DynamicWindow<'a>){
         window.draw(|p,g|{
             g.clear_colour([1.0;4]);
             // Drawing static image
@@ -78,6 +82,8 @@ impl<'a> WindowPage<'a> for Page<'a>{
     fn on_file_dropped(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}
     fn on_file_hovered(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}
     fn on_file_hovered_canceled(&mut self,_:&mut DynamicWindow<'a>){}
+
+    fn on_event_loop_closed(&mut self,_:&mut DynamicWindow<'a>){}
 }
 
 
@@ -86,10 +92,14 @@ pub struct Page2;
 
 impl<'a> WindowPage<'a> for Page2{
     type Window=DynamicWindow<'a>;
+    type Output=();
 
     fn on_close_requested(&mut self,_window:&mut DynamicWindow<'a>){
         println!("Closing");
     }
+
+    #[cfg(not(feature="lazy"))]
+    fn on_update_requested(&mut self,_window:&mut DynamicWindow<'a>){}
 
     fn on_redraw_requested(&mut self,window:&mut DynamicWindow<'a>){
         window.draw(|_,g|{
@@ -133,6 +143,8 @@ impl<'a> WindowPage<'a> for Page2{
     fn on_file_dropped(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}
     fn on_file_hovered(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}
     fn on_file_hovered_canceled(&mut self,_:&mut DynamicWindow<'a>){}
+
+    fn on_event_loop_closed(&mut self,_:&mut DynamicWindow<'a>){}
 }
 
 fn main(){

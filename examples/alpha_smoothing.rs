@@ -21,10 +21,14 @@ pub struct Page{
 
 impl WindowPage<'static> for Page{
     type Window=PagedWindow;
+    type Output=();
 
     fn on_close_requested(&mut self,_window:&mut PagedWindow){
         println!("Closing");
     }
+
+    #[cfg(not(feature="lazy"))]
+    fn on_update_requested(&mut self,_window:&mut PagedWindow){}
 
     fn on_redraw_requested(&mut self,window:&mut PagedWindow){
         if self.smoothing{
@@ -79,6 +83,8 @@ impl WindowPage<'static> for Page{
     fn on_file_dropped(&mut self,_:&mut PagedWindow,_:PathBuf){}
     fn on_file_hovered(&mut self,_:&mut PagedWindow,_:PathBuf){}
     fn on_file_hovered_canceled(&mut self,_:&mut PagedWindow){}
+
+    fn on_event_loop_closed(&mut self,_:&mut PagedWindow){}
 }
 
 
@@ -102,6 +108,6 @@ fn main(){
         texture,
     };
 
-    window.set_new_smooth(0.0625);
+    window.set_new_smooth(0.03125);
     window.run_page(&mut page);
 }

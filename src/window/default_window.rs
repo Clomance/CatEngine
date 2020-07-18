@@ -1,7 +1,4 @@
-use crate::{
-    Colour,
-    graphics::GraphicsSettings,
-};
+use crate::graphics::GraphicsSettings;
 
 #[cfg(feature="mouse_cursor_icon")]
 use super::MouseCursorIconSettings;
@@ -13,9 +10,7 @@ use super::{
     window_center,
     mouse_cursor,
     // enums
-    WindowSettings,
     WindowEvent,
-    MouseButton,
     KeyboardButton,
     InnerWindowEvent,
     PageState,
@@ -25,6 +20,8 @@ use super::{
     WindowBase,
     PagedWindow,
     DynamicWindow,
+    WindowSettings,
+    GeneralSettings,
 };
 
 use glium::backend::glutin::DisplayCreationError;
@@ -37,7 +34,7 @@ use glium::glutin::{
     event::{
         Event,
         WindowEvent as GWindowEvent,
-        MouseButton as GMouseButton,
+        MouseButton,
         ElementState,
     },
     window::WindowBuilder,
@@ -47,6 +44,7 @@ use glium::glutin::{
 use std::{
     collections::VecDeque,
     path::PathBuf,
+    time::Instant,
 };
 
 /*
@@ -59,21 +57,20 @@ use std::{
     4) LoopDestroyed
 */
 
-/// Окно, включает в себя графические функции
-/// и обработчик событий.
-/// A window with graphic functions and an event listener included.
+/// Окно с внешним обработчиком событий.
+/// A window with an outer event hanlder.
 /// 
 /// #
 /// 
-/// Все события обрабатываются и добавляются в очередь внешней обработки (DefaultWindow.events)
+/// Все события обрабатываются и добавляются в очередь внешней обработки
 /// для работы с ними вне структуры окна.
 /// 
 /// #
 /// 
-/// All events are handled and added to the outer handling queue (DefaultWindow.events)
+/// All events are handled and added to the outer handling queue
 /// to work with them outside of the window structure.
 pub struct DefaultWindow{
-    pub (crate) base:WindowBase<InnerWindowEvent>,
+    pub (crate) base:WindowBase,
 
     pub (crate) events:VecDeque<WindowEvent>,
 
@@ -115,8 +112,6 @@ impl DefaultWindow{
     /// 
     /// Saves the 'auto_hide' feature state (the window hidden or not).
     pub fn into_paged_window(self)->PagedWindow{
-        let proxy=self.base.event_loop.create_proxy();
-
         #[cfg(feature="auto_hide")]
         let minimized=if self.events_handler
             as *const fn(&mut DefaultWindow)
@@ -133,8 +128,6 @@ impl DefaultWindow{
         PagedWindow{
             base:self.base,
 
-            event_loop_proxy:proxy,
-
             #[cfg(feature="auto_hide")]
             minimized,
         }
@@ -144,12 +137,8 @@ impl DefaultWindow{
     /// 
     /// Ignores the 'auto_hide' feature state (the window hidden or not).
     pub fn into_dynamic_window<'a>(self)->DynamicWindow<'a>{
-        let proxy=self.base.event_loop.create_proxy();
-
         DynamicWindow{
             base:self.base,
-
-            event_loop_proxy:proxy,
 
             page:PageState::<'a>::SetNew(None),
         }
@@ -168,119 +157,69 @@ impl DefaultWindow{
     /// Обычная функция обработки событий
     pub (crate) fn event_listener(&mut self){
         let el=&mut self.base.event_loop as *mut EventLoop<InnerWindowEvent>;
-
         let event_loop=unsafe{&mut *el};
 
         event_loop.run_return(|event,_,control_flow|{
+            #[cfg(not(feature="lazy"))]{
+                let now=Instant::now();
+                if self.base.next_update<now{
+                    self.base.event_loop_proxy
+                            .send_event(InnerWindowEvent::Update)
+                                    .expect("Dead event loop");
+
+                    self.base.next_update+=self.base.update_interval;
+                }
+            }
+            
             *control_flow=ControlFlow::Exit;
+            
             let next_event=match event{
+                Event::UserEvent(event)=>match event{
+                    #[cfg(not(feature="lazy"))]
+                    InnerWindowEvent::Update=>{
+                        self.base.next_update+=self.base.update_interval;
+                        WindowEvent::Update
+                    }
+                    _=>return
+                }
+
                 // События окна
                 Event::WindowEvent{event,..}=>{
                     match event{
-                        // Закрытие окна
-                        GWindowEvent::CloseRequested=>{
-                            Exit
-                        }
+                        // Запрос на закрытие окна
+                        GWindowEvent::CloseRequested=>Exit,
 
                         // Изменение размера окна
-                        GWindowEvent::Resized(size)=>unsafe{
-                            window_width=size.width as f32;
-                            window_height=size.height as f32;
-                            window_center=[window_width/2f32,window_height/2f32];
-
-                            #[cfg(feature="mouse_cursor_icon")]
-                            self.base.mouse_icon.update(&mut self.base.graphics);
-
-                            Resized([size.width,size.height])
-                        }
+                        GWindowEvent::Resized(size)=>window_resized!(size,self),
 
                         // Сдвиг окна
                         GWindowEvent::Moved(pos)=>Moved([pos.x,pos.y]),
 
                         // Сдвиг мыши (сдвиг за пределы окна игнорируется)
-                        GWindowEvent::CursorMoved{position,..}=>unsafe{
-                            let last_position=mouse_cursor.position();
-
-                            let position=[position.x as f32,position.y as f32];
-
-                            let dx=position[0]-last_position[0];
-                            let dy=position[1]-last_position[1];
-
-                            mouse_cursor.set_position(position);
-
-                            MouseMovementDelta([dx,dy])
-                        }
+                        GWindowEvent::CursorMoved{position,..}=>cursor_moved!(position),
 
                         // Прокрутка колёсика мыши
                         GWindowEvent::MouseWheel{delta,..}=>MouseWheelScroll(delta),
 
-                        // Обработка действий с кнопками мыши (только стандартные кнопки)
-                        GWindowEvent::MouseInput{button,state,..}=>{
-                            if state==ElementState::Pressed{
-                                match button{
-                                    GMouseButton::Left=>{
-                                        #[cfg(feature="mouse_cursor_icon")]
-                                        self.base.mouse_icon.pressed(&mut self.base.graphics);
-
-                                        MousePressed(MouseButton::Left)
-                                    }
-                                    GMouseButton::Middle=>MousePressed(MouseButton::Middle),
-                                    GMouseButton::Right=>MousePressed(MouseButton::Right),
-                                    GMouseButton::Other(_)=>return
-                                }
-                            }
-                            else{
-                                match button{
-                                    GMouseButton::Left=>{
-                                        #[cfg(feature="mouse_cursor_icon")]
-                                        self.base.mouse_icon.released(&mut self.base.graphics);
-
-                                        MouseReleased(MouseButton::Left)
-                                    }
-                                    GMouseButton::Middle=>MouseReleased(MouseButton::Middle),
-                                    GMouseButton::Right=>MouseReleased(MouseButton::Right),
-                                    GMouseButton::Other(_)=>return
-                                }
-                            }
-                        }
+                        // Обработка действий с кнопками мыши
+                        GWindowEvent::MouseInput{button,state,..}=>mouse_input!(button,state,self),
 
                         // Обработка действий с клавишами клавиатуры
-                        GWindowEvent::KeyboardInput{input,..}=>{
-                            let key=if let Some(key)=input.virtual_keycode{
-                                unsafe{std::mem::transmute(key)}
-                            }
-                            else{
-                                KeyboardButton::Unknown
-                            };
-
-                            if input.state==ElementState::Pressed{
-                                KeyboardPressed(key)
-                            }
-                            else{
-                                KeyboardReleased(key)
-                            }
-                        }
+                        GWindowEvent::KeyboardInput{input,..}=>keyboard_input!(input),
 
                         // Получение вводимых букв
-                        GWindowEvent::ReceivedCharacter(character)=>if character.is_ascii_control(){
-                            return
-                        }
-                        else{
-                            CharacterInput(character)
-                        }
+                        GWindowEvent::ReceivedCharacter(character)
+                                if !character.is_ascii_control()=>CharacterInput(character),
 
-                        // При потере фокуса
+                        // Сворачивание при потере фокуса
                         #[cfg(feature="auto_hide")]
-                        GWindowEvent::Focused(f)=>if !f{
-                            self.lost_focus()
-                        }
-                        else{
-                            WindowEvent::Hide(false) // Передача события во внешнее управление
-                        }
+                        GWindowEvent::Focused(f) if !f=>self.lost_focus(),
 
+                        // Потеря фокуса
                         #[cfg(not(feature="auto_hide"))]
                         GWindowEvent::Focused(f)=>WindowEvent::Focused(f),
 
+                        // Файл перенесён в окно
                         GWindowEvent::DroppedFile(path)=>DroppedFile(path),
                         GWindowEvent::HoveredFile(path)=>HoveredFile(path),
                         GWindowEvent::HoveredFileCancelled=>HoveredFileCancelled,
@@ -316,7 +255,6 @@ impl DefaultWindow{
     #[cfg(feature="auto_hide")]
     pub (crate) fn wait_until_focused(&mut self){
         let el=&mut self.base.event_loop as *mut EventLoop<InnerWindowEvent>;
-
         let event_loop=unsafe{&mut *el};
 
         event_loop.run_return(|event,_,control_flow|{
@@ -325,20 +263,14 @@ impl DefaultWindow{
             let event=match event{
                 Event::WindowEvent{event,..}=>{
                     match event{
-                        GWindowEvent::Resized(size)=>unsafe{
-                            window_width=size.width as f32;
-                            window_height=size.height as f32;
-                            window_center=[window_width/2f32,window_height/2f32];
-
-                            #[cfg(feature="mouse_cursor_icon")]
-                            self.base.mouse_icon.update(&mut self.base.graphics);
-
-                            return
-                        }
-
                         GWindowEvent::CloseRequested=>{ // Остановка цикла обработки событий,
                             *control_flow=ControlFlow::Exit;
-                            Exit // Передача события во внешнее управление
+                            Exit
+                        }
+
+                        GWindowEvent::Resized(size)=>{
+                            *control_flow=ControlFlow::Exit;
+                            window_resized!(size,self)
                         }
 
                         // При получении фокуса
@@ -377,27 +309,26 @@ impl DefaultWindow{
         self.base.display.gl_window().window().set_minimized(true); // Сворацивание окна
         self.events_handler=DefaultWindow::wait_until_focused; // Смена фукции обработки событий
 
-        WindowEvent::Hide(true) // Передача события во внешнее управление
+        Focused(false)
     }
 
     /// При получении фокуса
     #[cfg(feature="auto_hide")]
     fn gained_focus(&mut self)->WindowEvent{
         self.events_handler=DefaultWindow::event_listener; // Смена фукции обработки событий
-        self.base.display.gl_window().window().set_minimized(false);
 
-        Hide(false) // Передача события во внешнее управление
+        self.base.display.gl_window().window().set_minimized(false); // Разворацивание окна
+
+        Focused(true)
     }
 }
 
 impl Window for DefaultWindow{
-    type UserEvent=InnerWindowEvent;
-
-    fn window_base(&self)->&WindowBase<Self::UserEvent>{
+    fn window_base(&self)->&WindowBase{
         &self.base
     }
 
-    fn window_base_mut(&mut self)->&mut WindowBase<Self::UserEvent>{
+    fn window_base_mut(&mut self)->&mut WindowBase{
         &mut self.base
     }
 
@@ -405,27 +336,19 @@ impl Window for DefaultWindow{
         window_builder:WindowBuilder,
         context_builder:ContextBuilder<NotCurrent>,
         graphics_settings:GraphicsSettings,
-        event_loop:EventLoop<Self::UserEvent>,
-        initial_colour:Option<Colour>,
+        event_loop:EventLoop<InnerWindowEvent>,
+        general_settings:GeneralSettings,
 
         #[cfg(feature="mouse_cursor_icon")]
         mouse_cursor_icon_settings:MouseCursorIconSettings<PathBuf>,
     )->Result<DefaultWindow,DisplayCreationError>{
 
-        #[cfg(not(feature="mouse_cursor_icon"))]
         let base=WindowBase::raw(window_builder,
             context_builder,
             graphics_settings,
             event_loop,
-            initial_colour
-        );
-
-        #[cfg(feature="mouse_cursor_icon")]
-        let base=WindowBase::raw(window_builder,
-            context_builder,
-            graphics_settings,
-            event_loop,
-            initial_colour,
+            general_settings,
+            #[cfg(feature="mouse_cursor_icon")]
             mouse_cursor_icon_settings
         );
 

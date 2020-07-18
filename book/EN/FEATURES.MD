@@ -45,7 +45,7 @@ Only the next events are able in minimized state:
  - suspending or resuming the application,
  `WindowEvent::Suspended` и `WindowEvent::Resumed`
  - closing the window, `WindowEvent::Exit`
-
+ - resizing the window, `WindowEvent::Resized(size)`
 
 ##### fps_counter
 

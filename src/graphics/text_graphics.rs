@@ -27,12 +27,12 @@ use glium::{
 // Пиксель для текста
 // Позиция и альфа-канал каждой точки
 // Цвет передаётся отдельно - для экономии места
-//
 implement_vertex!(TextPoint,p);
 #[derive(Clone,Copy)]
 struct TextPoint{
     p:[f32;3], // position + alpha channel
 }
+
 pub struct TextGraphics{
     vertex_buffer:VertexBuffer<TextPoint>,
     program:Program
