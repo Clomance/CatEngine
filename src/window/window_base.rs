@@ -186,6 +186,7 @@ impl WindowBase{
     /// by sending the stopping event.
     /// 
     /// Returns `Err` if the loop has been already stopped.
+    #[inline(always)]
     pub fn request_event_loop_close(&self)->Result<(),EventLoopClosed<InnerWindowEvent>>{
         self.event_loop_proxy.send_event(InnerWindowEvent::EventLoopCloseRequested)
     }

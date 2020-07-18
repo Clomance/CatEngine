@@ -31,6 +31,10 @@ impl WindowPage<'static> for Page{
     }
 
     fn on_redraw_requested(&mut self,window:&mut PagedWindow){
+        #[cfg(feature="lazy")]{
+            self.angle+=0.001;
+        }
+
         window.draw(|p,g|{
             g.clear_colour([1.0;4]);
             // Drawing static image
