@@ -128,7 +128,7 @@ pub enum WindowEvent{
     /// 
     /// Shift, Ctrl, Alt or Logo state has been changed.
     ModifiersChanged(ModifiersState),
- 
+
     /// A file has been dropped into the window.
     /// When the user drops multiple files at once,
     /// this event will be emitted for each file separately.
