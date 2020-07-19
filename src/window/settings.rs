@@ -33,69 +33,7 @@ pub struct WindowSettings{
 
     //--Window attributes--\\
 
-    /// The dimensions of the window.
-    /// If this is None, some platform-specific dimensions will be used.
-    /// 
-    /// The default is None.
-    pub inner_size:Option<Size>,
-
-    /// The minimum dimensions a window can be.
-    /// If this is None, the window will have no minimum dimensions (aside from reserved).
-    /// 
-    /// The default is None.
-    pub min_inner_size:Option<Size>,
-
-    /// The maximum dimensions a window can be.
-    /// If this is None, the maximum will have no maximum or will be set to the primary monitor's dimensions by the platform.
-    /// 
-    /// The default is None.
-    pub max_inner_size:Option<Size>,
-
-    /// Whether the window is resizable or not.
-    /// 
-    /// The default is true.
-    pub resizable:bool,
-
-    /// Whether the window should be set as fullscreen upon creation.
-    /// 
-    /// The default is None.
-    pub fullscreen:Option<Fullscreen>,
-
-    /// The title of the window in the title bar.
-    /// 
-    /// The default is "Window".
-    pub title:String,
-
-    /// Whether the window should be maximized upon creation.
-    /// 
-    /// The default is false.
-    pub maximized:bool,
-
-    /// Whether the window should be immediately visible upon creation.
-    /// 
-    /// The default is true.
-    pub visible:bool,
-
-    /// Whether the the window should be transparent.
-    /// If this is true, writing colors with alpha values different than 1.0 will produce a transparent window.
-    /// 
-    /// The default is false.
-    pub transparent:bool,
-
-    /// Whether the window should have borders and bars.
-    /// 
-    /// The default is true.
-    pub decorations:bool,
-
-    /// Whether the window should always be on top of other windows.
-    /// 
-    /// The default is false.
-    pub always_on_top:bool,
-
-    /// The window icon.
-    /// 
-    /// The default is None.
-    pub window_icon:Option<Icon>,
+    pub window_attributes:WindowAttributes,
 
 
 
@@ -191,24 +129,7 @@ pub struct WindowSettings{
 
 
     //--Local graphics attributes--\\
-
-    /// The default is 8.
-    /// 
-    /// feature = "texture_graphics"
-    #[cfg(feature="texture_graphics")]
-    pub texture_vertex_buffer_size:usize,
-
-    /// The default is 100.
-    /// 
-    /// feature = "simple_graphics"
-    #[cfg(feature="simple_graphics")]
-    pub simple_vertex_buffer_size:usize,
-
-    /// The default is 2000.
-    /// 
-    /// feature = "text_graphics"
-    #[cfg(feature="text_graphics")]
-    pub text_vertex_buffer_size:usize,
+    pub graphics_base_settings:GraphicsSettings,
 }
 
 #[allow(dead_code)]
@@ -229,18 +150,7 @@ impl WindowSettings{
             mouse_cursor_icon_settings:MouseCursorIconSettings::<PathBuf>::new(),
 
             //--Window attributes--\\
-            inner_size:None,
-            min_inner_size:None,
-            max_inner_size:None,
-            resizable:true,
-            fullscreen:None,
-            title:"Window".to_string(),
-            maximized:false,
-            visible:true,
-            transparent:true,
-            decorations:true,
-            always_on_top:false,
-            window_icon:None,
+            window_attributes:WindowAttributes::default(),
 
 
 
@@ -263,42 +173,21 @@ impl WindowSettings{
             srgb:true,
             release_behavior:ReleaseBehavior::Flush,
 
-
             //--Local graphics attributes--\\
-            #[cfg(feature="texture_graphics")]
-            texture_vertex_buffer_size:8usize,
-            #[cfg(feature="simple_graphics")]
-            simple_vertex_buffer_size:100usize,
-            #[cfg(feature="text_graphics")]
-            text_vertex_buffer_size:2000usize,
+            graphics_base_settings:GraphicsSettings::new(),
         }
     }
 
     #[cfg(feature="mouse_cursor_icon")]
-    pub (crate) fn devide<'a,P:AsRef<Path>>(self)->(
+    pub (crate) fn devide<'a>(self)->(
         WindowBuilder,
         ContextBuilder<'a,NotCurrent>,
         GraphicsSettings,
         GeneralSettings,
         MouseCursorIconSettings<PathBuf>
     ){
-        let window_attributes=WindowAttributes{
-            inner_size:self.inner_size,
-            min_inner_size:self.min_inner_size,
-            max_inner_size:self.max_inner_size,
-            resizable:self.resizable,
-            fullscreen:self.fullscreen,
-            title:self.title,
-            maximized:self.maximized,
-            visible:self.visible,
-            transparent:self.transparent,
-            decorations:self.decorations,
-            always_on_top:self.always_on_top,
-            window_icon:self.window_icon,
-        };
-
         let mut window_builder=WindowBuilder::default();
-        window_builder.window=window_attributes;
+        window_builder.window=self.window_attributes;
 
         let mut context_builder=ContextBuilder::new();
         context_builder.gl_attr.vsync=self.vsync;
@@ -315,22 +204,13 @@ impl WindowSettings{
         context_builder.pf_reqs.stereoscopy=self.stereoscopy;
         context_builder.pf_reqs.srgb=self.srgb;
         context_builder.pf_reqs.release_behavior=self.release_behavior;
-        
-        let graphics_settings=GraphicsSettings{
-            #[cfg(feature="texture_graphics")]
-            texture_vertex_buffer_size:self.texture_vertex_buffer_size,
-            #[cfg(feature="simple_graphics")]
-            simple_vertex_buffer_size:self.simple_vertex_buffer_size,
-            #[cfg(feature="text_graphics")]
-            text_vertex_buffer_size:self.text_vertex_buffer_size,
-        };
 
         let mouse_cursor_icon_settings=self.mouse_cursor_icon_settings;
 
         (
             window_builder,
             context_builder,
-            graphics_settings,
+            self.graphics_base_settings,
             self.general,
             mouse_cursor_icon_settings,
         )

@@ -107,35 +107,38 @@ pub trait Window:Sized{
         // Настройка
         setting(monitors,&mut window_settings);
 
+
+        let mut window_builder=WindowBuilder::default();
+        window_builder.window=window_settings.window_attributes;
+
+        let mut context_builder=ContextBuilder::new();
+        context_builder.gl_attr.vsync=window_settings.vsync;
+        context_builder.gl_attr.debug=window_settings.debug;
+
+        context_builder.pf_reqs.hardware_accelerated=window_settings.hardware_accelerated;
+        context_builder.pf_reqs.color_bits=window_settings.color_bits;
+        context_builder.pf_reqs.float_color_buffer=window_settings.float_color_buffer;
+        context_builder.pf_reqs.alpha_bits=window_settings.alpha_bits;
+        context_builder.pf_reqs.depth_bits=window_settings.depth_bits;
+        context_builder.pf_reqs.stencil_bits=window_settings.stencil_bits;
+        context_builder.pf_reqs.double_buffer=window_settings.double_buffer;
+        context_builder.pf_reqs.multisampling=window_settings.multisampling;
+        context_builder.pf_reqs.stereoscopy=window_settings.stereoscopy;
+        context_builder.pf_reqs.srgb=window_settings.srgb;
+        context_builder.pf_reqs.release_behavior=window_settings.release_behavior;
+
         #[cfg(feature="mouse_cursor_icon")]
-        let (window_builder,context_builder,graphics_settings,general_settings,mouse_cursor_icon_settings)
-                =window_settings.devide::<PathBuf>();
-
-        #[cfg(not(feature="mouse_cursor_icon"))]
-        let (window_builder,context_builder,graphics_settings,general_settings)
-                =window_settings.devide();
+        let mouse_cursor_icon_settings=window_settings.mouse_cursor_icon_settings;
 
 
-        #[cfg(feature="mouse_cursor_icon")]
-        let window=Self::raw(
+        Self::raw(
             window_builder,
             context_builder,
-            graphics_settings,
+            window_settings.graphics_base_settings,
             event_loop,
-            general_settings,
-            mouse_cursor_icon_settings,
-        );
-
-        #[cfg(not(feature="mouse_cursor_icon"))]
-        let window=Self::raw(
-            window_builder,
-            context_builder,
-            graphics_settings,
-            event_loop,
-            general_settings,
-        );
-
-        window
+            window_settings.general,
+            #[cfg(feature="mouse_cursor_icon")]mouse_cursor_icon_settings,
+        )
     }
 
     #[inline(always)]

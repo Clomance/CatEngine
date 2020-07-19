@@ -40,6 +40,8 @@ lazy = []
 
 alpha_smoothing = []
 
+file_drop = []
+
 [package.metadata.docs.rs]
 features = [
     "default",

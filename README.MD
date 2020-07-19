@@ -25,7 +25,7 @@ If you use audio feature, alsa delevopment libraries are required for Linux: `li
 
 ## [Release notes](RELEASE-NOTES.MD)
 
-## [Book](book/)
+## [The book](book/README.MD)
 
 ## List of features
 [English version](book/EN/features.md)
