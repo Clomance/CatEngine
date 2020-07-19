@@ -27,7 +27,7 @@ use glium::glutin::{
     NotCurrent,
     monitor::MonitorHandle,
     event_loop::EventLoop,
-    event::MouseScrollDelta,
+    event::{MouseScrollDelta,ModifiersState},
     window::WindowBuilder,
 };
 
@@ -44,7 +44,7 @@ pub trait WindowPage<'a>{
     type Output;
 
     /// Called when the window has been requested to close.
-    fn on_close_requested(&mut self,window:&mut Self::Window);
+    fn on_window_close_requested(&mut self,window:&mut Self::Window);
 
     /// feature != "lazy"
     #[cfg(not(feature="lazy"))]
@@ -68,6 +68,8 @@ pub trait WindowPage<'a>{
 
     fn on_suspended(&mut self,window:&mut Self::Window);
     fn on_resumed(&mut self,window:&mut Self::Window);
+
+    fn on_modifiers_changed(&mut self,window:&mut Self::Window,modifiers:ModifiersState);
 
     /// feature = "file_drop"
     #[cfg(feature="file_drop")]

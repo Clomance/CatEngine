@@ -159,6 +159,15 @@ impl PagedWindow{
             }
         }
     }
+    // Mister Programmer, may I have some loops?
+    //      /\_____/\
+    //     /  o   o  \
+    //    ( ==  ^  == )
+    //     )         (
+    //    (           )
+    //   ( (  )   (  ) )
+    //  (__(__)___(__)__)
+
 
     /// Останавливает обработку событий,
     /// отправляя событие для остановки.
@@ -263,7 +272,7 @@ impl PagedWindow{
                         GWindowEvent::CloseRequested=>{
                             *control_flow=ControlFlow::Exit;
                             close_flag=true;
-                            Exit
+                            CloseRequested
                         }
 
                         // Изменение размера окна
@@ -297,9 +306,10 @@ impl PagedWindow{
                             return
                         }
 
-
                         #[cfg(not(feature="auto_hide"))]
                         GWindowEvent::Focused(f)=>Focused(f),
+
+                        GWindowEvent::ModifiersChanged(modifier)=>ModifiersChanged(modifier),
 
                         #[cfg(feature="file_drop")]
                         GWindowEvent::DroppedFile(path)=>DroppedFile(path),
@@ -325,7 +335,7 @@ impl PagedWindow{
                 Event::RedrawRequested(_)=>{
                     #[cfg(feature="fps_counter")]
                     self.base.count_fps();
-                    Draw
+                    RedrawRequested
                 }
 
                 Event::LoopDestroyed=>WindowEvent::EventLoopClosed,
@@ -368,7 +378,7 @@ impl PagedWindow{
                         GWindowEvent::CloseRequested=>{
                             *control_flow=ControlFlow::Exit;
                             close_flag=true;
-                            Exit
+                            CloseRequested
                         }
 
                         GWindowEvent::Resized(size)=>window_resized!(size,self),
@@ -447,7 +457,7 @@ impl PagedWindow{
                         GWindowEvent::CloseRequested=>{
                             *control_flow=ControlFlow::Exit;
                             state=EventLoopState::CloseRequested;
-                            page.on_close_requested(self);
+                            page.on_window_close_requested(self);
                         }
 
                         // Изменение размера окна
@@ -483,6 +493,8 @@ impl PagedWindow{
 
                         #[cfg(not(feature="auto_hide"))]
                         GWindowEvent::Focused(f)=>page.on_window_focused(self,f),
+
+                        GWindowEvent::ModifiersChanged(modifier)=>page.on_modifiers_changed(self,modifier),
 
                         #[cfg(feature="file_drop")]
                         GWindowEvent::DroppedFile(path)=>page.on_file_dropped(self,path),
@@ -554,7 +566,7 @@ impl PagedWindow{
                         GWindowEvent::CloseRequested=>{ 
                             *control_flow=ControlFlow::Exit;
                             state=EventLoopState::CloseRequested;
-                            page.on_close_requested(self)
+                            page.on_window_close_requested(self)
                         }
 
                         // Изменение размера окна

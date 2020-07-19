@@ -54,7 +54,7 @@
 // re-exports
 pub use glium::{
     self,
-    glutin::event::MouseButton
+    glutin::event::{MouseButton,ModifiersState,MouseScrollDelta},
 };
 
 
@@ -72,7 +72,24 @@ pub mod graphics;
 mod window;
 pub use window::*;
 
-
+//    _.---.._             _.---...__
+// .-'   /\   \          .'  /\     /
+// `.   (  )   \        /   (  )   /
+//   `.  \/   .'\      /`.   \/  .'
+//     ``---''   )    (   ``---''
+//             .';.--.;`.
+//           .' /_...._\ `.
+//         .'   `.a  a.'   `.
+//        (        \/        )
+//         `.___..-'`-..___.'
+//            \          /
+//             `-.____.-'
+//      Henlo, Mister Programmer.
+// If you think there are to many cats, you are mistaken.
+// There can't be too many cats.
+// Cats are cute.
+// I'd better write a good documentation rather than paste cates.
+// But......................... Cats are better.
 
 
 /// RGBA - [f32; 4]

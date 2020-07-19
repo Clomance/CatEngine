@@ -132,6 +132,17 @@ unsafe impl std::marker::Send for AudioSystemCommand{}
 
 const audio_thread_stack_size:usize=1024;
 
+//     /\__/\
+//    /`    '\
+//   |  0  0  |
+//  ===  --  ===
+//   /        \
+//  /          \
+// |            |
+//  \  ||  ||  /
+//   \_oo__oo_/#######o
+// I am watching you, Mister Programmer.
+
 /// Простой аудио движок.
 /// Simple audio engine.
 /// 

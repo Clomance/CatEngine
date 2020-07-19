@@ -8,10 +8,16 @@ A `file_drop` feature - enables the next events:
  - `WindowEvent::DroppedFile(PathBuf)`
 and related functions.
 
+A new event - `WindowEvent::ModifiersChanged(ModifiersState)`.
+
 ### Other
 
 Changes in the `WindowSettings` fields.
 
+
+The `WindowEvent::Draw` event has been renamed to `WindowEvent::RedrawRequested`.
+The `WindowEvent::Exit` event has been renamed to `WindowEvent::CloseRequested`.
+The `WindowPage::on_close_requested()` function has been renamed to `WindowPage::on_window_close_requested()`.
 
 # Version 0.2.1
 

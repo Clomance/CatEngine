@@ -5,7 +5,8 @@ use cat_engine::{
     WindowPage,
     MouseButton,
     KeyboardButton,
-    glium::glutin::event::MouseScrollDelta,
+    MouseScrollDelta,
+    ModifiersState,
 };
 
 use std::path::PathBuf;
@@ -22,7 +23,7 @@ impl<'a> WindowPage<'a> for Page<'a>{
     type Window=DynamicWindow<'a>;
     type Output=();
 
-    fn on_close_requested(&mut self,_window:&mut DynamicWindow<'a>){
+    fn on_window_close_requested(&mut self,_window:&mut DynamicWindow<'a>){
         println!("Closing");
     }
 
@@ -83,6 +84,8 @@ impl<'a> WindowPage<'a> for Page<'a>{
 
     fn on_window_focused(&mut self,_window:&mut DynamicWindow<'a>,_:bool){}
 
+    fn on_modifiers_changed(&mut self,_window:&mut DynamicWindow<'a>,_modifiers:ModifiersState){}
+
     #[cfg(feature="file_drop")]
     fn on_file_dropped(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}
     #[cfg(feature="file_drop")]
@@ -101,7 +104,7 @@ impl<'a> WindowPage<'a> for Page2{
     type Window=DynamicWindow<'a>;
     type Output=();
 
-    fn on_close_requested(&mut self,_window:&mut DynamicWindow<'a>){
+    fn on_window_close_requested(&mut self,_window:&mut DynamicWindow<'a>){
         println!("Closing");
     }
 
@@ -146,6 +149,8 @@ impl<'a> WindowPage<'a> for Page2{
     fn on_window_moved(&mut self,_window:&mut DynamicWindow<'a>,_:[i32;2]){}
 
     fn on_window_focused(&mut self,_window:&mut DynamicWindow<'a>,_:bool){}
+
+    fn on_modifiers_changed(&mut self,_window:&mut DynamicWindow<'a>,_modifiers:ModifiersState){}
 
     #[cfg(feature="file_drop")]
     fn on_file_dropped(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}

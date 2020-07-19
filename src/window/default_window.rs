@@ -187,7 +187,7 @@ impl DefaultWindow{
                 Event::WindowEvent{event,..}=>{
                     match event{
                         // Запрос на закрытие окна
-                        GWindowEvent::CloseRequested=>Exit,
+                        GWindowEvent::CloseRequested=>CloseRequested,
 
                         // Изменение размера окна
                         GWindowEvent::Resized(size)=>window_resized!(size,self),
@@ -217,7 +217,9 @@ impl DefaultWindow{
 
                         // Потеря фокуса
                         #[cfg(not(feature="auto_hide"))]
-                        GWindowEvent::Focused(f)=>WindowEvent::Focused(f),
+                        GWindowEvent::Focused(f)=>Focused(f),
+
+                        GWindowEvent::ModifiersChanged(modifier)=>ModifiersChanged(modifier),
 
                         // Файл перенесён в окно
                         #[cfg(feature="file_drop")]
@@ -244,7 +246,7 @@ impl DefaultWindow{
                 Event::RedrawRequested(_)=>{
                     #[cfg(feature="fps_counter")]
                     self.base.count_fps();
-                    Draw
+                    RedrawRequested
                 }
 
                 _=>return  // Игнорирование остальных событий
@@ -268,7 +270,7 @@ impl DefaultWindow{
                     match event{
                         GWindowEvent::CloseRequested=>{ // Остановка цикла обработки событий,
                             *control_flow=ControlFlow::Exit;
-                            Exit
+                            CloseRequested
                         }
 
                         GWindowEvent::Resized(size)=>{

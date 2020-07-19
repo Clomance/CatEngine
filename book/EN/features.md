@@ -47,6 +47,8 @@ Only the next events are able in minimized state:
  - closing the window, `WindowEvent::Exit`
  - resizing the window, `WindowEvent::Resized(size)`
 
+It's usefull for fullscreen application.
+
 ##### fps_counter
 
 Adds a simple fps counter. The value updates every second.

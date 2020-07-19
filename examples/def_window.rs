@@ -13,7 +13,7 @@ fn main(){
 
     while let Some(event)=window.next_event(){
         match event{
-            WindowEvent::Exit=>{
+            WindowEvent::CloseRequested=>{
                 break
             }
 
@@ -37,9 +37,8 @@ fn main(){
                 }
             }
 
-            WindowEvent::Draw=>{
-                #[cfg(eature="lazy")]
-
+            WindowEvent::RedrawRequested=>{
+                #[cfg(feature="lazy")]
                 if rect.colour[0]>=1f32{
                     if rect.colour[1]>=1f32{
                         if rect.colour[2]>=1f32{

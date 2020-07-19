@@ -5,7 +5,8 @@ use cat_engine::{
     WindowEvent,
     MouseButton,
     KeyboardButton,
-    glium::glutin::event::MouseScrollDelta
+    MouseScrollDelta,
+    ModifiersState
 };
 
 use std::path::PathBuf;
@@ -18,7 +19,7 @@ impl WindowPage<'static> for Page{
     type Window=PagedWindow;
     type Output=();
 
-    fn on_close_requested(&mut self,_window:&mut PagedWindow){
+    fn on_window_close_requested(&mut self,_window:&mut PagedWindow){
         println!("Closing");
     }
 
@@ -60,6 +61,8 @@ impl WindowPage<'static> for Page{
 
     fn on_window_focused(&mut self,_window:&mut PagedWindow,_:bool){}
 
+    fn on_modifiers_changed(&mut self,_window:&mut PagedWindow,_modifiers:ModifiersState){}
+
     #[cfg(feature="file_drop")]
     fn on_file_dropped(&mut self,_:&mut PagedWindow,_:PathBuf){}
     #[cfg(feature="file_drop")]
@@ -86,10 +89,10 @@ fn main(){
 
     window.run(|window,event|{
         match event{
-            WindowEvent::Exit=>{
+            WindowEvent::CloseRequested=>{
                 println!("Exit");
             }
-            WindowEvent::Draw=>{
+            WindowEvent::RedrawRequested=>{
                 // I'm gonna draw ya
                 window.draw(|p,g|{
                     g.clear_colour([1.0;4]);

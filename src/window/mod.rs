@@ -69,10 +69,10 @@ pub enum WindowEvent{
     /// Кадр окна можно обновить.
     /// 
     /// The window should be redrawn.
-    Draw,
+    RedrawRequested,
 
     /// The window has been requested to close.
-    Exit,
+    CloseRequested,
 
     /// Event loop has been stopped.
     /// 
@@ -124,9 +124,9 @@ pub enum WindowEvent{
     KeyboardReleased(KeyboardButton),
     CharacterInput(char),
 
-    /// Shift, Ctrl, Alt или Logo нажаты.
+    /// Состояние Shift, Ctrl, Alt или Logo изменено.
     /// 
-    /// Shift, Ctrl, Alt or Logo pressed.
+    /// Shift, Ctrl, Alt or Logo state has been changed.
     ModifiersChanged(ModifiersState),
  
     /// A file has been dropped into the window.

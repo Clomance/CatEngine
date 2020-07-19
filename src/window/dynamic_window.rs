@@ -168,6 +168,7 @@ impl<'a> DynamicWindow<'a>{
         }
     }
 
+
     /// Останавливает обработку событий,
     /// отправляя событие для остановки.
     /// 
@@ -257,7 +258,7 @@ impl<'a> DynamicWindow<'a>{
                         GWindowEvent::CloseRequested=>{
                             *control_flow=ControlFlow::Exit;
                             close_flag=true;
-                            page.on_close_requested(self);
+                            page.on_window_close_requested(self);
                         }
 
                         // Изменение размера окна
@@ -292,6 +293,8 @@ impl<'a> DynamicWindow<'a>{
 
                         #[cfg(not(feature="auto_hide"))]
                         GWindowEvent::Focused(f)=>page.on_window_focused(self,f),
+
+                        GWindowEvent::ModifiersChanged(modifier)=>page.on_modifiers_changed(self,modifier),
 
                         #[cfg(feature="file_drop")]
                         GWindowEvent::DroppedFile(path)=>page.on_file_dropped(self,path),
@@ -374,7 +377,7 @@ impl<'a> DynamicWindow<'a>{
                         GWindowEvent::CloseRequested=>{ // Остановка цикла обработки событий,
                             *control_flow=ControlFlow::Exit;
                             close_flag=true;
-                            page.on_close_requested(self)
+                            page.on_window_close_requested(self)
                         }
 
                         GWindowEvent::Resized(size)=>window_resized!(size,page,self),
