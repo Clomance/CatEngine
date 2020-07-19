@@ -1,3 +1,18 @@
+# Version 0.2.2
+
+### Added
+
+A `file_drop` feature - enables the next events:
+ - `WindowEvent::HoveredFileCancelled`
+ - `WindowEvent::HoveredFile(PathBuf)`
+ - `WindowEvent::DroppedFile(PathBuf)`
+and related functions.
+
+### Other
+
+Changes in the `WindowSettings` fields.
+
+
 # Version 0.2.1
 
 ### Added

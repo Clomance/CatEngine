@@ -301,8 +301,11 @@ impl PagedWindow{
                         #[cfg(not(feature="auto_hide"))]
                         GWindowEvent::Focused(f)=>Focused(f),
 
+                        #[cfg(feature="file_drop")]
                         GWindowEvent::DroppedFile(path)=>DroppedFile(path),
+                        #[cfg(feature="file_drop")]
                         GWindowEvent::HoveredFile(path)=>HoveredFile(path),
+                        #[cfg(feature="file_drop")]
                         GWindowEvent::HoveredFileCancelled=>HoveredFileCancelled,
 
                         _=>return // Игнорирование остальных событий
@@ -481,8 +484,11 @@ impl PagedWindow{
                         #[cfg(not(feature="auto_hide"))]
                         GWindowEvent::Focused(f)=>page.on_window_focused(self,f),
 
+                        #[cfg(feature="file_drop")]
                         GWindowEvent::DroppedFile(path)=>page.on_file_dropped(self,path),
+                        #[cfg(feature="file_drop")]
                         GWindowEvent::HoveredFile(path)=>page.on_file_hovered(self,path),
+                        #[cfg(feature="file_drop")]
                         GWindowEvent::HoveredFileCancelled=>page.on_file_hovered_canceled(self),
 
                         _=>{} // Игнорирование остальных событий

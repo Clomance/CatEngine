@@ -80,8 +80,11 @@ impl WindowPage<'static> for Page{
 
     fn on_window_focused(&mut self,_window:&mut PagedWindow,_:bool){}
 
+    #[cfg(feature="file_drop")]
     fn on_file_dropped(&mut self,_:&mut PagedWindow,_:PathBuf){}
+    #[cfg(feature="file_drop")]
     fn on_file_hovered(&mut self,_:&mut PagedWindow,_:PathBuf){}
+    #[cfg(feature="file_drop")]
     fn on_file_hovered_canceled(&mut self,_:&mut PagedWindow){}
 
     fn on_event_loop_closed(&mut self,_:&mut PagedWindow){}

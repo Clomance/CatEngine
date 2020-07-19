@@ -83,8 +83,11 @@ impl<'a> WindowPage<'a> for Page<'a>{
 
     fn on_window_focused(&mut self,_window:&mut DynamicWindow<'a>,_:bool){}
 
+    #[cfg(feature="file_drop")]
     fn on_file_dropped(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}
+    #[cfg(feature="file_drop")]
     fn on_file_hovered(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}
+    #[cfg(feature="file_drop")]
     fn on_file_hovered_canceled(&mut self,_:&mut DynamicWindow<'a>){}
 
     fn on_event_loop_closed(&mut self,_:&mut DynamicWindow<'a>){}
@@ -144,8 +147,11 @@ impl<'a> WindowPage<'a> for Page2{
 
     fn on_window_focused(&mut self,_window:&mut DynamicWindow<'a>,_:bool){}
 
+    #[cfg(feature="file_drop")]
     fn on_file_dropped(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}
+    #[cfg(feature="file_drop")]
     fn on_file_hovered(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}
+    #[cfg(feature="file_drop")]
     fn on_file_hovered_canceled(&mut self,_:&mut DynamicWindow<'a>){}
 
     fn on_event_loop_closed(&mut self,_:&mut DynamicWindow<'a>){}

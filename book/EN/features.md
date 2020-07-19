@@ -55,6 +55,14 @@ Adds a simple fps counter. The value updates every second.
 
 Adds functions for drawing with changing alpha channel.
 
+##### file_drop
+
+Enables the next events:
+ - `WindowEvent::HoveredFileCancelled`
+ - `WindowEvent::HoveredFile(PathBuf)`
+ - `WindowEvent::DroppedFile(PathBuf)`
+and related functions.
+
 
 
 # PagedWindow and DynamicWindow

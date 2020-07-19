@@ -278,7 +278,7 @@ impl<'a> DynamicWindow<'a>{
                         // Обработка действий с клавишами клавиатуры
                         GWindowEvent::KeyboardInput{input,..}=>keyboard_input!(input,page,self),
 
-                        // Получение вводимых букв
+                        // Получение вводимых символов
                         GWindowEvent::ReceivedCharacter(character)
                                 if !character.is_ascii_control()=>page.on_character_recieved(self,character),
 
@@ -293,8 +293,11 @@ impl<'a> DynamicWindow<'a>{
                         #[cfg(not(feature="auto_hide"))]
                         GWindowEvent::Focused(f)=>page.on_window_focused(self,f),
 
+                        #[cfg(feature="file_drop")]
                         GWindowEvent::DroppedFile(path)=>page.on_file_dropped(self,path),
+                        #[cfg(feature="file_drop")]
                         GWindowEvent::HoveredFile(path)=>page.on_file_hovered(self,path),
+                        #[cfg(feature="file_drop")]
                         GWindowEvent::HoveredFileCancelled=>page.on_file_hovered_canceled(self),
 
                         _=>{} // Игнорирование остальных событий

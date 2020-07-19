@@ -220,8 +220,11 @@ impl DefaultWindow{
                         GWindowEvent::Focused(f)=>WindowEvent::Focused(f),
 
                         // Файл перенесён в окно
+                        #[cfg(feature="file_drop")]
                         GWindowEvent::DroppedFile(path)=>DroppedFile(path),
+                        #[cfg(feature="file_drop")]
                         GWindowEvent::HoveredFile(path)=>HoveredFile(path),
+                        #[cfg(feature="file_drop")]
                         GWindowEvent::HoveredFileCancelled=>HoveredFileCancelled,
 
                         _=>return // Игнорирование остальных событий

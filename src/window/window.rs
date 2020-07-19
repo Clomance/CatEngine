@@ -69,8 +69,14 @@ pub trait WindowPage<'a>{
     fn on_suspended(&mut self,window:&mut Self::Window);
     fn on_resumed(&mut self,window:&mut Self::Window);
 
+    /// feature = "file_drop"
+    #[cfg(feature="file_drop")]
     fn on_file_dropped(&mut self,window:&mut Self::Window,path:PathBuf);
+    /// feature = "file_drop"
+    #[cfg(feature="file_drop")]
     fn on_file_hovered(&mut self,window:&mut Self::Window,path:PathBuf);
+    /// feature = "file_drop"
+    #[cfg(feature="file_drop")]
     fn on_file_hovered_canceled(&mut self,window:&mut Self::Window);
 
     /// Event loop has been stopped.
@@ -115,17 +121,7 @@ pub trait Window:Sized{
         context_builder.gl_attr.vsync=window_settings.vsync;
         context_builder.gl_attr.debug=window_settings.debug;
 
-        context_builder.pf_reqs.hardware_accelerated=window_settings.hardware_accelerated;
-        context_builder.pf_reqs.color_bits=window_settings.color_bits;
-        context_builder.pf_reqs.float_color_buffer=window_settings.float_color_buffer;
-        context_builder.pf_reqs.alpha_bits=window_settings.alpha_bits;
-        context_builder.pf_reqs.depth_bits=window_settings.depth_bits;
-        context_builder.pf_reqs.stencil_bits=window_settings.stencil_bits;
-        context_builder.pf_reqs.double_buffer=window_settings.double_buffer;
-        context_builder.pf_reqs.multisampling=window_settings.multisampling;
-        context_builder.pf_reqs.stereoscopy=window_settings.stereoscopy;
-        context_builder.pf_reqs.srgb=window_settings.srgb;
-        context_builder.pf_reqs.release_behavior=window_settings.release_behavior;
+        context_builder.pf_reqs=window_settings.pixel_fmt_req;
 
         #[cfg(feature="mouse_cursor_icon")]
         let mouse_cursor_icon_settings=window_settings.mouse_cursor_icon_settings;
@@ -202,6 +198,7 @@ pub trait Window:Sized{
     /// 
     /// feature = "alpha_smoothing"
     #[cfg(feature="alpha_smoothing")]
+    #[inline(always)]
     fn draw_smooth<F:FnOnce(f32,&mut DrawParameters,&mut Graphics)>(&mut self,f:F)->Result<f32,SwapBuffersError>{
         self.window_base_mut().draw_smooth(f)
     }
@@ -226,7 +223,7 @@ pub trait Window:Sized{
 
 
 
-    /// feature = "mouse_cursor_icon
+    /// feature = "mouse_cursor_icon"
     #[cfg(feature="mouse_cursor_icon")]
     #[inline(always)]
     fn set_user_cursor_visible(&mut self,visible:bool){
