@@ -170,9 +170,9 @@ impl DefaultWindow{
                     self.base.next_update+=self.base.update_interval;
                 }
             }
-            
+
             *control_flow=ControlFlow::Exit;
-            
+
             let next_event=match event{
                 Event::UserEvent(event)=>match event{
                     #[cfg(not(feature="lazy"))]
@@ -184,53 +184,51 @@ impl DefaultWindow{
                 }
 
                 // События окна
-                Event::WindowEvent{event,..}=>{
-                    match event{
-                        // Запрос на закрытие окна
-                        GWindowEvent::CloseRequested=>CloseRequested,
+                Event::WindowEvent{event,..}=>match event{
+                    // Запрос на закрытие окна
+                    GWindowEvent::CloseRequested=>CloseRequested,
 
-                        // Изменение размера окна
-                        GWindowEvent::Resized(size)=>window_resized!(size,self),
+                    // Изменение размера окна
+                    GWindowEvent::Resized(size)=>window_resized!(size,self),
 
-                        // Сдвиг окна
-                        GWindowEvent::Moved(pos)=>Moved([pos.x,pos.y]),
+                    // Сдвиг окна
+                    GWindowEvent::Moved(pos)=>Moved([pos.x,pos.y]),
 
-                        // Сдвиг мыши (сдвиг за пределы окна игнорируется)
-                        GWindowEvent::CursorMoved{position,..}=>cursor_moved!(position),
+                    // Сдвиг мыши (сдвиг за пределы окна игнорируется)
+                    GWindowEvent::CursorMoved{position,..}=>cursor_moved!(position),
 
-                        // Прокрутка колёсика мыши
-                        GWindowEvent::MouseWheel{delta,..}=>MouseWheelScroll(delta),
+                    // Прокрутка колёсика мыши
+                    GWindowEvent::MouseWheel{delta,..}=>MouseWheelScroll(delta),
 
-                        // Обработка действий с кнопками мыши
-                        GWindowEvent::MouseInput{button,state,..}=>mouse_input!(button,state,self),
+                    // Обработка действий с кнопками мыши
+                    GWindowEvent::MouseInput{button,state,..}=>mouse_input!(button,state,self),
 
-                        // Обработка действий с клавишами клавиатуры
-                        GWindowEvent::KeyboardInput{input,..}=>keyboard_input!(input),
+                    // Обработка действий с клавишами клавиатуры
+                    GWindowEvent::KeyboardInput{input,..}=>keyboard_input!(input),
 
-                        // Получение вводимых букв
-                        GWindowEvent::ReceivedCharacter(character)
-                                if !character.is_ascii_control()=>CharacterInput(character),
+                    // Получение вводимых букв
+                    GWindowEvent::ReceivedCharacter(character)
+                            if !character.is_ascii_control()=>CharacterInput(character),
 
-                        // Сворачивание при потере фокуса
-                        #[cfg(feature="auto_hide")]
-                        GWindowEvent::Focused(f) if !f=>self.lost_focus(),
+                    // Сворачивание при потере фокуса
+                    #[cfg(feature="auto_hide")]
+                    GWindowEvent::Focused(f) if !f=>self.lost_focus(),
 
-                        // Потеря фокуса
-                        #[cfg(not(feature="auto_hide"))]
-                        GWindowEvent::Focused(f)=>Focused(f),
+                    // Потеря фокуса
+                    #[cfg(not(feature="auto_hide"))]
+                    GWindowEvent::Focused(f)=>Focused(f),
 
-                        GWindowEvent::ModifiersChanged(modifier)=>ModifiersChanged(modifier),
+                    GWindowEvent::ModifiersChanged(modifier)=>ModifiersChanged(modifier),
 
-                        // Файл перенесён в окно
-                        #[cfg(feature="file_drop")]
-                        GWindowEvent::DroppedFile(path)=>DroppedFile(path),
-                        #[cfg(feature="file_drop")]
-                        GWindowEvent::HoveredFile(path)=>HoveredFile(path),
-                        #[cfg(feature="file_drop")]
-                        GWindowEvent::HoveredFileCancelled=>HoveredFileCancelled,
+                    // Файл перенесён в окно
+                    #[cfg(feature="file_drop")]
+                    GWindowEvent::DroppedFile(path)=>DroppedFile(path),
+                    #[cfg(feature="file_drop")]
+                    GWindowEvent::HoveredFile(path)=>HoveredFile(path),
+                    #[cfg(feature="file_drop")]
+                    GWindowEvent::HoveredFileCancelled=>HoveredFileCancelled,
 
-                        _=>return // Игнорирование остальных событий
-                    }
+                    _=>return // Игнорирование остальных событий
                 }
 
                 Event::Suspended=>Suspended,

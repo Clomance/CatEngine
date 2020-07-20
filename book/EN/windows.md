@@ -1,5 +1,36 @@
 # General
 
+There are three types of windows. They differ in speed and capabilities (they will be discussed separately below).
+
+Всего три вида окон. Отличаются они по скорости работы и возможностям (ниже будут рассмотрены по отдельности).
+
+Threre are two functions to create a window:
+ * with a closure - gives the default settings and the list of monitors (to set to fullscreen)
+```
+let mut window=DefaultWindow::new(|monitors,settings|{
+    let monitor=monitors.remove(0);
+    let fullscreen=cat_engine::glium::glutin::window::Fullscreen::Borderless(monitor);
+    window_settings.window_attributes.fullscreen=Some(fullscreen);
+}).unwrap();
+```
+
+* with fully-manually setting
+```
+let graphics_settings=GraphicsSettings::new();
+let general_settings=GeneralSettings::new();
+let context_builder=ContextBuilder::new();
+let window_builder=WindowBuilder::default();
+let event_loop=EventLoop::<InnerWindowEvent>::with_user_event();
+
+let mut window=PagedWindow::raw(
+    window_builder,
+    context_builder,
+    graphics_settings,
+    event_loop,
+    general_settings,
+).unwrap();
+```
+
 Windows supports the next events:
  - requested to close the window
  - changed the size or the position of the window
@@ -17,6 +48,7 @@ Windows supports the next events:
 A window base with graphic functions included.
 
 You can create you own window with it.
+All it's field are public.
 
 It also includes almost all the features.
 

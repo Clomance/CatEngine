@@ -125,17 +125,13 @@ pub trait Window:Sized{
 
         context_builder.pf_reqs=window_settings.pixel_fmt_req;
 
-        #[cfg(feature="mouse_cursor_icon")]
-        let mouse_cursor_icon_settings=window_settings.mouse_cursor_icon_settings;
-
-
         Self::raw(
             window_builder,
             context_builder,
             window_settings.graphics_base_settings,
             event_loop,
             window_settings.general,
-            #[cfg(feature="mouse_cursor_icon")]mouse_cursor_icon_settings,
+            #[cfg(feature="mouse_cursor_icon")]window_settings.mouse_cursor_icon_settings,
         )
     }
 
