@@ -31,11 +31,11 @@ let mut window=PagedWindow::raw(
 ).unwrap();
 ```
 
-Windows supports the next events:
- - requested to close the window
- - changed the size or the position of the window
+Windows support the next events:
+ - requests to close the window
+ - changes of the size or the position of the window
  - updates (only with `feature != "lazy"`)
- - requested to redraw the window
+ - requests to redraw the window
  - the window has been suspended or resumed
  - the event loop has been stopped (to close a 'page' for `PagedWindow` и `DynamicWindow`)
  - the window gained or lost focus
