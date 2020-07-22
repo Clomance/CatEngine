@@ -1,4 +1,4 @@
-# Version 0.2.2
+# 0.3.0
 
 ### Added
 
@@ -10,14 +10,26 @@ and related functions.
 
 A new event - `WindowEvent::ModifiersChanged(ModifiersState)`.
 
+Rotating functions for simple objects.
+
+### Removed
+
+User's mouse cursor and everything related to it.
+
 ### Other
 
 Changes in the `WindowSettings` fields.
 
-
 The `WindowEvent::Draw` event has been renamed to `WindowEvent::RedrawRequested`.
 The `WindowEvent::Exit` event has been renamed to `WindowEvent::CloseRequested`.
 The `WindowPage::on_close_requested()` function has been renamed to `WindowPage::on_window_close_requested()`.
+
+The range system for simple objects has been replaced with an object one.
+Now you can add an object to the array and then quickly draw it or the whole array.
+
+Some changes in the `SimpleObject` trait.
+
+
 
 # Version 0.2.1
 

@@ -42,6 +42,9 @@ alpha_smoothing = []
 
 file_drop = []
 
+# 2D = []
+# 3D = []
+
 [package.metadata.docs.rs]
 features = [
     "default",

@@ -2,17 +2,19 @@ use cat_engine::{
     PagedWindow,
     Window,
     WindowPage,
-    WindowEvent,
     MouseButton,
     KeyboardButton,
     MouseScrollDelta,
-    ModifiersState
+    ModifiersState,
+    glium::draw_parameters::PolygonMode,
 };
 
 use std::path::PathBuf;
 
 pub struct Page{
     rect:cat_engine::graphics::Rectangle,
+    angle:f32,
+    shift:[f32;2]
 }
 
 impl WindowPage<'static> for Page{
@@ -24,12 +26,23 @@ impl WindowPage<'static> for Page{
     }
 
     #[cfg(not(feature="lazy"))]
-    fn on_update_requested(&mut self,_window:&mut PagedWindow){}
+    fn on_update_requested(&mut self,_window:&mut PagedWindow){
+        self.angle+=0.01;
+        self.shift[0]+=1f32;
+    }
 
     fn on_redraw_requested(&mut self,window:&mut PagedWindow){
         window.draw(|p,g|{
             g.clear_colour([1.0;4]);
             self.rect.draw(p,g).unwrap();
+
+            p.polygon_mode=PolygonMode::Line;
+            // rotating and drawing
+            self.rect.draw_rotate([150f32;2],self.angle,p,g).unwrap();
+
+            p.polygon_mode=PolygonMode::Fill;
+            // shifting and drawing
+            self.rect.draw_shift(self.shift,p,g).unwrap();
         }).unwrap()
     }
 
@@ -74,39 +87,14 @@ impl WindowPage<'static> for Page{
 }
 
 fn main(){
-    // One way
     let rect=cat_engine::graphics::Rectangle::new([100.0;4],[1.0,0.0,0.0,1.0]);
     let mut page=Page{
         rect,
+        shift:[0f32;2],
+        angle:0f32,
     };
 
     let mut window=PagedWindow::new(|_,_|{}).unwrap();
 
     window.run_page(&mut page);
-
-    // or another
-    let rect=cat_engine::graphics::Rectangle::new([100.0;4],[0.0,0.0,0.0,1.0]);
-
-    window.run(|window,event|{
-        match event{
-            WindowEvent::CloseRequested=>{
-                println!("Exit");
-            }
-            WindowEvent::RedrawRequested=>{
-                // I'm gonna draw ya
-                window.draw(|p,g|{
-                    g.clear_colour([1.0;4]);
-                    rect.draw(p,g).unwrap();
-                }).unwrap();
-            }
-            WindowEvent::KeyboardPressed(button)=>match button{
-                KeyboardButton::Escape=>{
-                    // I'm gonna break ya, break ya, break ya, break ya
-                    let _=window.stop_events(); // break out of the loop
-                }
-                _=>{}
-            }
-            _=>{}
-        }
-    });
 }

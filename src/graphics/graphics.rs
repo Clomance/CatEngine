@@ -6,7 +6,7 @@ use crate::image::{ImageBase,Texture};
 use super::TextureGraphics;
 
 #[cfg(feature="simple_graphics")]
-use super::{SimpleGraphics,SimpleObject};
+use super::{SimpleGraphics,SimpleObject,SimpleGraphicsSettings};
 
 #[cfg(feature="text_graphics")]
 use crate::text::Character;
@@ -36,16 +36,14 @@ use core::ops::Range;
 #[derive(Clone,Debug)]
 pub struct GraphicsSettings{
     /// The default is 8.
-    ///
+    /// 
     /// feature = "texture_graphics"
     #[cfg(feature="texture_graphics")]
     pub texture_vertex_buffer_size:usize,
 
-    /// The default is 100.
-    /// 
     /// feature = "simple_graphics"
     #[cfg(feature="simple_graphics")]
-    pub simple_vertex_buffer_size:usize,
+    pub simple:SimpleGraphicsSettings,
 
     /// The default is 2000.
     /// 
@@ -60,7 +58,7 @@ impl GraphicsSettings{
             #[cfg(feature="texture_graphics")]
             texture_vertex_buffer_size:8usize,
             #[cfg(feature="simple_graphics")]
-            simple_vertex_buffer_size:100usize,
+            simple:SimpleGraphicsSettings::new(),
             #[cfg(feature="text_graphics")]
             text_vertex_buffer_size:2000usize,
         }
@@ -93,7 +91,7 @@ impl Graphics2D{
             #[cfg(feature="texture_graphics")]
             texture:TextureGraphics::new(window,settings.texture_vertex_buffer_size,glsl),
             #[cfg(feature="simple_graphics")]
-            simple:SimpleGraphics::new(window,settings.simple_vertex_buffer_size,glsl),
+            simple:SimpleGraphics::new(window,settings.simple,glsl),
             #[cfg(feature="text_graphics")]
             text:TextGraphics::new(window,settings.text_vertex_buffer_size,glsl),
         }
@@ -137,22 +135,6 @@ impl Graphics2D{
         self.texture.bind_range(range,&data)
     }
 
-
-    /// Сохраняет координаты простого объекта в выбранной области в буфере.
-    /// Возращает номер области, если она не выходит за границы буфера.
-    /// 
-    /// Для вывода объекта из этой области используется функция 'draw_range_simple'.
-    /// 
-    /// Saves vertexes of the simple object to the given range of the vertex buffer.
-    /// Returns the index of the range.
-    /// 
-    /// Use 'draw_range_simple' for drawing.
-    #[cfg(feature="simple_graphics")]
-    pub fn bind_simple<'a,O:SimpleObject<'a>>(&mut self,range:Range<usize>,object:&O)->Option<usize>{
-        let data=object.vertex_buffer();
-        self.simple.bind_range(range,&data)
-    }
-
     /// Обновляет значения области массива для текстур.
     /// 
     /// Только для невращающихся изображений.
@@ -179,14 +161,6 @@ impl Graphics2D{
         self.texture.rewrite_range(range,&data)
     }
 
-    /// Обновляет значения области массива простых объектов.
-    /// 
-    /// Rewrites the range with new object.
-    #[cfg(feature="simple_graphics")]
-    pub fn rewrite_range_simple<'a,O:SimpleObject<'a>>(&mut self,range:usize,object:&O)->Option<()>{
-        let data=object.vertex_buffer();
-        self.simple.rewrite_range(range,&data)
-    }
 
     /// Удаляет и возращает последюю область из массива областей текстур.
     /// 
@@ -197,14 +171,6 @@ impl Graphics2D{
         self.texture.pop_range()
     }
 
-    /// Удаляет и возращает последюю область из массива областей простых объектов.
-    /// 
-    /// Removes the last range from the range buffer of simple objects.
-    #[inline(always)]
-    #[cfg(feature="simple_graphics")]
-    pub fn pop_simple(&mut self)->Option<Range<usize>>{
-        self.simple.pop_range()
-    }
 
     /// Удаляет область из массива областей текстур.
     /// 
@@ -215,14 +181,6 @@ impl Graphics2D{
         self.texture.unbind(index)
     }
 
-    /// Удаляет область из массива областей простых объектов.
-    /// 
-    /// Removes the range from the range buffer of simple objects.
-    #[inline(always)]
-    #[cfg(feature="simple_graphics")]
-    pub fn unbind_simple(&mut self,index:usize){
-        self.simple.unbind(index)
-    }
 
     #[cfg(feature="texture_graphics")]
     fn draw_range_image(
@@ -289,25 +247,20 @@ impl Graphics2D{
             frame
         )
     }
+}
+
+/// # Функции для работы с объектами. Functions to work with objects.
+impl Graphics2D{
+    #[cfg(feature="simple_graphics")]
+    #[inline(always)]
+    pub fn add_plain_object<O:SimpleObject>(&mut self,object:&O)->Option<usize>{
+        self.simple.push_object(object)
+    }
 
     #[cfg(feature="simple_graphics")]
-    fn draw_range_simple<'a,O:SimpleObject<'a>>(
-        &self,
-        index:usize,
-        object:&O,
-        draw_parameters:&mut DrawParameters,
-        frame:&mut Frame
-    )->Result<(),DrawError>{
-        let colour=object.colour();
-        let draw_type=object.indices();
-
-        self.simple.draw_range(
-            index,
-            colour,
-            draw_type,
-            draw_parameters,
-            frame
-        )
+    #[inline(always)]
+    pub fn clear_plain_object_array(&mut self){
+        self.simple.clear_object_array()
     }
 }
 
@@ -338,33 +291,6 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     #[inline(always)]
     pub fn clear_colour(&mut self,colour:[f32;4]){
         self.frame.clear_color(colour[0],colour[1],colour[2],colour[3]);
-    }
-
-    /// Рисует простой объект.
-    /// 
-    /// Draws the simple object.
-    #[inline(always)]
-    #[cfg(feature="simple_graphics")]
-    pub fn draw_simple<'a,O:SimpleObject<'a>>(
-        &mut self,
-        object:&O,
-        draw_parameters:&mut DrawParameters
-    )->Result<(),DrawError>{
-        self.graphics.simple.draw(object,draw_parameters,self.frame)
-    }
-
-    /// Рисует сдвинутый простой объект.
-    /// 
-    /// Draws shifted simple object.
-    #[inline(always)] 
-    #[cfg(feature="simple_graphics")]
-    pub fn draw_shift_simple<'a,O:SimpleObject<'a>>(
-        &mut self,
-        object:&O,
-        shift:[f32;2],
-        draw_parameters:&mut DrawParameters
-    )->Result<(),DrawError>{
-        self.graphics.simple.draw_shift(object,shift,draw_parameters,self.frame)
     }
 
     /// Рисует один символ.
@@ -476,7 +402,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             colour_filter,
             shift,
             draw_parameters,
-            &mut self.frame
+            self.frame
         )
     }
 
@@ -505,26 +431,105 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             rotation_center,
             angle,
             draw_parameters,
-            &mut self.frame
+            self.frame
         )
     }
+}
 
-    /// Рисует простой объект на основе данных из области.
+/// # Функции для работы с простыми объектами. Functions to work with simple objects.
+#[cfg(feature="simple_graphics")]
+impl<'graphics,'frame> Graphics<'graphics,'frame>{
+    /// Рисует простой объект.
     /// 
-    /// Draws the simple object based on data from the range.
+    /// Draws the simple object.
     #[inline(always)]
-    #[cfg(feature="simple_graphics")]
-    pub fn draw_range_simple<'a,O:SimpleObject<'a>>(
+    pub fn draw_simple<O:SimpleObject>(
         &mut self,
-        index:usize,
         object:&O,
         draw_parameters:&mut DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.draw_range_simple(
-            index,
+        self.graphics.simple.draw(object,draw_parameters,self.frame)
+    }
+
+    /// Рисует сдвинутый простой объект.
+    /// 
+    /// Draws shifted simple object.
+    #[inline(always)] 
+    pub fn draw_shift_simple<O:SimpleObject>(
+        &mut self,
+        object:&O,
+        shift:[f32;2],
+        draw_parameters:&mut DrawParameters
+    )->Result<(),DrawError>{
+        self.graphics.simple.draw_shift(object,shift,draw_parameters,self.frame)
+    }
+
+    /// Рисует повёрнутый простой объект.
+    /// 
+    /// Draws the rotated simple object.
+    #[inline(always)]
+    pub fn draw_rotate_simple<O:SimpleObject>(
+        &mut self,object:&O,
+        rotation_center:[f32;2],
+        angle:f32,
+        draw_parameters:&mut DrawParameters
+    )->Result<(),DrawError>{
+        self.graphics.simple.draw_rotate(
             object,
+            rotation_center,
+            angle,
             draw_parameters,
-            self.frame,
+            self.frame
+        )
+    }
+
+    /// Рисует простой объект.
+    /// 
+    /// Draws the simple object.
+    #[inline(always)]
+    pub fn draw_plain_object(
+        &mut self,
+        index:usize,
+        draw_parameters:&DrawParameters
+    )->Result<(),DrawError>{
+        self.graphics.simple.draw_object(index,draw_parameters,self.frame)
+    }
+
+    /// Рисует сдвинутый простой объект.
+    /// 
+    /// Draws the shifted simple object.
+    #[inline(always)]
+    pub fn draw_shift_plain_object(
+        &mut self,
+        index:usize,
+        shift:[f32;2],
+        draw_parameters:&DrawParameters
+    )->Result<(),DrawError>{
+        self.graphics.simple.draw_shift_object(
+            index,
+            shift,
+            draw_parameters,
+            self.frame
+        )
+    }
+
+    /// Рисует повёрнутый простой объект.
+    /// 
+    /// Draws the rotated simple object.
+    #[inline(always)]
+    pub fn draw_rotate_plain_object(
+        &mut self,
+        index:usize,
+        rotation_center:[f32;2],
+        angle:f32,
+        draw_parameters:&DrawParameters
+    )->Result<(),DrawError>{
+        self.graphics.simple.draw_rotate_object(
+            index,
+            rotation_center,
+            angle,
+            draw_parameters,
+            self.frame
         )
     }
 }

@@ -26,15 +26,6 @@ Enables to use functions to work with plain objects.
 
 ### Window additions
 
-##### mouse_cursor_icon
-
-Replaces the default mouse cursor with user's image.
-
-The default path to the image is `./mouse_cursor_icon.png`.
-
-The ImageBase for the image binds to the texture vertex buffer.
-The default range is 4..8.
-
 ##### auto_hide
 
 The window gets minimized when loses focus.

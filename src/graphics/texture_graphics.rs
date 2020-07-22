@@ -163,7 +163,6 @@ impl TextureGraphics{
             colour_filter:image_base.colour_filter,
         };
 
-
         let slice=self.vertex_buffer.slice(0..4).unwrap();
         slice.write(&image_base.rotation_vertex_buffer());
 

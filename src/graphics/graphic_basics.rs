@@ -32,13 +32,12 @@ impl Quadrilateral{
     }
 }
 
-impl<'a> SimpleObject<'a> for Quadrilateral{
-    type Indices=NoIndices;
+impl SimpleObject for Quadrilateral{
     fn colour(&self)->Colour{
         self.colour
     }
 
-    fn point_buffer(&self)->Vec<Vertex2D>{
+    fn vertex_buffer(&self)->Vec<Vertex2D>{
         let mut vec=Vec::with_capacity(4);
 
         for point in &self.points{
@@ -48,8 +47,12 @@ impl<'a> SimpleObject<'a> for Quadrilateral{
         vec
     }
 
-    fn indices(&self)->NoIndices{
-        NoIndices(PrimitiveType::TriangleStrip)
+    fn indices(&self)->Option<Vec<u8>>{
+        None
+    }
+
+    fn primitive_type(&self)->PrimitiveType{
+        PrimitiveType::TriangleStrip
     }
 }
 
@@ -88,24 +91,37 @@ impl Rectangle{
         }
     }
 
+    /// Рисует прямоугольник.
+    /// 
+    /// Draws the rectangle.
     #[inline(always)]
     pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
         graphics.draw_simple(self,draw_parameters)
     }
 
+    /// Рисует сдвинутый прямоугольник.
+    /// 
+    /// Draws the shifted rectangle.
     #[inline(always)]
     pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
         graphics.draw_shift_simple(self,shift,draw_parameters)
     }
+
+    /// Рисует повёрнутый прямоугольник.
+    /// 
+    /// Draws the rotated rectangle.
+    #[inline(always)]
+    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
+    }
 }
 
-impl<'a> SimpleObject<'a> for Rectangle{
-    type Indices=NoIndices;
+impl SimpleObject for Rectangle{
     fn colour(&self)->Colour{
         self.colour
     }
 
-    fn point_buffer(&self)->Vec<Vertex2D>{
+    fn vertex_buffer(&self)->Vec<Vertex2D>{
         let mut vec=Vec::with_capacity(4);
 
         vec.push(Vertex2D::new(self.x1,self.y1));
@@ -116,8 +132,12 @@ impl<'a> SimpleObject<'a> for Rectangle{
         vec
     }
 
-    fn indices(&self)->NoIndices{
-        NoIndices(PrimitiveType::TriangleStrip)
+    fn indices(&self)->Option<Vec<u8>>{
+        None
+    }
+
+    fn primitive_type(&self)->PrimitiveType{
+        PrimitiveType::TriangleStrip
     }
 }
 
@@ -180,13 +200,12 @@ impl RectangleBorder{
     }
 }
 
-impl<'a> SimpleObject<'a> for RectangleBorder{
-    type Indices=NoIndices;
+impl SimpleObject for RectangleBorder{
     fn colour(&self)->Colour{
         self.colour
     }
 
-    fn point_buffer(&self)->Vec<Vertex2D>{
+    fn vertex_buffer(&self)->Vec<Vertex2D>{
         let mut vec=Vec::with_capacity(4);
 
         vec.push(Vertex2D::new(self.x1,self.y1));
@@ -197,8 +216,12 @@ impl<'a> SimpleObject<'a> for RectangleBorder{
         vec
     }
 
-    fn indices(&self)->NoIndices{
-        NoIndices(PrimitiveType::LineLoop)
+    fn indices(&self)->Option<Vec<u8>>{
+        None
+    }
+
+    fn primitive_type(&self)->PrimitiveType{
+        PrimitiveType::LineLoop
     }
 }
 
@@ -291,13 +314,12 @@ impl Line{
 }
 
 
-impl<'a> SimpleObject<'a> for Line{
-    type Indices=NoIndices;
+impl SimpleObject for Line{
     fn colour(&self)->Colour{
         self.colour
     }
 
-    fn point_buffer(&self)->Vec<Vertex2D>{
+    fn vertex_buffer(&self)->Vec<Vertex2D>{
         let mut vec=Vec::with_capacity(2);
 
         vec.push(Vertex2D::new(self.x1,self.y1));
@@ -306,8 +328,12 @@ impl<'a> SimpleObject<'a> for Line{
         vec
     }
 
-    fn indices(&self)->NoIndices{
-        NoIndices(PrimitiveType::LinesList)
+    fn indices(&self)->Option<Vec<u8>>{
+        None
+    }
+
+    fn primitive_type(&self)->PrimitiveType{
+        PrimitiveType::LinesList
     }
 }
 
@@ -340,14 +366,12 @@ impl Circle{
     }
 }
 
-impl<'a> SimpleObject<'a> for Circle{
-    type Indices=NoIndices;
-
+impl SimpleObject for Circle{
     fn colour(&self)->Colour{
         self.colour
     }
 
-    fn point_buffer(&self)->Vec<Vertex2D>{
+    fn vertex_buffer(&self)->Vec<Vertex2D>{
         let r_x=self.radius;
         let r_y=self.radius;
 
@@ -382,8 +406,12 @@ impl<'a> SimpleObject<'a> for Circle{
         shape
     }
 
-    fn indices(&self)->NoIndices{
-        NoIndices(PrimitiveType::TriangleFan)
+    fn indices(&self)->Option<Vec<u8>>{
+        None
+    }
+
+    fn primitive_type(&self)->PrimitiveType{
+        PrimitiveType::TriangleFan
     }
 }
 

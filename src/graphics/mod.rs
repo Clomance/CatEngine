@@ -61,6 +61,7 @@ pub (crate) use simple_graphics::SimpleGraphics;
 pub use simple_graphics::{
     SimpleObject,
     Vertex2D,
+    SimpleGraphicsSettings,
 };
 
 #[cfg(feature="simple_graphics")]

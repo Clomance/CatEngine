@@ -17,7 +17,7 @@ Uses OpenGL 2.0 and above.
  - Graphics - [glium](https://github.com/glium/glium)
  - Images - [image](https://github.com/image-rs/image)
  - Fonts - [rusttype](https://gitlab.redox-os.org/redox-os/rusttype)
- - Music - [cpal](https://github.com/RustAudio/cpal) and [minimp3](https://github.com/germangb/minimp3-rs)
+ - Audio - [cpal](https://github.com/RustAudio/cpal) and [minimp3](https://github.com/germangb/minimp3-rs)
 
 If you use audio feature, alsa delevopment libraries are required for Linux: `libasound2-dev` for Debian and Ubuntu, `alsa-lib-devel` for Fedora (see [cpal](https://github.com/RustAudio/cpal)).
 
