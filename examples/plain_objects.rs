@@ -21,15 +21,15 @@ fn main(){
     { // No need for the rectangle after adding it to the array
         let mut rect=cat_engine::graphics::Rectangle::new([100f32;4],[0.0,0.0,0.0,1.0]);
 
-        window.graphics().add_plain_object(&rect).unwrap();
+        window.graphics().add_simple_object(&rect).unwrap();
 
         rect.colour=[1.0,0.0,0.0,1.0];
 
-        window.graphics().add_plain_object(&rect).unwrap();
+        window.graphics().add_simple_object(&rect).unwrap();
 
         rect.colour=[1.0,0.0,0.0,1.0];
 
-        window.graphics().add_plain_object(&rect).unwrap();
+        window.graphics().add_simple_object(&rect).unwrap();
     }
 
     let mut angle=0f32;
@@ -53,15 +53,15 @@ fn main(){
                     g.clear_colour([1.0;4]);
                     
                     // drawing the first rectangle
-                    g.draw_plain_object(0,p).unwrap();
+                    g.draw_simple_object(0,p).unwrap();
 
                     p.polygon_mode=PolygonMode::Line;
                     // rotating and drawing the second
-                    g.draw_rotate_plain_object(1,[150f32;2],angle,p).unwrap();
+                    g.draw_rotate_simple_object(1,[150f32;2],angle,p).unwrap();
 
                     p.polygon_mode=PolygonMode::Fill;
                     // shifting and drawing the third
-                    g.draw_shift_plain_object(2,shift,p).unwrap();
+                    g.draw_shift_simple_object(2,shift,p).unwrap();
                 }).unwrap();
             }
 
@@ -79,5 +79,5 @@ fn main(){
 
     // There is no need to do this at the end of the program
     // This is just an example
-    window.graphics().clear_plain_object_array();
+    window.graphics().clear_simple_object_array();
 }

@@ -1,4 +1,5 @@
 use cat_engine::{
+    graphics::SimpleObject,
     PagedWindow,
     Window,
     WindowPage,

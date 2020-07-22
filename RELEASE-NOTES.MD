@@ -6,6 +6,7 @@ A `file_drop` feature - enables the next events:
  - `WindowEvent::HoveredFileCancelled`
  - `WindowEvent::HoveredFile(PathBuf)`
  - `WindowEvent::DroppedFile(PathBuf)`
+
 and related functions.
 
 A new event - `WindowEvent::ModifiersChanged(ModifiersState)`.

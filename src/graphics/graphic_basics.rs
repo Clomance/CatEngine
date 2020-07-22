@@ -11,7 +11,6 @@ use glium::{
     },
 };
 
-/// Четырёхугольник. Quadrilateral.
 #[derive(Clone)]
 pub struct Quadrilateral{
     pub points:[Vertex2D;4],
@@ -24,11 +23,6 @@ impl Quadrilateral{
             points,
             colour
         }
-    }
-
-    #[inline(always)]
-    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_simple(self,draw_parameters)
     }
 }
 
@@ -56,9 +50,6 @@ impl SimpleObject for Quadrilateral{
     }
 }
 
-
-
-/// Прямоугольник.
 #[derive(Clone)]
 pub struct Rectangle{
     pub x1:f32,
@@ -89,30 +80,6 @@ impl Rectangle{
             y2:rect[3],
             colour
         }
-    }
-
-    /// Рисует прямоугольник.
-    /// 
-    /// Draws the rectangle.
-    #[inline(always)]
-    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_simple(self,draw_parameters)
-    }
-
-    /// Рисует сдвинутый прямоугольник.
-    /// 
-    /// Draws the shifted rectangle.
-    #[inline(always)]
-    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_shift_simple(self,shift,draw_parameters)
-    }
-
-    /// Рисует повёрнутый прямоугольник.
-    /// 
-    /// Draws the rotated rectangle.
-    #[inline(always)]
-    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
     }
 }
 
@@ -186,18 +153,6 @@ impl RectangleBorder{
             colour
         }
     }
-
-    #[inline(always)]
-    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        draw_parameters.line_width=Some(self.width);
-        graphics.draw_simple(self,draw_parameters)
-    }
-
-    #[inline(always)]
-    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        draw_parameters.line_width=Some(self.width);
-        graphics.draw_shift_simple(self,shift,draw_parameters)
-    }
 }
 
 impl SimpleObject for RectangleBorder{
@@ -225,7 +180,6 @@ impl SimpleObject for RectangleBorder{
     }
 }
 
-/// Прямоугольник с рамкой.
 #[derive(Clone)]
 pub struct RectangleWithBorder{
     pub rect:Rectangle,
@@ -358,11 +312,6 @@ impl Circle{
             radius:circle[2],
             colour
         }
-    }
-
-    #[inline(always)]
-    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_simple(self,draw_parameters)
     }
 }
 

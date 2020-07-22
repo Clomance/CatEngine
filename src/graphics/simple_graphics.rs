@@ -1,5 +1,9 @@
 use crate::{Colour,window_center};
 
+use super::{
+    Graphics,
+};
+
 use glium::{
     uniform,
     implement_vertex,
@@ -43,23 +47,6 @@ impl Vertex2D{
     pub const fn new(x:f32,y:f32)->Vertex2D{
         Self{
             position:[x,y]
-        }
-    }
-
-    /// Переводит в формат OpenGL.
-    /// 
-    /// Converts to OpenGL format.
-    pub fn convert(&mut self){
-        unsafe{
-            self.position[0]=self.position[0]/window_center[0]-1f32;
-            self.position[1]=1f32-self.position[1]/window_center[1];
-        }
-    }
-
-    pub fn center_radius(&mut self){
-        unsafe{
-            self.position[0]=self.position[0]-window_center[0];
-            self.position[1]=window_center[1]-self.position[1];
         }
     }
 }
@@ -181,21 +168,7 @@ impl SimpleGraphics{
         }
     }
 
-    /// Вписывает в буфер вершин данные.
-    pub fn write_vertex(&self,data:&[Vertex2D])->Option<BufferSlice<[Vertex2D]>>{
-        let slice=self.vertex_buffer.slice(0..data.len())?;
-        slice.write(data);
-        Some(slice)
-    }
-
-    /// Вписывает в буфер индексов данные.
-    pub fn write_indices(&self,data:&[u8])->Option<BufferSlice<[u8]>>{
-        let slice=self.index_buffer.slice(0..data.len())?;
-        slice.write(data);
-        Some(slice)
-    }
-
-    pub fn verteces_source<'a>(&'a self,slice:&'a BufferSlice<[Vertex2D]>)->VerticesSource::<'a>{
+    pub fn vertices_source<'a>(&'a self,slice:&'a BufferSlice<[Vertex2D]>)->VerticesSource::<'a>{
         VerticesSource::VertexBuffer(slice.as_slice_any(),&self.bindings,false)
     }
 
@@ -215,24 +188,18 @@ impl SimpleGraphics{
     pub fn draw<O:SimpleObject>(
         &self,
         object:&O,
-        draw_parameters:&mut DrawParameters,
+        draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
-        let verteces=object.vertex_buffer();
+        // Вписывание вершин и подготовка к выводу
+        let vertex_source=object.write_vertices(
+            &self.vertex_buffer,
+            &self.bindings
+        ).expect("VertexBuffer: Not enouth space");
 
-        let vertex_slice=self.write_vertex(&verteces).unwrap();
-        let vertex_source=self.verteces_source(&vertex_slice);
-
-        let primitive_type=object.primitive_type();
-
-        let indices=if let Some(indices)=object.indices(){
-            self.write_indices(&indices)
-        }
-        else{
-            None
-        };
-
-        let indices_source=self.indices_source(indices.as_ref(),primitive_type);
+        // Вписывание индексов и подготовка к выводу
+        let indices_source=object.write_indices(&self.index_buffer)
+                .expect("IndexBuffer: Not enouth space");
 
         let uni=uniform!{
             colour:object.colour(),
@@ -246,25 +213,18 @@ impl SimpleGraphics{
         &self,
         object:&O,
         shift:[f32;2],
-        draw_parameters:&mut DrawParameters,
+        draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
-        let points=object.vertex_buffer();
+        // Вписывание вершин и подготовка к выводу
+        let vertex_source=object.write_vertices(
+            &self.vertex_buffer,
+            &self.bindings
+        ).expect("VertexBuffer: Not enouth space");
 
-        let verteces=object.vertex_buffer();
-
-        let vertex_slice=self.write_vertex(&verteces).unwrap();
-        let vertex_source=self.verteces_source(&vertex_slice);
-
-        let primitive_type=object.primitive_type();
-
-        let indices=if let Some(indices)=object.indices(){
-            self.write_indices(&indices)
-        }
-        else{
-            None
-        };
-        let indices_source=self.indices_source(indices.as_ref(),primitive_type);
+        // Вписывание индексов и подготовка к выводу
+        let indices_source=object.write_indices(&self.index_buffer)
+                .expect("IndexBuffer: Not enouth space");
 
         let uni=uniform!{
             colour:object.colour(),
@@ -280,25 +240,18 @@ impl SimpleGraphics{
         object:&O,
         [x,y]:[f32;2],
         angle:f32,
-        draw_parameters:&mut DrawParameters,
+        draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
-        let points=object.vertex_buffer();
+        // Вписывание вершин и подготовка к выводу
+        let vertex_source=object.write_vertices(
+            &self.vertex_buffer,
+            &self.bindings
+        ).expect("VertexBuffer: Not enouth space");
 
-        let verteces=object.vertex_buffer();
-
-        let vertex_slice=self.write_vertex(&verteces).unwrap();
-        let vertex_source=self.verteces_source(&vertex_slice);
-
-        let primitive_type=object.primitive_type();
-
-        let indices=if let Some(indices)=object.indices(){
-            self.write_indices(&indices)
-        }
-        else{
-            None
-        };
-        let indices_source=self.indices_source(indices.as_ref(),primitive_type);
+        // Вписывание индексов и подготовка к выводу
+        let indices_source=object.write_indices(&self.index_buffer)
+                .expect("IndexBuffer: Not enouth space");
 
         let (sin,cos)=angle.sin_cos();
 
@@ -418,7 +371,7 @@ impl SimpleGraphics{
             window_center:unsafe{window_center},
         };
 
-        let vertex_slice=self.verteces_source(&vertex_slice);
+        let vertex_slice=self.vertices_source(&vertex_slice);
 
         frame.draw(
             vertex_slice,
@@ -454,7 +407,7 @@ impl SimpleGraphics{
                 window_center:unsafe{window_center},
             };
 
-            let vertex_slice=self.verteces_source(&vertex_slice);
+            let vertex_slice=self.vertices_source(&vertex_slice);
 
             frame.draw(
                 vertex_slice,
@@ -497,7 +450,7 @@ impl SimpleGraphics{
             shift:shift,
         };
 
-        let vertex_slice=self.verteces_source(&vertex_slice);
+        let vertex_slice=self.vertices_source(&vertex_slice);
 
         frame.draw(
             vertex_slice,
@@ -542,7 +495,7 @@ impl SimpleGraphics{
             colour:object.colour,
         };
 
-        let vertex_slice=self.verteces_source(&vertex_slice);
+        let vertex_slice=self.vertices_source(&vertex_slice);
 
         frame.draw(
             vertex_slice,
@@ -556,26 +509,102 @@ impl SimpleGraphics{
 
 /// Типаж для создания собственных простых одноцветных объектов.
 /// 
-/// Trait for creating plain objects.
-pub trait SimpleObject{
+/// Trait for creating simple objects.
+pub trait SimpleObject:Sized{
     /// Цвет объекта.
     /// 
-    /// An object's colour.
+    /// Object's colour.
     fn colour(&self)->Colour;
 
-    /// Точки объекта в оконных координатах.
+    /// Вершины объекта в оконных координатах.
     /// 
-    /// Object's verteces in the window coordinate system.
+    /// Object's vertices in the window coordinate system.
     fn vertex_buffer(&self)->Vec<Vertex2D>;
 
     /// Индексы для построения объекта.
     /// 
-    /// Indices to build an object.
+    /// Indices to build the object.
     fn indices(&self)->Option<Vec<u8>>;
 
     fn primitive_type(&self)->PrimitiveType;
 
-    fn write_indices(&self,){
+    /// Вписывает индексы в буфер индексов и возвращает `Some(IndicesSource)` для рисования
+    /// или `None`, если недостаточно места.
+    /// 
+    /// Writes indices to the index buffer and return `Some(IndicesSource)` to draw
+    /// or `None` if there is not enough space.
+    fn write_indices<'a>(&self,index_buffer:&'a Buffer<[u8]>)->Option<IndicesSource<'a>>{
+        Some(
+            if let Some(indices)=self.indices(){
+                let slice=match index_buffer.slice(0..indices.len()){
+                    Some(slice)=>slice,
+                    None=>return None,
+                };
+                slice.write(&indices);
 
+                IndicesSource::IndexBuffer{
+                    buffer:slice.as_slice_any(),
+                    data_type:IndexType::U8,
+                    primitives:self.primitive_type(),
+                }
+            }
+            else{
+                IndicesSource::NoIndices{
+                    primitives:self.primitive_type(),
+                }
+            }
+        )
+    }
+
+    /// Вписывает вершины в буфер индексов и возвращает `Some(IndicesSource)` для рисования
+    /// или `None`, если недостаточно места.
+    /// 
+    /// Writes indices to the index buffer and return `Some(IndicesSource)` to draw
+    /// or `None` if there is not enough space.
+    fn write_vertices<'a>(
+        &self,
+        vertex_buffer:&'a Buffer<[Vertex2D]>,
+        vertex_format:&'a VertexFormat,
+    )->Option<VerticesSource<'a>>{
+        let vertices=self.vertex_buffer();
+
+        let slice=match vertex_buffer.slice(0..vertices.len()){
+            Some(slice)=>slice,
+            None=>return None,
+        };
+
+        slice.write(&vertices);
+
+        Some(
+            VerticesSource::VertexBuffer(
+                slice.as_slice_any(),
+                vertex_format,
+                false
+            )
+        )
+    }
+
+    /// Рисует объект.
+    /// 
+    /// Draws the object.
+    #[inline(always)]
+    fn draw(&self,draw_parameters:&DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_simple(self,draw_parameters)
+    }
+
+    /// Рисует сдвинутый объект.
+    /// 
+    /// Draws the shifted object.
+    #[inline(always)]
+    fn draw_shift(&self,shift:[f32;2],draw_parameters:&DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_shift_simple(self,shift,draw_parameters)
+    }
+
+    /// Рисует повёрнутый объект.
+    /// 
+    /// Draws the rotated object.
+    #[inline(always)]
+    fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
     }
 }

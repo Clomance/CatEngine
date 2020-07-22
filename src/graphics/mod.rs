@@ -18,9 +18,9 @@
 //! 2. Textures (images)
 //! 3. Text
 //! 
-//! Common functions use VertexBuffer from the start.
+//! Common functions use VertexBuffer from the beginning.
 //! 
-//! Also it's possible to save and use vertexes of objects.
+//! Also it's possible to save and use vertices of objects.
 //! 
 //! #
 //! 

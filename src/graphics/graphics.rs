@@ -250,22 +250,37 @@ impl Graphics2D{
 }
 
 /// # Функции для работы с объектами. Functions to work with objects.
+#[cfg(feature="simple_graphics")]
 impl Graphics2D{
-    #[cfg(feature="simple_graphics")]
+    /// Добавляет простой объект в массив.
+    /// 
+    /// Adds the simple object to the array.
     #[inline(always)]
-    pub fn add_plain_object<O:SimpleObject>(&mut self,object:&O)->Option<usize>{
+    pub fn add_simple_object<O:SimpleObject>(&mut self,object:&O)->Option<usize>{
         self.simple.push_object(object)
     }
 
-    #[cfg(feature="simple_graphics")]
+    /// Удаляет последний простой объект в массиве,
+    /// если такой есть.
+    /// 
+    /// Deletes the last simple object of the array
+    /// if there is any.
     #[inline(always)]
-    pub fn clear_plain_object_array(&mut self){
+    pub fn delete_last_simple_object(&mut self){
+        self.simple.delete_last_object();
+    }
+
+    /// Отчищает массив объектов.
+    /// 
+    /// Clears the object array.
+    #[inline(always)]
+    pub fn clear_simple_object_array(&mut self){
         self.simple.clear_object_array()
     }
 }
 
 /// Простой интерфейс для связи кадра и графических функций.
-/// Simple interface to connect graphic fuctions to the frame.
+/// Simple interface to connect graphics fuctions to the frame.
 pub struct Graphics<'graphics,'frame>{
     graphics:&'graphics Graphics2D,
     frame:&'frame mut Frame,
@@ -288,9 +303,12 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         self.frame
     }
 
+    /// Заполняет окно данным цветом.
+    /// 
+    /// Fills the window with the given colour.
     #[inline(always)]
-    pub fn clear_colour(&mut self,colour:[f32;4]){
-        self.frame.clear_color(colour[0],colour[1],colour[2],colour[3]);
+    pub fn clear_colour(&mut self,[r,g,b,a]:[f32;4]){
+        self.frame.clear_color(r,g,b,a);
     }
 
     /// Рисует один символ.
@@ -446,7 +464,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     pub fn draw_simple<O:SimpleObject>(
         &mut self,
         object:&O,
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics.simple.draw(object,draw_parameters,self.frame)
     }
@@ -459,7 +477,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         object:&O,
         shift:[f32;2],
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics.simple.draw_shift(object,shift,draw_parameters,self.frame)
     }
@@ -472,7 +490,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,object:&O,
         rotation_center:[f32;2],
         angle:f32,
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics.simple.draw_rotate(
             object,
@@ -485,9 +503,9 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
 
     /// Рисует простой объект.
     /// 
-    /// Draws the simple object.
+    /// Draws the saved simple object.
     #[inline(always)]
-    pub fn draw_plain_object(
+    pub fn draw_simple_object(
         &mut self,
         index:usize,
         draw_parameters:&DrawParameters
@@ -497,9 +515,9 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
 
     /// Рисует сдвинутый простой объект.
     /// 
-    /// Draws the shifted simple object.
+    /// Draws the shifted saved simple object.
     #[inline(always)]
-    pub fn draw_shift_plain_object(
+    pub fn draw_shift_simple_object(
         &mut self,
         index:usize,
         shift:[f32;2],
@@ -515,9 +533,9 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
 
     /// Рисует повёрнутый простой объект.
     /// 
-    /// Draws the rotated simple object.
+    /// Draws the rotated saved simple object.
     #[inline(always)]
-    pub fn draw_rotate_plain_object(
+    pub fn draw_rotate_simple_object(
         &mut self,
         index:usize,
         rotation_center:[f32;2],

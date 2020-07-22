@@ -1,4 +1,5 @@
 use cat_engine::{
+    graphics::SimpleObject,
     DefaultWindow,
     WindowEvent,
     Window,
