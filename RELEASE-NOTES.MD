@@ -1,3 +1,9 @@
+# 0.3.1
+
+### Other
+
+The graphics engine is now divided into 2D and 3D (3D is not implemented yet).
+
 # 0.3.0
 
 ### Added

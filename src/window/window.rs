@@ -1,4 +1,8 @@
-use crate::graphics::{Graphics2D,Graphics,GraphicsSettings};
+use crate::graphics::{
+    Graphics,
+    GraphicsSettings,
+    two_dimensions::Graphics2D
+};
 
 #[cfg(feature="mouse_cursor_icon")]
 use super::MouseCursorIconSettings;

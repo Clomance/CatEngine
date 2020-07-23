@@ -6,7 +6,10 @@ use super::{
     // types
     Colour,
     // structs
-    graphics::{Graphics,TexturedVertex},
+    graphics::{
+        Graphics,
+        two_dimensions::TexturedVertex
+    },
 };
 
 mod texture;

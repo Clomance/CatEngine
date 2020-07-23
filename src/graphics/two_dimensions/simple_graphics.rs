@@ -1,7 +1,10 @@
-use crate::{Colour,window_center};
-
-use super::{
-    Graphics,
+use crate::{
+    // statics
+    window_center,
+    // types
+    Colour,
+    // structs
+    graphics::Graphics,
 };
 
 use glium::{
@@ -14,7 +17,6 @@ use glium::{
     DrawError,
     index::{
         PrimitiveType,
-        IndexBuffer,
         IndicesSource,
         IndexType,
     },
@@ -29,8 +31,6 @@ use glium::{
         BufferType,
         BufferMode,
         BufferSlice,
-        Content,
-        BufferAnySlice,
     },
 };
 

@@ -4,16 +4,7 @@ use crate::{
 };
 
 use glium::glutin::{
-    ReleaseBehavior,
-    NotCurrent,
-    ContextBuilder,
-    dpi::Size,
-    window::{
-        WindowBuilder,
-        WindowAttributes,
-        Fullscreen,
-        Icon
-    },
+    window::WindowAttributes,
     PixelFormatRequirements,
 };
 

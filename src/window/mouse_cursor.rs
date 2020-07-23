@@ -1,5 +1,8 @@
 use crate::{
-    graphics::{Graphics,Graphics2D},
+    graphics::{
+        Graphics,
+        two_dimensions::Graphics2D
+    },
     image::{ImageBase,Texture}
 };
 

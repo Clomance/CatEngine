@@ -1,4 +1,3 @@
-#![allow(unused_imports,unused_variables)]
 //! # Графические основы. Graphics basics.
 //! 
 //! Графический движок разделен на три части:
@@ -49,32 +48,60 @@
 //! window.graphics().unbind_texture(range);
 //! ```
 
-mod graphics;
-pub use graphics::{Graphics,Graphics2D,GraphicsSettings};
+// #[cfg(feature="2D")]
+pub (crate) mod two_dimensions;
 
-
-#[cfg(feature="simple_graphics")]
-mod simple_graphics;
-#[cfg(feature="simple_graphics")]
-pub (crate) use simple_graphics::SimpleGraphics;
-#[cfg(feature="simple_graphics")]
-pub use simple_graphics::{
+pub use two_dimensions::{
+    Graphics2D,
     SimpleObject,
     Vertex2D,
-    SimpleGraphicsSettings,
 };
 
-#[cfg(feature="texture_graphics")]
-mod texture_graphics;
-#[cfg(feature="texture_graphics")]
-pub (crate) use texture_graphics::{TextureGraphics,TexturedVertex};
-
-#[cfg(feature="text_graphics")]
-mod text_graphics;
-#[cfg(feature="text_graphics")]
-pub (crate) use text_graphics::TextGraphics;
+#[cfg(feature="simple_graphics")]
+use two_dimensions::SimpleGraphicsSettings;
 
 
-mod graphics2d;
+#[cfg(feature="3D")]
+pub (crate) mod three_dimensions;
 
-mod graphics3d;
+
+mod base;
+pub use base::Graphics;
+
+
+
+/// Настройки графических основ.
+/// Settings for graphics basics.
+#[derive(Clone,Debug)]
+pub struct GraphicsSettings{
+    /// The default is 8.
+    /// 
+    /// feature = "texture_graphics"
+    #[cfg(feature="texture_graphics")]
+    pub texture_vertex_buffer_size:usize,
+
+    /// feature = "simple_graphics"
+    #[cfg(feature="simple_graphics")]
+    pub simple:SimpleGraphicsSettings,
+
+    /// The default is 2000.
+    /// 
+    /// feature = "text_graphics"
+    #[cfg(feature="text_graphics")]
+    pub text_vertex_buffer_size:usize,
+}
+
+impl GraphicsSettings{
+    pub const fn new()->GraphicsSettings{
+        Self{
+            #[cfg(feature="texture_graphics")]
+            texture_vertex_buffer_size:8usize,
+
+            #[cfg(feature="simple_graphics")]
+            simple:SimpleGraphicsSettings::new(),
+
+            #[cfg(feature="text_graphics")]
+            text_vertex_buffer_size:2000usize,
+        }
+    }
+}

@@ -1,14 +1,15 @@
 use super::Colour;
 
-use super::graphics::{Graphics,SimpleObject,Vertex2D};
+use super::graphics::{
+    Graphics,
+    SimpleObject,
+    Vertex2D
+};
 
 use glium::{
     DrawError,
     DrawParameters,
-    index::{
-        NoIndices,
-        PrimitiveType,
-    },
+    index::PrimitiveType,
 };
 
 #[derive(Clone)]
@@ -152,6 +153,11 @@ impl RectangleBorder{
             width,
             colour
         }
+    }
+
+    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        draw_parameters.line_width=Some(self.width);
+        SimpleObject::draw(self,draw_parameters,graphics)
     }
 }
 

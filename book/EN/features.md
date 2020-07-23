@@ -1,3 +1,9 @@
+# Why do we need features
+
+Features help to remove unnecessary code and lessed size if some structures.
+
+
+
 # General features
 
 ### Audio

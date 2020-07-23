@@ -43,3 +43,4 @@ Other features:
  - "fps_counter"
  - "lazy"
  - "alpha_smoothing"
+ - "file_drop"
