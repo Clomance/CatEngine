@@ -54,10 +54,31 @@ It also includes almost all the features.
 
 # DefaultWindow
 
-This window has wide range of features, but is the most slowly one.
+This window has widest range of features, but is the most slowly one and has a lot of problems.
 
 All events are handled and added to the outer handling queue (Window.events)
 to work with them outside of the window structure.
+
+```
+let mut window=DefaultWindow::new(|_,_|{}).unwrap();
+
+while let Some(event)=window.next_event(){
+    match event{
+        WindowEvent::CloseRequested=>{
+            break
+        }
+
+        WindowEvent::Update=>{
+            
+        }
+
+        WindowEvent::RedrawRequested=>{
+            // Rendering
+        }
+        _=>{}
+    }
+}
+```
 
 
 # PagedWindow
