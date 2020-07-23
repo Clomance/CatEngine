@@ -3,8 +3,10 @@ use crate::{
         Graphics,
         two_dimensions::Graphics2D
     },
-    image::{ImageBase,Texture}
 };
+
+#[cfg(feature="mouse_cursor_icon")]
+use crate::image::{ImageBase,Texture};
 
 use super::{
     mouse_cursor,
@@ -91,18 +93,20 @@ impl MouseCursor{
     }
 }
 
-
+#[cfg(feature="mouse_cursor_icon")]
 const d_radius:f32=5f32;
 
 /// Иконка курсора мышки.
 /// 
 /// Загружает картинку из папки ресурсов.
+#[cfg(feature="mouse_cursor_icon")]
 pub struct MouseCursorIcon{
     image_base:ImageBase,
     texture:Texture,
     visible:bool,
 }
 
+#[cfg(feature="mouse_cursor_icon")]
 impl MouseCursorIcon{
     pub fn new<P:AsRef<Path>>(settings:MouseCursorIconSettings<P>,display:&Display,graphics:&mut Graphics2D)->MouseCursorIcon{
         let image_base=ImageBase::new([1f32;4],

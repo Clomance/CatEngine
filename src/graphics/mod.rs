@@ -51,14 +51,14 @@
 // #[cfg(feature="2D")]
 pub (crate) mod two_dimensions;
 
-pub use two_dimensions::{
-    Graphics2D,
-    SimpleObject,
-    Vertex2D,
-};
+pub use two_dimensions::Graphics2D;
 
 #[cfg(feature="simple_graphics")]
-use two_dimensions::SimpleGraphicsSettings;
+pub use two_dimensions::{
+    SimpleObject,
+    Vertex2D,
+    SimpleGraphicsSettings
+};
 
 
 #[cfg(feature="3D")]

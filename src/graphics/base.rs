@@ -1,16 +1,18 @@
-use crate::{
-    Colour,
-    text::Character,
-    image::{
-        ImageBase,
-        Texture,
-    }
+use crate::Colour;
+
+#[cfg(feature="text_graphics")]
+use crate::text::Character;
+
+#[cfg(feature="texture_graphics")]
+use crate::image::{
+    ImageBase,
+    Texture,
 };
 
-use super::two_dimensions::{
-    Graphics2D,
-    SimpleObject,
-};
+#[cfg(feature="simple_graphics")]
+use super::two_dimensions::SimpleObject;
+
+use super::two_dimensions::Graphics2D;
 
 use glium::{
     Frame,

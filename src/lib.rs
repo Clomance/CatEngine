@@ -61,7 +61,7 @@ pub use glium::{
 #[cfg(feature="audio")]
 pub mod audio;
 
-
+#[cfg(feature="text_graphics")]
 pub mod text;
 
 #[cfg(feature="texture_graphics")]
@@ -73,7 +73,7 @@ mod window;
 pub use window::*;
 
 /// Геометрические фигуры. Geometric shapes.
-/// feature = "simple_graphics_2d"
+/// `feature = "simple_graphics_2d"`, `default_features`
 #[cfg(all(feature="simple_graphics"))]
 pub mod shapes;
 
