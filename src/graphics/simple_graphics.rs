@@ -60,31 +60,71 @@ pub struct PlainObject{
 }
 
 impl PlainObject{
-    pub fn vertex_source(&self){
+    #[inline(always)]
+    pub fn set_colour(&mut self,colour:Colour){
+        self.colour=colour
+    }
 
+    /// Returns the vertices source of the object.
+    pub fn vertices_source<'a>(
+        &self,
+        vertices:&'a Buffer<[Vertex2D]>,
+        vertex_format:&'a VertexFormat
+    )->VerticesSource<'a>{
+        let slice=vertices.slice(self.vertex_buffer_range.clone()).unwrap();
+
+        VerticesSource::VertexBuffer(
+            slice.as_slice_any(),
+            &vertex_format,
+            false
+        )
+    }
+
+    /// Returns the indices source of the object.
+    pub fn indices_source<'a>(
+        &self,
+        indices:&'a Buffer<[u8]>,
+    )->IndicesSource<'a>{
+        if self.index_buffer_range.len()!=0{
+            let slice=indices.slice(self.index_buffer_range.clone()).unwrap();
+            IndicesSource::IndexBuffer{
+                buffer:slice.as_slice_any(),
+                data_type:IndexType::U8,
+                primitives:self.primitive_type,
+            }
+        }
+        else{
+            IndicesSource::NoIndices{primitives:self.primitive_type}
+        }
     }
 }
 
 #[derive(Clone,Debug)]
 pub struct SimpleGraphicsSettings{
+    /// The capacity of the vertex buffer.
+    /// 
     /// The default is 8.
     pub vertex_buffer_size:usize,
 
-    /// The range from 0 to `offset` is for common drawing.
-    /// The range after `offset` is for saving objects.
+    /// The range from 0 to the `offset` is for common drawing.
+    /// The range from `offset` to the end is for saving objects.
     /// 
     /// The default is 4.
     pub vertex_buffer_offset:usize,
 
+    /// The capacity of the index buffer.
+    /// 
     /// The default is 8.
     pub index_buffer_size:usize,
 
-    /// The range from 0 to `offset` is for common drawing.
-    /// The range after `offset` is for saving objects.
+    /// The range from 0 to the `offset` is for common drawing.
+    /// The range from `offset` to the end is for saving objects.
     /// 
     /// The default is 4.
     pub index_buffer_offset:usize,
 
+    /// The capacity of the object buffer.
+    /// 
     /// The default is 2.
     pub object_buffer_size:usize,
 }
@@ -94,8 +134,10 @@ impl SimpleGraphicsSettings{
         SimpleGraphicsSettings{
             vertex_buffer_size:8,
             vertex_buffer_offset:4,
+
             index_buffer_size:8,
             index_buffer_offset:4,
+
             object_buffer_size:2,
         }
     }
@@ -166,10 +208,6 @@ impl SimpleGraphics{
             draw_shift:Program::from_source(display,shift,fragment_shader,None).unwrap(),
             draw_rotate:Program::from_source(display,rotation,fragment_shader,None).unwrap(),
         }
-    }
-
-    pub fn vertices_source<'a>(&'a self,slice:&'a BufferSlice<[Vertex2D]>)->VerticesSource::<'a>{
-        VerticesSource::VertexBuffer(slice.as_slice_any(),&self.bindings,false)
     }
 
     pub fn indices_source<'a>(&'a self,slice:Option<&'a BufferSlice<[u8]>>,primitive_type:PrimitiveType)->IndicesSource<'a>{
@@ -352,26 +390,14 @@ impl SimpleGraphics{
     )->Result<(),DrawError>{
         let object=&self.plain_objects[index];
 
-        let vertex_slice=self.vertex_buffer.slice(object.vertex_buffer_range.clone()).unwrap();
-
-        let index_source=if object.index_buffer_range.len()!=0{
-            let slice=self.index_buffer.slice(object.index_buffer_range.clone()).unwrap();
-            IndicesSource::IndexBuffer{
-                buffer:slice.as_slice_any(),
-                data_type:IndexType::U8,
-                primitives:object.primitive_type,
-            }
-        }
-        else{
-            IndicesSource::NoIndices{primitives:object.primitive_type}
-        };
+        let index_source=object.indices_source(&self.index_buffer);
 
         let uni=uniform!{
             colour:object.colour,
             window_center:unsafe{window_center},
         };
 
-        let vertex_slice=self.vertices_source(&vertex_slice);
+        let vertex_slice=object.vertices_source(&self.vertex_buffer,&self.bindings);
 
         frame.draw(
             vertex_slice,
@@ -388,26 +414,14 @@ impl SimpleGraphics{
         frame:&mut Frame
     )->Result<(),DrawError>{
         for object in &self.plain_objects{
-            let vertex_slice=self.vertex_buffer.slice(object.vertex_buffer_range.clone()).unwrap();
-
-            let index_source=if object.index_buffer_range.len()!=0{
-                let slice=self.index_buffer.slice(object.index_buffer_range.clone()).unwrap();
-                IndicesSource::IndexBuffer{
-                    buffer:slice.as_slice_any(),
-                    data_type:IndexType::U8,
-                    primitives:object.primitive_type,
-                }
-            }
-            else{
-                IndicesSource::NoIndices{primitives:object.primitive_type}
-            };
+            let index_source=object.indices_source(&self.index_buffer);
 
             let uni=uniform!{
                 colour:object.colour,
                 window_center:unsafe{window_center},
             };
 
-            let vertex_slice=self.vertices_source(&vertex_slice);
+            let vertex_slice=object.vertices_source(&self.vertex_buffer,&self.bindings);
 
             frame.draw(
                 vertex_slice,
@@ -430,19 +444,7 @@ impl SimpleGraphics{
     )->Result<(),DrawError>{
         let object=&self.plain_objects[index];
 
-        let vertex_slice=self.vertex_buffer.slice(object.vertex_buffer_range.clone()).unwrap();
-
-        let index_source=if object.index_buffer_range.len()!=0{
-            let slice=self.index_buffer.slice(object.index_buffer_range.clone()).unwrap();
-            IndicesSource::IndexBuffer{
-                buffer:slice.as_slice_any(),
-                data_type:IndexType::U8,
-                primitives:object.primitive_type,
-            }
-        }
-        else{
-            IndicesSource::NoIndices{primitives:object.primitive_type}
-        };
+        let index_source=object.indices_source(&self.index_buffer);
 
         let uni=uniform!{
             colour:object.colour,
@@ -450,7 +452,7 @@ impl SimpleGraphics{
             shift:shift,
         };
 
-        let vertex_slice=self.vertices_source(&vertex_slice);
+        let vertex_slice=object.vertices_source(&self.vertex_buffer,&self.bindings);
 
         frame.draw(
             vertex_slice,
@@ -471,19 +473,7 @@ impl SimpleGraphics{
     )->Result<(),DrawError>{
         let object=&self.plain_objects[index];
 
-        let vertex_slice=self.vertex_buffer.slice(object.vertex_buffer_range.clone()).unwrap();
-
-        let index_source=if object.index_buffer_range.len()!=0{
-            let slice=self.index_buffer.slice(object.index_buffer_range.clone()).unwrap();
-            IndicesSource::IndexBuffer{
-                buffer:slice.as_slice_any(),
-                data_type:IndexType::U8,
-                primitives:object.primitive_type,
-            }
-        }
-        else{
-            IndicesSource::NoIndices{primitives:object.primitive_type}
-        };
+        let index_source=object.indices_source(&self.index_buffer);
 
         let (sin,cos)=angle.sin_cos();
 
@@ -495,7 +485,7 @@ impl SimpleGraphics{
             colour:object.colour,
         };
 
-        let vertex_slice=self.vertices_source(&vertex_slice);
+        let vertex_slice=object.vertices_source(&self.vertex_buffer,&self.bindings);
 
         frame.draw(
             vertex_slice,
