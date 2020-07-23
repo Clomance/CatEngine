@@ -4,6 +4,7 @@ use cat_engine::{
     WindowEvent,
     KeyboardButton,
     glium::draw_parameters::PolygonMode,
+    shapes::Rectangle,
 };
 
 fn main(){
@@ -19,7 +20,7 @@ fn main(){
     }).unwrap();
 
     { // No need for the rectangle after adding it to the array
-        let mut rect=cat_engine::graphics::Rectangle::new([100f32;4],[0.0,0.0,0.0,1.0]);
+        let mut rect=Rectangle::new([100f32;4],[0.0,0.0,0.0,1.0]);
 
         window.graphics().add_simple_object(&rect).unwrap();
 

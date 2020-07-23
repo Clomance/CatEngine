@@ -30,7 +30,7 @@ Now you can add an object to the array and then quickly draw it or the whole arr
 
 Some changes in the `SimpleObject` trait.
 
-
+All the geometric shapes (`cat_engine::graphics::*;`) has been moved to `cat_engine::shapes::*`.
 
 # Version 0.2.1
 

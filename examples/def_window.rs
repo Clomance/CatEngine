@@ -3,6 +3,7 @@ use cat_engine::{
     DefaultWindow,
     WindowEvent,
     Window,
+    shapes::Rectangle
 };
 
 fn main(){
@@ -10,7 +11,7 @@ fn main(){
         sets.general.updates_per_second=20;
     }).unwrap();
 
-    let mut rect=cat_engine::graphics::Rectangle::new([100.0;4],[0.0,0.0,0.0,1.0]);
+    let mut rect=Rectangle::new([100.0;4],[0.0,0.0,0.0,1.0]);
 
     while let Some(event)=window.next_event(){
         match event{

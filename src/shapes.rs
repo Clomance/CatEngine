@@ -1,6 +1,6 @@
-use crate::Colour;
+use super::Colour;
 
-use super::{Graphics,SimpleObject,Vertex2D};
+use super::graphics::{Graphics,SimpleObject,Vertex2D};
 
 use glium::{
     DrawError,

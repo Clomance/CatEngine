@@ -37,6 +37,7 @@ use glium::{
 use core::ops::Range;
 
 implement_vertex!(Vertex2D,position);
+/// Вершина для простых объектов.
 /// A vertex for simple objects.
 #[derive(Copy,Clone)]
 pub struct Vertex2D{

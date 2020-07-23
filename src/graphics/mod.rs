@@ -1,5 +1,5 @@
 #![allow(unused_imports,unused_variables)]
-//! # Графические основы. Graphic basics.
+//! # Графические основы. Graphics basics.
 //! 
 //! Графический движок разделен на три части:
 //! 1. Простая графика - одноцветные объекты состоящие из `Vertex2D`.
@@ -64,12 +64,6 @@ pub use simple_graphics::{
     SimpleGraphicsSettings,
 };
 
-#[cfg(feature="simple_graphics")]
-mod graphic_basics;
-#[cfg(feature="simple_graphics")]
-pub use graphic_basics::*;
-
-
 #[cfg(feature="texture_graphics")]
 mod texture_graphics;
 #[cfg(feature="texture_graphics")]
@@ -79,3 +73,8 @@ pub (crate) use texture_graphics::{TextureGraphics,TexturedVertex};
 mod text_graphics;
 #[cfg(feature="text_graphics")]
 pub (crate) use text_graphics::TextGraphics;
+
+
+mod graphics2d;
+
+mod graphics3d;

@@ -8,12 +8,13 @@ use cat_engine::{
     MouseScrollDelta,
     ModifiersState,
     glium::draw_parameters::PolygonMode,
+    shapes::Rectangle,
 };
 
 use std::path::PathBuf;
 
 pub struct Page{
-    rect:cat_engine::graphics::Rectangle,
+    rect:Rectangle,
     angle:f32,
     shift:[f32;2]
 }
@@ -88,7 +89,7 @@ impl WindowPage<'static> for Page{
 }
 
 fn main(){
-    let rect=cat_engine::graphics::Rectangle::new([100.0;4],[1.0,0.0,0.0,1.0]);
+    let rect=Rectangle::new([100.0;4],[1.0,0.0,0.0,1.0]);
     let mut page=Page{
         rect,
         shift:[0f32;2],

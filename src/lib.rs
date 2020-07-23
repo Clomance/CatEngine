@@ -72,6 +72,11 @@ pub mod graphics;
 mod window;
 pub use window::*;
 
+/// Геометрические фигуры. Geometric shapes.
+/// feature = "simple_graphics"
+#[cfg(feature="simple_graphics")]
+pub mod shapes;
+
 //    _.---.._             _.---...__
 // .-'   /\   \          .'  /\     /
 // `.   (  )   \        /   (  )   /
@@ -88,8 +93,8 @@ pub use window::*;
 // If you think there are to many cats, you are mistaken.
 // There can't be too many cats.
 // Cats are cute.
-// I'd better write a good documentation rather than paste cates.
-// But......................... Cats are better.
+// I'd better write a good documentation rather than paste cats.
+// But......................... Cats are more important!
 
 
 /// RGBA - [f32; 4]

@@ -31,8 +31,7 @@ use glium::{
 use core::ops::Range;
 
 /// Настройки графических основ.
-/// 
-/// Settings for graphic basics.
+/// Settings for graphics basics.
 #[derive(Clone,Debug)]
 pub struct GraphicsSettings{
     /// The default is 8.
