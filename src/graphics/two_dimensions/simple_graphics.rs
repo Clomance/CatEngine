@@ -52,7 +52,7 @@ impl Vertex2D{
     }
 }
 
-pub struct PlainObject{
+pub struct SimpleObjectData{
     vertex_buffer_range:Range<usize>,
     colour:Colour,
 
@@ -60,12 +60,7 @@ pub struct PlainObject{
     primitive_type:PrimitiveType,
 }
 
-impl PlainObject{
-    #[inline(always)]
-    pub fn set_colour(&mut self,colour:Colour){
-        self.colour=colour
-    }
-
+impl SimpleObjectData{
     /// Returns the vertices source of the object.
     pub fn vertices_source<'a>(
         &self,
@@ -154,7 +149,7 @@ pub struct SimpleGraphics{
     index_buffer:Buffer<[u8]>,
     index_buffer_edge:usize, // Сколько уже занято
 
-    plain_objects:Vec<PlainObject>,
+    simple_objects:Vec<SimpleObjectData>,
 
     draw:Program,
     draw_shift:Program,
@@ -203,7 +198,7 @@ impl SimpleGraphics{
 
             index_buffer_edge:settings.index_buffer_offset,
 
-            plain_objects:Vec::<PlainObject>::with_capacity(settings.object_buffer_size),
+            simple_objects:Vec::<SimpleObjectData>::with_capacity(settings.object_buffer_size),
 
             draw:Program::from_source(display,vertex_shader,fragment_shader,None).unwrap(),
             draw_shift:Program::from_source(display,shift,fragment_shader,None).unwrap(),
@@ -312,7 +307,7 @@ impl SimpleGraphics{
     }
 }
 
-// Функции для работы с объектами
+// Функции для добаления/удаления объектов
 impl SimpleGraphics{
     // Добавляет объект в конец списка
     pub fn push_object<O:SimpleObject>(&mut self,object:&O)->Option<usize>{
@@ -344,9 +339,9 @@ impl SimpleGraphics{
             0..0
         };
 
-        let len=self.plain_objects.len();
+        let len=self.simple_objects.len();
 
-        self.plain_objects.push(PlainObject{
+        self.simple_objects.push(SimpleObjectData{
             vertex_buffer_range:vertex_range,
             index_buffer_range:index_range,
 
@@ -357,8 +352,8 @@ impl SimpleGraphics{
         Some(len)
     }
 
-    pub fn pop_object(&mut self)->Option<PlainObject>{
-        if let Some(object)=self.plain_objects.pop(){
+    pub fn pop_object(&mut self)->Option<SimpleObjectData>{
+        if let Some(object)=self.simple_objects.pop(){
             let len=object.vertex_buffer_range.len();
             self.vertex_buffer_edge-=len;
             Some(object)
@@ -369,7 +364,7 @@ impl SimpleGraphics{
     }
 
     pub fn delete_last_object(&mut self){
-        if let Some(object)=self.plain_objects.pop(){
+        if let Some(object)=self.simple_objects.pop(){
             let len=object.vertex_buffer_range.len();
             self.vertex_buffer_edge-=len;
         }
@@ -377,7 +372,34 @@ impl SimpleGraphics{
 
     pub fn clear_object_array(&mut self){
         self.vertex_buffer_edge=0;
-        self.plain_objects.clear();
+        self.simple_objects.clear();
+    }
+}
+
+// Редактирование объектов
+impl SimpleGraphics{
+    pub fn set_object_colour(&mut self,index:usize,colour:Colour){
+        self.simple_objects[index].colour=colour
+    }
+
+    pub fn set_object_primitive_type(&mut self,index:usize,primitive_type:PrimitiveType){
+        self.simple_objects[index].primitive_type=primitive_type
+    }
+
+    // Если размер новых данных не соответсвует выделенному ранее размеру, то ПАНИКА!
+    pub fn rewrite_object_vertices(&mut self,index:usize,vertices:&[Vertex2D]){
+        let object=&self.simple_objects[index];
+
+        let vertex_slice=self.vertex_buffer.slice(object.vertex_buffer_range.clone()).unwrap();
+        vertex_slice.write(vertices);
+    }
+
+    // Если размер новых данных не соответсвует выделенному ранее размеру, то ПАНИКА!
+    pub fn rewrite_object_indices(&mut self,index:usize,indices:&[u8]){
+        let object=&self.simple_objects[index];
+
+        let index_slice=self.index_buffer.slice(object.index_buffer_range.clone()).unwrap();
+        index_slice.write(&indices);
     }
 }
 
@@ -389,7 +411,7 @@ impl SimpleGraphics{
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
-        let object=&self.plain_objects[index];
+        let object=&self.simple_objects[index];
 
         let index_source=object.indices_source(&self.index_buffer);
 
@@ -414,7 +436,7 @@ impl SimpleGraphics{
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
-        for object in &self.plain_objects{
+        for object in &self.simple_objects{
             let index_source=object.indices_source(&self.index_buffer);
 
             let uni=uniform!{
@@ -443,7 +465,7 @@ impl SimpleGraphics{
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
-        let object=&self.plain_objects[index];
+        let object=&self.simple_objects[index];
 
         let index_source=object.indices_source(&self.index_buffer);
 
@@ -472,7 +494,7 @@ impl SimpleGraphics{
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
-        let object=&self.plain_objects[index];
+        let object=&self.simple_objects[index];
 
         let index_source=object.indices_source(&self.index_buffer);
 

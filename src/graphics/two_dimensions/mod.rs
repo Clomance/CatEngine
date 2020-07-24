@@ -252,4 +252,52 @@ impl Graphics2D{
     pub fn clear_simple_object_array(&mut self){
         self.simple.clear_object_array()
     }
+
+    /// Устанавливает цвет объекта.
+    /// 
+    /// Паникует, если нет такого объекта.
+    /// 
+    /// Sets the colour of the object.
+    /// 
+    /// Panics if there is no such object.
+    #[inline(always)]
+    pub fn set_simple_object_colour(&mut self,index:usize,colour:Colour){
+        self.simple.set_object_colour(index,colour)
+    }
+
+    /// Устанавливает тип отрисовки объекта.
+    /// 
+    /// Паникует, если нет такого объекта.
+    /// 
+    /// Sets the primitive type of the object.
+    /// 
+    /// Panics if there is no such object.
+    #[inline(always)]
+    pub fn set_simple_object_primitive_type(&mut self,index:usize,primitive_type:PrimitiveType){
+        self.simple.set_object_primitive_type(index,primitive_type)
+    }
+
+    /// Переписывает вершины объекта.
+    /// 
+    /// Паникует, если нет такого объекта или размер `vertices` отличается от установленного.
+    /// 
+    /// Rewrites vertices of the object.
+    /// 
+    /// Panics if there is no such object or the `vertices` size differs from the set.
+    #[inline(always)]
+    pub fn rewrite_simple_object_vertices(&mut self,index:usize,vertices:&[Vertex2D]){
+        self.simple.rewrite_object_vertices(index,vertices)
+    }
+
+    /// Переписывает индексы объекта.
+    /// 
+    /// Паникует, если нет такого объекта или размер `indices` отличается от установленного.
+    /// 
+    /// Rewrites indices of the object.
+    /// 
+    /// Panics if there is no such object or the `indices` size differs from the set.
+    #[inline(always)]
+    pub fn rewrite_simple_object_indices(&mut self,index:usize,indices:&[u8]){
+        self.simple.rewrite_object_indices(index,indices)
+    }
 }

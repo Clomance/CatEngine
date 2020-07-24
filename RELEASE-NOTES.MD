@@ -1,3 +1,13 @@
+# 0.3.2
+
+### Added
+
+Functions to change saved simple objects directly:
+```
+window.graphics().set_simple_object_colour(0,White);
+window.graphics().rewrite_simple_object_vertices(0,&[100f32;4])
+```
+
 # 0.3.1
 
 ### Fixed

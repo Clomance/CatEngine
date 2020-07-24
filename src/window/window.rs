@@ -149,7 +149,7 @@ pub trait Window:Sized{
     /// Returns the graphics base.
     #[inline(always)]
     fn graphics(&mut self)->&mut Graphics2D{
-        &mut self.window_base_mut().graphics
+        &mut self.window_base_mut().graphics2d
     }
 
     /// Даёт кадр для рисования.

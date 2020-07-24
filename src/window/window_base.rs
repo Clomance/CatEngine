@@ -4,6 +4,9 @@ use crate::graphics::{
     two_dimensions::Graphics2D,
 };
 
+#[cfg(feature="3D")]
+use crate::graphics::three_dimensions::Graphics3D;
+
 #[cfg(feature="mouse_cursor_icon")]
 use super::{
     MouseCursorIconSettings,
@@ -68,8 +71,11 @@ pub struct WindowBase{
     /// A window with a GL context.
     pub display:Display,
 
-    /// A graphics base.
-    pub graphics:Graphics2D,
+    /// A graphics base for 2D rendering.
+    pub graphics2d:Graphics2D,
+
+    #[cfg(feature="3D")]
+    pub graphics3d:Graphics3D,
 
     /// An event loop.
     pub event_loop:EventLoop<InnerWindowEvent>,
@@ -146,19 +152,19 @@ impl WindowBase{
         #[cfg(feature="mouse_cursor_icon")]
         display.gl_window().window().set_cursor_visible(false);
 
-        #[cfg(feature="mouse_cursor_icon")]
-        let mut graphics=Graphics2D::new(&display,graphics_settings,glsl);
-
-        #[cfg(not(feature="mouse_cursor_icon"))]
-        let graphics=Graphics2D::new(&display,graphics_settings,glsl);
+        let mut graphics2d=Graphics2D::new(&display,graphics_settings,glsl);
 
         let proxy=event_loop.create_proxy();
 
         Ok(Self{
             #[cfg(feature="mouse_cursor_icon")]
-            mouse_icon:MouseCursorIcon::new(mouse_cursor_icon_settings,&display,&mut graphics),
+            mouse_icon:MouseCursorIcon::new(mouse_cursor_icon_settings,&display,&mut graphics2d),
 
-            graphics,
+            graphics2d,
+
+            #[cfg(feature="3D")]
+            graphics3d:Graphics3D::new(),
+
             display,
 
             event_loop,
@@ -216,7 +222,11 @@ impl WindowBase{
 
         let mut frame=self.display.draw();
 
-        let mut g=Graphics::new(&self.graphics,&mut frame);
+        let mut g=Graphics::new(
+            &self.graphics2d,
+            #[cfg(feature="3D")]&self.graphics3d,
+            &mut frame
+        );
 
         f(&mut draw_parameters,&mut g);
 
@@ -243,7 +253,11 @@ impl WindowBase{
 
         let mut frame=self.display.draw();
 
-        let mut g=Graphics::new(&mut self.graphics,&mut frame);
+        let mut g=Graphics::new(
+            &mut self.graphics2d,
+            #[cfg(feature="3D")]&self.graphics3d,
+            &mut frame
+        );
 
         f(self.alpha_channel,&mut draw_parameters,&mut g);
 
@@ -387,7 +401,7 @@ macro_rules! window_resized{
             window_center=[window_width/2f32,window_height/2f32];
 
             #[cfg(feature="mouse_cursor_icon")]
-            $window.base.mouse_icon.update(&mut $window.base.graphics);
+            $window.base.mouse_icon.update(&mut $window.base.graphics2d);
 
             Resized([$size.width,$size.height])
         }
@@ -400,7 +414,7 @@ macro_rules! window_resized{
             window_center=[window_width/2f32,window_height/2f32];
 
             #[cfg(feature="mouse_cursor_icon")]
-            $window.base.mouse_icon.update(&mut $window.base.graphics);
+            $window.base.mouse_icon.update(&mut $window.base.graphics2d);
 
             $page.on_window_resized($window,[$size.width,$size.height])
         }
@@ -447,7 +461,7 @@ macro_rules! mouse_input{
         if $state==ElementState::Pressed{
             #[cfg(feature="mouse_cursor_icon")]
             if $button==MouseButton::Left{
-                $window.base.mouse_icon.pressed(&mut $window.base.graphics);
+                $window.base.mouse_icon.pressed(&mut $window.base.graphics2d);
             }
 
             MousePressed($button)
@@ -455,7 +469,7 @@ macro_rules! mouse_input{
         else{
             #[cfg(feature="mouse_cursor_icon")]
             if $button==MouseButton::Left{
-                $window.base.mouse_icon.released(&mut $window.base.graphics);
+                $window.base.mouse_icon.released(&mut $window.base.graphics2d);
             }
 
             MouseReleased($button)
@@ -466,7 +480,7 @@ macro_rules! mouse_input{
         if $state==ElementState::Pressed{
             #[cfg(feature="mouse_cursor_icon")]
             if $button==MouseButton::Left{
-                $window.base.mouse_icon.pressed(&mut $window.base.graphics);
+                $window.base.mouse_icon.pressed(&mut $window.base.graphics2d);
             }
 
             $page.on_mouse_pressed($window,$button)
@@ -474,7 +488,7 @@ macro_rules! mouse_input{
         else{
             #[cfg(feature="mouse_cursor_icon")]
             if $button==MouseButton::Left{
-                $window.base.mouse_icon.released(&mut $window.base.graphics);
+                $window.base.mouse_icon.released(&mut $window.base.graphics2d);
             }
 
             $page.on_mouse_released($window,$button)

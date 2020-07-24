@@ -14,6 +14,9 @@ use super::two_dimensions::SimpleObject;
 
 use super::two_dimensions::Graphics2D;
 
+#[cfg(feature="3D")]
+use super::three_dimensions::Graphics3D;
+
 use glium::{
     Frame,
     DrawParameters,
@@ -24,15 +27,27 @@ use glium::{
 /// Простой интерфейс для связи кадра и графических функций.
 /// Simple interface to connect graphics fuctions to the frame.
 pub struct Graphics<'graphics,'frame>{
-    graphics:&'graphics Graphics2D,
+    graphics2d:&'graphics Graphics2D,
+
+    #[cfg(feature="3D")]
+    graphics3d:&'graphics Graphics3D,
+
     frame:&'frame mut Frame,
 }
 
 impl<'graphics,'frame> Graphics<'graphics,'frame>{
     #[inline(always)]
-    pub (crate) fn new(graphics:&'graphics Graphics2D,frame:&'frame mut Frame)->Graphics<'graphics,'frame>{
+    pub (crate) fn new(
+        graphics2d:&'graphics Graphics2D,
+        #[cfg(feature="3D")]graphics3d:&'graphics Graphics3D,
+        frame:&'frame mut Frame
+    )->Graphics<'graphics,'frame>{
         Self{
-            graphics,
+            graphics2d,
+
+            #[cfg(feature="3D")]
+            graphics3d,
+
             frame
         }
     }
@@ -64,7 +79,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         character:&Character,
         draw_parameters:&mut DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.text.draw_character(character,colour,draw_parameters,self.frame)
+        self.graphics2d.text.draw_character(character,colour,draw_parameters,self.frame)
     }
 
     /// Рисует изображение на основе `ImageBase`.
@@ -78,7 +93,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         texture:&Texture,
         draw_parameters:&mut DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.texture.draw_image(image_base,texture,draw_parameters,self.frame)
+        self.graphics2d.texture.draw_image(image_base,texture,draw_parameters,self.frame)
     }
 
     /// Рисует изображение на основе `ImageBase`.
@@ -93,7 +108,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         shift:[f32;2],
         draw_parameters:&mut DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.texture.draw_shift_image(image_base,texture,shift,draw_parameters,self.frame)
+        self.graphics2d.texture.draw_shift_image(image_base,texture,shift,draw_parameters,self.frame)
     }
 
     /// Рисует изображение на основе `ImageBase` c поворотом в 'angle' градусов.
@@ -109,7 +124,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         angle:f32,
         draw_parameters:&mut DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.texture.draw_rotate_image(
+        self.graphics2d.texture.draw_rotate_image(
             image_base,
             texture,
             rotation_center,
@@ -134,7 +149,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         colour_filter:Colour,
         draw_parameters:&mut DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.draw_range_image(
+        self.graphics2d.draw_range_image(
             index,
             texture,
             colour_filter,
@@ -156,7 +171,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         shift:[f32;2],
         draw_parameters:&mut DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.draw_shift_range_image(
+        self.graphics2d.draw_shift_range_image(
             index,
             texture,
             colour_filter,
@@ -184,7 +199,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         angle:f32,
         draw_parameters:&mut DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.draw_rotate_range_image(
+        self.graphics2d.draw_rotate_range_image(
             index,
             texture,
             colour_filter,
@@ -208,7 +223,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         object:&O,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.simple.draw(object,draw_parameters,self.frame)
+        self.graphics2d.simple.draw(object,draw_parameters,self.frame)
     }
 
     /// Рисует сдвинутый простой объект.
@@ -221,7 +236,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         shift:[f32;2],
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.simple.draw_shift(object,shift,draw_parameters,self.frame)
+        self.graphics2d.simple.draw_shift(object,shift,draw_parameters,self.frame)
     }
 
     /// Рисует повёрнутый простой объект.
@@ -234,7 +249,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         angle:f32,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.simple.draw_rotate(
+        self.graphics2d.simple.draw_rotate(
             object,
             rotation_center,
             angle,
@@ -252,7 +267,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         index:usize,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.simple.draw_object(index,draw_parameters,self.frame)
+        self.graphics2d.simple.draw_object(index,draw_parameters,self.frame)
     }
 
     /// Рисует сдвинутый простой объект.
@@ -265,7 +280,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         shift:[f32;2],
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.simple.draw_shift_object(
+        self.graphics2d.simple.draw_shift_object(
             index,
             shift,
             draw_parameters,
@@ -284,7 +299,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         angle:f32,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
-        self.graphics.simple.draw_rotate_object(
+        self.graphics2d.simple.draw_rotate_object(
             index,
             rotation_center,
             angle,

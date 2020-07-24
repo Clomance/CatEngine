@@ -1,6 +1,6 @@
 [package]
 name = "cat_engine"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
 homepage = "https://github.com/Clomance/CatEngine"
@@ -42,8 +42,8 @@ alpha_smoothing = []
 
 file_drop = []
 
-# 2D = []
-# 3D = []
+2D = []
+3D = []
 
 [package.metadata.docs.rs]
 features = [
