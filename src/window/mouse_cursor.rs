@@ -1,12 +1,14 @@
-use crate::{
-    graphics::{
-        Graphics,
-        two_dimensions::Graphics2D
-    },
+#[cfg(feature="mouse_cursor_icon")]
+use crate::graphics::{
+    Graphics,
+    two_dimensions::Graphics2D,
 };
 
 #[cfg(feature="mouse_cursor_icon")]
 use crate::image::{ImageBase,Texture};
+
+#[cfg(feature="mouse_cursor_icon")]
+use crate::graphics::two_dimensions::TexturedVertex2D;
 
 use super::{
     mouse_cursor,
@@ -15,8 +17,15 @@ use super::{
 };
 
 use glium::{
+    uniform,
     Display,
     DrawParameters,
+    VertexBuffer,
+    index::{
+        PrimitiveType, // enum
+        NoIndices,
+    },
+    Surface,
 };
 
 use std::path::Path;
@@ -101,6 +110,7 @@ const d_radius:f32=5f32;
 /// Загружает картинку из папки ресурсов.
 #[cfg(feature="mouse_cursor_icon")]
 pub struct MouseCursorIcon{
+    vertex_buffer:VertexBuffer<TexturedVertex2D>,
     image_base:ImageBase,
     texture:Texture,
     visible:bool,
@@ -108,7 +118,7 @@ pub struct MouseCursorIcon{
 
 #[cfg(feature="mouse_cursor_icon")]
 impl MouseCursorIcon{
-    pub fn new<P:AsRef<Path>>(settings:MouseCursorIconSettings<P>,display:&Display,graphics:&mut Graphics2D)->MouseCursorIcon{
+    pub fn new<P:AsRef<Path>>(settings:MouseCursorIconSettings<P>,display:&Display)->MouseCursorIcon{
         let image_base=ImageBase::new([1f32;4],
             unsafe{[
                 window_center[0]+settings.shift[0],
@@ -118,17 +128,16 @@ impl MouseCursorIcon{
             ]}
         );
 
-        graphics.bind_image(settings.range,image_base.clone()).expect("Mouse curcor image binging error");
-
         Self{
+            vertex_buffer:VertexBuffer::new(display,&image_base.vertex_buffer()).unwrap(),
             image_base,
             texture:Texture::from_path(settings.path,display).expect("Loading mouse curcor image error"),
             visible:true,
         }
     }
 
-    pub fn update(&self,graphics:&mut Graphics2D){
-        graphics.rewrite_range_image(0,self.image_base.clone()).expect("Mouse curcor image update error");
+    pub fn update(&self){
+        self.vertex_buffer.as_slice().write(&self.image_base.vertex_buffer())
     }
 
     #[inline(always)]
@@ -144,30 +153,43 @@ impl MouseCursorIcon{
     /// При нажатии кнопки мыши.
     /// 
     /// On a mouse button pressed.
-    pub fn pressed(&mut self,graphics:&mut Graphics2D){
+    pub fn pressed(&mut self){
         self.image_base.x1+=d_radius;
         self.image_base.y1+=d_radius;
         self.image_base.x2-=d_radius;
         self.image_base.y2-=d_radius;
-        graphics.rewrite_range_image(0,self.image_base.clone()).expect("Mouse curcor image update error");
+        self.vertex_buffer.as_slice().write(&self.image_base.vertex_buffer())
     }
 
     /// При освобождении кнопки мыши.
     /// 
     /// On a mouse button released.
-    pub fn released(&mut self,graphics:&mut Graphics2D){
+    pub fn released(&mut self){
         self.image_base.x1-=d_radius;
         self.image_base.y1-=d_radius;
         self.image_base.x2+=d_radius;
         self.image_base.y2+=d_radius;
-        graphics.rewrite_range_image(0,self.image_base.clone()).expect("Mouse curcor update error");
+        self.vertex_buffer.as_slice().write(&self.image_base.vertex_buffer())
     }
 
     #[inline(always)]
     pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics){
         if self.visible{
-            let shift=unsafe{mouse_cursor.center_radius()};
-            graphics.draw_shift_range_image(0,&self.texture,[1f32;4],shift,draw_parameters).expect("Mouse curcor drawing error");
+            let index=NoIndices(PrimitiveType::TriangleStrip);
+
+            let uni=uniform!{
+                tex:&self.texture.0,
+                shift:unsafe{mouse_cursor.center_radius()},
+                window_center:unsafe{window_center},
+            };
+
+            graphics.frame.draw(
+                &self.vertex_buffer,
+                index,
+                &graphics.graphics2d.texture.draw_shift,
+                &uni,
+                draw_parameters
+            );
         }
     }
 }

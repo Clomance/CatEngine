@@ -8,6 +8,17 @@ window.graphics().set_simple_object_colour(0,White);
 window.graphics().rewrite_simple_object_vertices(0,&[100f32;4])
 ```
 
+### Fixed
+
+Removing simple objects now deletes their indices.
+Removing all the simple objects does not delete the buffer offsets.
+
+### Other
+
+The range system for textures has been replaced with an object one.
+
+All the field of the `Graphics` are now public.
+
 # 0.3.1
 
 ### Fixed

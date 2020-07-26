@@ -27,12 +27,12 @@ use glium::{
 /// Простой интерфейс для связи кадра и графических функций.
 /// Simple interface to connect graphics fuctions to the frame.
 pub struct Graphics<'graphics,'frame>{
-    graphics2d:&'graphics Graphics2D,
+    pub graphics2d:&'graphics Graphics2D,
 
     #[cfg(feature="3D")]
-    graphics3d:&'graphics Graphics3D,
+    pub graphics3d:&'graphics Graphics3D,
 
-    frame:&'frame mut Frame,
+    pub frame:&'frame mut Frame,
 }
 
 impl<'graphics,'frame> Graphics<'graphics,'frame>{
@@ -50,14 +50,6 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
 
             frame
         }
-    }
-
-    /// Возвращает ссылку на кадр.
-    /// 
-    /// Returns the reference to the frame.
-    #[inline(always)]
-    pub fn frame(&mut self)->&mut Frame{
-        self.frame
     }
 
     /// Заполняет окно данным цветом.
@@ -135,74 +127,76 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     }
 }
 
-/// # Функции для работы с областями. Functions to work with ranges.
+/// # Функции для работы с текстурными объектами. Functions to work with textured objects.
 impl<'graphics,'frame> Graphics<'graphics,'frame>{
-    /// Рисует изображение на основе данных из области.
+    /// Рисует сохранённый текстурный объект.
     /// 
-    /// Draws the image based on data from the range.
+    /// Draws the saved textured object.
     #[inline(always)]
     #[cfg(feature="texture_graphics")]
-    pub fn draw_range_image(
+    pub fn draw_textured_object(
         &mut self,
         index:usize,
-        texture:&Texture,
-        colour_filter:Colour,
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
-        self.graphics2d.draw_range_image(
+        self.graphics2d.texture.draw_object(
             index,
-            texture,
-            colour_filter,
             draw_parameters,
             self.frame,
         )
     }
 
-    /// Рисует сдвинутое изображение на основе данных из области.
+    /// Рисует сохранённый текстурный объект.
     /// 
-    /// Draws shifted the image based on data from the range.
+    /// Draws the saved textured object.
     #[inline(always)]
     #[cfg(feature="texture_graphics")]
-    pub fn draw_shift_range_image(
+    pub fn draw_all_textured_objects(
+        &mut self,
+        draw_parameters:&DrawParameters
+    )->Result<(),DrawError>{
+        self.graphics2d.texture.draw_all_objects(
+            draw_parameters,
+            self.frame,
+        )
+    }
+
+    /// Рисует сдвинутый сохранённый текстурный объект.
+    /// 
+    /// Draws the shifted saved textured object.
+    #[inline(always)]
+    #[cfg(feature="texture_graphics")]
+    pub fn draw_shift_textured_object(
         &mut self,
         index:usize,
-        texture:&Texture,
-        colour_filter:Colour,
         shift:[f32;2],
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
-        self.graphics2d.draw_shift_range_image(
+        self.graphics2d.texture.draw_shift_object(
             index,
-            texture,
-            colour_filter,
             shift,
             draw_parameters,
             self.frame
         )
     }
 
-    /// Рисует изображение с поворотом в 'angle' градусов на основе
-    /// данных из области.
+    /// Рисует повёрнутый сохранённый текстурный объект.
     /// 
-    /// Draws the image based on data from the range rotated `angle` degrees.
+    /// Draws the rotated saved textured object.
     /// 
     /// rotation_center - [x, y]
     /// angle - radians
     #[inline(always)]
     #[cfg(feature="texture_graphics")]
-    pub fn draw_rotate_range_image(
+    pub fn draw_rotate_textured_object(
         &mut self,
         index:usize,
-        texture:&Texture,
-        colour_filter:Colour,
         rotation_center:[f32;2],
         angle:f32,
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
-        self.graphics2d.draw_rotate_range_image(
+        self.graphics2d.texture.draw_rotate_object(
             index,
-            texture,
-            colour_filter,
             rotation_center,
             angle,
             draw_parameters,

@@ -8,7 +8,7 @@ use super::{
     // structs
     graphics::{
         Graphics,
-        two_dimensions::TexturedVertex
+        two_dimensions::TexturedVertex2D
     },
 };
 
@@ -78,40 +78,12 @@ impl ImageBase{
     /// для невращающихся изображений.
     /// 
     /// Returns vertex array for non-rotating images.
-    pub (crate) fn vertex_buffer(&self)->[TexturedVertex;4]{
-        let (x1,y1,x2,y2)=unsafe{(
-            self.x1/window_center[0]-1f32,
-            1f32-self.y1/window_center[1],
-
-            self.x2/window_center[0]-1f32,
-            1f32-self.y2/window_center[1]
-        )};
-
+    pub (crate) fn vertex_buffer(&self)->[TexturedVertex2D;4]{
         [
-            TexturedVertex::new([x1,y1],[0.0,1.0]),
-            TexturedVertex::new([x1,y2],[0.0,0.0]),
-            TexturedVertex::new([x2,y1],[1.0,1.0]),
-            TexturedVertex::new([x2,y2],[1.0,0.0])
-        ]
-    }
-
-    /// Массив координат
-    /// для вращающихся изображений.
-    /// 
-    /// Returns vertex array for rotating images.
-    pub (crate) fn rotation_vertex_buffer(&self)->[TexturedVertex;4]{
-        let (x1,y1,x2,y2)=unsafe{(
-            self.x1-window_center[0],
-            window_center[1]-self.y1,
-            self.x2-window_center[0],
-            window_center[1]-self.y2
-        )};
-
-        [
-            TexturedVertex::new([x1,y1],[0.0,1.0]),
-            TexturedVertex::new([x1,y2],[0.0,0.0]),
-            TexturedVertex::new([x2,y1],[1.0,1.0]),
-            TexturedVertex::new([x2,y2],[1.0,0.0])
+            TexturedVertex2D::new([self.x1,self.y1],[0.0,1.0]),
+            TexturedVertex2D::new([self.x1,self.y2],[0.0,0.0]),
+            TexturedVertex2D::new([self.x2,self.y1],[1.0,1.0]),
+            TexturedVertex2D::new([self.x2,self.y2],[1.0,0.0])
         ]
     }
 

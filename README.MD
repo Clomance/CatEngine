@@ -23,6 +23,8 @@ If you use audio feature, alsa delevopment libraries are required for Linux: `li
 
 ## [My own game](https://github.com/Clomance/Visual-Novel)
 
+## [Pre-release](https://github.com/Clomance/CatEngine/tree/pre-release)
+
 ## [Release notes](RELEASE-NOTES.MD)
 
 ## [The book](book/README.MD)

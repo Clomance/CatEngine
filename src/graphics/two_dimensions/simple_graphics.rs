@@ -1,3 +1,4 @@
+#[cfg(feature="simple_graphics")]
 use crate::{
     // statics
     window_center,
@@ -5,6 +6,12 @@ use crate::{
     Colour,
     // structs
     graphics::Graphics,
+};
+
+use super::{
+    InnerGraphicsSettings,
+    SimpleObject2D,
+    Vertex2D,
 };
 
 use glium::{
@@ -30,126 +37,23 @@ use glium::{
         Buffer,
         BufferType,
         BufferMode,
-        BufferSlice,
     },
 };
 
-use core::ops::Range;
-
-implement_vertex!(Vertex2D,position);
-/// Вершина для простых объектов.
-/// A vertex for simple objects.
-#[derive(Copy,Clone)]
-pub struct Vertex2D{
-    pub position:[f32;2],
-}
-
-impl Vertex2D{
-    pub const fn new(x:f32,y:f32)->Vertex2D{
-        Self{
-            position:[x,y]
-        }
-    }
-}
-
-pub struct SimpleObjectData{
-    vertex_buffer_range:Range<usize>,
-    colour:Colour,
-
-    index_buffer_range:Range<usize>,
-    primitive_type:PrimitiveType,
-}
-
-impl SimpleObjectData{
-    /// Returns the vertices source of the object.
-    pub fn vertices_source<'a>(
-        &self,
-        vertices:&'a Buffer<[Vertex2D]>,
-        vertex_format:&'a VertexFormat
-    )->VerticesSource<'a>{
-        let slice=vertices.slice(self.vertex_buffer_range.clone()).unwrap();
-
-        VerticesSource::VertexBuffer(
-            slice.as_slice_any(),
-            &vertex_format,
-            false
-        )
-    }
-
-    /// Returns the indices source of the object.
-    pub fn indices_source<'a>(
-        &self,
-        indices:&'a Buffer<[u8]>,
-    )->IndicesSource<'a>{
-        if self.index_buffer_range.len()!=0{
-            let slice=indices.slice(self.index_buffer_range.clone()).unwrap();
-            IndicesSource::IndexBuffer{
-                buffer:slice.as_slice_any(),
-                data_type:IndexType::U8,
-                primitives:self.primitive_type,
-            }
-        }
-        else{
-            IndicesSource::NoIndices{primitives:self.primitive_type}
-        }
-    }
-}
-
-#[derive(Clone,Debug)]
-pub struct SimpleGraphicsSettings{
-    /// The capacity of the vertex buffer.
-    /// 
-    /// The default is 8.
-    pub vertex_buffer_size:usize,
-
-    /// The range from 0 to the `offset` is for common drawing.
-    /// The range from `offset` to the end is for saving objects.
-    /// 
-    /// The default is 4.
-    pub vertex_buffer_offset:usize,
-
-    /// The capacity of the index buffer.
-    /// 
-    /// The default is 8.
-    pub index_buffer_size:usize,
-
-    /// The range from 0 to the `offset` is for common drawing.
-    /// The range from `offset` to the end is for saving objects.
-    /// 
-    /// The default is 4.
-    pub index_buffer_offset:usize,
-
-    /// The capacity of the object buffer.
-    /// 
-    /// The default is 2.
-    pub object_buffer_size:usize,
-}
-
-impl SimpleGraphicsSettings{
-    pub const fn new()->SimpleGraphicsSettings{
-        SimpleGraphicsSettings{
-            vertex_buffer_size:8,
-            vertex_buffer_offset:4,
-
-            index_buffer_size:8,
-            index_buffer_offset:4,
-
-            object_buffer_size:2,
-        }
-    }
-}
 
 /// Графическая основа для простых одноцветных объектов.
 /// Размер буферов регулируется вручную при создании.
 pub struct SimpleGraphics{
     vertex_buffer:Buffer<[Vertex2D]>,
     bindings:VertexFormat,
+    vertex_buffer_active_edge:usize,
     vertex_buffer_edge:usize, // Сколько уже занято
 
     index_buffer:Buffer<[u8]>,
+    index_buffer_active_edge:usize,
     index_buffer_edge:usize, // Сколько уже занято
 
-    simple_objects:Vec<SimpleObjectData>,
+    objects:Vec<SimpleObject2D>,
 
     draw:Program,
     draw_shift:Program,
@@ -157,7 +61,7 @@ pub struct SimpleGraphics{
 }
 
 impl SimpleGraphics{
-    pub fn new(display:&Display,settings:SimpleGraphicsSettings,glsl:u16)->SimpleGraphics{
+    pub fn new(display:&Display,settings:InnerGraphicsSettings,glsl:u16)->SimpleGraphics{
         let (
             rotation,
             shift,
@@ -187,6 +91,8 @@ impl SimpleGraphics{
             ).unwrap(),
 
             bindings:Vertex2D::build_bindings(),
+
+            vertex_buffer_active_edge:settings.vertex_buffer_offset,
             vertex_buffer_edge:settings.vertex_buffer_offset,
 
             index_buffer:Buffer::empty_unsized(
@@ -196,26 +102,14 @@ impl SimpleGraphics{
                 BufferMode::Default
             ).unwrap(),
 
+            index_buffer_active_edge:settings.index_buffer_offset,
             index_buffer_edge:settings.index_buffer_offset,
 
-            simple_objects:Vec::<SimpleObjectData>::with_capacity(settings.object_buffer_size),
+            objects:Vec::<SimpleObject2D>::with_capacity(settings.object_buffer_size),
 
             draw:Program::from_source(display,vertex_shader,fragment_shader,None).unwrap(),
             draw_shift:Program::from_source(display,shift,fragment_shader,None).unwrap(),
             draw_rotate:Program::from_source(display,rotation,fragment_shader,None).unwrap(),
-        }
-    }
-
-    pub fn indices_source<'a>(&'a self,slice:Option<&'a BufferSlice<[u8]>>,primitive_type:PrimitiveType)->IndicesSource<'a>{
-        match slice{
-            Some(buffer)=>IndicesSource::IndexBuffer{
-                buffer:buffer.as_slice_any(),
-                data_type:IndexType::U8,
-                primitives:primitive_type,
-            },
-            None=>IndicesSource::NoIndices{
-                primitives:primitive_type,
-            }
         }
     }
 
@@ -339,9 +233,9 @@ impl SimpleGraphics{
             0..0
         };
 
-        let len=self.simple_objects.len();
+        let len=self.objects.len();
 
-        self.simple_objects.push(SimpleObjectData{
+        self.objects.push(SimpleObject2D{
             vertex_buffer_range:vertex_range,
             index_buffer_range:index_range,
 
@@ -352,10 +246,13 @@ impl SimpleGraphics{
         Some(len)
     }
 
-    pub fn pop_object(&mut self)->Option<SimpleObjectData>{
-        if let Some(object)=self.simple_objects.pop(){
-            let len=object.vertex_buffer_range.len();
+    pub fn pop_object(&mut self)->Option<SimpleObject2D>{
+        if let Some(object)=self.objects.pop(){
+            let mut len=object.vertex_buffer_range.len();
             self.vertex_buffer_edge-=len;
+
+            len=object.index_buffer_range.len();
+            self.index_buffer_edge-=len;
             Some(object)
         }
         else{
@@ -364,31 +261,35 @@ impl SimpleGraphics{
     }
 
     pub fn delete_last_object(&mut self){
-        if let Some(object)=self.simple_objects.pop(){
-            let len=object.vertex_buffer_range.len();
+        if let Some(object)=self.objects.pop(){
+            let mut len=object.vertex_buffer_range.len();
             self.vertex_buffer_edge-=len;
+
+            len=object.index_buffer_range.len();
+            self.index_buffer_edge-=len;
         }
     }
 
     pub fn clear_object_array(&mut self){
-        self.vertex_buffer_edge=0;
-        self.simple_objects.clear();
+        self.vertex_buffer_edge=self.vertex_buffer_active_edge;
+        self.index_buffer_edge=self.index_buffer_active_edge;
+        self.objects.clear();
     }
 }
 
 // Редактирование объектов
 impl SimpleGraphics{
     pub fn set_object_colour(&mut self,index:usize,colour:Colour){
-        self.simple_objects[index].colour=colour
+        self.objects[index].colour=colour
     }
 
     pub fn set_object_primitive_type(&mut self,index:usize,primitive_type:PrimitiveType){
-        self.simple_objects[index].primitive_type=primitive_type
+        self.objects[index].primitive_type=primitive_type
     }
 
     // Если размер новых данных не соответсвует выделенному ранее размеру, то ПАНИКА!
     pub fn rewrite_object_vertices(&mut self,index:usize,vertices:&[Vertex2D]){
-        let object=&self.simple_objects[index];
+        let object=&self.objects[index];
 
         let vertex_slice=self.vertex_buffer.slice(object.vertex_buffer_range.clone()).unwrap();
         vertex_slice.write(vertices);
@@ -396,7 +297,7 @@ impl SimpleGraphics{
 
     // Если размер новых данных не соответсвует выделенному ранее размеру, то ПАНИКА!
     pub fn rewrite_object_indices(&mut self,index:usize,indices:&[u8]){
-        let object=&self.simple_objects[index];
+        let object=&self.objects[index];
 
         let index_slice=self.index_buffer.slice(object.index_buffer_range.clone()).unwrap();
         index_slice.write(&indices);
@@ -411,7 +312,7 @@ impl SimpleGraphics{
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
-        let object=&self.simple_objects[index];
+        let object=&self.objects[index];
 
         let index_source=object.indices_source(&self.index_buffer);
 
@@ -436,7 +337,7 @@ impl SimpleGraphics{
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
-        for object in &self.simple_objects{
+        for object in &self.objects{
             let index_source=object.indices_source(&self.index_buffer);
 
             let uni=uniform!{
@@ -465,7 +366,7 @@ impl SimpleGraphics{
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
-        let object=&self.simple_objects[index];
+        let object=&self.objects[index];
 
         let index_source=object.indices_source(&self.index_buffer);
 
@@ -494,7 +395,7 @@ impl SimpleGraphics{
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
-        let object=&self.simple_objects[index];
+        let object=&self.objects[index];
 
         let index_source=object.indices_source(&self.index_buffer);
 

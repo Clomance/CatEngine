@@ -57,7 +57,7 @@ pub use two_dimensions::Graphics2D;
 pub use two_dimensions::{
     SimpleObject,
     Vertex2D,
-    SimpleGraphicsSettings
+    InnerGraphicsSettings
 };
 
 
@@ -68,8 +68,6 @@ pub (crate) mod three_dimensions;
 mod base;
 pub use base::Graphics;
 
-
-
 /// Настройки графических основ.
 /// Settings for graphics basics.
 #[derive(Clone,Debug)]
@@ -78,11 +76,11 @@ pub struct GraphicsSettings{
     /// 
     /// feature = "texture_graphics"
     #[cfg(feature="texture_graphics")]
-    pub texture_vertex_buffer_size:usize,
+    pub texture:InnerGraphicsSettings,
 
     /// feature = "simple_graphics"
     #[cfg(feature="simple_graphics")]
-    pub simple:SimpleGraphicsSettings,
+    pub simple:InnerGraphicsSettings,
 
     /// The default is 2000.
     /// 
@@ -95,10 +93,10 @@ impl GraphicsSettings{
     pub const fn new()->GraphicsSettings{
         Self{
             #[cfg(feature="texture_graphics")]
-            texture_vertex_buffer_size:8usize,
+            texture:InnerGraphicsSettings::new(),
 
             #[cfg(feature="simple_graphics")]
-            simple:SimpleGraphicsSettings::new(),
+            simple:InnerGraphicsSettings::new(),
 
             #[cfg(feature="text_graphics")]
             text_vertex_buffer_size:2000usize,

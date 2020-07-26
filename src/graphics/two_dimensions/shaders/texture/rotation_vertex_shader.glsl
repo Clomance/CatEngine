@@ -13,7 +13,9 @@ uniform vec2 window_center;
 void main() {
     v_tex_coords = tex_coords;
 
-    vec2 new_position = position - rotation_center;
+    vec2 new_position = vec2(position.x - window_center.x, window_center.y - position.y);
+
+    new_position = new_position - rotation_center;
 
     new_position = vec2(new_position.x * cos - new_position.y * sin, new_position.x * sin + new_position.y * cos);
 
