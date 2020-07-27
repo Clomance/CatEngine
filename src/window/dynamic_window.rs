@@ -53,7 +53,7 @@ pub enum PageState<'a>{
     TakeOld(Option<PageRef<'a>>),
 }
 
-/// Окно, которое использует 'страницы' как типажи-объекты для обработки событий.
+/// Окно, которое использует "страницы" как типажи-объекты для обработки событий.
 /// A window that uses 'pages' as trait objects to handle the events.
 /// 
 /// #

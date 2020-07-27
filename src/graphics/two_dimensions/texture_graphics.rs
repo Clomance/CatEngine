@@ -298,6 +298,14 @@ impl TextureGraphics{
 
 // Редактирование объектов
 impl TextureGraphics{
+    pub fn get_object_colour(&mut self,index:usize)->&mut Colour{
+        &mut self.objects[index].base.colour
+    }
+
+    pub fn get_object_texture(&mut self,index:usize)->&mut Texture{
+        &mut self.objects[index].texture
+    }
+
     pub fn set_object_colour(&mut self,index:usize,colour:Colour){
         self.objects[index].base.colour=colour
     }

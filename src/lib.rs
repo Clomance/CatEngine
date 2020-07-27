@@ -1,4 +1,4 @@
-#![allow(non_upper_case_globals,unused_must_use,unused_imports,dead_code,unused_mut)]
+#![allow(non_upper_case_globals,unused_must_use,unused_imports,dead_code,unused_mut,unused_variables)]
 
 //! # 2D графический движок с поддержкой аудио. A 2D graphics engine with audio support.
 //! 
@@ -73,7 +73,7 @@ mod window;
 pub use window::*;
 
 /// Геометрические фигуры. Geometric shapes.
-/// `feature = "simple_graphics_2d"`, `default_features`
+/// `feature = "simple_graphics"`, `default_features`
 #[cfg(all(feature="simple_graphics"))]
 pub mod shapes;
 

@@ -59,7 +59,7 @@ enum EventLoopState<O:PartialEq>{
     Closed(O),
 }
 
-/// Окно, которое использует 'страницы' и замыкания для обработки событий.
+/// Окно, которое использует "страницы" и замыкания для обработки событий.
 /// A window that uses 'pages' and closures to handle the events.
 /// 
 /// #
@@ -182,7 +182,11 @@ impl PagedWindow{
         self.base.request_event_loop_close()
     }
 
-    /// Converts into `DefaultWindow`.
+    /// Переводит в `DefaultWindow`.
+    /// 
+    /// Сохраняет состояние окна при `feature = "auto_hide"` (свёрнутое или нет).
+    /// 
+    /// Converts into the `DefaultWindow`.
     /// 
     /// Saves the 'auto_hide' feature state (the window hidden or not).
     pub fn into_default_window(self)->DefaultWindow{
@@ -204,7 +208,11 @@ impl PagedWindow{
         }
     }
 
-    /// Converts into `DynamicWindow`.
+    /// Переводит в `DynamicWindow`.
+    /// 
+    /// Не учитывает состояние окна при `feature = "auto_hide"` (свёрнутое или нет).
+    /// 
+    /// Converts into the `DynamicWindow`.
     /// 
     /// Ignores the 'auto_hide' feature state (the window hidden or not).
     pub fn into_dynamic_window<'a>(self)->DynamicWindow<'a>{

@@ -89,6 +89,14 @@ impl Graphics2D{
         self.simple.clear_object_array()
     }
 
+    /// Возвращает ссылку на цвет объекта.
+    /// 
+    /// Returns a reference to the object's colour.
+    #[inline(always)]
+    pub fn get_simple_object_colour(&mut self,index:usize)->&mut Colour{
+        self.simple.get_object_colour(index)
+    }
+
     /// Устанавливает цвет объекта.
     /// 
     /// Паникует, если нет такого объекта.
@@ -167,6 +175,22 @@ impl Graphics2D{
         self.texture.clear_object_array()
     }
 
+    /// Возвращает ссылку на цвет объекта.
+    /// 
+    /// Returns a reference to the object's colour.
+    #[inline(always)]
+    pub fn get_textured_object_colour(&mut self,index:usize)->&mut Colour{
+        self.texture.get_object_colour(index)
+    }
+
+    /// Возвращает ссылку на текстуру объекта.
+    /// 
+    /// Returns a reference to the object's texture.
+    #[inline(always)]
+    pub fn get_textured_object_texture(&mut self,index:usize)->&mut Texture{
+        self.texture.get_object_texture(index)
+    }
+
     /// Устанавливает цвет объекта.
     /// 
     /// Паникует, если нет такого объекта.
@@ -213,17 +237,5 @@ impl Graphics2D{
     #[inline(always)]
     pub fn rewrite_textured_object_indices(&mut self,index:usize,indices:&[u8]){
         self.texture.rewrite_object_indices(index,indices)
-    }
-
-    /// Обновляет картинку объекта.
-    /// 
-    /// Паникует, если нет такого объекта.
-    /// 
-    /// Updates  the image of the object.
-    /// 
-    /// Panics if there is no such object.
-    #[inline(always)]
-    pub fn update_textured_object_image(&mut self,index:usize,image:&RgbaImage){
-        self.texture.update_object_image(index,image)
     }
 }

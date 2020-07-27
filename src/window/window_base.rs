@@ -154,6 +154,9 @@ impl WindowBase{
 
         let mut graphics2d=Graphics2D::new(&display,graphics_settings,glsl);
 
+        #[cfg(feature="3D")]
+        let mut graphics3d=Graphics3D::new();
+
         let proxy=event_loop.create_proxy();
 
         Ok(Self{
@@ -163,7 +166,7 @@ impl WindowBase{
             graphics2d,
 
             #[cfg(feature="3D")]
-            graphics3d:Graphics3D::new(),
+            graphics3d,
 
             display,
 
@@ -204,27 +207,17 @@ impl WindowBase{
 
 /// Функции для рисования. Drawing functions.
 impl WindowBase{
-    /// Даёт прямое управление над кадром.
-    /// 
-    /// Gives frame to raw drawing.
-    pub fn draw_raw<F:FnOnce(&mut DrawParameters,&mut Frame)>(&self,f:F)->Result<(),SwapBuffersError>{
-        let mut frame=self.display.draw();
-        let mut draw_parameters=default_draw_parameters();
-        f(&mut draw_parameters,&mut frame);
-        frame.finish()
-    }
-
     /// Выполняет замыкание (и рисует курсор, если `feature = "mouse_cursor_icon"`).
     /// 
     /// Executes the closure (and draws the mouse cursor if `feature = "mouse_cursor_icon"`).
-    pub fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&self,f:F)->Result<(),SwapBuffersError>{
+    pub fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&mut self,f:F)->Result<(),SwapBuffersError>{
         let mut draw_parameters=default_draw_parameters();
 
         let mut frame=self.display.draw();
 
         let mut g=Graphics::new(
-            &self.graphics2d,
-            #[cfg(feature="3D")]&self.graphics3d,
+            &mut self.graphics2d,
+            #[cfg(feature="3D")]&mut self.graphics3d,
             &mut frame
         );
 
@@ -255,7 +248,9 @@ impl WindowBase{
 
         let mut g=Graphics::new(
             &mut self.graphics2d,
-            #[cfg(feature="3D")]&self.graphics3d,
+
+            #[cfg(feature="3D")]&mut self.graphics3d,
+
             &mut frame
         );
 
@@ -282,7 +277,7 @@ impl WindowBase{
         self.mouse_icon.set_visible(visible);
     }
 
-    /// feature = "mouse_cursor_icon
+    /// feature = "mouse_cursor_icon"
     #[cfg(feature="mouse_cursor_icon")]
     #[inline(always)]
     pub fn switch_cursor_visibility(&mut self){

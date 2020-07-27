@@ -95,7 +95,7 @@ pub struct GeneralSettings{
     /// The default is None.
     pub initial_colour:Option<Colour>,
 
-    /// The amount of update events per second.
+    /// The amount of the update events per second.
     /// 
     /// The default is 50.
     pub updates_per_second:u32,

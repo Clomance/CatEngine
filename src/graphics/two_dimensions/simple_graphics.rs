@@ -279,6 +279,10 @@ impl SimpleGraphics{
 
 // Редактирование объектов
 impl SimpleGraphics{
+    pub fn get_object_colour(&mut self,index:usize)->&mut Colour{
+        &mut self.objects[index].colour
+    }
+
     pub fn set_object_colour(&mut self,index:usize,colour:Colour){
         self.objects[index].colour=colour
     }

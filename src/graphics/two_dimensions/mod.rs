@@ -1,7 +1,6 @@
 use super::GraphicsSettings;
 
 mod objects_2d;
-#[cfg(feature="simple_graphics")]
 pub (crate) use objects_2d::SimpleObject2D;
 #[cfg(feature="simple_graphics")]
 pub use objects_2d::Vertex2D;

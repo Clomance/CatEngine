@@ -67,7 +67,7 @@ use std::{
 /// 
 /// #
 /// 
-/// All events are handled and added to the outer handling queue
+/// All the events are handled and added to the outer handling queue
 /// to work with them outside of the window structure.
 pub struct DefaultWindow{
     pub (crate) base:WindowBase,
@@ -108,7 +108,11 @@ impl DefaultWindow{
         self.events.pop_front()
     }
 
-    /// Converts into `PagedWindow`.
+    /// Переводит в `PagedWindow`.
+    /// 
+    /// Сохраняет состояние окна при `feature = "auto_hide"` (свёрнутое или нет).
+    /// 
+    /// Converts into the `PagedWindow`.
     /// 
     /// Saves the 'auto_hide' feature state (the window hidden or not).
     pub fn into_paged_window(self)->PagedWindow{
@@ -133,7 +137,11 @@ impl DefaultWindow{
         }
     }
 
-    /// Converts into `DynamicWindow`.
+    /// Переводит в `DynamicWindow`.
+    /// 
+    /// Не учитывает состояние окна при `feature = "auto_hide"` (свёрнутое или нет).
+    /// 
+    /// Converts into the `DynamicWindow`.
     /// 
     /// Ignores the 'auto_hide' feature state (the window hidden or not).
     pub fn into_dynamic_window<'a>(self)->DynamicWindow<'a>{

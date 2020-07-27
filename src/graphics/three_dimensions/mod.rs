@@ -1,3 +1,5 @@
+#![cfg(feature="3D")]
+
 mod simple;
 use simple::*;
 

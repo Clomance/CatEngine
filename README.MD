@@ -9,7 +9,7 @@
 [doc.rs]:https://docs.rs/cat_engine/
 
 
-A 2D graphics engine with audio support.
+A 2D graphics engine with audio support for Windows and Linux.
 
 Uses OpenGL 2.0 and above.
 
@@ -23,9 +23,9 @@ If you use audio feature, alsa delevopment libraries are required for Linux: `li
 
 ## [My own game](https://github.com/Clomance/Visual-Novel)
 
-## [Pre-release](https://github.com/Clomance/CatEngine/tree/pre-release)
-
 ## [Release notes](RELEASE-NOTES.MD)
+
+## [Pre-release](https://github.com/Clomance/CatEngine/tree/pre-release)
 
 ## [The book](book/README.MD)
 

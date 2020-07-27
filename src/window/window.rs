@@ -148,28 +148,25 @@ pub trait Window:Sized{
     /// 
     /// Returns the graphics base.
     #[inline(always)]
-    fn graphics(&mut self)->&mut Graphics2D{
+    fn graphics2d(&mut self)->&mut Graphics2D{
         &mut self.window_base_mut().graphics2d
     }
 
-    /// Даёт кадр для рисования.
+    /// Выполняет замыкание
+    /// и рисует пользовательский курсор мыши,
+    /// если установлен.
     /// 
-    /// Gives a frame for drawing.
+    /// Executes the closure
+    /// and draws user's mouse cursor if set.
     #[inline(always)]
-    fn draw_raw<F:FnOnce(&mut DrawParameters,&mut Frame)>(&self,f:F)->Result<(),SwapBuffersError>{
-        self.window_base().draw_raw(f)
-    }
-
-    /// Выполняет замыкание.
-    /// 
-    /// Executes the closure.
-    #[inline(always)]
-    fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&self,f:F)->Result<(),SwapBuffersError>{
-        self.window_base().draw(f)
+    fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&mut self,f:F)->Result<(),SwapBuffersError>{
+        self.window_base_mut().draw(f)
     }
 
 
     /// Sets alpha channel for drawing with a changing alpha channel.
+    /// 
+    /// feature = "alpha_smoothing"
     #[cfg(feature="alpha_smoothing")]
     #[inline(always)]
     fn set_alpha(&mut self,alpha:f32){
@@ -177,6 +174,8 @@ pub trait Window:Sized{
     }
 
     /// Sets smooth for drawing with a changing alpha channel.
+    /// 
+    /// feature = "alpha_smoothing"
     #[cfg(feature="alpha_smoothing")]
     #[inline(always)]
     fn set_smooth(&mut self,smooth:f32){
@@ -184,6 +183,8 @@ pub trait Window:Sized{
     }
 
     /// Sets smooth and zeroes alpha channel for drawing with a changing alpha channel.
+    /// 
+    /// feature = "alpha_smoothing"
     #[cfg(feature="alpha_smoothing")]
     #[inline(always)]
     fn set_new_smooth(&mut self,smooth:f32){

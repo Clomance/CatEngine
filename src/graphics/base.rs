@@ -27,10 +27,11 @@ use glium::{
 /// Простой интерфейс для связи кадра и графических функций.
 /// Simple interface to connect graphics fuctions to the frame.
 pub struct Graphics<'graphics,'frame>{
-    pub graphics2d:&'graphics Graphics2D,
+    pub graphics2d:&'graphics mut Graphics2D,
 
+    /// feature = "3D" (not implemented)
     #[cfg(feature="3D")]
-    pub graphics3d:&'graphics Graphics3D,
+    pub graphics3d:&'graphics mut Graphics3D,
 
     pub frame:&'frame mut Frame,
 }
@@ -38,8 +39,8 @@ pub struct Graphics<'graphics,'frame>{
 impl<'graphics,'frame> Graphics<'graphics,'frame>{
     #[inline(always)]
     pub (crate) fn new(
-        graphics2d:&'graphics Graphics2D,
-        #[cfg(feature="3D")]graphics3d:&'graphics Graphics3D,
+        graphics2d:&'graphics mut Graphics2D,
+        #[cfg(feature="3D")]graphics3d:&'graphics mut Graphics3D,
         frame:&'frame mut Frame
     )->Graphics<'graphics,'frame>{
         Self{
@@ -74,10 +75,10 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         self.graphics2d.text.draw_character(character,colour,draw_parameters,self.frame)
     }
 
-    /// Рисует изображение на основе `ImageBase`.
+    /// Рисует изображение.
     /// 
-    /// Draws the image based on `ImageBase`.
-    #[inline(always)] 
+    /// Draws the image.
+    #[inline(always)]
     #[cfg(feature="texture_graphics")]
     pub fn draw_image(
         &mut self,
@@ -88,10 +89,10 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         self.graphics2d.texture.draw_image(image_base,texture,draw_parameters,self.frame)
     }
 
-    /// Рисует изображение на основе `ImageBase`.
+    /// Рисует сдвинутое изображение.
     /// 
-    /// Draws the image based on `ImageBase`.
-    #[inline(always)] 
+    /// Draws the shifted image.
+    #[inline(always)]
     #[cfg(feature="texture_graphics")]
     pub fn draw_shift_image(
         &mut self,
@@ -103,9 +104,11 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         self.graphics2d.texture.draw_shift_image(image_base,texture,shift,draw_parameters,self.frame)
     }
 
-    /// Рисует изображение на основе `ImageBase` c поворотом в 'angle' градусов.
+    /// Рисует повёрнутое изображение.
     /// 
-    /// Draws the image based on `ImageBase` rotated `angle` degrees.
+    /// Draws the rotated image.
+    /// 
+    /// angle - radians
     #[inline(always)]
     #[cfg(feature="texture_graphics")]
     pub fn draw_rotate_image(
@@ -146,9 +149,9 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         )
     }
 
-    /// Рисует сохранённый текстурный объект.
+    /// Рисует все сохранённые текстурные объекты.
     /// 
-    /// Draws the saved textured object.
+    /// Draws all the saved textured objects.
     #[inline(always)]
     #[cfg(feature="texture_graphics")]
     pub fn draw_all_textured_objects(

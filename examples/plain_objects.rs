@@ -22,15 +22,16 @@ fn main(){
     { // No need for the rectangle after adding it to the array
         let mut rect=Rectangle::new([100f32;4],[0.0,0.0,0.0,1.0]);
 
-        window.graphics().add_simple_object(&rect).unwrap();
+        let graphics=window.graphics2d();
+        graphics.add_simple_object(&rect).unwrap();
 
         rect.colour=[1.0,0.0,0.0,1.0];
 
-        window.graphics().add_simple_object(&rect).unwrap();
+        graphics.add_simple_object(&rect).unwrap();
 
         rect.colour=[1.0,0.0,0.0,1.0];
 
-        window.graphics().add_simple_object(&rect).unwrap();
+        graphics.add_simple_object(&rect).unwrap();
     }
 
     let mut angle=0f32;
@@ -80,5 +81,5 @@ fn main(){
 
     // There is no need to do this at the end of the program
     // This is just an example
-    window.graphics().clear_simple_object_array();
+    window.graphics2d().clear_simple_object_array();
 }

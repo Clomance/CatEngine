@@ -8,6 +8,10 @@ window.graphics().set_simple_object_colour(0,White);
 window.graphics().rewrite_simple_object_vertices(0,&[100f32;4])
 ```
 
+### Removed
+
+The `draw_raw()` function of all the windows.
+
 ### Fixed
 
 Removing simple objects now deletes their indices.
@@ -18,6 +22,8 @@ Removing all the simple objects does not delete the buffer offsets.
 The range system for textures has been replaced with an object one.
 
 All the field of the `Graphics` are now public.
+
+Window drawing function takes `&mut self` instead of `&self`.
 
 # 0.3.1
 
