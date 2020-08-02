@@ -57,13 +57,10 @@ use image::{
     DynamicImage
 };
 
-#[cfg(any(feature="fps_counter",not(feature="lazy")))]
-use std::time::{Instant,Duration};
-
-use std::path::Path;
-
-#[cfg(feature="mouse_cursor_icon")]
-use std::path::PathBuf;
+use std::{
+    path::{Path,PathBuf},
+    time::{Instant,Duration}
+};
 
 /// Основа для окон для создания более сложных окон.
 /// A window base for creating more complex windows.

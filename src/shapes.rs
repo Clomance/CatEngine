@@ -2,7 +2,7 @@ use super::Colour;
 
 use super::graphics::{
     Graphics,
-    SimpleObject,
+    DependentObject,
     Vertex2D
 };
 
@@ -14,35 +14,44 @@ use glium::{
 
 #[derive(Clone)]
 pub struct Quadrilateral{
-    pub points:[Vertex2D;4],
+    pub vertices:[Vertex2D;4],
     pub colour:Colour,
 }
 
 impl Quadrilateral{
-    pub fn new(points:[Vertex2D;4],colour:Colour)->Quadrilateral{
+    pub fn new(vertices:[Vertex2D;4],colour:Colour)->Quadrilateral{
         Self{
-            points,
+            vertices,
             colour
         }
     }
+
+    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_simple(self,draw_parameters)
+    }
+
+    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
+    }
+
+    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_shift_simple(self,shift,draw_parameters)
+    }
 }
 
-impl SimpleObject for Quadrilateral{
+impl<'o> DependentObject<'o,Vertex2D,u8> for Quadrilateral{
+    type Vertices=&'o [Vertex2D;4];
+    type Indices=[u8;0];
+
     fn colour(&self)->Colour{
         self.colour
     }
 
-    fn vertex_buffer(&self)->Vec<Vertex2D>{
-        let mut vec=Vec::with_capacity(4);
-
-        for point in &self.points{
-            vec.push(point.clone());
-        }
-
-        vec
+    fn vertices(&'o self)->&'o [Vertex2D;4]{
+        &self.vertices
     }
 
-    fn indices(&self)->Option<Vec<u8>>{
+    fn indices(&self)->Option<[u8;0]>{
         None
     }
 
@@ -82,25 +91,38 @@ impl Rectangle{
             colour
         }
     }
+
+    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_simple(self,draw_parameters)
+    }
+
+    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
+    }
+
+    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_shift_simple(self,shift,draw_parameters)
+    }
 }
 
-impl SimpleObject for Rectangle{
+impl<'o> DependentObject<'o,Vertex2D,u8> for Rectangle{
+    type Vertices=[Vertex2D;4];
+    type Indices=[u8;0];
+
     fn colour(&self)->Colour{
         self.colour
     }
 
-    fn vertex_buffer(&self)->Vec<Vertex2D>{
-        let mut vec=Vec::with_capacity(4);
-
-        vec.push(Vertex2D::new(self.x1,self.y1));
-        vec.push(Vertex2D::new(self.x1,self.y2));
-        vec.push(Vertex2D::new(self.x2,self.y1));
-        vec.push(Vertex2D::new(self.x2,self.y2));
-
-        vec
+    fn vertices(&self)->[Vertex2D;4]{
+        [
+            Vertex2D::new(self.x1,self.y1),
+            Vertex2D::new(self.x1,self.y2),
+            Vertex2D::new(self.x2,self.y1),
+            Vertex2D::new(self.x2,self.y2),
+        ]
     }
 
-    fn indices(&self)->Option<Vec<u8>>{
+    fn indices(&self)->Option<[u8;0]>{
         None
     }
 
@@ -157,27 +179,38 @@ impl RectangleBorder{
 
     pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
         draw_parameters.line_width=Some(self.width);
-        SimpleObject::draw(self,draw_parameters,graphics)
+        graphics.draw_simple(self,draw_parameters)
+    }
+
+    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        draw_parameters.line_width=Some(self.width);
+        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
+    }
+
+    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        draw_parameters.line_width=Some(self.width);
+        graphics.draw_shift_simple(self,shift,draw_parameters)
     }
 }
 
-impl SimpleObject for RectangleBorder{
+impl<'o> DependentObject<'o,Vertex2D,u8> for RectangleBorder{
+    type Vertices=[Vertex2D;4];
+    type Indices=[u8;0];
+
     fn colour(&self)->Colour{
         self.colour
     }
 
-    fn vertex_buffer(&self)->Vec<Vertex2D>{
-        let mut vec=Vec::with_capacity(4);
-
-        vec.push(Vertex2D::new(self.x1,self.y1));
-        vec.push(Vertex2D::new(self.x1,self.y2));
-        vec.push(Vertex2D::new(self.x2,self.y2));
-        vec.push(Vertex2D::new(self.x2,self.y1));
-
-        vec
+    fn vertices(&self)->[Vertex2D;4]{
+        [
+            Vertex2D::new(self.x1,self.y1),
+            Vertex2D::new(self.x1,self.y2),
+            Vertex2D::new(self.x2,self.y2),
+            Vertex2D::new(self.x2,self.y1),
+        ]
     }
 
-    fn indices(&self)->Option<Vec<u8>>{
+    fn indices(&self)->Option<[u8;0]>{
         None
     }
 
@@ -211,6 +244,7 @@ impl RectangleWithBorder{
             border_colour,
         }
     }
+
     pub const fn border(mut self,width:f32,colour:Colour)->RectangleWithBorder{
         self.border_width=width;
         self.border_colour=colour;
@@ -221,6 +255,18 @@ impl RectangleWithBorder{
         self.rect.draw(draw_parameters,graphics)?;
         let border=RectangleBorder::rectangle_base(self.rect.clone(),self.border_width,self.border_colour);
         border.draw(draw_parameters,graphics)
+    }
+
+    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        self.rect.draw_rotate(rotation_center,angle,draw_parameters,graphics)?;
+        let border=RectangleBorder::rectangle_base(self.rect.clone(),self.border_width,self.border_colour);
+        border.draw_rotate(rotation_center,angle,draw_parameters,graphics)
+    }
+
+    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        self.rect.draw_shift(shift,draw_parameters,graphics)?;
+        let border=RectangleBorder::rectangle_base(self.rect.clone(),self.border_width,self.border_colour);
+        border.draw_shift(shift,draw_parameters,graphics)
     }
 }
 
@@ -271,24 +317,35 @@ impl Line{
         draw_parameters.line_width=Some(self.radius);
         graphics.draw_simple(self,draw_parameters)
     }
+
+    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        draw_parameters.line_width=Some(self.radius);
+        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
+    }
+
+    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        draw_parameters.line_width=Some(self.radius);
+        graphics.draw_shift_simple(self,shift,draw_parameters)
+    }
 }
 
 
-impl SimpleObject for Line{
+impl <'o> DependentObject<'o,Vertex2D,u8> for Line{
+    type Vertices=[Vertex2D;2];
+    type Indices=[u8;0];
+
     fn colour(&self)->Colour{
         self.colour
     }
 
-    fn vertex_buffer(&self)->Vec<Vertex2D>{
-        let mut vec=Vec::with_capacity(2);
-
-        vec.push(Vertex2D::new(self.x1,self.y1));
-        vec.push(Vertex2D::new(self.x2,self.y2));
-
-        vec
+    fn vertices(&self)->[Vertex2D;2]{
+        [
+            Vertex2D::new(self.x1,self.y1),
+            Vertex2D::new(self.x2,self.y2)
+        ]
     }
 
-    fn indices(&self)->Option<Vec<u8>>{
+    fn indices(&self)->Option<[u8;0]>{
         None
     }
 
@@ -319,14 +376,29 @@ impl Circle{
             colour
         }
     }
+
+    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_simple(self,draw_parameters)
+    }
+
+    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
+    }
+
+    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+        graphics.draw_shift_simple(self,shift,draw_parameters)
+    }
 }
 
-impl SimpleObject for Circle{
+impl <'o> DependentObject<'o,Vertex2D,u8> for Circle{
+    type Vertices=Vec<Vertex2D>;
+    type Indices=[u8;0];
+
     fn colour(&self)->Colour{
         self.colour
     }
 
-    fn vertex_buffer(&self)->Vec<Vertex2D>{
+    fn vertices(&self)->Vec<Vertex2D>{
         let r_x=self.radius;
         let r_y=self.radius;
 
@@ -361,7 +433,7 @@ impl SimpleObject for Circle{
         shape
     }
 
-    fn indices(&self)->Option<Vec<u8>>{
+    fn indices(&self)->Option<[u8;0]>{
         None
     }
 
@@ -408,7 +480,7 @@ impl SimpleObject for Circle{
 // }
 
 // // // // // // // // // // // // // // // // // // // // // // // // // //
-// impl<'a> SimpleObject<'a> for CircleWithBorder{
+// impl<'a> <'o> DependentObject<'o,Vertex2D,u8><'a> for CircleWithBorder{
 //     type Indices=NoIndices;
 //     fn colour(&self)->Colour{
 //         self.colour

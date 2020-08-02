@@ -13,6 +13,10 @@ A 2D graphics engine with audio support for Windows and Linux.
 
 Uses OpenGL 2.0 and above.
 
+Supported platforms:
+ - Windows, Linux
+ - Mac, iOS might work anyway
+
 #### Dependencies
  - Graphics - [glium](https://github.com/glium/glium)
  - Images - [image](https://github.com/image-rs/image)
@@ -20,6 +24,7 @@ Uses OpenGL 2.0 and above.
  - Audio - [cpal](https://github.com/RustAudio/cpal) and [minimp3](https://github.com/germangb/minimp3-rs)
 
 If you use audio feature, alsa delevopment libraries are required for Linux: `libasound2-dev` for Debian and Ubuntu, `alsa-lib-devel` for Fedora (see [cpal](https://github.com/RustAudio/cpal)).
+
 
 ## [My own game](https://github.com/Clomance/Visual-Novel)
 

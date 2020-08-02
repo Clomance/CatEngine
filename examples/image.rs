@@ -1,5 +1,5 @@
 use cat_engine::{
-    image::{ImageBase,Texture},
+    texture::{ImageBase,Texture},
     Window,
     PagedWindow,
     WindowPage,

@@ -1,7 +1,7 @@
 #![cfg(feature="alpha_smoothing")]
 
 use cat_engine::{
-    image::{ImageBase,Texture},
+    texture::{ImageBase,Texture},
     Window,
     WindowPage,
     PagedWindow,

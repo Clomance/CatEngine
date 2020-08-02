@@ -1,7 +1,6 @@
 use crate::Colour;
 
-#[cfg(feature="texture_graphics")]
-use crate::image::Texture;
+use crate::texture::Texture;
 
 use glium::{
     implement_vertex,
@@ -10,14 +9,8 @@ use glium::{
         IndicesSource,
         IndexType,
     },
-    vertex::{
-        VerticesSource,
-        VertexFormat,
-    },
-    buffer::{
-        Buffer,
-        Content,
-    },
+    vertex::{VerticesSource,VertexFormat},
+    buffer::{Buffer,Content},
 };
 
 use core::ops::Range;
@@ -38,11 +31,11 @@ impl Vertex2D{
     }
 }
 
-pub struct SimpleObject2D{
-    pub (crate) vertex_buffer_range:Range<usize>,
-    pub (crate) index_buffer_range:Range<usize>,
-    pub (crate) primitive_type:PrimitiveType,
-    pub (crate) colour:Colour,
+pub (crate) struct SimpleObject2D{
+    pub vertex_buffer_range:Range<usize>,
+    pub index_buffer_range:Range<usize>,
+    pub primitive_type:PrimitiveType,
+    pub colour:Colour,
 }
 
 impl SimpleObject2D{
@@ -86,8 +79,8 @@ impl SimpleObject2D{
 implement_vertex!(TexturedVertex2D,position,tex_coords);
 #[derive(Copy,Clone)]
 pub struct TexturedVertex2D{
-    position:[f32;2],
-    tex_coords:[f32;2],
+    pub position:[f32;2],
+    pub tex_coords:[f32;2],
 }
 
 impl TexturedVertex2D{
@@ -99,13 +92,11 @@ impl TexturedVertex2D{
     }
 }
 
-#[cfg(feature="texture_graphics")]
-pub struct TexturedObject2D{
-    pub (crate) base:SimpleObject2D,
-    pub (crate) texture:Texture,
+pub (crate) struct TexturedObject2D{
+    pub base:SimpleObject2D,
+    pub texture:Texture,
 }
 
-#[cfg(feature="texture_graphics")]
 impl TexturedObject2D{
     /// Returns the vertices source of the object.
     pub fn vertices_source<'a,T:Copy>(

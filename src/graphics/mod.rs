@@ -15,15 +15,10 @@
 // #[cfg(feature="2D")]
 pub (crate) mod two_dimensions;
 
-#[cfg(feature="simple_graphics")]
-pub use two_dimensions::{
-    SimpleObject,
-    Vertex2D,
-};
-
 pub use two_dimensions::{
     Graphics2D,
-    InnerGraphicsSettings
+    TexturedVertex2D,
+    Vertex2D
 };
 
 #[cfg(feature="3D")]
@@ -32,6 +27,53 @@ pub (crate) mod three_dimensions;
 
 mod base;
 pub use base::Graphics;
+
+mod objects;
+pub use objects::DependentObject;
+
+#[derive(Clone,Debug)]
+pub struct InnerGraphicsSettings{
+    /// The capacity of the vertex buffer.
+    /// 
+    /// The default is 8.
+    pub vertex_buffer_size:usize,
+
+    /// The range from 0 to the `offset` is for common drawing.
+    /// The range from `offset` to the end is for saving objects.
+    /// 
+    /// The default is 4.
+    pub vertex_buffer_offset:usize,
+
+    /// The capacity of the index buffer.
+    /// 
+    /// The default is 8.
+    pub index_buffer_size:usize,
+
+    /// The range from 0 to the `offset` is for common drawing.
+    /// The range from `offset` to the end is for saving objects.
+    /// 
+    /// The default is 4.
+    pub index_buffer_offset:usize,
+
+    /// The capacity of the object buffer.
+    /// 
+    /// The default is 2.
+    pub object_buffer_size:usize,
+}
+
+impl InnerGraphicsSettings{
+    pub const fn new()->InnerGraphicsSettings{
+        Self{
+            vertex_buffer_size:8,
+            vertex_buffer_offset:4,
+
+            index_buffer_size:8,
+            index_buffer_offset:4,
+
+            object_buffer_size:2,
+        }
+    }
+}
 
 /// Настройки графических основ.
 /// Settings for graphics bases.

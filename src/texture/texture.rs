@@ -38,7 +38,7 @@ impl TextureCreationResult{
     }
 }
 
-/// Обёртка для 2D текстуры. Wrapper for 2D texture.
+/// Обёртка для 2D текстуры. Wrapper for a 2D texture.
 pub struct Texture(pub SrgbTexture2d);
 
 impl Texture{

@@ -1,38 +1,28 @@
-#[cfg(feature="simple_graphics")]
 use crate::{
     // statics
     window_center,
     // types
     Colour,
     // structs
-    graphics::Graphics,
+    graphics::InnerGraphicsSettings,
 };
 
 use super::{
-    InnerGraphicsSettings,
     SimpleObject2D,
     Vertex2D,
+    DependentObject
 };
 
 use glium::{
     uniform,
-    implement_vertex,
     Program,
     Display,
     Frame,
     DrawParameters,
     DrawError,
-    index::{
-        PrimitiveType,
-        IndicesSource,
-        IndexType,
-    },
+    index::PrimitiveType,
     Surface,
-    vertex::{
-        VerticesSource,
-        Vertex,
-        VertexFormat,
-    },
+    vertex::{Vertex,VertexFormat},
     buffer::{
         Buffer,
         BufferType,
@@ -40,6 +30,7 @@ use glium::{
     },
 };
 
+use std::mem::size_of;
 
 /// Графическая основа для простых одноцветных объектов.
 /// Размер буферов регулируется вручную при создании.
@@ -80,7 +71,7 @@ impl SimpleGraphics{
             include_str!("shaders/simple/fragment_shader.glsl"),
         )};
 
-        let vertex_buffer_size=settings.vertex_buffer_size*8;
+        let vertex_buffer_size=settings.vertex_buffer_size*size_of::<Vertex2D>();
 
         Self{
             vertex_buffer:Buffer::empty_unsized(
@@ -113,12 +104,23 @@ impl SimpleGraphics{
         }
     }
 
-    pub fn draw<O:SimpleObject>(
+    pub fn draw<'o,O,V,I>(
         &self,
-        object:&O,
+        object:&'o O,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
-    )->Result<(),DrawError>{
+    )->Result<(),DrawError>
+        where
+            O:DependentObject<
+                'o,
+                Vertex2D,
+                u8,
+                Vertices=V,
+                Indices=I
+            >,
+            V:AsRef<[Vertex2D]>+'o,
+            I:AsRef<[u8]>+'o
+    {
         // Вписывание вершин и подготовка к выводу
         let vertex_source=object.write_vertices(
             &self.vertex_buffer,
@@ -137,13 +139,24 @@ impl SimpleGraphics{
         frame.draw(vertex_source,indices_source,&self.draw,&uni,draw_parameters)
     }
 
-    pub fn draw_shift<O:SimpleObject>(
+    pub fn draw_shift<'o,O,V,I>(
         &self,
-        object:&O,
+        object:&'o O,
         shift:[f32;2],
         draw_parameters:&DrawParameters,
         frame:&mut Frame
-    )->Result<(),DrawError>{
+    )->Result<(),DrawError>
+        where
+            O:DependentObject<
+                'o,
+                Vertex2D,
+                u8,
+                Vertices=V,
+                Indices=I
+            >,
+            V:AsRef<[Vertex2D]>+'o,
+            I:AsRef<[u8]>+'o
+    {
         // Вписывание вершин и подготовка к выводу
         let vertex_source=object.write_vertices(
             &self.vertex_buffer,
@@ -163,14 +176,25 @@ impl SimpleGraphics{
         frame.draw(vertex_source,indices_source,&self.draw_shift,&uni,draw_parameters)
     }
 
-    pub fn draw_rotate<O:SimpleObject>(
+    pub fn draw_rotate<'o,O,V,I>(
         &self,
-        object:&O,
-        [x,y]:[f32;2],
+        object:&'o O,
+        rotation_center:[f32;2],
         angle:f32,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
-    )->Result<(),DrawError>{
+    )->Result<(),DrawError>
+        where
+            O:DependentObject<
+                'o,
+                Vertex2D,
+                u8,
+                Vertices=V,
+                Indices=I
+            >,
+            V:AsRef<[Vertex2D]>+'o,
+            I:AsRef<[u8]>+'o
+    {
         // Вписывание вершин и подготовка к выводу
         let vertex_source=object.write_vertices(
             &self.vertex_buffer,
@@ -186,7 +210,7 @@ impl SimpleGraphics{
         let uni=uniform!{
             cos:cos,
             sin:sin,
-            rotation_center:unsafe{[x-window_center[0],window_center[1]-y]},
+            rotation_center:rotation_center,
             window_center:unsafe{window_center},
             colour:object.colour(),
         };
@@ -204,21 +228,35 @@ impl SimpleGraphics{
 // Функции для добаления/удаления объектов
 impl SimpleGraphics{
     // Добавляет объект в конец списка
-    pub fn push_object<O:SimpleObject>(&mut self,object:&O)->Option<usize>{
+    pub fn push_object<'o,O,V,I>(&mut self,object:&'o O)->Option<usize>
+        where
+            O:DependentObject<
+                'o,
+                Vertex2D,
+                u8,
+                Vertices=V,
+                Indices=I
+            >,
+            V:AsRef<[Vertex2D]>+'o,
+            I:AsRef<[u8]>+'o
+    {
         // Вершины
-        let vertexes=object.vertex_buffer();
+        let verticesb=object.vertices();
+        let vertices:&[Vertex2D]=verticesb.as_ref();
 
-        let new_edge=self.vertex_buffer_edge+vertexes.len();
+        let new_edge=self.vertex_buffer_edge+vertices.len();
         let vertex_range=self.vertex_buffer_edge..new_edge;
 
         // Сдвиг границы
         self.vertex_buffer_edge=new_edge;
 
         let vertex_slice=self.vertex_buffer.slice(vertex_range.clone())?;
-        vertex_slice.write(&vertexes);
+        vertex_slice.write(&vertices);
 
         // Индексы
-        let index_range=if let Some(indices)=object.indices(){
+        let index_range=if let Some(indicesb)=object.indices(){
+            let indices=indicesb.as_ref();
+
             let new_edge=self.index_buffer_edge+indices.len();
             let range=self.index_buffer_edge..new_edge;
 
@@ -246,19 +284,19 @@ impl SimpleGraphics{
         Some(len)
     }
 
-    pub fn pop_object(&mut self)->Option<SimpleObject2D>{
-        if let Some(object)=self.objects.pop(){
-            let mut len=object.vertex_buffer_range.len();
-            self.vertex_buffer_edge-=len;
+    // pub fn pop_object(&mut self)->Option<SimpleObject2D>{
+    //     if let Some(object)=self.objects.pop(){
+    //         let mut len=object.vertex_buffer_range.len();
+    //         self.vertex_buffer_edge-=len;
 
-            len=object.index_buffer_range.len();
-            self.index_buffer_edge-=len;
-            Some(object)
-        }
-        else{
-            None
-        }
-    }
+    //         len=object.index_buffer_range.len();
+    //         self.index_buffer_edge-=len;
+    //         Some(object)
+    //     }
+    //     else{
+    //         None
+    //     }
+    // }
 
     pub fn delete_last_object(&mut self){
         if let Some(object)=self.objects.pop(){
@@ -394,7 +432,7 @@ impl SimpleGraphics{
     pub fn draw_rotate_object(
         &self,
         index:usize,
-        [x,y]:[f32;2],
+        rotation_center:[f32;2],
         angle:f32,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
@@ -408,7 +446,7 @@ impl SimpleGraphics{
         let uni=uniform!{
             cos:cos,
             sin:sin,
-            rotation_center:unsafe{[x-window_center[0],window_center[1]-y]},
+            rotation_center:rotation_center,
             window_center:unsafe{window_center},
             colour:object.colour,
         };
@@ -422,107 +460,5 @@ impl SimpleGraphics{
             &uni,
             draw_parameters
         )
-    }
-}
-
-/// Типаж для создания собственных простых одноцветных объектов.
-/// 
-/// Trait for creating simple objects.
-pub trait SimpleObject:Sized{
-    /// Цвет объекта.
-    /// 
-    /// Object's colour.
-    fn colour(&self)->Colour;
-
-    /// Вершины объекта в оконных координатах.
-    /// 
-    /// Object's vertices in the window coordinate system.
-    fn vertex_buffer(&self)->Vec<Vertex2D>;
-
-    /// Индексы для построения объекта.
-    /// 
-    /// Indices to build the object.
-    fn indices(&self)->Option<Vec<u8>>;
-
-    fn primitive_type(&self)->PrimitiveType;
-
-    /// Вписывает индексы в буфер индексов и возвращает `Some(IndicesSource)` для рисования
-    /// или `None`, если недостаточно места.
-    /// 
-    /// Writes indices to the index buffer and return `Some(IndicesSource)` to draw
-    /// or `None` if there is not enough space.
-    fn write_indices<'a>(&self,index_buffer:&'a Buffer<[u8]>)->Option<IndicesSource<'a>>{
-        Some(
-            if let Some(indices)=self.indices(){
-                let slice=match index_buffer.slice(0..indices.len()){
-                    Some(slice)=>slice,
-                    None=>return None,
-                };
-                slice.write(&indices);
-
-                IndicesSource::IndexBuffer{
-                    buffer:slice.as_slice_any(),
-                    data_type:IndexType::U8,
-                    primitives:self.primitive_type(),
-                }
-            }
-            else{
-                IndicesSource::NoIndices{
-                    primitives:self.primitive_type(),
-                }
-            }
-        )
-    }
-
-    /// Вписывает вершины в буфер индексов и возвращает `Some(IndicesSource)` для рисования
-    /// или `None`, если недостаточно места.
-    /// 
-    /// Writes indices to the index buffer and return `Some(IndicesSource)` to draw
-    /// or `None` if there is not enough space.
-    fn write_vertices<'a>(
-        &self,
-        vertex_buffer:&'a Buffer<[Vertex2D]>,
-        vertex_format:&'a VertexFormat,
-    )->Option<VerticesSource<'a>>{
-        let vertices=self.vertex_buffer();
-
-        let slice=match vertex_buffer.slice(0..vertices.len()){
-            Some(slice)=>slice,
-            None=>return None,
-        };
-
-        slice.write(&vertices);
-
-        Some(
-            VerticesSource::VertexBuffer(
-                slice.as_slice_any(),
-                vertex_format,
-                false
-            )
-        )
-    }
-
-    /// Рисует объект.
-    /// 
-    /// Draws the object.
-    #[inline(always)]
-    fn draw(&self,draw_parameters:&DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_simple(self,draw_parameters)
-    }
-
-    /// Рисует сдвинутый объект.
-    /// 
-    /// Draws the shifted object.
-    #[inline(always)]
-    fn draw_shift(&self,shift:[f32;2],draw_parameters:&DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_shift_simple(self,shift,draw_parameters)
-    }
-
-    /// Рисует повёрнутый объект.
-    /// 
-    /// Draws the rotated object.
-    #[inline(always)]
-    fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
     }
 }

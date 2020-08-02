@@ -3,19 +3,20 @@ use crate::Colour;
 #[cfg(feature="text_graphics")]
 use crate::text::Character;
 
-#[cfg(feature="texture_graphics")]
-use crate::image::{
+use crate::texture::{
     ImageBase,
     Texture,
 };
 
-#[cfg(feature="simple_graphics")]
-use super::two_dimensions::SimpleObject;
-
-use super::two_dimensions::Graphics2D;
+use super::two_dimensions::{
+    Vertex2D,
+    Graphics2D
+};
 
 #[cfg(feature="3D")]
 use super::three_dimensions::Graphics3D;
+
+use super::DependentObject;
 
 use glium::{
     Frame,
@@ -80,13 +81,13 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// Draws the image.
     #[inline(always)]
     #[cfg(feature="texture_graphics")]
-    pub fn draw_image(
+    pub fn draw_texture(
         &mut self,
         image_base:&ImageBase,
         texture:&Texture,
         draw_parameters:&mut DrawParameters
     )->Result<(),DrawError>{
-        self.graphics2d.texture.draw_image(image_base,texture,draw_parameters,self.frame)
+        self.graphics2d.texture.draw(image_base,texture,draw_parameters,self.frame)
     }
 
     /// Рисует сдвинутое изображение.
@@ -101,7 +102,13 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         shift:[f32;2],
         draw_parameters:&mut DrawParameters
     )->Result<(),DrawError>{
-        self.graphics2d.texture.draw_shift_image(image_base,texture,shift,draw_parameters,self.frame)
+        self.graphics2d.texture.draw_shift(
+            image_base,
+            texture,
+            shift,
+            draw_parameters,
+            self.frame
+        )
     }
 
     /// Рисует повёрнутое изображение.
@@ -111,21 +118,21 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// angle - radians
     #[inline(always)]
     #[cfg(feature="texture_graphics")]
-    pub fn draw_rotate_image(
+    pub fn draw_rotate_image<'o>(
         &mut self,
-        image_base:&ImageBase,
+        image_base:&'o ImageBase,
         texture:&Texture,
         rotation_center:[f32;2],
         angle:f32,
         draw_parameters:&mut DrawParameters
     )->Result<(),DrawError>{
-        self.graphics2d.texture.draw_rotate_image(
+        self.graphics2d.texture.draw_rotate(
             image_base,
             texture,
             rotation_center,
             angle,
+            draw_parameters,
             self.frame,
-            draw_parameters
         )
     }
 }
@@ -215,11 +222,22 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws the simple object.
     #[inline(always)]
-    pub fn draw_simple<O:SimpleObject>(
+    pub fn draw_simple<'o,O,V,I>(
         &mut self,
-        object:&O,
+        object:&'o O,
         draw_parameters:&DrawParameters
-    )->Result<(),DrawError>{
+    )->Result<(),DrawError>
+    where
+            O:DependentObject<
+                'o,
+                Vertex2D,
+                u8,
+                Vertices=V,
+                Indices=I
+            >,
+            V:AsRef<[Vertex2D]>+'o,
+            I:AsRef<[u8]>+'o
+    {
         self.graphics2d.simple.draw(object,draw_parameters,self.frame)
     }
 
@@ -227,12 +245,23 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws shifted simple object.
     #[inline(always)] 
-    pub fn draw_shift_simple<O:SimpleObject>(
+    pub fn draw_shift_simple<'o,O,V,I>(
         &mut self,
-        object:&O,
+        object:&'o O,
         shift:[f32;2],
         draw_parameters:&DrawParameters
-    )->Result<(),DrawError>{
+    )->Result<(),DrawError>
+        where
+            O:DependentObject<
+                'o,
+                Vertex2D,
+                u8,
+                Vertices=V,
+                Indices=I
+            >,
+            V:AsRef<[Vertex2D]>+'o,
+            I:AsRef<[u8]>+'o
+    {
         self.graphics2d.simple.draw_shift(object,shift,draw_parameters,self.frame)
     }
 
@@ -240,12 +269,23 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws the rotated simple object.
     #[inline(always)]
-    pub fn draw_rotate_simple<O:SimpleObject>(
-        &mut self,object:&O,
+    pub fn draw_rotate_simple<'o,O,V,I>(
+        &mut self,object:&'o O,
         rotation_center:[f32;2],
         angle:f32,
         draw_parameters:&DrawParameters
-    )->Result<(),DrawError>{
+    )->Result<(),DrawError>
+        where
+            O:DependentObject<
+                'o,
+                Vertex2D,
+                u8,
+                Vertices=V,
+                Indices=I
+            >,
+            V:AsRef<[Vertex2D]>+'o,
+            I:AsRef<[u8]>+'o
+    {
         self.graphics2d.simple.draw_rotate(
             object,
             rotation_center,

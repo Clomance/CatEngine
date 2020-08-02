@@ -1,4 +1,6 @@
-//! # Основы работы с изображениями. Image basics. `feature = "texture_graphics"`, `default-features`.
+//! # Основы работы с изображениями. Image basics.
+
+pub use image; // re-export
 
 use super::{
     // statics
@@ -8,21 +10,21 @@ use super::{
     // structs
     graphics::{
         Graphics,
-        two_dimensions::TexturedVertex2D
+        TexturedVertex2D,
+        DependentObject,
     },
 };
 
 mod texture;
 pub use texture::{Texture,TextureCreationResult};
 
-pub use image;
-
 use glium::{
     DrawError,
-    draw_parameters::DrawParameters
+    draw_parameters::DrawParameters,
+    index::PrimitiveType,
 };
 
-/// Основа для изображений (текстур). Image (texture) base.
+/// Основа для изображений. Image base.
 /// 
 /// Прямоугольник с вершинами: (x1, y1), (x1, y2), (x2, y1), (x2, y2).
 /// 
@@ -31,7 +33,7 @@ use glium::{
 /// 
 /// #
 /// 
-/// Rectangle with vertexes: (x1, y1), (x1, y2), (x2, y1), (x2, y2).
+/// A rectangle with vertices: (x1, y1), (x1, y2), (x2, y1), (x2, y2).
 /// 
 /// Colour filter - [red, green, blue, alpha].
 /// Colour = colour * filter.
@@ -45,7 +47,7 @@ pub struct ImageBase{
 }
 
 impl ImageBase{
-    /// rect - [x,y,width,height]
+    /// rect - [x, y, width, height]
     pub fn new(colour_filter:Colour,rect:[f32;4])->ImageBase{
         Self{
             x1:rect[0],
@@ -56,7 +58,7 @@ impl ImageBase{
         }
     }
 
-    /// rect - [x,y,width,height]
+    /// rect - [x, y, width, height]
     pub fn set_rect(&mut self,rect:[f32;4]){
         self.x1=rect[0];
         self.y1=rect[1];
@@ -74,22 +76,10 @@ impl ImageBase{
         self.y2+=dy;
     }
 
-    /// Массив координат
-    /// для невращающихся изображений.
-    /// 
-    /// Returns vertex array for non-rotating images.
-    pub (crate) fn vertex_buffer(&self)->[TexturedVertex2D;4]{
-        [
-            TexturedVertex2D::new([self.x1,self.y1],[0.0,1.0]),
-            TexturedVertex2D::new([self.x1,self.y2],[0.0,0.0]),
-            TexturedVertex2D::new([self.x2,self.y1],[1.0,1.0]),
-            TexturedVertex2D::new([self.x2,self.y2],[1.0,0.0])
-        ]
-    }
-
     /// Рисует изображение.
     /// 
     /// Draws the image.
+    #[cfg(feature="texture_graphics")]
     #[inline(always)]
     pub fn draw(
         &self,
@@ -97,7 +87,7 @@ impl ImageBase{
         draw_parameters:&mut DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
-        graphics.draw_image(self,texture,draw_parameters)
+        graphics.draw_texture(self,texture,draw_parameters)
     }
 
     /// Рисует сдвинутое изображение.
@@ -105,6 +95,7 @@ impl ImageBase{
     /// Draws the shifted image.
     /// 
     /// shift - [dx, dy]
+    #[cfg(feature="texture_graphics")]
     #[inline(always)] 
     pub fn draw_shift(
         &self,
@@ -122,6 +113,7 @@ impl ImageBase{
     /// 
     /// rotation_center - [x, y],
     /// angle - radians
+    #[cfg(feature="texture_graphics")]
     #[inline(always)]
     pub fn draw_rotate(
         &self,
@@ -132,5 +124,40 @@ impl ImageBase{
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         graphics.draw_rotate_image(self,texture,rotation_center,angle,draw_parameters)
+    }
+}
+
+impl<'o> DependentObject<'o,TexturedVertex2D,u8> for ImageBase{
+    type Vertices=[TexturedVertex2D;4];
+    type Indices=[u8;1];
+
+    /// Цвет объекта.
+    /// 
+    /// Object's colour.
+    fn colour(&self)->Colour{
+        self.colour_filter
+    }
+
+    /// Вершины объекта.
+    /// 
+    /// Object's vertices.
+    fn vertices(&self)->Self::Vertices{
+        [
+            TexturedVertex2D::new([self.x1,self.y1],[0.0,1.0]),
+            TexturedVertex2D::new([self.x1,self.y2],[0.0,0.0]),
+            TexturedVertex2D::new([self.x2,self.y1],[1.0,1.0]),
+            TexturedVertex2D::new([self.x2,self.y2],[1.0,0.0])
+        ]
+    }
+
+    /// Индексы для построения объекта.
+    /// 
+    /// Indices to build the object.
+    fn indices(&self)->Option<Self::Indices>{
+        None
+    }
+
+    fn primitive_type(&self)->PrimitiveType{
+        PrimitiveType::TriangleStrip
     }
 }

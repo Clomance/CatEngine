@@ -94,7 +94,7 @@ impl DefaultWindow{
     /// 
     /// Блокирует поток, пока не получит следующее событие.
     /// 
-    /// Returns next window event.
+    /// Returns the next window event.
     /// 
     /// Blocks the thread until it receives the next event.
     pub fn next_event(&mut self)->Option<WindowEvent>{

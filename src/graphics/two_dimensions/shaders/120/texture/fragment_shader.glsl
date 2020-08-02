@@ -3,9 +3,9 @@
 varying vec2 v_tex_coords;
 
 
-uniform sampler2D tex;
+uniform sampler2D texture2d;
 uniform vec4 colour_filter;
 
 void main() {
-    gl_FragColor = colour_filter * texture2D(tex, v_tex_coords);
+    gl_FragColor = colour_filter * texture2D(texture2d, v_tex_coords);
 }

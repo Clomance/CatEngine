@@ -1,3 +1,14 @@
+# 0.3.3
+
+The `MouseCursor` is now public.
+
+The `SimpleObject` trait has been replaced with the `DependentObject`,
+and textured objects must be implemented for this new trait.
+
+The `image` mod has been renamed to `texture`.
+
+The `image` crate version has been changed to `0.23.8`.
+
 # 0.3.2
 
 ### Added

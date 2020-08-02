@@ -64,8 +64,7 @@ pub mod audio;
 #[cfg(feature="text_graphics")]
 pub mod text;
 
-#[cfg(feature="texture_graphics")]
-pub mod image;
+pub mod texture;
 
 pub mod graphics;
 

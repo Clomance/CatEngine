@@ -1,10 +1,9 @@
 #[macro_use]
 mod window_base;
-
 pub use window_base::WindowBase;
 
 mod window;
-pub use window::*;
+pub use window::{Window,WindowPage};
 
 mod default_window;
 pub use default_window::DefaultWindow;
@@ -13,15 +12,16 @@ mod paged_window;
 pub use paged_window::PagedWindow;
 
 mod dynamic_window;
-pub (crate) use dynamic_window::PageState;
+use dynamic_window::PageState;
 pub use dynamic_window::{DynamicWindow,PageRef};
 
 mod settings;
 pub use settings::*;
 
-
 mod mouse_cursor;
-use mouse_cursor::*;
+#[cfg(feature="mouse_cursor_icon")]
+use mouse_cursor::MouseCursorIcon;
+pub use mouse_cursor::MouseCursor;
 
 use glium::glutin::event::{
     ModifiersState,
@@ -30,8 +30,6 @@ use glium::glutin::event::{
 };
 
 use std::path::PathBuf;
-
-
 
 /// Положение курсора мыши. The mouse cursor position.
 pub static mut mouse_cursor:MouseCursor=MouseCursor::new();

@@ -1,14 +1,12 @@
-#[cfg(feature="mouse_cursor_icon")]
-use crate::graphics::{
-    Graphics,
-    two_dimensions::Graphics2D,
+use crate::{
+    texture::{ImageBase,Texture},
+    graphics::{
+        Graphics,
+        Graphics2D,
+        DependentObject,
+        TexturedVertex2D
+    },
 };
-
-#[cfg(feature="mouse_cursor_icon")]
-use crate::image::{ImageBase,Texture};
-
-#[cfg(feature="mouse_cursor_icon")]
-use crate::graphics::two_dimensions::TexturedVertex2D;
 
 use super::{
     mouse_cursor,
@@ -102,7 +100,6 @@ impl MouseCursor{
     }
 }
 
-#[cfg(feature="mouse_cursor_icon")]
 const d_radius:f32=5f32;
 
 /// Иконка курсора мышки.
@@ -129,7 +126,7 @@ impl MouseCursorIcon{
         );
 
         Self{
-            vertex_buffer:VertexBuffer::new(display,&image_base.vertex_buffer()).unwrap(),
+            vertex_buffer:VertexBuffer::new(display,&image_base.vertices()).unwrap(),
             image_base,
             texture:Texture::from_path(settings.path,display).expect("Loading mouse curcor image error"),
             visible:true,
@@ -137,7 +134,7 @@ impl MouseCursorIcon{
     }
 
     pub fn update(&self){
-        self.vertex_buffer.as_slice().write(&self.image_base.vertex_buffer())
+        self.vertex_buffer.as_slice().write(&self.image_base.vertices())
     }
 
     #[inline(always)]
@@ -158,7 +155,7 @@ impl MouseCursorIcon{
         self.image_base.y1+=d_radius;
         self.image_base.x2-=d_radius;
         self.image_base.y2-=d_radius;
-        self.vertex_buffer.as_slice().write(&self.image_base.vertex_buffer())
+        self.vertex_buffer.as_slice().write(&self.image_base.vertices())
     }
 
     /// При освобождении кнопки мыши.
@@ -169,7 +166,7 @@ impl MouseCursorIcon{
         self.image_base.y1-=d_radius;
         self.image_base.x2+=d_radius;
         self.image_base.y2+=d_radius;
-        self.vertex_buffer.as_slice().write(&self.image_base.vertex_buffer())
+        self.vertex_buffer.as_slice().write(&self.image_base.vertices())
     }
 
     #[inline(always)]
