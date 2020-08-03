@@ -95,7 +95,9 @@ fn main(){
         angle:0f32,
     };
 
-    let mut window=PagedWindow::new(|_,_|{}).unwrap();
+    let mut window=PagedWindow::new(|_,s|{
+        s.vsync=true;
+    }).unwrap();
 
     window.run_page(&mut page);
 }

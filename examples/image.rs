@@ -94,7 +94,9 @@ fn main(){
         400f32
     ]);
 
-    let mut window=PagedWindow::new(|_,_|{}).unwrap();
+    let mut window=PagedWindow::new(|_,s|{
+        s.vsync=true;
+    }).unwrap();
 
     let texture=Texture::from_path("logo_400x400.png",window.display()).unwrap();
 

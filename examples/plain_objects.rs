@@ -9,6 +9,7 @@ use cat_engine::{
 
 fn main(){
     let mut window=PagedWindow::new(|_,s|{
+        s.vsync=true;
         // changing the offset because we won't use common drawing functions
         // and we need space for three objects
         s.graphics_base_settings.simple.vertex_buffer_offset=0;
