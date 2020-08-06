@@ -55,7 +55,7 @@ let mut window=PagedWindow::raw(
 
 # DefaultWindow
 
-Все события обрабатываются и добавляются в очередь внешней обработки (Window.events)
+Все события обрабатываются и добавляются в очередь внешней обработки
 для работы с ними вне структуры окна.
 
 Имеет самый широкий спектр возможностей, но является самым медленным и имеет много проблем.
@@ -66,11 +66,12 @@ let mut window=DefaultWindow::new(|_,_|{}).unwrap();
 while let Some(event)=window.next_event(){
     match event{
         WindowEvent::CloseRequested=>{
+            // Нужно выйти из цикла
             break
         }
 
         WindowEvent::Update=>{
-            
+            // Какие-то действия
         }
 
         WindowEvent::RedrawRequested=>{
@@ -90,6 +91,8 @@ while let Some(event)=window.next_event(){
 
 Является самым производительным методом, но имеет серьёзные ограничения в возможностях.
 
+
+
 ### Работа с помощью замыканий
 
 Все события обратываются в замыкании.
@@ -98,9 +101,31 @@ while let Some(event)=window.next_event(){
 но медленнее первого и так же, как и последний ограничивает некоторые возможности.
 
 
+```
+let mut window=PagedWindow::new(|_,_|{}).unwrap();
+
+window.run(|window,event|{
+    match event{
+        WindowEvent::CloseRequested=>{
+            // Автоматически выходит из цикла
+        }
+
+        WindowEvent::Update=>{
+            // Какие-то действия
+        }
+
+        WindowEvent::RedrawRequested=>{
+            // Рендеринг
+        }
+        _=>{}
+    }
+});
+```
+
 # DynamicWindow
 
 Все события прописываются с помощь типажа `WindowPage`
 и обработываются сразу же после их появления.
 
 Это окно использует страницы как типажи-объекты, поэтому их сможно менять на ходу.
+

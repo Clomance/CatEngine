@@ -2,10 +2,8 @@
 
 There are three types of windows. They differ in speed and capabilities (they will be discussed separately below).
 
-Всего три вида окон. Отличаются они по скорости работы и возможностям (ниже будут рассмотрены по отдельности).
-
 Threre are two functions to create a window:
- * with a closure - gives the default settings and the list of monitors (to set to fullscreen)
+ - with a closure - gives the default settings and a list of monitors (to set to fullscreen)
 ```
 let mut window=DefaultWindow::new(|monitors,settings|{
     let monitor=monitors.remove(0);
@@ -14,7 +12,7 @@ let mut window=DefaultWindow::new(|monitors,settings|{
 }).unwrap();
 ```
 
-* with fully-manually setting
+ - with fully-manually setting
 ```
 let graphics_settings=GraphicsSettings::new();
 let general_settings=GeneralSettings::new();
@@ -65,11 +63,12 @@ let mut window=DefaultWindow::new(|_,_|{}).unwrap();
 while let Some(event)=window.next_event(){
     match event{
         WindowEvent::CloseRequested=>{
+            // Must break the cycle
             break
         }
 
         WindowEvent::Update=>{
-            
+            // Some actions
         }
 
         WindowEvent::RedrawRequested=>{
@@ -93,6 +92,26 @@ and handled immediately after emited.
 
 All the events are handled with a closure.
 
+```
+let mut window=PagedWindow::new(|_,_|{}).unwrap();
+
+window.run(|window,event|{
+    match event{
+        WindowEvent::CloseRequested=>{
+            // automatically breaks the cycle
+        }
+
+        WindowEvent::Update=>{
+            // Some actions
+        }
+
+        WindowEvent::RedrawRequested=>{
+            // Rendering
+        }
+        _=>{}
+    }
+});
+```
 
 # DynamicWindow
 
