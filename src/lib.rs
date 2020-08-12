@@ -57,6 +57,8 @@ pub use glium::{
     glutin::event::{MouseButton,ModifiersState,MouseScrollDelta},
 };
 
+// re-exports
+pub use image;
 
 #[cfg(feature="audio")]
 pub mod audio;

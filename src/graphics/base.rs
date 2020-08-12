@@ -1,7 +1,7 @@
 use crate::Colour;
 
 #[cfg(feature="text_graphics")]
-use crate::text::Character;
+use crate::text::TextBase;
 
 use crate::texture::{
     ImageBase,
@@ -23,6 +23,14 @@ use glium::{
     DrawParameters,
     DrawError,
     Surface,
+};
+
+#[cfg(feature="text_graphics")]
+use rusttype::{
+    Font,
+    Scale,
+    Point,
+    PositionedGlyph,
 };
 
 /// Простой интерфейс для связи кадра и графических функций.
@@ -62,18 +70,64 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         self.frame.clear_color(r,g,b,a);
     }
 
-    /// Рисует один символ.
-    /// 
-    /// Draws one character.
-    #[inline(always)]
-    #[cfg(feature="text_graphics")]
-    pub fn draw_character(
+    pub fn draw_glyph(
         &mut self,
+        glyph:PositionedGlyph,
         colour:Colour,
-        character:&Character,
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
-        self.graphics2d.text.draw_character(character,colour,draw_parameters,self.frame)
+        self.graphics2d.text.draw_glyph(glyph,colour,draw_parameters,self.frame)
+    }
+
+    pub fn draw_char(
+        &mut self,
+        character:char,
+        base:&TextBase,
+        font:&Font,
+        draw_parameters:&DrawParameters,
+    )->Result<(),DrawError>{
+        let scale=Scale::uniform(base.font_size);
+        let point=Point{
+            x:base.position[0],
+            y:base.position[1]
+        };
+        // Получение символа
+        let glyph=font.glyph(character).scaled(scale).positioned(point);
+
+        self.graphics2d.text.draw_glyph(glyph,base.colour,draw_parameters,self.frame)
+    }
+
+    /// Выводит строку.
+    pub fn draw_str(
+        &mut self,
+        s:&str,
+        base:&TextBase,
+        font:&Font,
+        draw_parameters:&DrawParameters,
+    )->Result<(),DrawError>{
+        let scale=Scale::uniform(base.font_size);
+        // позиция для вывода символа
+        let mut point=Point{
+            x:base.position[0],
+            y:base.position[1]
+        };
+
+        let mut width_offset; // сдвиг для следующего символа
+
+        for character in s.chars(){
+            // Получение символа
+            let scaled_glyph=font.glyph(character).scaled(scale);
+
+            width_offset=scaled_glyph.h_metrics().advance_width;
+
+            let glyph=scaled_glyph.positioned(point);
+
+            self.graphics2d.text.draw_glyph(glyph,base.colour,draw_parameters,self.frame)?;
+
+            point.x+=width_offset;
+        }
+
+        Ok(())
     }
 
     /// Рисует изображение.

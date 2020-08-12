@@ -400,7 +400,7 @@ impl TextureGraphics{
         let index_source=object.indices_source(&self.index_buffer);
 
         let uni=uniform!{
-            tex:&object.texture.0,
+            texture2d:&object.texture.0,
             colour_filter:object.base.colour,
             window_center:unsafe{window_center},
         };

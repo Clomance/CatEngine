@@ -128,12 +128,6 @@ pub struct MouseCursorIconSettings<P:AsRef<Path>>{
     /// 
     /// The default is `./mouse_cursor_icon.png`.
     pub path:P,
-
-    /// The range of the texture vertex buffer
-    /// to save icon vertexes.
-    /// 
-    /// The default is 4..8.
-    pub range:Range<usize>,
 }
 
 impl MouseCursorIconSettings<PathBuf>{
@@ -145,7 +139,6 @@ impl MouseCursorIconSettings<PathBuf>{
             size:[30f32;2],
             shift:[-15f32;2],
             path:path,
-            range:4..8
         }
     }
 }

@@ -54,7 +54,7 @@ impl Graphics2D{
             #[cfg(feature="simple_graphics")]
             simple:SimpleGraphics::new(window,settings.simple,glsl),
             #[cfg(feature="text_graphics")]
-            text:TextGraphics::new(window,settings.text_vertex_buffer_size,glsl),
+            text:TextGraphics::new(window,settings.text_image_buffer_size,glsl),
         }
     }
 }

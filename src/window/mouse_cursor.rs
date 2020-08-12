@@ -103,8 +103,6 @@ impl MouseCursor{
 const d_radius:f32=5f32;
 
 /// Иконка курсора мышки.
-/// 
-/// Загружает картинку из папки ресурсов.
 #[cfg(feature="mouse_cursor_icon")]
 pub struct MouseCursorIcon{
     vertex_buffer:VertexBuffer<TexturedVertex2D>,
@@ -175,7 +173,7 @@ impl MouseCursorIcon{
             let index=NoIndices(PrimitiveType::TriangleStrip);
 
             let uni=uniform!{
-                tex:&self.texture.0,
+                texture2d:&self.texture.0,
                 shift:unsafe{mouse_cursor.center_radius()},
                 window_center:unsafe{window_center},
             };
