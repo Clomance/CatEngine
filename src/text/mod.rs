@@ -21,8 +21,6 @@ use std::{
     path::Path
 };
 
-const text_pixel_size:f32=1f32; // Размер одной точки (можно сделать текст жирнее)
-
 /// Загружает шрифт.
 /// Loads a font.
 pub fn load_font<P:AsRef<Path>>(path:P)->Option<Font<'static>>{
@@ -44,20 +42,40 @@ pub fn char_width(character:char,font_size:f32,font:&Font)->f32{
 
 pub fn char_height(character:char,font_size:f32,font:&Font)->f32{
     let scale=Scale::uniform(font_size);
+    let point=Point{
+        x:0f32,
+        y:0f32,
+    };
 
-    let v_metrics=font.v_metrics(scale);
+    let glyph=font.glyph(character).scaled(scale).positioned(point);
 
-    v_metrics.ascent-v_metrics.descent
+    if let Some(bounding_box)=glyph.pixel_bounding_box(){
+        bounding_box.height() as f32
+    }
+    else{
+        0f32
+    }
 }
 
 pub fn char_size(character:char,font_size:f32,font:&Font)->[f32;2]{
     let scale=Scale::uniform(font_size);
+    let point=Point{
+        x:0f32,
+        y:0f32,
+    };
 
     let v_metrics=font.v_metrics(scale);
-    let height=v_metrics.ascent-v_metrics.descent;
+    v_metrics.ascent-v_metrics.descent;
 
     let glyph=font.glyph(character).scaled(scale);
     let width=glyph.h_metrics().advance_width;
+
+    let height=if let Some(bounding_box)=glyph.positioned(point).pixel_bounding_box(){
+        bounding_box.height() as f32
+    }
+    else{
+        0f32
+    };
 
     [width,height]
 }
@@ -71,8 +89,34 @@ pub fn text_width(text:&str,font_size:f32,font:&Font)->f32{
         let glyph=font.glyph(c).scaled(scale);
         width+=glyph.h_metrics().advance_width;
     }
+
     width
 }
+
+/// Расчитывает высоту текста.
+/// Calculates the height of the text.
+pub fn text_height(text:&str,font_size:f32,font:&Font)->f32{
+    let scale=Scale::uniform(font_size);
+    let point=Point{
+        x:0f32,
+        y:0f32,
+    };
+
+    let mut height=0f32;
+
+    for c in text.chars(){
+        let glyph=font.glyph(c).scaled(scale).positioned(point);
+        if let Some(bounding_box)=glyph.pixel_bounding_box(){
+            let glyph_height=bounding_box.height() as f32;
+            if height<glyph_height{
+                height=glyph_height;
+            }
+        }
+    }
+
+    height
+}
+
 /// Расчитывает и возвращает ширину и высоту текста.
 /// Calculates and returns the width and the height of the text.
 /// [width, height]
@@ -95,15 +139,13 @@ pub fn text_size(text:&str,font_size:f32,font:&Font)->[f32;2]{
             }
         }
     }
+
     [width,height]
 }
 
-/// Основа для текста с установленным
-/// цветом и размером шрифта.
-/// Сам шрифт задаётся отдельно во время вывода.
+/// Основа для рендеринга текста.
 /// 
-/// A base for text with set colour and font_size.
-/// The font is set at drawing.
+/// A base for  textrendering.
 pub struct TextBase{
     pub position:[f32;2],
     pub font_size:f32,
@@ -111,17 +153,20 @@ pub struct TextBase{
 }
 
 impl TextBase{
-    pub const fn new(colour:Colour,font_size:f32)->TextBase{
+    pub const fn new(position:[f32;2],font_size:f32,colour:Colour)->TextBase{
         Self{
             font_size,
             colour,
-            position:[0f32;2]
+            position,
         }
     }
 
-    pub const fn position(mut self,position:[f32;2])->TextBase{
-        self.position=position;
-        self
+    pub const fn zero_position(font_size:f32,colour:Colour)->TextBase{
+        Self{
+            font_size,
+            colour,
+            position:[0f32;2],
+        }
     }
 
     #[inline(always)]
@@ -168,7 +213,7 @@ impl TextBase{
     /// Выводит уже готовый символ.
     /// 
     /// Draws an already built glyph.
-    #[inline(always)] 
+    #[inline(always)]
     pub fn draw_glyph(
         &self,
         glyph:PositionedGlyph,
@@ -181,7 +226,7 @@ impl TextBase{
     /// Строит и выводит один символ.
     /// 
     /// Builds and draws a character.
-    #[inline(always)] 
+    #[inline(always)]
     pub fn draw_char(
         &self,
         character:char,
@@ -192,7 +237,7 @@ impl TextBase{
         graphics.draw_char(character,self,font,draw_parameters)
     }
 
-    /// Выводит весь текст в строчку.
+    /// Выводит строку.
     /// 
     /// Draws a string.
     #[inline(always)]
@@ -206,7 +251,7 @@ impl TextBase{
         graphics.draw_str(s,self,font,draw_parameters)
     }
 
-    /// Выводит часть текста в строчку.
+    /// Выводит часть строки.
     /// Если текст выведен полностью, возвращает true.
     /// 
     /// Draws a part of the string.

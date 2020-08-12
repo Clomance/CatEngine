@@ -184,7 +184,7 @@ impl MouseCursorIcon{
                 &graphics.graphics2d.texture.draw_shift,
                 &uni,
                 draw_parameters
-            );
+            ).expect("Mouse cursor icon rendering error");
         }
     }
 }

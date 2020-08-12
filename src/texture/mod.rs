@@ -1,8 +1,6 @@
 //! # Основы работы с изображениями. Image basics.
 
 use super::{
-    // statics
-    window_center,
     // types
     Colour,
     // structs

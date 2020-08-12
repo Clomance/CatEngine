@@ -1,12 +1,10 @@
 use crate::Colour;
 
 use glium::{
-    implement_vertex,
     index::{
         PrimitiveType,
         IndicesSource,
         IndexType,
-        Index
     },
     vertex::{
         VerticesSource,

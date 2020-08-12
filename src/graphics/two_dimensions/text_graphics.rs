@@ -8,8 +8,6 @@ use crate::{
 };
 
 use glium::{
-    // macroses
-    implement_vertex,
     uniform,
     // enums
     DrawError,
@@ -33,12 +31,7 @@ use glium::{
     Rect,
 };
 
-use rusttype::{
-    Font,
-    Scale,
-    Point,
-    PositionedGlyph,
-};
+use rusttype::PositionedGlyph;
 
 pub struct TextGraphics{
     vertex_buffer:VertexBuffer<TexturedVertex2D>,
@@ -51,12 +44,12 @@ pub struct TextGraphics{
 impl TextGraphics{
     pub fn new(display:&Display,[width,height]:[u32;2],glsl:u16)->TextGraphics{
         let (vertex,fragment)=if glsl==120{(
-            include_str!("shaders/text/vertex_shader.glsl"),
-            include_str!("shaders/text/fragment_shader.glsl")
-        )}
-        else{(
             include_str!("shaders/120/text/vertex_shader.glsl"),
             include_str!("shaders/120/text/fragment_shader.glsl")
+        )}
+        else{(
+            include_str!("shaders/text/vertex_shader.glsl"),
+            include_str!("shaders/text/fragment_shader.glsl")
         )};
         Self{
             vertex_buffer:VertexBuffer::empty_dynamic(display,4).unwrap(),
