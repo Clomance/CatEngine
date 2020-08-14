@@ -356,9 +356,6 @@ impl <'o> DependentObject<'o,Vertex2D,u8> for Line{
 
 const ellipse_points:usize=15; // Количество точек для эллипса
 
-/// Круг с центром в точке (x, y)
-/// и радиусом 'radius',
-/// который заполняется цветом 'colour'.
 pub struct Circle{
     pub x:f32,
     pub y:f32,

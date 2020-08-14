@@ -1,8 +1,5 @@
 use crate::Colour;
 
-#[cfg(feature="text_graphics")]
-use crate::text::TextBase;
-
 use crate::texture::{
     ImageBase,
     Texture,
@@ -26,12 +23,7 @@ use glium::{
 };
 
 #[cfg(feature="text_graphics")]
-use rusttype::{
-    Font,
-    Scale,
-    Point,
-    PositionedGlyph,
-};
+use rusttype::PositionedGlyph;
 
 /// Простой интерфейс для связи кадра и графических функций.
 /// Simple interface to connect graphics fuctions to the frame.
@@ -70,6 +62,11 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         self.frame.clear_color(r,g,b,a);
     }
 
+    /// Выводит уже готовый символ.
+    /// 
+    /// Draws the already built glyph.
+    #[inline(always)]
+    #[cfg(feature="text_graphics")]
     pub fn draw_glyph(
         &mut self,
         glyph:PositionedGlyph,
@@ -77,57 +74,6 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
         self.graphics2d.text.draw_glyph(glyph,colour,draw_parameters,self.frame)
-    }
-
-    pub fn draw_char(
-        &mut self,
-        character:char,
-        base:&TextBase,
-        font:&Font,
-        draw_parameters:&DrawParameters,
-    )->Result<(),DrawError>{
-        let scale=Scale::uniform(base.font_size);
-        let point=Point{
-            x:base.position[0],
-            y:base.position[1]
-        };
-        // Получение символа
-        let glyph=font.glyph(character).scaled(scale).positioned(point);
-
-        self.graphics2d.text.draw_glyph(glyph,base.colour,draw_parameters,self.frame)
-    }
-
-    /// Выводит строку.
-    pub fn draw_str(
-        &mut self,
-        s:&str,
-        base:&TextBase,
-        font:&Font,
-        draw_parameters:&DrawParameters,
-    )->Result<(),DrawError>{
-        let scale=Scale::uniform(base.font_size);
-        // позиция для вывода символа
-        let mut point=Point{
-            x:base.position[0],
-            y:base.position[1]
-        };
-
-        let mut width_offset; // сдвиг для следующего символа
-
-        for character in s.chars(){
-            // Получение символа
-            let scaled_glyph=font.glyph(character).scaled(scale);
-
-            width_offset=scaled_glyph.h_metrics().advance_width;
-
-            let glyph=scaled_glyph.positioned(point);
-
-            self.graphics2d.text.draw_glyph(glyph,base.colour,draw_parameters,self.frame)?;
-
-            point.x+=width_offset;
-        }
-
-        Ok(())
     }
 
     /// Рисует изображение.
@@ -139,7 +85,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         image_base:&ImageBase,
         texture:&Texture,
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.texture.draw(image_base,texture,draw_parameters,self.frame)
     }
@@ -154,7 +100,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         image_base:&ImageBase,
         texture:&Texture,
         shift:[f32;2],
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.texture.draw_shift(
             image_base,
@@ -178,7 +124,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         texture:&Texture,
         rotation_center:[f32;2],
         angle:f32,
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.texture.draw_rotate(
             image_base,
@@ -281,7 +227,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         object:&'o O,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
-    where
+        where
             O:DependentObject<
                 'o,
                 Vertex2D,
@@ -298,7 +244,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// Рисует сдвинутый простой объект.
     /// 
     /// Draws shifted simple object.
-    #[inline(always)] 
+    #[inline(always)]
     pub fn draw_shift_simple<'o,O,V,I>(
         &mut self,
         object:&'o O,

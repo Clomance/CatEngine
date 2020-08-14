@@ -55,7 +55,7 @@ impl MouseCursor{
 
     /// Вычисляет перемещение от сохранённой позиции.
     /// 
-    /// Calculates movement from the saved position.
+    /// Calculates the movement from the saved position.
     pub fn saved_shift(&self)->[f32;2]{
         [
             self.position[0]-self.saved_position[0],
@@ -83,7 +83,7 @@ impl MouseCursor{
 
     /// Расстояние от курсора до центра окна.
     /// 
-    /// Distance between the cursor and the center of the window.
+    /// The distance between the cursor and the center of the window.
     pub fn center_radius(&self)->[f32;2]{
         unsafe{[
             self.position[0]-window_center[0],
@@ -95,7 +95,7 @@ impl MouseCursor{
     /// 
     /// Sets the mouse cursor position.
     #[inline(always)]
-    pub fn set_position(&mut self,position:[f32;2]){
+    pub (crate) fn set_position(&mut self,position:[f32;2]){
         self.position=position;
     }
 }

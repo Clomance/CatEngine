@@ -32,6 +32,8 @@ pub fn load_font<P:AsRef<Path>>(path:P)->Option<Font<'static>>{
     }
 }
 
+/// Возвращает ширину символа.
+/// Returns the width of the character.
 pub fn char_width(character:char,font_size:f32,font:&Font)->f32{
     let scale=Scale::uniform(font_size);
 
@@ -40,6 +42,8 @@ pub fn char_width(character:char,font_size:f32,font:&Font)->f32{
     glyph.h_metrics().advance_width
 }
 
+/// Возвращает высоту символа.
+/// Returns the height of the character.
 pub fn char_height(character:char,font_size:f32,font:&Font)->f32{
     let scale=Scale::uniform(font_size);
     let point=Point{
@@ -57,6 +61,10 @@ pub fn char_height(character:char,font_size:f32,font:&Font)->f32{
     }
 }
 
+/// Возвращает размер символа.
+/// Returns the size of the character.
+/// 
+/// [width, height]
 pub fn char_size(character:char,font_size:f32,font:&Font)->[f32;2]{
     let scale=Scale::uniform(font_size);
     let point=Point{
@@ -119,6 +127,7 @@ pub fn text_height(text:&str,font_size:f32,font:&Font)->f32{
 
 /// Расчитывает и возвращает ширину и высоту текста.
 /// Calculates and returns the width and the height of the text.
+/// 
 /// [width, height]
 pub fn text_size(text:&str,font_size:f32,font:&Font)->[f32;2]{
     let scale=Scale::uniform(font_size);
@@ -144,8 +153,7 @@ pub fn text_size(text:&str,font_size:f32,font:&Font)->[f32;2]{
 }
 
 /// Основа для рендеринга текста.
-/// 
-/// A base for  textrendering.
+/// A base for  text rendering.
 pub struct TextBase{
     pub position:[f32;2],
     pub font_size:f32,
@@ -180,7 +188,7 @@ impl TextBase{
     }
 
     #[inline(always)]
-    pub fn set_position(&mut self,position:[f32;2]){
+    pub fn move_to(&mut self,position:[f32;2]){
         self.position=position
     }
 
@@ -212,12 +220,12 @@ impl TextBase{
 
     /// Выводит уже готовый символ.
     /// 
-    /// Draws an already built glyph.
+    /// Draws the already built glyph.
     #[inline(always)]
     pub fn draw_glyph(
         &self,
         glyph:PositionedGlyph,
-        draw_parameters:&mut DrawParameters,
+        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         graphics.draw_glyph(glyph,self.colour,draw_parameters)
@@ -225,43 +233,75 @@ impl TextBase{
 
     /// Строит и выводит один символ.
     /// 
-    /// Builds and draws a character.
-    #[inline(always)]
+    /// Builds and draws a glyph.
     pub fn draw_char(
         &self,
         character:char,
         font:&Font,
-        draw_parameters:&mut DrawParameters,
+        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
-        graphics.draw_char(character,self,font,draw_parameters)
+        let scale=Scale::uniform(self.font_size);
+
+        // позиция для вывода символа
+        let point=Point{
+            x:self.position[0],
+            y:self.position[1]
+        };
+
+        // Получение символа
+        let glyph=font.glyph(character).scaled(scale).positioned(point);
+
+        graphics.draw_glyph(glyph,self.colour,draw_parameters)
     }
 
     /// Выводит строку.
     /// 
     /// Draws a string.
-    #[inline(always)]
     pub fn draw_str(
         &self,
         s:&str,
         font:&Font,
-        draw_parameters:&mut DrawParameters,
+        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
-        graphics.draw_str(s,self,font,draw_parameters)
+        let scale=Scale::uniform(self.font_size);
+        // позиция для вывода символа
+        let mut point=Point{
+            x:self.position[0],
+            y:self.position[1]
+        };
+
+        let mut width_offset; // сдвиг для следующего символа
+
+        for character in s.chars(){
+            // Получение символа
+            let scaled_glyph=font.glyph(character).scaled(scale);
+
+            width_offset=scaled_glyph.h_metrics().advance_width;
+
+            // установка положения символа
+            let glyph=scaled_glyph.positioned(point);
+
+            graphics.draw_glyph(glyph,self.colour,draw_parameters)?;
+
+            point.x+=width_offset;
+        }
+
+        Ok(())
     }
 
     /// Выводит часть строки.
     /// Если текст выведен полностью, возвращает true.
     /// 
     /// Draws a part of the string.
-    /// Returns true, if the whole string was drawn.
+    /// Returns true, if the whole string is drawn.
     pub fn draw_str_part(
         &self,
         s:&str,
         chars:usize,
         font:&Font,
-        draw_parameters:&mut DrawParameters,
+        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<bool,DrawError>{
         let mut whole=true; // Флаг вывода всего текста
@@ -287,7 +327,7 @@ impl TextBase{
             // ширина символа
             width_offset=scaled_glyph.h_metrics().advance_width;
 
-            // символ с позицией
+            // установка положения символа
             let glyph=scaled_glyph.positioned(point);
 
             graphics.draw_glyph(glyph,self.colour,draw_parameters)?;

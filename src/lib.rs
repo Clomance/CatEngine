@@ -2,20 +2,6 @@
 
 //! # 2D графический движок с поддержкой аудио. A 2D graphics engine with audio support.
 //! 
-//! Использует OpenGL 2.0 и выше.
-//! 
-//! Текст рисуется поточечно. Так что важно указать правильный размер буфера.
-//! 
-//! #
-//! 
-//! Uses OpenGL 2.0 and above.
-//! 
-//! Text is drawn pointwise. It's important to set correct size of the text graphics buffer.
-//! 
-//! #
-//! 
-//! 
-//! 
 //! ```
 //! use cat_engine::{
 //!     DefaultWindow,

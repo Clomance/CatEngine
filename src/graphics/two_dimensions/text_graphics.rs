@@ -112,6 +112,7 @@ impl TextGraphics{
             self.image.clear();
             let slice=self.vertex_buffer.slice(0..4).unwrap();
 
+            // размер изображения символа
             let uwidth=width as f32/self.texture_size[0];
             let uheight=height as f32/self.texture_size[1];
 
