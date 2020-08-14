@@ -42,7 +42,6 @@ let mut window=PagedWindow::raw(
  - перенос файлов в окно (только при `feature = "file_drop"`)
 
 
-
 # WindowBase
 
 Основа для окон, включает в себя само окно, графические функции,
@@ -91,6 +90,67 @@ while let Some(event)=window.next_event(){
 
 Является самым производительным методом, но имеет серьёзные ограничения в возможностях.
 
+```
+pub struct Page;
+
+impl WindowPage<'static> for Page{
+    type Window=PagedWindow;
+    type Output=();
+
+    fn on_window_close_requested(&mut self,_window:&mut PagedWindow){
+        // automatically breaks the cycle
+    }
+
+    #[cfg(not(feature="lazy"))]
+    fn on_update_requested(&mut self,_window:&mut PagedWindow){
+        // Some actions
+    }
+
+    fn on_redraw_requested(&mut self,_window:&mut PagedWindow){
+        // Rendering
+    }
+
+    fn on_mouse_pressed(&mut self,_window:&mut PagedWindow,_button:MouseButton){}
+    fn on_mouse_released(&mut self,_window:&mut PagedWindow,_button:MouseButton){}
+    fn on_mouse_moved(&mut self,_window:&mut PagedWindow,_:[f32;2]){}
+    fn on_mouse_scrolled(&mut self,_window:&mut PagedWindow,_:MouseScrollDelta){}
+
+    fn on_keyboard_pressed(&mut self,_window:&mut PagedWindow,button:KeyboardButton){}
+
+    fn on_keyboard_released(&mut self,_window:&mut PagedWindow,_button:KeyboardButton){}
+
+    fn on_character_recieved(&mut self,_window:&mut PagedWindow,_character:char){}
+
+    fn on_window_resized(&mut self,_window:&mut PagedWindow,_new_size:[u32;2]){}
+
+    fn on_suspended(&mut self,_window:&mut PagedWindow){}
+    fn on_resumed(&mut self,_window:&mut PagedWindow){}
+
+    fn on_window_moved(&mut self,_window:&mut PagedWindow,_:[i32;2]){}
+
+    fn on_window_focused(&mut self,_window:&mut PagedWindow,_:bool){}
+
+    fn on_modifiers_changed(&mut self,_window:&mut PagedWindow,_modifiers:ModifiersState){}
+
+    #[cfg(feature="file_drop")]
+    fn on_file_dropped(&mut self,_:&mut PagedWindow,_:PathBuf){}
+    #[cfg(feature="file_drop")]
+    fn on_file_hovered(&mut self,_:&mut PagedWindow,_:PathBuf){}
+    #[cfg(feature="file_drop")]
+    fn on_file_hovered_canceled(&mut self,_:&mut PagedWindow){}
+
+    fn on_event_loop_closed(&mut self,_:&mut PagedWindow){}
+}
+
+
+fn main(){
+    let mut window=PagedWindow::new(|_,_|{}).unwrap();
+
+    let mut page=Page;
+
+    window.run_page(&mut page);
+}
+```
 
 
 ### Работа с помощью замыканий
@@ -129,3 +189,65 @@ window.run(|window,event|{
 
 Это окно использует страницы как типажи-объекты, поэтому их сможно менять на ходу.
 
+```
+pub struct Page;
+
+impl<'a> WindowPage<'a> for Page{
+    type Window=DynamicWindow<'a>;
+    type Output=();
+
+    fn on_window_close_requested(&mut self,_window:&mut DynamicWindow<'a>){
+        // automatically breaks the cycle
+    }
+
+    #[cfg(not(feature="lazy"))]
+    fn on_update_requested(&mut self,_window:&mut DynamicWindow<'a>){
+        // Some actions
+    }
+
+    fn on_redraw_requested(&mut self,_window:&mut DynamicWindow<'a>){
+        // Rendering
+    }
+
+    fn on_mouse_pressed(&mut self,_window:&mut DynamicWindow<'a>,_button:MouseButton){}
+    fn on_mouse_released(&mut self,_window:&mut DynamicWindow<'a>,_button:MouseButton){}
+    fn on_mouse_moved(&mut self,_window:&mut DynamicWindow<'a>,_:[f32;2]){}
+    fn on_mouse_scrolled(&mut self,_window:&mut DynamicWindow<'a>,_:MouseScrollDelta){}
+
+    fn on_keyboard_pressed(&mut self,_window:&mut DynamicWindow<'a>,button:KeyboardButton){}
+
+    fn on_keyboard_released(&mut self,_window:&mut DynamicWindow<'a>,_button:KeyboardButton){}
+
+    fn on_character_recieved(&mut self,_window:&mut DynamicWindow<'a>,_character:char){}
+
+    fn on_window_resized(&mut self,_window:&mut DynamicWindow<'a>,_new_size:[u32;2]){}
+
+    fn on_suspended(&mut self,_window:&mut DynamicWindow<'a>){}
+    fn on_resumed(&mut self,_window:&mut DynamicWindow<'a>){}
+
+    fn on_window_moved(&mut self,_window:&mut DynamicWindow<'a>,_:[i32;2]){}
+
+    fn on_window_focused(&mut self,_window:&mut DynamicWindow<'a>,_:bool){}
+
+    fn on_modifiers_changed(&mut self,_window:&mut DynamicWindow<'a>,_modifiers:ModifiersState){}
+
+    #[cfg(feature="file_drop")]
+    fn on_file_dropped(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}
+    #[cfg(feature="file_drop")]
+    fn on_file_hovered(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}
+    #[cfg(feature="file_drop")]
+    fn on_file_hovered_canceled(&mut self,_:&mut DynamicWindow<'a>){}
+
+    fn on_event_loop_closed(&mut self,_:&mut DynamicWindow<'a>){}
+}
+
+fn main(){
+    let mut window=DynamicWindow::new(|_,_|{}).unwrap();
+
+    let mut page=Page;
+
+    window.change_page(&mut page);
+
+    window.run();
+}
+```

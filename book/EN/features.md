@@ -1,6 +1,6 @@
 # Why do we need features
 
-Features help to remove unnecessary code and lessed size if some structures.
+Features help us to remove unnecessary code and modules and lessen the size of some structures.
 
 
 
@@ -18,7 +18,7 @@ Enables to use audio output.
 
 ##### texture_graphics
 
-Enables to use functions to work with textures.
+Enables to use functions to work with textured objects.
 
 ##### text_graphics
 
@@ -28,21 +28,6 @@ Enables to use functions to work with text.
 
 Enables to use functions to work with plain (for now) objects.
 
-There are functions to save these objects for a quicker access:
-
-```
-let mut rect=Rectangle::new([100f32;4],[0.0,0.0,0.0,1.0]);
-// there is no need for the rectangle after adding it
-window.graphics().add_simple_object(&rect).unwrap();
-.
-.
-.
-window.draw(|p,g|{
-    g.draw_simple_object(0,p).unwrap();
-}).unwrap();
-```
-
-This a bit speeds up drawing.
 
 
 ### Window additions
@@ -76,7 +61,7 @@ Enables the next events:
  - `WindowEvent::HoveredFile(PathBuf)`
  - `WindowEvent::DroppedFile(PathBuf)`
 
-and related functions.
+and the related functions.
 
 
 

@@ -72,10 +72,10 @@ pub enum WindowEvent{
     /// The window has been requested to close.
     CloseRequested,
 
-    /// Event loop has been stopped.
+    /// Event loop has been stopped,
+    /// means that a page (closure) will be closed.
     /// 
-    /// For the `DefaultWindow` means nothing,
-    /// for the others means that a page (closure) will be closed.
+    /// Only for the `PagedWindow`.
     EventLoopClosed,
 
     /// Приложение приостановлено.
