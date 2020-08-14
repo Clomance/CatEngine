@@ -1,10 +1,6 @@
 //! # Основы работы с изображениями. Image basics.
 
-pub use image; // re-export
-
 use super::{
-    // statics
-    window_center,
     // types
     Colour,
     // structs

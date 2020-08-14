@@ -1,3 +1,21 @@
+# 0.4.0
+
+### Fixed
+
+Rendering user's mouse cursor.
+
+Rendering a static textured object.
+
+### Removed
+
+The range in the `MouseCursorIconSettings`.
+
+### Other
+
+Text rendering fully has been remade. Now it works faster.
+
+The `image` crate has been replaced from `crate::texture` to `crate`.
+
 # 0.3.3
 
 The `MouseCursor` is now public.

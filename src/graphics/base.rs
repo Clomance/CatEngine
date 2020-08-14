@@ -1,8 +1,5 @@
 use crate::Colour;
 
-#[cfg(feature="text_graphics")]
-use crate::text::Character;
-
 use crate::texture::{
     ImageBase,
     Texture,
@@ -24,6 +21,9 @@ use glium::{
     DrawError,
     Surface,
 };
+
+#[cfg(feature="text_graphics")]
+use rusttype::PositionedGlyph;
 
 /// Простой интерфейс для связи кадра и графических функций.
 /// Simple interface to connect graphics fuctions to the frame.
@@ -62,18 +62,18 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         self.frame.clear_color(r,g,b,a);
     }
 
-    /// Рисует один символ.
+    /// Выводит уже готовый символ.
     /// 
-    /// Draws one character.
+    /// Draws the already built glyph.
     #[inline(always)]
     #[cfg(feature="text_graphics")]
-    pub fn draw_character(
+    pub fn draw_glyph(
         &mut self,
+        glyph:PositionedGlyph,
         colour:Colour,
-        character:&Character,
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
-        self.graphics2d.text.draw_character(character,colour,draw_parameters,self.frame)
+        self.graphics2d.text.draw_glyph(glyph,colour,draw_parameters,self.frame)
     }
 
     /// Рисует изображение.
@@ -85,7 +85,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         image_base:&ImageBase,
         texture:&Texture,
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.texture.draw(image_base,texture,draw_parameters,self.frame)
     }
@@ -100,7 +100,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         image_base:&ImageBase,
         texture:&Texture,
         shift:[f32;2],
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.texture.draw_shift(
             image_base,
@@ -124,7 +124,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         texture:&Texture,
         rotation_center:[f32;2],
         angle:f32,
-        draw_parameters:&mut DrawParameters
+        draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.texture.draw_rotate(
             image_base,
@@ -227,7 +227,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         object:&'o O,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
-    where
+        where
             O:DependentObject<
                 'o,
                 Vertex2D,
@@ -244,7 +244,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// Рисует сдвинутый простой объект.
     /// 
     /// Draws shifted simple object.
-    #[inline(always)] 
+    #[inline(always)]
     pub fn draw_shift_simple<'o,O,V,I>(
         &mut self,
         object:&'o O,

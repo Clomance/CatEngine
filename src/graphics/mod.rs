@@ -38,8 +38,8 @@ pub struct InnerGraphicsSettings{
     /// The default is 8.
     pub vertex_buffer_size:usize,
 
-    /// The range from 0 to the `offset` is for common drawing.
-    /// The range from `offset` to the end is for saving objects.
+    /// The range [0..offset] is for common drawing,
+    /// [offset..] is for saving objects.
     /// 
     /// The default is 4.
     pub vertex_buffer_offset:usize,
@@ -49,8 +49,8 @@ pub struct InnerGraphicsSettings{
     /// The default is 8.
     pub index_buffer_size:usize,
 
-    /// The range from 0 to the `offset` is for common drawing.
-    /// The range from `offset` to the end is for saving objects.
+    /// The range [0..offset] is for common drawing,
+    /// [offset..] is for saving objects.
     /// 
     /// The default is 4.
     pub index_buffer_offset:usize,
@@ -87,11 +87,11 @@ pub struct GraphicsSettings{
     #[cfg(feature="simple_graphics")]
     pub simple:InnerGraphicsSettings,
 
-    /// The default is 2000.
+    /// The default is [256;2].
     /// 
     /// feature = "text_graphics"
     #[cfg(feature="text_graphics")]
-    pub text_vertex_buffer_size:usize,
+    pub text_image_buffer_size:[u32;2],
 }
 
 impl GraphicsSettings{
@@ -104,7 +104,7 @@ impl GraphicsSettings{
             simple:InnerGraphicsSettings::new(),
 
             #[cfg(feature="text_graphics")]
-            text_vertex_buffer_size:2000usize,
+            text_image_buffer_size:[256u32;2],
         }
     }
 }
