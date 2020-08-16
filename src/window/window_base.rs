@@ -21,6 +21,7 @@ use super::{
     window_width,
     window_height,
     window_center,
+    mouse_cursor,
     // enums
     InnerWindowEvent,
     // structs
@@ -274,6 +275,12 @@ impl WindowBase{
         self.mouse_icon.set_visible(visible);
     }
 
+    #[cfg(feature="mouse_cursor_icon")]
+    #[inline(always)]
+    pub (crate) fn mouse_icon(&mut self)->&mut MouseCursorIcon{
+        &mut self.mouse_icon
+    }
+
     /// feature = "mouse_cursor_icon"
     #[cfg(feature="mouse_cursor_icon")]
     #[inline(always)]
@@ -362,167 +369,37 @@ impl WindowBase{
             self.time=current_time;
         }
     }
+
+    #[cfg(not(feature="lazy"))]
+    pub (crate) fn update_check(&mut self){
+        let now=Instant::now();
+        if self.next_update<now{
+            self.event_loop_proxy
+                    .send_event(InnerWindowEvent::Update)
+                            .expect("Dead event loop");
+
+            self.next_update+=self.update_interval;
+        }
+    }
 }
 
 
 fn default_draw_parameters<'a>()->DrawParameters<'a>{
-    let mut draw_parameters=DrawParameters::default();
-
-    draw_parameters.blend=Blend{
-        color:BlendingFunction::Addition{
-            source:LinearBlendingFactor::SourceAlpha,
-            destination:LinearBlendingFactor::OneMinusSourceAlpha,
+    DrawParameters{
+        blend:Blend{
+            color:BlendingFunction::Addition{
+                source:LinearBlendingFactor::SourceAlpha,
+                destination:LinearBlendingFactor::OneMinusSourceAlpha,
+            },
+            alpha:BlendingFunction::Addition{
+                source:LinearBlendingFactor::One,
+                destination:LinearBlendingFactor::One,
+            },
+            constant_value:(0.0,0.0,0.0,0.0),
         },
-        alpha:BlendingFunction::Addition{
-            source:LinearBlendingFactor::One,
-            destination:LinearBlendingFactor::One,
-        },
-        constant_value:(0.0,0.0,0.0,0.0),
-    };
 
-    draw_parameters.backface_culling=BackfaceCullingMode::CullingDisabled;
+        backface_culling:BackfaceCullingMode::CullingDisabled,
 
-    draw_parameters
-}
-
-macro_rules! window_resized{
-    ($size:expr,$window:ident)=>{
-        unsafe{
-            window_width=$size.width as f32;
-            window_height=$size.height as f32;
-            window_center=[window_width/2f32,window_height/2f32];
-
-            #[cfg(feature="mouse_cursor_icon")]
-            $window.base.mouse_icon.update();
-
-            Resized([$size.width,$size.height])
-        }
-    };
-
-    ($size:expr,$page:expr,$window:ident)=>{
-        unsafe{
-            window_width=$size.width as f32;
-            window_height=$size.height as f32;
-            window_center=[window_width/2f32,window_height/2f32];
-
-            #[cfg(feature="mouse_cursor_icon")]
-            $window.base.mouse_icon.update();
-
-            $page.on_window_resized($window,[$size.width,$size.height])
-        }
-    }
-}
-
-
-// Сдвиг мыши (сдвиг за пределы окна игнорируется)
-macro_rules! cursor_moved{
-    ($position:expr)=>{
-        unsafe{
-            let last_position=mouse_cursor.position();
-
-            let position=[$position.x as f32,$position.y as f32];
-
-            let dx=position[0]-last_position[0];
-            let dy=position[1]-last_position[1];
-
-            mouse_cursor.set_position(position);
-
-            WindowEvent::MouseMovementDelta([dx,dy])
-        }
-    };
-
-    ($position:expr,$page:expr,$window:ident)=>{
-        unsafe{
-            let last_position=mouse_cursor.position();
-
-            let position=[$position.x as f32,$position.y as f32];
-
-            let dx=position[0]-last_position[0];
-            let dy=position[1]-last_position[1];
-
-            mouse_cursor.set_position(position);
-
-            $page.on_mouse_moved($window,[dx,dy])
-        }
-    }
-}
-
-// Обработка действий с кнопками мыши
-macro_rules! mouse_input{
-    ($button:expr,$state:expr,$window:ident)=>{
-        if $state==ElementState::Pressed{
-            #[cfg(feature="mouse_cursor_icon")]
-            if $button==MouseButton::Left{
-                $window.base.mouse_icon.pressed();
-            }
-
-            MousePressed($button)
-        }
-        else{
-            #[cfg(feature="mouse_cursor_icon")]
-            if $button==MouseButton::Left{
-                $window.base.mouse_icon.released();
-            }
-
-            MouseReleased($button)
-        }
-    };
-
-    ($button:expr,$state:expr,$page:expr,$window:ident)=>{
-        if $state==ElementState::Pressed{
-            #[cfg(feature="mouse_cursor_icon")]
-            if $button==MouseButton::Left{
-                $window.base.mouse_icon.pressed();
-            }
-
-            $page.on_mouse_pressed($window,$button)
-        }
-        else{
-            #[cfg(feature="mouse_cursor_icon")]
-            if $button==MouseButton::Left{
-                $window.base.mouse_icon.released();
-            }
-
-            $page.on_mouse_released($window,$button)
-        }
-    }
-}
-
-// Обработка действий с клавишами клавиатуры
-macro_rules! keyboard_input{
-    ($input:expr)=>{
-        {
-            let key=if let Some(key)=$input.virtual_keycode{
-                unsafe{std::mem::transmute(key)}
-            }
-            else{
-                KeyboardButton::Unknown
-            };
-
-            if $input.state==ElementState::Pressed{
-                KeyboardPressed(key)
-            }
-            else{
-                KeyboardReleased(key)
-            }
-        }
-    };
-
-    ($input:expr,$page:expr,$window:ident)=>{
-        {
-            let key=if let Some(key)=$input.virtual_keycode{
-                unsafe{std::mem::transmute(key)}
-            }
-            else{
-                KeyboardButton::Unknown
-            };
-
-            if $input.state==ElementState::Pressed{
-                $page.on_keyboard_pressed($window,key)
-            }
-            else{
-                $page.on_keyboard_released($window,key)
-            }
-        }
+        ..DrawParameters::default()
     }
 }

@@ -13,7 +13,6 @@ use super::{
     WindowEvent,
     KeyboardButton,
     InnerWindowEvent,
-    PageState,
     // traits
     Window,
     // structs
@@ -137,20 +136,20 @@ impl DefaultWindow{
         }
     }
 
-    /// Переводит в `DynamicWindow`.
-    /// 
-    /// Не учитывает состояние окна при `feature = "auto_hide"` (свёрнутое или нет).
-    /// 
-    /// Converts into the `DynamicWindow`.
-    /// 
-    /// Ignores the 'auto_hide' feature state (the window hidden or not).
-    pub fn into_dynamic_window<'a>(self)->DynamicWindow<'a>{
-        DynamicWindow{
-            base:self.base,
+    // /// Переводит в `DynamicWindow`.
+    // /// 
+    // /// Не учитывает состояние окна при `feature = "auto_hide"` (свёрнутое или нет).
+    // /// 
+    // /// Converts into the `DynamicWindow`.
+    // /// 
+    // /// Ignores the 'auto_hide' feature state (the window hidden or not).
+    // pub fn into_dynamic_window<'a>(self)->DynamicWindow<'a>{
+    //     DynamicWindow{
+    //         base:self.base,
 
-            page:PageState::<'a>::SetNew(None),
-        }
-    }
+    //         page:PageState::<'a>::SetNew(None),
+    //     }
+    // }
 }
 
 
@@ -353,7 +352,6 @@ impl Window for DefaultWindow{
         #[cfg(feature="mouse_cursor_icon")]
         mouse_cursor_icon_settings:MouseCursorIconSettings<PathBuf>,
     )->Result<DefaultWindow,DisplayCreationError>{
-
         let base=WindowBase::raw(window_builder,
             context_builder,
             graphics_settings,

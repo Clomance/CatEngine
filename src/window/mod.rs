@@ -1,4 +1,6 @@
 #[macro_use]
+mod event_handlers; // макросы для обратки событий
+
 mod window_base;
 pub use window_base::WindowBase;
 
@@ -12,7 +14,6 @@ mod paged_window;
 pub use paged_window::PagedWindow;
 
 mod dynamic_window;
-use dynamic_window::PageState;
 pub use dynamic_window::{DynamicWindow,PageRef};
 
 mod settings;
@@ -46,6 +47,13 @@ pub static mut window_center:[f32;2]=[0f32;2];
 /// Обновляется раз в секунду. Updates once a second.
 #[cfg(feature="fps_counter")]
 pub static mut fps:u32=0;
+
+#[derive(PartialEq)]
+pub (crate) enum EventLoopState<O:PartialEq>{
+    Running,
+    CloseRequested,
+    Closed(O),
+}
 
 /// Внутренние события для управления окном.
 /// Inner events to operate the window.

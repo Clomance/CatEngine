@@ -1,7 +1,5 @@
 use crate::graphics::GraphicsSettings;
 
-//use super::cursor_moved;
-
 #[cfg(feature="mouse_cursor_icon")]
 use super::MouseCursorIconSettings;
 
@@ -16,7 +14,7 @@ use super::{
     KeyboardButton,
     WindowEvent,
     InnerWindowEvent,
-    PageState,
+    EventLoopState,
     // traits
     Window,
     WindowPage,
@@ -51,13 +49,6 @@ use std::{
     path::PathBuf,
     time::Instant,
 };
-
-#[derive(PartialEq)]
-enum EventLoopState<O:PartialEq>{
-    Running,
-    CloseRequested,
-    Closed(O),
-}
 
 /// Окно, которое использует "страницы" и замыкания для обработки событий.
 /// A window that uses 'pages' and closures to handle the events.
@@ -174,10 +165,10 @@ impl PagedWindow{
     /// 
     /// Возвращает `Err`, если обработчик уже остановлен.
     /// 
-    /// Stops the event listener
+    /// Stops the event loop
     /// by sending the stopping event.
     /// 
-    /// Returns `Err` if the listener has been already stopped.
+    /// Returns `Err` if the loop is already stopped.
     pub fn stop_events(&self)->Result<(),EventLoopClosed<InnerWindowEvent>>{
         self.base.request_event_loop_close()
     }
@@ -188,7 +179,7 @@ impl PagedWindow{
     /// 
     /// Converts into the `DefaultWindow`.
     /// 
-    /// Saves the 'auto_hide' feature state (the window hidden or not).
+    /// Saves the 'auto_hide' feature state (the window is hidden or not).
     pub fn into_default_window(self)->DefaultWindow{
         #[cfg(feature="auto_hide")]
         let _fn=if self.minimized{
@@ -215,12 +206,26 @@ impl PagedWindow{
     /// Converts into the `DynamicWindow`.
     /// 
     /// Ignores the 'auto_hide' feature state (the window hidden or not).
-    pub fn into_dynamic_window<'a>(self)->DynamicWindow<'a>{
+    pub fn into_dynamic_window<'a,O:PartialEq>(self)->DynamicWindow<'a,O>{
         DynamicWindow{
             base:self.base,
 
-            page:PageState::<'a>::SetNew(None),
+            page_ref:std::ptr::null_mut(),
+
+            last_page:None,
         }
+    }
+
+    #[cfg(feature="auto_hide")]
+    #[inline(always)]
+    fn on_window_hidden(&mut self){
+        self.minimized=true;
+    }
+
+    #[cfg(feature="auto_hide")]
+    #[inline(always)]
+    fn on_window_unhidden(&mut self){
+        self.minimized=false;
     }
 }
 
@@ -239,14 +244,7 @@ impl PagedWindow{
 
         event_loop.run_return(|event,_,control_flow|{
             #[cfg(not(feature="lazy"))]{
-                let now=Instant::now();
-                if self.base.next_update<now{
-                    self.base.event_loop_proxy
-                            .send_event(InnerWindowEvent::Update)
-                                    .expect("Dead event loop");
-
-                    self.base.next_update+=self.base.update_interval;
-                }
+                self.base.update_check();
                 // Endless cycling checking events
                 *control_flow=ControlFlow::Poll;
             }
@@ -414,7 +412,7 @@ impl PagedWindow{
         close_flag
     }
 
-    fn paged_event_listener<O:PartialEq,P:WindowPage<'static,Window=PagedWindow,Output=O>>(
+    pub (crate) fn paged_event_listener<O:PartialEq,P:WindowPage<'static,Window=PagedWindow,Output=O>>(
         &mut self,
         event_loop:&mut EventLoop<InnerWindowEvent>,
         page:&mut P
@@ -422,123 +420,7 @@ impl PagedWindow{
         let mut state=EventLoopState::<O>::Running;
 
         event_loop.run_return(|event,_,control_flow|{
-            #[cfg(not(feature="lazy"))]{
-                let now=Instant::now();
-                if self.base.next_update<now{
-                    self.base.event_loop_proxy
-                            .send_event(InnerWindowEvent::Update)
-                                    .expect("Dead event loop");
-
-                    self.base.next_update+=self.base.update_interval;
-                }
-                // Endless cycling checking events
-                *control_flow=ControlFlow::Poll;
-            }
-            
-            #[cfg(feature="lazy")]{
-                // Waiting for any event except redraw event
-                *control_flow=ControlFlow::Wait;
-            }
-
-            match event{
-                Event::UserEvent(event)=>match event{
-                    // Запрос на закрытие
-                    InnerWindowEvent::EventLoopCloseRequested=>{
-                        *control_flow=ControlFlow::Exit;
-                        // Запрос на закрытие - для получения возвращаемого значения
-                        // в LoopDestroyed
-                        state=EventLoopState::CloseRequested;
-                        return
-                    }
-
-                    #[cfg(not(feature="lazy"))]
-                    InnerWindowEvent::Update=>page.on_update_requested(self),
-
-                    #[cfg(feature="lazy")]
-                    _=>return
-                }
-
-                // События окна
-                Event::WindowEvent{event,..}=>{
-                    match event{
-                        // Закрытие окна
-                        GWindowEvent::CloseRequested=>{
-                            *control_flow=ControlFlow::Exit;
-                            state=EventLoopState::CloseRequested;
-                            page.on_window_close_requested(self);
-                        }
-
-                        // Изменение размера окна
-                        GWindowEvent::Resized(size)=>window_resized!(size,page,self),
-
-                        // Сдвиг окна
-                        GWindowEvent::Moved(pos)=>page.on_window_moved(self,[pos.x,pos.y]),
-
-                        // Сдвиг мыши (сдвиг за пределы окна игнорируется)
-                        GWindowEvent::CursorMoved{position,..}=>cursor_moved!(position,page,self),
-
-                        // Прокрутка колёсика мыши
-                        GWindowEvent::MouseWheel{delta,..}=>page.on_mouse_scrolled(self,delta),
-
-                        // Обработка действий с кнопками мыши
-                        GWindowEvent::MouseInput{button,state,..}=>mouse_input!(button,state,page,self),
-
-                        // Обработка действий с клавишами клавиатуры
-                        GWindowEvent::KeyboardInput{input,..}=>keyboard_input!(input,page,self),
-
-                        // Получение вводимых букв
-                        GWindowEvent::ReceivedCharacter(character)
-                                if !character.is_ascii_control()=>page.on_character_recieved(self,character),
-
-                        // При потере фокуса
-                        #[cfg(feature="auto_hide")]
-                        GWindowEvent::Focused(f)=>if !f{
-                            *control_flow=ControlFlow::Exit;
-                            self.minimized=true;
-                            self.base.display.gl_window().window().set_minimized(true); // Сворацивание окна
-                            page.on_window_focused(self,f);
-                        }
-
-                        #[cfg(not(feature="auto_hide"))]
-                        GWindowEvent::Focused(f)=>page.on_window_focused(self,f),
-
-                        GWindowEvent::ModifiersChanged(modifier)=>page.on_modifiers_changed(self,modifier),
-
-                        #[cfg(feature="file_drop")]
-                        GWindowEvent::DroppedFile(path)=>page.on_file_dropped(self,path),
-                        #[cfg(feature="file_drop")]
-                        GWindowEvent::HoveredFile(path)=>page.on_file_hovered(self,path),
-                        #[cfg(feature="file_drop")]
-                        GWindowEvent::HoveredFileCancelled=>page.on_file_hovered_canceled(self),
-
-                        _=>{} // Игнорирование остальных событий
-                    }
-                }
-
-                Event::Suspended=>page.on_suspended(self),
-                Event::Resumed=>page.on_resumed(self),
-
-                // Запрос на рендеринг
-                Event::MainEventsCleared=>{
-                    self.base.display.gl_window().window().request_redraw();
-                }
-
-                // Рендеринг
-                Event::RedrawRequested(_)=>{
-                    #[cfg(feature="fps_counter")]
-                    self.base.count_fps();
-
-                    page.on_redraw_requested(self);
-                }
-
-                Event::LoopDestroyed=>{
-                    if EventLoopState::CloseRequested==state{
-                        state=EventLoopState::Closed(page.on_event_loop_closed(self))
-                    }
-                }
-
-                _=>{}
-            }
+            paged_event_listener!(self,event,control_flow,page,state);
         });
 
         state
@@ -547,73 +429,29 @@ impl PagedWindow{
 
     /// Функция ожидания получения фокуса - перехватывает управление до получения окном фокуса
     #[cfg(feature="auto_hide")]
-    fn paged_wait_until_focused<O:PartialEq,P:WindowPage<'static,Window=PagedWindow,Output=O>>(
+    pub (crate) fn paged_wait_until_focused<O:PartialEq,P:WindowPage<'static,Window=PagedWindow,Output=O>>(
         &mut self,
         event_loop:&mut EventLoop<InnerWindowEvent>,
         page:&mut P
     )->EventLoopState<O>{
-
         let mut state=EventLoopState::<O>::Running;
 
         event_loop.run_return(|event,_,control_flow|{
-            *control_flow=ControlFlow::Wait;
-
-            match event{
-                Event::UserEvent(event)=>match event{
-                    InnerWindowEvent::EventLoopCloseRequested=>{
-                        *control_flow=ControlFlow::Exit;
-                        state=EventLoopState::CloseRequested;
-                        return
-                    }
-                    _=>return
-                }
-
-                Event::WindowEvent{event,..}=>{
-                    match event{
-                        // Остановка цикла обработки событий
-                        GWindowEvent::CloseRequested=>{ 
-                            *control_flow=ControlFlow::Exit;
-                            state=EventLoopState::CloseRequested;
-                            page.on_window_close_requested(self)
-                        }
-
-                        // Изменение размера окна
-                        GWindowEvent::Resized(size)=>window_resized!(size,page,self),
-
-                        // При получении фокуса
-                        GWindowEvent::Focused(f)=>{
-                            *control_flow=ControlFlow::Exit;
-                            self.base.display.gl_window().window().set_minimized(false);
-                            self.minimized=false;
-                            page.on_window_focused(self,f);
-                        }
-
-                        _=>return
-                    }
-                }
-
-                Event::Suspended=>page.on_suspended(self),
-                Event::Resumed=>page.on_resumed(self),
-
-                Event::LoopDestroyed=>{
-                    if EventLoopState::CloseRequested==state{
-                        state=EventLoopState::Closed(page.on_event_loop_closed(self))
-                    }
-                }
-
-                _=>return
-            }
+            paged_wait_until_focused!(self,event,control_flow,page,state);
         });
 
         state
     }
 }
 
+
 impl Window for PagedWindow{
+    #[inline(always)]
     fn window_base(&self)->&WindowBase{
         &self.base
     }
 
+    #[inline(always)]
     fn window_base_mut(&mut self)->&mut WindowBase{
         &mut self.base
     }

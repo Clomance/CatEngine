@@ -59,6 +59,10 @@ pub mod graphics;
 mod window;
 pub use window::*;
 
+//      Caution      \\
+// Under construction \\
+mod app;
+
 /// Геометрические фигуры. Geometric shapes.
 /// `feature = "simple_graphics"`, `default_features`
 #[cfg(all(feature="simple_graphics"))]
