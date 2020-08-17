@@ -49,6 +49,7 @@ pub use image;
 #[cfg(feature="audio")]
 pub mod audio;
 
+/// feature = "text_graphics"
 #[cfg(feature="text_graphics")]
 pub mod text;
 

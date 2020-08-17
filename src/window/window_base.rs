@@ -343,11 +343,19 @@ impl WindowBase{
         self.smooth=smooth
     }
 
-    /// Sets smooth and zero alpha channel
+    /// Sets smooth and zeroes alpha channel
     /// for smooth drawing.
     pub fn set_new_smooth(&mut self,smooth:f32){
         self.alpha_channel=0f32;
         self.smooth=smooth
+    }
+
+    pub fn get_alpha(&mut self)->f32{
+        self.alpha_channel
+    }
+
+    pub fn get_smooth(&mut self)->f32{
+        self.smooth
     }
 }
 

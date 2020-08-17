@@ -258,6 +258,8 @@ macro_rules! paged_event_listener{
     }
 }
 
+// Цельный обработчик событий основанный на страницах
+// (для ожидания получения фокуса)
 macro_rules! paged_wait_until_focused{
     ($window:expr,$event:expr,$control_flow:expr,$page:expr,$state:expr)=>{
         *$control_flow=ControlFlow::Wait;

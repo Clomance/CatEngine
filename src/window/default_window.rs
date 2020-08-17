@@ -136,20 +136,22 @@ impl DefaultWindow{
         }
     }
 
-    // /// Переводит в `DynamicWindow`.
-    // /// 
-    // /// Не учитывает состояние окна при `feature = "auto_hide"` (свёрнутое или нет).
-    // /// 
-    // /// Converts into the `DynamicWindow`.
-    // /// 
-    // /// Ignores the 'auto_hide' feature state (the window hidden or not).
-    // pub fn into_dynamic_window<'a>(self)->DynamicWindow<'a>{
-    //     DynamicWindow{
-    //         base:self.base,
+    /// Переводит в `DynamicWindow`.
+    /// 
+    /// Не учитывает состояние окна при `feature = "auto_hide"` (свёрнутое или нет).
+    /// 
+    /// Converts into the `DynamicWindow`.
+    /// 
+    /// Ignores the 'auto_hide' feature state (the window hidden or not).
+    pub fn into_dynamic_window<'a,O:PartialEq>(self)->DynamicWindow<'a,O>{
+        DynamicWindow{
+            base:self.base,
 
-    //         page:PageState::<'a>::SetNew(None),
-    //     }
-    // }
+            page_ref:std::ptr::null_mut(),
+
+            last_page:None,
+        }
+    }
 }
 
 
