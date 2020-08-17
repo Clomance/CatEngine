@@ -5,7 +5,7 @@ use crate::graphics::{
 };
 
 #[cfg(feature="mouse_cursor_icon")]
-use super::MouseCursorIconSettings;
+use super::{MouseCursorIcon,MouseCursorIconSettings};
 
 use super::{
     // enums
@@ -44,7 +44,8 @@ use std::path::{Path,PathBuf};
 pub trait WindowPage<'a>{
     type Window:Window+'a;
 
-    /// The return type of output when the loop is closed.
+    /// The type of output when
+    /// the 'page' (for the `PagedWindow`)/ window (for the `DynamicWindow`) is closed.
     type Output;
 
     /// Called when the window has been requested to close.
@@ -68,6 +69,7 @@ pub trait WindowPage<'a>{
     fn on_window_resized(&mut self,window:&mut Self::Window,new_size:[u32;2]);
     fn on_window_moved(&mut self,window:&mut Self::Window,position:[i32;2]);
 
+    /// Calls when the window loses or gains focus.
     fn on_window_focused(&mut self,window:&mut Self::Window,focused:bool);
 
     fn on_suspended(&mut self,window:&mut Self::Window);
@@ -85,11 +87,14 @@ pub trait WindowPage<'a>{
     #[cfg(feature="file_drop")]
     fn on_file_hovered_canceled(&mut self,window:&mut Self::Window);
 
-    /// Event loop has been stopped.
+    /// The event loop has been stopped.
     /// 
-    /// The page closes after this function is called.
+    /// The 'page' (for the `PagedWindow`)/ window (for the `DynamicWindow`)
+    /// is closed after this function is called.
     fn on_event_loop_closed(&mut self,window:&mut Self::Window)->Self::Output;
 }
+
+
 
 /// Типаж, помогающий создать более сложное окно на базе `WindowBase`.
 /// A trait that helps to create a more complex window based on a `WindowBase`.
@@ -231,5 +236,11 @@ pub trait Window:Sized{
     #[inline(always)]
     fn set_user_cursor_visible(&mut self,visible:bool){
         self.window_base_mut().mouse_icon.set_visible(visible)
+    }
+
+    #[cfg(feature="mouse_cursor_icon")]
+    #[inline(always)]
+    fn mouse_icon(&mut self)->&mut MouseCursorIcon{
+        self.window_base_mut().mouse_icon()
     }
 }

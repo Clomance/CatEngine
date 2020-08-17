@@ -49,6 +49,7 @@ pub use image;
 #[cfg(feature="audio")]
 pub mod audio;
 
+/// feature = "text_graphics"
 #[cfg(feature="text_graphics")]
 pub mod text;
 
@@ -58,6 +59,10 @@ pub mod graphics;
 
 mod window;
 pub use window::*;
+
+//      Caution      \\
+// Under construction \\
+mod app;
 
 /// Геометрические фигуры. Geometric shapes.
 /// `feature = "simple_graphics"`, `default_features`

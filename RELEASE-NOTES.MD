@@ -1,3 +1,7 @@
+# 0.4.1
+
+Added output for the `DynamicWindow`.
+
 # 0.4.0
 
 ### Fixed
