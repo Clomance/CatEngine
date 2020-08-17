@@ -1,9 +1,5 @@
 use crate::graphics::GraphicsSettings;
 
-#[cfg(feature="mouse_cursor_icon")]
-use super::MouseCursorIconSettings;
-
-
 use super::{
     // statics
     window_width,
@@ -36,19 +32,13 @@ use glium::glutin::{
     event::{
         Event,
         WindowEvent as GWindowEvent,
-        MouseButton,
         ElementState,
     },
     window::WindowBuilder,
     platform::desktop::EventLoopExtDesktop,
 };
 
-
-use std::{
-    collections::VecDeque,
-    path::PathBuf,
-    time::Instant,
-};
+use std::collections::VecDeque;
 
 /// Окно, которое использует "страницы" и замыкания для обработки событий.
 /// A window that uses 'pages' and closures to handle the events.
@@ -462,9 +452,6 @@ impl Window for PagedWindow{
         graphics_settings:GraphicsSettings,
         event_loop:EventLoop<InnerWindowEvent>,
         general_settings:GeneralSettings,
-
-        #[cfg(feature="mouse_cursor_icon")]
-        mouse_cursor_icon_settings:MouseCursorIconSettings<PathBuf>,
     )->Result<PagedWindow,DisplayCreationError>{
 
         let base=WindowBase::raw(window_builder,
@@ -472,8 +459,6 @@ impl Window for PagedWindow{
             graphics_settings,
             event_loop,
             general_settings,
-            #[cfg(feature="mouse_cursor_icon")]
-            mouse_cursor_icon_settings
         );
 
         match base{

@@ -72,9 +72,6 @@ pub fn char_size(character:char,font_size:f32,font:&Font)->[f32;2]{
         y:0f32,
     };
 
-    let v_metrics=font.v_metrics(scale);
-    v_metrics.ascent-v_metrics.descent;
-
     let glyph=font.glyph(character).scaled(scale);
     let width=glyph.h_metrics().advance_width;
 

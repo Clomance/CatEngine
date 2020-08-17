@@ -30,8 +30,6 @@ texture_graphics = []
 
 audio = ["cpal","minimp3"]
 
-mouse_cursor_icon = ["texture_graphics"]
-
 auto_hide = []
 
 fps_counter = []
@@ -49,7 +47,6 @@ file_drop = []
 features = [
     "default",
     "audio",
-    "mouse_cursor_icon",
     "auto_hide",
     "fps_counter",
     "alpha_smoothing",

@@ -4,9 +4,6 @@ use crate::graphics::{
     two_dimensions::Graphics2D
 };
 
-#[cfg(feature="mouse_cursor_icon")]
-use super::{MouseCursorIcon,MouseCursorIconSettings};
-
 use super::{
     // enums
     MouseButton,
@@ -20,7 +17,6 @@ use super::{
 
 use glium::{
     Display,
-    Frame,
     draw_parameters::DrawParameters,
     backend::glutin::DisplayCreationError,
     SwapBuffersError
@@ -108,9 +104,6 @@ pub trait Window:Sized{
         graphics_settings:GraphicsSettings,
         event_loop:EventLoop<InnerWindowEvent>,
         general_settings:GeneralSettings,
-
-        #[cfg(feature="mouse_cursor_icon")]
-        mouse_cursor_icon_settings:MouseCursorIconSettings<PathBuf>,
     )->Result<Self,DisplayCreationError>;
 
     fn new<F>(setting:F)->Result<Self,DisplayCreationError>
@@ -140,7 +133,6 @@ pub trait Window:Sized{
             window_settings.graphics_base_settings,
             event_loop,
             window_settings.general,
-            #[cfg(feature="mouse_cursor_icon")]window_settings.mouse_cursor_icon_settings,
         )
     }
 
@@ -226,21 +218,5 @@ pub trait Window:Sized{
     #[inline(always)]
     fn save_screenshot<P:AsRef<Path>>(&self,path:P){
         self.window_base().save_screenshot(path)
-    }
-
-
-
-
-    /// feature = "mouse_cursor_icon"
-    #[cfg(feature="mouse_cursor_icon")]
-    #[inline(always)]
-    fn set_user_cursor_visible(&mut self,visible:bool){
-        self.window_base_mut().mouse_icon.set_visible(visible)
-    }
-
-    #[cfg(feature="mouse_cursor_icon")]
-    #[inline(always)]
-    fn mouse_icon(&mut self)->&mut MouseCursorIcon{
-        self.window_base_mut().mouse_icon()
     }
 }

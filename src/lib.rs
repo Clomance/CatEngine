@@ -1,4 +1,5 @@
-#![allow(non_upper_case_globals,unused_must_use,unused_imports,dead_code,unused_mut,unused_variables)]
+#![allow(non_upper_case_globals,unused_must_use,unused_imports,
+    dead_code,unused_mut,unused_variables,unused_macros)]
 
 //! # 2D графический движок с поддержкой аудио. A 2D graphics engine with audio support.
 //! 

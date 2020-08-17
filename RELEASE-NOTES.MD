@@ -1,3 +1,7 @@
+# 0.4.2
+
+Removed user's mouse cursor icon and it's feature.
+
 # 0.4.1
 
 Added output for the `DynamicWindow`.

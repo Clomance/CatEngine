@@ -45,7 +45,6 @@ Default features:
 
 Other features:
  - "audio"
- - "mouse_cursor_icon"
  - "auto_hide"
  - "fps_counter"
  - "lazy"

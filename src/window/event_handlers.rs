@@ -6,9 +6,6 @@ macro_rules! window_resized{
             window_height=$size.height as f32;
             window_center=[window_width/2f32,window_height/2f32];
 
-            #[cfg(feature="mouse_cursor_icon")]
-            $window.base.mouse_icon.update();
-
             Resized([$size.width,$size.height])
         }
     };
@@ -18,9 +15,6 @@ macro_rules! window_resized{
             window_width=$size.width as f32;
             window_height=$size.height as f32;
             window_center=[window_width/2f32,window_height/2f32];
-
-            #[cfg(feature="mouse_cursor_icon")]
-            $window.window_base_mut().mouse_icon().update();
 
             $page.on_window_resized($window,[$size.width,$size.height])
         }
@@ -65,38 +59,18 @@ macro_rules! cursor_moved{
 macro_rules! mouse_input{
     ($button:expr,$state:expr,$window:expr)=>{
         if $state==ElementState::Pressed{
-            #[cfg(feature="mouse_cursor_icon")]
-            if $button==MouseButton::Left{
-                $window.base.mouse_icon.pressed();
-            }
-
             MousePressed($button)
         }
         else{
-            #[cfg(feature="mouse_cursor_icon")]
-            if $button==MouseButton::Left{
-                $window.base.mouse_icon.released();
-            }
-
             MouseReleased($button)
         }
     };
 
     ($button:expr,$state:expr,$page:expr,$window:expr)=>{
         if $state==ElementState::Pressed{
-            #[cfg(feature="mouse_cursor_icon")]
-            if $button==MouseButton::Left{
-                $window.window_base_mut().mouse_icon().pressed();
-            }
-
             $page.on_mouse_pressed($window,$button)
         }
         else{
-            #[cfg(feature="mouse_cursor_icon")]
-            if $button==MouseButton::Left{
-                $window.window_base_mut().mouse_icon().released();
-            }
-
             $page.on_mouse_released($window,$button)
         }
     }

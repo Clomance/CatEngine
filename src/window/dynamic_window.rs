@@ -1,8 +1,5 @@
 use crate::graphics::GraphicsSettings;
 
-#[cfg(feature="mouse_cursor_icon")]
-use super::MouseCursorIconSettings;
-
 use super::{
     // statics
     window_width,
@@ -32,18 +29,12 @@ use glium::glutin::{
     event::{
         Event,
         WindowEvent as GWindowEvent,
-        MouseButton,
         ElementState,
     },
     window::WindowBuilder,
     platform::desktop::EventLoopExtDesktop,
 };
 
-
-use std::{
-    path::PathBuf,
-    time::Instant,
-};
 
 /// Ссылка на типаж-объект для `DynamicWindow`.
 /// A trait object reference for a `DynamicWindow`.
@@ -252,9 +243,6 @@ impl<'a,O:PartialEq> Window for DynamicWindow<'a,O>{
         graphics_settings:GraphicsSettings,
         event_loop:EventLoop<InnerWindowEvent>,
         general_settings:GeneralSettings,
-        
-        #[cfg(feature="mouse_cursor_icon")]
-        mouse_cursor_icon_settings:MouseCursorIconSettings<PathBuf>,
     )->Result<DynamicWindow<'a,O>,DisplayCreationError>{
 
         let base=WindowBase::raw(window_builder,
@@ -262,8 +250,6 @@ impl<'a,O:PartialEq> Window for DynamicWindow<'a,O>{
             graphics_settings,
             event_loop,
             general_settings,
-            #[cfg(feature="mouse_cursor_icon")]
-            mouse_cursor_icon_settings
         );
 
         match base{

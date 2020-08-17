@@ -1,8 +1,5 @@
 use crate::graphics::GraphicsSettings;
 
-#[cfg(feature="mouse_cursor_icon")]
-use super::MouseCursorIconSettings;
-
 use super::{
     // statics
     window_width,
@@ -33,18 +30,13 @@ use glium::glutin::{
     event::{
         Event,
         WindowEvent as GWindowEvent,
-        MouseButton,
         ElementState,
     },
     window::WindowBuilder,
     platform::desktop::EventLoopExtDesktop,
 };
 
-use std::{
-    collections::VecDeque,
-    path::PathBuf,
-    time::Instant,
-};
+use std::collections::VecDeque;
 
 /*
     EventLoop - минимум четыре шага:
@@ -350,17 +342,12 @@ impl Window for DefaultWindow{
         graphics_settings:GraphicsSettings,
         event_loop:EventLoop<InnerWindowEvent>,
         general_settings:GeneralSettings,
-
-        #[cfg(feature="mouse_cursor_icon")]
-        mouse_cursor_icon_settings:MouseCursorIconSettings<PathBuf>,
     )->Result<DefaultWindow,DisplayCreationError>{
         let base=WindowBase::raw(window_builder,
             context_builder,
             graphics_settings,
             event_loop,
             general_settings,
-            #[cfg(feature="mouse_cursor_icon")]
-            mouse_cursor_icon_settings
         );
 
         match base{

@@ -20,8 +20,6 @@ mod settings;
 pub use settings::*;
 
 mod mouse_cursor;
-#[cfg(feature="mouse_cursor_icon")]
-use mouse_cursor::MouseCursorIcon;
 pub use mouse_cursor::MouseCursor;
 
 use glium::glutin::event::{

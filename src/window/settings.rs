@@ -8,19 +8,10 @@ use glium::glutin::{
     PixelFormatRequirements,
 };
 
-use std::{
-    ops::Range,
-    path::PathBuf
-};
-
 #[derive(Clone,Debug)]
 pub struct WindowSettings{
     //--General attributes--\\
     pub general:GeneralSettings,
-
-    /// feature = "mouse_cursor_icon"
-    #[cfg(feature="mouse_cursor_icon")]
-    pub mouse_cursor_icon_settings:MouseCursorIconSettings<PathBuf>,
 
 
 
@@ -59,18 +50,9 @@ pub struct WindowSettings{
 impl WindowSettings{
     /// Default settings.
     pub fn new()->WindowSettings{
-
-        #[cfg(feature="mouse_cursor_icon")]
-        let mut path=PathBuf::new();
-        #[cfg(feature="mouse_cursor_icon")]
-        path.push("./mouse_cursor_icon.png");
-
         Self{
             //--General attributes--\\
             general:GeneralSettings::new(),
-
-            #[cfg(feature="mouse_cursor_icon")]
-            mouse_cursor_icon_settings:MouseCursorIconSettings::<PathBuf>::new(),
 
             //--Window attributes--\\
             window_attributes:WindowAttributes::default(),
@@ -106,39 +88,6 @@ impl GeneralSettings{
         Self{
             initial_colour:None,
             updates_per_second:50u32,
-        }
-    }
-}
-
-use std::path::Path;
-
-#[derive(Clone,Debug)]
-pub struct MouseCursorIconSettings<P:AsRef<Path>>{
-    /// The icon size.
-    /// 
-    /// The default is [30f32;2].
-    pub size:[f32;2],
-
-    /// The icon position = mouse cursor position + shift
-    /// 
-    /// The default is [-15f32;2].
-    pub shift:[f32;2],
-
-    /// The path to the icon.
-    /// 
-    /// The default is `./mouse_cursor_icon.png`.
-    pub path:P,
-}
-
-impl MouseCursorIconSettings<PathBuf>{
-    pub fn new()->MouseCursorIconSettings<PathBuf>{
-        let mut path=PathBuf::new();
-        path.push("./mouse_cursor_icon.png");
-
-        Self{
-            size:[30f32;2],
-            shift:[-15f32;2],
-            path:path,
         }
     }
 }

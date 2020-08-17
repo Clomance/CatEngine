@@ -7,12 +7,6 @@ use crate::graphics::{
 #[cfg(feature="3D")]
 use crate::graphics::three_dimensions::Graphics3D;
 
-#[cfg(feature="mouse_cursor_icon")]
-use super::{
-    MouseCursorIconSettings,
-    MouseCursorIcon,
-};
-
 #[cfg(feature="fps_counter")]
 use super::fps;
 
@@ -21,7 +15,6 @@ use super::{
     window_width,
     window_height,
     window_center,
-    mouse_cursor,
     // enums
     InnerWindowEvent,
     // structs
@@ -31,7 +24,6 @@ use super::{
 use glium::{
     Display,
     Surface,
-    Frame,
     Version,
     draw_parameters::{
         DrawParameters,
@@ -59,7 +51,7 @@ use image::{
 };
 
 use std::{
-    path::{Path,PathBuf},
+    path::Path,
     time::{Instant,Duration}
 };
 
@@ -101,10 +93,6 @@ pub struct WindowBase{
     /// feature = "alpha_smoothing"
     #[cfg(feature="alpha_smoothing")]
     pub smooth:f32,
-
-    /// feature = "mouse_cursor_icon"
-    #[cfg(feature="mouse_cursor_icon")]
-    pub mouse_icon:MouseCursorIcon,
 }
 
 impl WindowBase{
@@ -114,9 +102,6 @@ impl WindowBase{
         graphics_settings:GraphicsSettings,
         event_loop:EventLoop<InnerWindowEvent>,
         general_settings:GeneralSettings,
-
-        #[cfg(feature="mouse_cursor_icon")]
-        mouse_cursor_icon_settings:MouseCursorIconSettings<PathBuf>,
     )->Result<WindowBase,DisplayCreationError>{
         // Создание окна и привязывание графической библиотеки
         let display=Display::new(window_builder,context_builder,&event_loop)?;
@@ -145,22 +130,14 @@ impl WindowBase{
             frame.finish().unwrap();        //
         }
 
-        // Отлючение курсора системы
-        // Замена его собственным
-        #[cfg(feature="mouse_cursor_icon")]
-        display.gl_window().window().set_cursor_visible(false);
-
-        let mut graphics2d=Graphics2D::new(&display,graphics_settings,glsl);
+        let graphics2d=Graphics2D::new(&display,graphics_settings,glsl);
 
         #[cfg(feature="3D")]
-        let mut graphics3d=Graphics3D::new();
+        let graphics3d=Graphics3D::new();
 
         let proxy=event_loop.create_proxy();
 
         Ok(Self{
-            #[cfg(feature="mouse_cursor_icon")]
-            mouse_icon:MouseCursorIcon::new(mouse_cursor_icon_settings,&display),
-
             graphics2d,
 
             #[cfg(feature="3D")]
@@ -205,9 +182,9 @@ impl WindowBase{
 
 /// Функции для рисования. Drawing functions.
 impl WindowBase{
-    /// Выполняет замыкание (и рисует курсор, если `feature = "mouse_cursor_icon"`).
+    /// Выполняет замыкание.
     /// 
-    /// Executes the closure (and draws the mouse cursor if `feature = "mouse_cursor_icon"`).
+    /// Executes the closure.
     pub fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&mut self,f:F)->Result<(),SwapBuffersError>{
         let mut draw_parameters=default_draw_parameters();
 
@@ -221,18 +198,15 @@ impl WindowBase{
 
         f(&mut draw_parameters,&mut g);
 
-        #[cfg(feature="mouse_cursor_icon")]
-        self.mouse_icon.draw(&mut draw_parameters,&mut g);
-
         frame.finish()
     }
 
-    /// Выполняет замыкание (и рисует курсор, если `feature = "mouse_cursor_icon"`).
+    /// Выполняет замыкание.
     /// Выдаёт альфа-канал, возвращает его следующее значение.
     /// 
     /// Нужна для рисования с изменяющимся альфа-канала.
     /// 
-    /// Executes closure (and draws the mouse cursor if `feature = "mouse_cursor_icon"`).
+    /// Executes closure.
     /// Gives alpha channel, returns it's next value.
     /// 
     /// Needed for drawing with changing alpha channel.
@@ -254,9 +228,6 @@ impl WindowBase{
 
         f(self.alpha_channel,&mut draw_parameters,&mut g);
 
-        #[cfg(feature="mouse_cursor_icon")]
-        self.mouse_icon.draw(&mut draw_parameters,&mut g);
-
         self.alpha_channel+=self.smooth;
         
         match frame.finish(){
@@ -268,26 +239,6 @@ impl WindowBase{
 
 /// # Дополнительные функции. Additional functions.
 impl WindowBase{
-    /// feature = "mouse_cursor_icon
-    #[cfg(feature="mouse_cursor_icon")]
-    #[inline(always)]
-    pub fn set_user_cursor_visible(&mut self,visible:bool){
-        self.mouse_icon.set_visible(visible);
-    }
-
-    #[cfg(feature="mouse_cursor_icon")]
-    #[inline(always)]
-    pub (crate) fn mouse_icon(&mut self)->&mut MouseCursorIcon{
-        &mut self.mouse_icon
-    }
-
-    /// feature = "mouse_cursor_icon"
-    #[cfg(feature="mouse_cursor_icon")]
-    #[inline(always)]
-    pub fn switch_cursor_visibility(&mut self){
-        self.mouse_icon.switch_visibility()
-    }
-
     /// Возвращает скриншот.
     /// 
     /// Returns a screenshot.
