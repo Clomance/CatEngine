@@ -1,5 +1,5 @@
 # Содержание
 
- - [Rust features](RUS/features.md)
+ - ["Фичи" Rust](RUS/features.md)
  - [Windows](RUS/windows.md)
  - [Graphics](RUS/graphics.md)
