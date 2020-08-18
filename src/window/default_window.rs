@@ -161,16 +161,8 @@ impl DefaultWindow{
         let event_loop=unsafe{&mut *el};
 
         event_loop.run_return(|event,_,control_flow|{
-            #[cfg(not(feature="lazy"))]{
-                let now=Instant::now();
-                if self.base.next_update<now{
-                    self.base.event_loop_proxy
-                            .send_event(InnerWindowEvent::Update)
-                                    .expect("Dead event loop");
-
-                    self.base.next_update+=self.base.update_interval;
-                }
-            }
+            #[cfg(not(feature="lazy"))]
+            self.base.update_check();
 
             *control_flow=ControlFlow::Exit;
 
