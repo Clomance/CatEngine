@@ -2,6 +2,10 @@
 
 Removed user's mouse cursor icon and it's feature.
 
+Removed the `alpha_channel` feature and the related functions and fields.
+
+Added object system for text graphics.
+
 # 0.4.1
 
 Added output for the `DynamicWindow`.

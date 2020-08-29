@@ -99,6 +99,7 @@ pub (crate) struct TexturedObject2D{
 
 impl TexturedObject2D{
     /// Returns the vertices source of the object.
+    #[inline(always)]
     pub fn vertices_source<'a,T:Copy>(
         &self,
         vertices:&'a Buffer<[T]>,
@@ -110,10 +111,20 @@ impl TexturedObject2D{
     }
 
     /// Returns the indices source of the object.
+    #[inline(always)]
     pub fn indices_source<'a>(
         &self,
         indices:&'a Buffer<[u8]>,
     )->IndicesSource<'a>{
         self.base.indices_source(indices)
     }
+}
+
+
+pub (crate) struct TextObject2D{
+    pub text:String,
+    pub position:[f32;2],
+    pub font_size:f32,
+    pub colour:Colour,
+    pub font:usize,
 }

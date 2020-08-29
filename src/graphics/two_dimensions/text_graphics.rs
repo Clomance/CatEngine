@@ -1,10 +1,12 @@
-use super::TexturedVertex2D;
+use super::{TexturedVertex2D,TextObject2D};
 
 use crate::{
     // statics
     window_center,
     // types
     Colour,
+    // structs
+    text::TextBase,
 };
 
 use glium::{
@@ -31,13 +33,22 @@ use glium::{
     Rect,
 };
 
-use rusttype::PositionedGlyph;
+use rusttype::{
+    PositionedGlyph,
+    Font,
+    Scale,
+    Point,
+};
 
 pub struct TextGraphics{
     vertex_buffer:VertexBuffer<TexturedVertex2D>,
     image:Vec<u8>, // Здесь рисуется символ
     texture:Texture2d, // Изображение символа записывается сюда, для рендеринга
     texture_size:[f32;2],
+
+    objects:Vec<TextObject2D>,
+    fonts:Vec<Font<'static>>,
+
     program:Program,
 }
 
@@ -51,9 +62,12 @@ impl TextGraphics{
             include_str!("shaders/text/vertex_shader.glsl"),
             include_str!("shaders/text/fragment_shader.glsl")
         )};
+
         Self{
             vertex_buffer:VertexBuffer::empty_dynamic(display,4).unwrap(),
+
             image:Vec::<u8>::with_capacity((width*height) as usize),
+
             texture:Texture2d::empty_with_format(
                 display,
                 UncompressedFloatFormat::U8,
@@ -61,7 +75,12 @@ impl TextGraphics{
                 width,
                 height
             ).unwrap(),
+
             texture_size:[width as f32,height as f32],
+
+            objects:Vec::with_capacity(10),
+            fonts:Vec::with_capacity(10),
+
             program:Program::from_source(display,vertex,fragment,None).unwrap()
         }
     }
@@ -139,6 +158,84 @@ impl TextGraphics{
                 &uni,
                 draw_parameters
             )?
+        }
+
+        Ok(())
+    }
+}
+
+// Функции для работы с объектами
+impl TextGraphics{
+    pub fn push_font(
+        &mut self,
+        font:Font<'static>,
+    )->Option<usize>{
+        let index=self.objects.len();
+
+        self.fonts.push(font);
+
+        Some(index)
+    }
+
+    pub fn get_font(&self,index:usize)->&Font<'static>{
+        &self.fonts[index]
+    }
+
+    pub fn push_object(
+        &mut self,
+        text:String,
+        text_base:&TextBase,
+        font:usize,
+    )->Option<usize>{
+        let object=TextObject2D{
+            text,
+            position:text_base.position,
+            font_size:text_base.font_size,
+            colour:text_base.colour,
+            font,
+        };
+
+        let index=self.objects.len();
+
+        self.objects.push(object);
+
+        Some(index)
+    }
+
+    pub fn delete_last_object(&mut self){
+        self.objects.pop();
+    }
+
+    pub fn draw_object(
+        &mut self,
+        index:usize,
+        draw_parameters:&DrawParameters,
+        frame:&mut Frame
+    )->Result<(),DrawError>{
+        // Убрать этот ужас отсюда)
+        let object=unsafe{&*(&self.objects[index] as *const TextObject2D)};
+
+        let scale=Scale::uniform(object.font_size);
+        // позиция для вывода символа
+        let mut point=Point{
+            x:object.position[0],
+            y:object.position[1]
+        };
+
+        let mut width_offset; // сдвиг для следующего символа
+
+        for character in object.text.chars(){
+            // Получение символа
+            let scaled_glyph=self.fonts[object.font].glyph(character).scaled(scale);
+
+            width_offset=scaled_glyph.h_metrics().advance_width;
+
+            // установка положения символа
+            let glyph=scaled_glyph.positioned(point);
+
+            self.draw_glyph(glyph,object.colour,draw_parameters,frame)?;
+
+            point.x+=width_offset;
         }
 
         Ok(())

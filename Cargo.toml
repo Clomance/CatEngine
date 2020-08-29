@@ -36,8 +36,6 @@ fps_counter = []
 
 lazy = []
 
-alpha_smoothing = []
-
 file_drop = []
 
 2D = []
@@ -49,7 +47,6 @@ features = [
     "audio",
     "auto_hide",
     "fps_counter",
-    "alpha_smoothing",
     "file_drop"
 ]
 

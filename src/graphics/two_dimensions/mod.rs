@@ -3,6 +3,9 @@ use crate::{
     texture::Texture,
 };
 
+#[cfg(feature="text_graphics")]
+use crate::text::{TextBase,rusttype::Font};
+
 use super::{
     GraphicsSettings,
     DependentObject
@@ -10,8 +13,11 @@ use super::{
 
 
 mod objects;
-pub (crate) use objects::SimpleObject2D;
-pub (crate) use objects::TexturedObject2D;
+pub (crate) use objects::{
+    SimpleObject2D,
+    TexturedObject2D,
+    TextObject2D,
+};
 
 pub use objects::{Vertex2D,TexturedVertex2D};
 
@@ -264,5 +270,51 @@ impl Graphics2D{
     #[inline(always)]
     pub fn rewrite_textured_object_indices(&mut self,index:usize,indices:&[u8]){
         self.texture.rewrite_object_indices(index,indices)
+    }
+}
+
+/// # Функции для работы с текстовыми объектами. Functions to work with text objects.
+#[cfg(feature="text_graphics")]
+impl Graphics2D{
+    /// Добавляет шрифт в массив.
+    /// 
+    /// Adds a font to the array.
+    #[inline(always)]
+    pub fn add_font(
+        &mut self,
+        font:Font<'static>,
+    )->Option<usize>{
+        self.text.push_font(font)
+    }
+
+    /// Возращает шрифт.
+    /// 
+    /// Returns a font.
+    #[inline(always)]
+    pub fn get_font(&self,index:usize)->&Font<'static>{
+        self.text.get_font(index)
+    }
+
+    /// Добавляет текстовой объект в массив.
+    /// 
+    /// Adds a text object to the array.
+    #[inline(always)]
+    pub fn add_text_object(
+        &mut self,
+        text:String,
+        text_base:&TextBase,
+        font:usize,
+    )->Option<usize>{
+        self.text.push_object(text,text_base,font)
+    }
+
+    /// Удаляет последний текстовой объект в массиве,
+    /// если такой есть.
+    /// 
+    /// Deletes the last text object of the array
+    /// if there is any.
+    #[inline(always)]
+    pub fn delete_last_text_object(&mut self){
+        self.text.delete_last_object();
     }
 }

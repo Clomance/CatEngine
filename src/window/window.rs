@@ -161,49 +161,6 @@ pub trait Window:Sized{
     }
 
 
-    /// Sets alpha channel for drawing with a changing alpha channel.
-    /// 
-    /// feature = "alpha_smoothing"
-    #[cfg(feature="alpha_smoothing")]
-    #[inline(always)]
-    fn set_alpha(&mut self,alpha:f32){
-        self.window_base_mut().set_alpha(alpha)
-    }
-
-    /// Sets smooth for drawing with a changing alpha channel.
-    /// 
-    /// feature = "alpha_smoothing"
-    #[cfg(feature="alpha_smoothing")]
-    #[inline(always)]
-    fn set_smooth(&mut self,smooth:f32){
-        self.window_base_mut().set_smooth(smooth)
-    }
-
-    /// Sets smooth and zeroes alpha channel for drawing with a changing alpha channel.
-    /// 
-    /// feature = "alpha_smoothing"
-    #[cfg(feature="alpha_smoothing")]
-    #[inline(always)]
-    fn set_new_smooth(&mut self,smooth:f32){
-        self.window_base_mut().set_new_smooth(smooth)
-    }
-
-    /// Выдаёт альфа-канал, возвращает его следующее значение.
-    /// 
-    /// Нужна для рисования с изменяющимся альфа-канала.
-    /// 
-    /// Gives an alpha channel, returns it's next value.
-    /// 
-    /// Needed for drawing with a changing alpha channel.
-    /// 
-    /// feature = "alpha_smoothing"
-    #[cfg(feature="alpha_smoothing")]
-    #[inline(always)]
-    fn draw_smooth<F:FnOnce(f32,&mut DrawParameters,&mut Graphics)>(&mut self,f:F)->Result<f32,SwapBuffersError>{
-        self.window_base_mut().draw_smooth(f)
-    }
-
-
     /// Возвращает скриншот.
     /// 
     /// Returns a screenshot.

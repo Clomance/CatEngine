@@ -23,7 +23,7 @@ use glium::{
 };
 
 #[cfg(feature="text_graphics")]
-use rusttype::PositionedGlyph;
+use rusttype::{PositionedGlyph,Font};
 
 /// Простой интерфейс для связи кадра и графических функций.
 /// Simple interface to connect graphics fuctions to the frame.
@@ -138,12 +138,12 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
 }
 
 /// # Функции для работы с текстурными объектами. Functions to work with textured objects.
+#[cfg(feature="texture_graphics")]
 impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// Рисует сохранённый текстурный объект.
     /// 
     /// Draws the saved textured object.
     #[inline(always)]
-    #[cfg(feature="texture_graphics")]
     pub fn draw_textured_object(
         &mut self,
         index:usize,
@@ -160,7 +160,6 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws all the saved textured objects.
     #[inline(always)]
-    #[cfg(feature="texture_graphics")]
     pub fn draw_all_textured_objects(
         &mut self,
         draw_parameters:&DrawParameters
@@ -175,7 +174,6 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws the shifted saved textured object.
     #[inline(always)]
-    #[cfg(feature="texture_graphics")]
     pub fn draw_shift_textured_object(
         &mut self,
         index:usize,
@@ -197,7 +195,6 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// rotation_center - [x, y]
     /// angle - radians
     #[inline(always)]
-    #[cfg(feature="texture_graphics")]
     pub fn draw_rotate_textured_object(
         &mut self,
         index:usize,
@@ -342,6 +339,26 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             angle,
             draw_parameters,
             self.frame
+        )
+    }
+}
+
+/// # Функции для работы с текстовыми объектами. Functions to work with text objects.
+#[cfg(feature="text_graphics")]
+impl<'graphics,'frame> Graphics<'graphics,'frame>{
+    /// Рисует сохранённый текстовой объект.
+    /// 
+    /// Draws the saved text object.
+    #[inline(always)]
+    pub fn draw_text_object(
+        &mut self,
+        index:usize,
+        draw_parameters:&DrawParameters
+    )->Result<(),DrawError>{
+        self.graphics2d.text.draw_object(
+            index,
+            draw_parameters,
+            self.frame,
         )
     }
 }

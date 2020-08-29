@@ -50,10 +50,6 @@ It's usefull for fullscreen application.
 
 Adds a simple fps counter. The value updates every second.
 
-##### alpha_smoothing
-
-Adds functions for drawing with changing alpha channel.
-
 ##### file_drop
 
 Enables the next events:

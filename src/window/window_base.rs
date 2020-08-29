@@ -86,13 +86,6 @@ pub struct WindowBase{
     /// feature = "fps_counter"
     #[cfg(feature="fps_counter")]
     pub time:Instant,
-
-    /// feature = "alpha_smoothing"
-    #[cfg(feature="alpha_smoothing")]
-    pub alpha_channel:f32,
-    /// feature = "alpha_smoothing"
-    #[cfg(feature="alpha_smoothing")]
-    pub smooth:f32,
 }
 
 impl WindowBase{
@@ -157,11 +150,6 @@ impl WindowBase{
             frames_passed:0u32,
             #[cfg(feature="fps_counter")]
             time:Instant::now(),
-
-            #[cfg(feature="alpha_smoothing")]
-            alpha_channel:0f32,
-            #[cfg(feature="alpha_smoothing")]
-            smooth:0f32,
         })
     }
 
@@ -199,41 +187,6 @@ impl WindowBase{
         f(&mut draw_parameters,&mut g);
 
         frame.finish()
-    }
-
-    /// Выполняет замыкание.
-    /// Выдаёт альфа-канал, возвращает его следующее значение.
-    /// 
-    /// Нужна для рисования с изменяющимся альфа-канала.
-    /// 
-    /// Executes closure.
-    /// Gives alpha channel, returns it's next value.
-    /// 
-    /// Needed for drawing with changing alpha channel.
-    /// 
-    /// feature = "alpha_smoothing"
-    #[cfg(feature="alpha_smoothing")]
-    pub fn draw_smooth<F:FnOnce(f32,&mut DrawParameters,&mut Graphics)>(&mut self,f:F)->Result<f32,SwapBuffersError>{
-        let mut draw_parameters=default_draw_parameters();
-
-        let mut frame=self.display.draw();
-
-        let mut g=Graphics::new(
-            &mut self.graphics2d,
-
-            #[cfg(feature="3D")]&mut self.graphics3d,
-
-            &mut frame
-        );
-
-        f(self.alpha_channel,&mut draw_parameters,&mut g);
-
-        self.alpha_channel+=self.smooth;
-        
-        match frame.finish(){
-            Ok(())=>Ok(self.alpha_channel),
-            Err(e)=>Err(e),
-        }
     }
 }
 
@@ -280,35 +233,6 @@ impl WindowBase{
     }
 }
 
-
-/// # feature = "alpha_smoothing"
-#[cfg(feature="alpha_smoothing")]
-impl WindowBase{
-    /// Sets alpha channel for smooth drawing.
-    pub fn set_alpha(&mut self,alpha:f32){
-        self.alpha_channel=alpha;
-    }
-
-    /// Sets smooth for smooth drawing.
-    pub fn set_smooth(&mut self,smooth:f32){
-        self.smooth=smooth
-    }
-
-    /// Sets smooth and zeroes alpha channel
-    /// for smooth drawing.
-    pub fn set_new_smooth(&mut self,smooth:f32){
-        self.alpha_channel=0f32;
-        self.smooth=smooth
-    }
-
-    pub fn get_alpha(&mut self)->f32{
-        self.alpha_channel
-    }
-
-    pub fn get_smooth(&mut self)->f32{
-        self.smooth
-    }
-}
 
 //                     \\
 //  ЛОКАЛЬНЫЕ ФУНКЦИИ  \\
