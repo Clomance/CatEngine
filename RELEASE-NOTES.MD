@@ -1,10 +1,22 @@
 # 0.4.2
 
-Removed user's mouse cursor icon and it's feature.
+### Added
 
-Removed the `alpha_channel` feature and the related functions and fields.
+An object system for text graphics and some function for rendering.
 
-Added object system for text graphics.
+General drawing functions.
+
+### Removed
+
+User's mouse cursor icon and it's feature.
+
+The `alpha_channel` feature and the related functions and fields.
+
+The `draw_all_textured_objects` function.
+
+### Optimized
+
+Glyph rendering.
 
 # 0.4.1
 

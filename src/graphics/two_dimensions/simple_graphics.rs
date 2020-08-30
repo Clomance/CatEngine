@@ -125,11 +125,11 @@ impl SimpleGraphics{
         let vertex_source=object.write_vertices(
             &self.vertex_buffer,
             &self.bindings
-        ).expect("VertexBuffer: Not enouth space");
+        ).expect("VertexBuffer: Not enough space");
 
         // Вписывание индексов и подготовка к выводу
         let indices_source=object.write_indices(&self.index_buffer)
-                .expect("IndexBuffer: Not enouth space");
+                .expect("IndexBuffer: Not enough space");
 
         let uni=uniform!{
             colour:object.colour(),
@@ -161,11 +161,11 @@ impl SimpleGraphics{
         let vertex_source=object.write_vertices(
             &self.vertex_buffer,
             &self.bindings
-        ).expect("VertexBuffer: Not enouth space");
+        ).expect("VertexBuffer: Not enough space");
 
         // Вписывание индексов и подготовка к выводу
         let indices_source=object.write_indices(&self.index_buffer)
-                .expect("IndexBuffer: Not enouth space");
+                .expect("IndexBuffer: Not enough space");
 
         let uni=uniform!{
             colour:object.colour(),
@@ -199,11 +199,11 @@ impl SimpleGraphics{
         let vertex_source=object.write_vertices(
             &self.vertex_buffer,
             &self.bindings
-        ).expect("VertexBuffer: Not enouth space");
+        ).expect("VertexBuffer: Not enough space");
 
         // Вписывание индексов и подготовка к выводу
         let indices_source=object.write_indices(&self.index_buffer)
-                .expect("IndexBuffer: Not enouth space");
+                .expect("IndexBuffer: Not enough space");
 
         let (sin,cos)=angle.sin_cos();
 
@@ -284,20 +284,6 @@ impl SimpleGraphics{
         Some(len)
     }
 
-    // pub fn pop_object(&mut self)->Option<SimpleObject2D>{
-    //     if let Some(object)=self.objects.pop(){
-    //         let mut len=object.vertex_buffer_range.len();
-    //         self.vertex_buffer_edge-=len;
-
-    //         len=object.index_buffer_range.len();
-    //         self.index_buffer_edge-=len;
-    //         Some(object)
-    //     }
-    //     else{
-    //         None
-    //     }
-    // }
-
     pub fn delete_last_object(&mut self){
         if let Some(object)=self.objects.pop(){
             let mut len=object.vertex_buffer_range.len();
@@ -372,33 +358,6 @@ impl SimpleGraphics{
             &uni,
             draw_parameters
         )
-    }
-
-    pub fn draw_all_objects(
-        &self,
-        draw_parameters:&DrawParameters,
-        frame:&mut Frame
-    )->Result<(),DrawError>{
-        for object in &self.objects{
-            let index_source=object.indices_source(&self.index_buffer);
-
-            let uni=uniform!{
-                colour:object.colour,
-                window_center:unsafe{window_center},
-            };
-
-            let vertex_slice=object.vertices_source(&self.vertex_buffer,&self.bindings);
-
-            frame.draw(
-                vertex_slice,
-                index_source,
-                &self.draw,
-                &uni,
-                draw_parameters
-            )?;
-        }
-
-        Ok(())
     }
 
     pub fn draw_shift_object(

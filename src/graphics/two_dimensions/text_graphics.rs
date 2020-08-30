@@ -40,6 +40,8 @@ use rusttype::{
     Point,
 };
 
+use std::borrow::Cow;
+
 pub struct TextGraphics{
     vertex_buffer:VertexBuffer<TexturedVertex2D>,
     image:Vec<u8>, // Здесь рисуется символ
@@ -49,17 +51,23 @@ pub struct TextGraphics{
     objects:Vec<TextObject2D>,
     fonts:Vec<Font<'static>>,
 
-    program:Program,
+    draw:Program,
+    draw_shift:Program,
+    draw_rotate:Program,
 }
 
 impl TextGraphics{
     pub fn new(display:&Display,[width,height]:[u32;2],glsl:u16)->TextGraphics{
-        let (vertex,fragment)=if glsl==120{(
-            include_str!("shaders/120/text/vertex_shader.glsl"),
+        let (common,shift,rotation,fragment)=if glsl==120{(
+            include_str!("shaders/120/texture/vertex_shader.glsl"),
+            include_str!("shaders/120/texture/shift_vertex_shader.glsl"),
+            include_str!("shaders/120/texture/rotation_vertex_shader.glsl"),
             include_str!("shaders/120/text/fragment_shader.glsl")
         )}
         else{(
-            include_str!("shaders/text/vertex_shader.glsl"),
+            include_str!("shaders/texture/vertex_shader.glsl"),
+            include_str!("shaders/texture/shift_vertex_shader.glsl"),
+            include_str!("shaders/texture/rotation_vertex_shader.glsl"),
             include_str!("shaders/text/fragment_shader.glsl")
         )};
 
@@ -81,31 +89,40 @@ impl TextGraphics{
             objects:Vec::with_capacity(10),
             fonts:Vec::with_capacity(10),
 
-            program:Program::from_source(display,vertex,fragment,None).unwrap()
+            draw:Program::from_source(display,common,fragment,None).unwrap(),
+            draw_shift:Program::from_source(display,shift,fragment,None).unwrap(),
+            draw_rotate:Program::from_source(display,rotation,fragment,None).unwrap(),
         }
     }
 
-    pub fn draw_glyph(
+    pub fn write_glyph(
         &mut self,
         glyph:PositionedGlyph,
-        colour:Colour,
-        draw_parameters:&DrawParameters,
-        frame:&mut Frame
-    )->Result<(),DrawError>{
+    )->Option<()>{
         if let Some(bounding_box)=glyph.pixel_bounding_box(){
-            let x1=bounding_box.min.x as f32;
-            let y1=bounding_box.min.y as f32;
-            let x2=bounding_box.max.x as f32;
-            let y2=bounding_box.max.y as f32;
-
-            let width=bounding_box.width() as u32;
+            let width=bounding_box.width() as usize;
             let height=bounding_box.height() as u32;
 
-            glyph.draw(|_,_,a|{
-                let gray=255f32*a;
+            // Из-за неудобной системы построения глифа
+            // приходится добавлять всякие конструкции
+            // (переворот картинки для openGL)
+            {
+                let mut len=width*height as usize;
+                unsafe{self.image.set_len(len)};
 
-                self.image.push(gray.round() as u8);
-            });
+                let mut c=len-width;
+                glyph.draw(|_,_,a|{
+                    let gray=255f32*a;
+                    self.image[c]=gray.round() as u8;
+                    c+=1;
+                    if c==len && len!=width{
+                        len-=width;
+                        c-=2*width;
+                    }
+                });
+            }
+
+            let width=width as u32;
 
             let rect=Rect{
                 left:0,
@@ -115,12 +132,7 @@ impl TextGraphics{
             };
 
             let raw_image=RawImage2d{
-                data:self.image
-                    .chunks(width as usize)
-                    .rev()
-                    .flat_map(|row|row.iter())
-                    .map(|p|p.clone())
-                    .collect(),
+                data:Cow::Borrowed(&self.image),
                 width,
                 height,
                 format:ClientFormat::U8,
@@ -136,6 +148,11 @@ impl TextGraphics{
             let uheight=height as f32/self.texture_size[1];
 
 
+            let x1=bounding_box.min.x as f32;
+            let y1=bounding_box.min.y as f32;
+            let x2=bounding_box.max.x as f32;
+            let y2=bounding_box.max.y as f32;
+
             let vertices=[
                 TexturedVertex2D::new([x1,y1],[0.0,uheight]),
                 TexturedVertex2D::new([x1,y2],[0.0,0.0]),
@@ -145,6 +162,21 @@ impl TextGraphics{
 
             slice.write(&vertices);
 
+            Some(())
+        }
+        else{
+            None
+        }
+    }
+
+    pub fn draw_glyph(
+        &mut self,
+        glyph:PositionedGlyph,
+        colour:Colour,
+        draw_parameters:&DrawParameters,
+        frame:&mut Frame
+    )->Result<(),DrawError>{
+        if let Some(_)=self.write_glyph(glyph){
             let uni=uniform!{
                 texture2d:&self.texture,
                 colour:colour,
@@ -152,9 +184,70 @@ impl TextGraphics{
             };
 
             frame.draw(
-                slice,
+                &self.vertex_buffer,
                 NoIndices(PrimitiveType::TriangleStrip),
-                &self.program,
+                &self.draw,
+                &uni,
+                draw_parameters
+            )?
+        }
+
+        Ok(())
+    }
+
+    pub fn draw_shift_glyph(
+        &mut self,
+        glyph:PositionedGlyph,
+        colour:Colour,
+        shift:[f32;2],
+        draw_parameters:&DrawParameters,
+        frame:&mut Frame
+    )->Result<(),DrawError>{
+        if let Some(_)=self.write_glyph(glyph){
+            let uni=uniform!{
+                texture2d:&self.texture,
+                colour:colour,
+                shift:shift,
+                window_center:unsafe{window_center}
+            };
+
+            frame.draw(
+                &self.vertex_buffer,
+                NoIndices(PrimitiveType::TriangleStrip),
+                &self.draw_shift,
+                &uni,
+                draw_parameters
+            )?
+        }
+
+        Ok(())
+    }
+
+    pub fn draw_rotate_glyph(
+        &mut self,
+        glyph:PositionedGlyph,
+        colour:Colour,
+        rotation_center:[f32;2],
+        angle:f32,
+        draw_parameters:&DrawParameters,
+        frame:&mut Frame
+    )->Result<(),DrawError>{
+        if let Some(_)=self.write_glyph(glyph){
+            let (sin,cos)=angle.sin_cos();
+
+            let uni=uniform!{
+                texture2d:&self.texture,
+                colour:colour,
+                cos:cos,
+                sin:sin,
+                rotation_center:rotation_center,
+                window_center:unsafe{window_center}
+            };
+
+            frame.draw(
+                &self.vertex_buffer,
+                NoIndices(PrimitiveType::TriangleStrip),
+                &self.draw_shift,
                 &uni,
                 draw_parameters
             )?
@@ -234,6 +327,79 @@ impl TextGraphics{
             let glyph=scaled_glyph.positioned(point);
 
             self.draw_glyph(glyph,object.colour,draw_parameters,frame)?;
+
+            point.x+=width_offset;
+        }
+
+        Ok(())
+    }
+
+    pub fn draw_shift_object(
+        &mut self,
+        index:usize,
+        shift:[f32;2],
+        draw_parameters:&DrawParameters,
+        frame:&mut Frame
+    )->Result<(),DrawError>{
+        // Убрать этот ужас отсюда)
+        let object=unsafe{&*(&self.objects[index] as *const TextObject2D)};
+
+        let scale=Scale::uniform(object.font_size);
+        // позиция для вывода символа
+        let mut point=Point{
+            x:object.position[0],
+            y:object.position[1]
+        };
+
+        let mut width_offset; // сдвиг для следующего символа
+
+        for character in object.text.chars(){
+            // Получение символа
+            let scaled_glyph=self.fonts[object.font].glyph(character).scaled(scale);
+
+            width_offset=scaled_glyph.h_metrics().advance_width;
+
+            // установка положения символа
+            let glyph=scaled_glyph.positioned(point);
+
+            self.draw_shift_glyph(glyph,object.colour,shift,draw_parameters,frame)?;
+
+            point.x+=width_offset;
+        }
+
+        Ok(())
+    }
+
+    pub fn draw_rotate_object(
+        &mut self,
+        index:usize,
+        rotation_center:[f32;2],
+        angle:f32,
+        draw_parameters:&DrawParameters,
+        frame:&mut Frame
+    )->Result<(),DrawError>{
+        // Убрать этот ужас отсюда)
+        let object=unsafe{&*(&self.objects[index] as *const TextObject2D)};
+
+        let scale=Scale::uniform(object.font_size);
+        // позиция для вывода символа
+        let mut point=Point{
+            x:object.position[0],
+            y:object.position[1]
+        };
+
+        let mut width_offset; // сдвиг для следующего символа
+
+        for character in object.text.chars(){
+            // Получение символа
+            let scaled_glyph=self.fonts[object.font].glyph(character).scaled(scale);
+
+            width_offset=scaled_glyph.h_metrics().advance_width;
+
+            // установка положения символа
+            let glyph=scaled_glyph.positioned(point);
+
+            self.draw_rotate_glyph(glyph,object.colour,rotation_center,angle,draw_parameters,frame)?;
 
             point.x+=width_offset;
         }

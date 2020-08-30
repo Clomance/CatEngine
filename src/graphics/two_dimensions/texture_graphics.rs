@@ -53,7 +53,7 @@ pub struct TextureGraphics{
 
     objects:Vec<TexturedObject2D>,
     draw:Program,
-    pub (crate) draw_shift:Program,
+    draw_shift:Program,
     draw_rotate:Program,
 }
 
@@ -134,11 +134,11 @@ impl TextureGraphics{
         let vertex_source=object.write_vertices(
             &self.vertex_buffer,
             &self.bindings
-        ).expect("VertexBuffer: Not enouth space");
+        ).expect("VertexBuffer: Not enough space");
 
         // Вписывание индексов и подготовка к выводу
         let indices_source=object.write_indices(&self.index_buffer)
-                .expect("IndexBuffer: Not enouth space");
+                .expect("IndexBuffer: Not enough space");
 
         let uni=uniform!{
             texture2d:&texture.0,
@@ -174,11 +174,11 @@ impl TextureGraphics{
         let vertex_source=object.write_vertices(
             &self.vertex_buffer,
             &self.bindings
-        ).expect("VertexBuffer: Not enouth space");
+        ).expect("VertexBuffer: Not enough space");
 
         // Вписывание индексов и подготовка к выводу
         let indices_source=object.write_indices(&self.index_buffer)
-                .expect("IndexBuffer: Not enouth space");
+                .expect("IndexBuffer: Not enough space");
 
         let uni=uniform!{
             texture2d:&texture.0,
@@ -222,11 +222,11 @@ impl TextureGraphics{
         let vertex_source=object.write_vertices(
             &self.vertex_buffer,
             &self.bindings
-        ).expect("VertexBuffer: Not enouth space");
+        ).expect("VertexBuffer: Not enough space");
 
         // Вписывание индексов и подготовка к выводу
         let indices_source=object.write_indices(&self.index_buffer)
-                .expect("IndexBuffer: Not enouth space");
+                .expect("IndexBuffer: Not enough space");
 
         let (sin,cos)=angle.sin_cos();
 
@@ -316,23 +316,6 @@ impl TextureGraphics{
         Some(len)
     }
 
-    // pub fn pop_object(&mut self)->Option<TexturedObject2D>{
-    //     if let Some(object)=self.objects.pop(){
-    //         // Сдвиг границы вершин
-    //         let mut len=object.base.vertex_buffer_range.len();
-    //         self.vertex_buffer_edge-=len;
-
-    //         // Сдвиг границы индексов
-    //         len=object.base.index_buffer_range.len();
-    //         self.index_buffer_edge-=len;
-
-    //         Some(object)
-    //     }
-    //     else{
-    //         None
-    //     }
-    // }
-
     pub fn delete_last_object(&mut self){
         if let Some(object)=self.objects.pop(){
             // Сдвиг границы вершин
@@ -414,34 +397,6 @@ impl TextureGraphics{
             &uni,
             draw_parameters
         )
-    }
-
-    pub fn draw_all_objects(
-        &self,
-        draw_parameters:&DrawParameters,
-        frame:&mut Frame
-    )->Result<(),DrawError>{
-        for object in &self.objects{
-            let index_source=object.indices_source(&self.index_buffer);
-
-            let uni=uniform!{
-                texture2d:&object.texture.0,
-                colour_filter:object.base.colour,
-                window_center:unsafe{window_center},
-            };
-
-            let vertex_slice=object.vertices_source(&self.vertex_buffer,&self.bindings);
-
-            frame.draw(
-                vertex_slice,
-                index_source,
-                &self.draw,
-                &uni,
-                draw_parameters
-            )?;
-        }
-
-        Ok(())
     }
 
     pub fn draw_shift_object(

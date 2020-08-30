@@ -32,6 +32,20 @@ mod objects;
 pub use objects::DependentObject;
 
 #[derive(Clone,Debug)]
+pub enum ObjectType{
+    Simple,
+    Textured,
+    Text,
+}
+
+#[derive(Clone,Debug)]
+pub enum DrawType{
+    Common,
+    Shifting([f32;2]),
+    Rotating((f32,[f32;2])),
+}
+
+#[derive(Clone,Debug)]
 pub struct InnerGraphicsSettings{
     /// The capacity of the vertex buffer.
     /// 
@@ -87,7 +101,7 @@ pub struct GraphicsSettings{
     #[cfg(feature="simple_graphics")]
     pub simple:InnerGraphicsSettings,
 
-    /// The default is [256;2].
+    /// The default is [256;2] - [width, height].
     /// 
     /// feature = "text_graphics"
     #[cfg(feature="text_graphics")]

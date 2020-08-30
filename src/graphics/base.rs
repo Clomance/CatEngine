@@ -13,7 +13,7 @@ use super::two_dimensions::{
 #[cfg(feature="3D")]
 use super::three_dimensions::Graphics3D;
 
-use super::DependentObject;
+use super::{DependentObject,ObjectType,DrawType};
 
 use glium::{
     Frame,
@@ -59,7 +59,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// Fills the window with the given colour.
     #[inline(always)]
     pub fn clear_colour(&mut self,[r,g,b,a]:[f32;4]){
-        self.frame.clear_color(r,g,b,a);
+        self.frame.clear_color(r,g,b,a)
     }
 
     /// Выводит уже готовый символ.
@@ -135,6 +135,55 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             self.frame,
         )
     }
+
+    /// Рисует сохранённый объект.
+    /// 
+    /// Draws a saved object.
+    pub fn draw_object(
+        &mut self,
+        index:usize,
+        object_type:ObjectType,
+        draw_type:DrawType,
+        draw_parameters:&DrawParameters
+    )->Result<(),DrawError>{
+        match object_type{
+            ObjectType::Simple=>{
+                match draw_type{
+                    DrawType::Common=>{
+                        self.draw_simple_object(index,&draw_parameters)
+                    }
+
+                    DrawType::Shifting(shift)=>{
+                        self.draw_shift_simple_object(index,shift,&draw_parameters)
+                    }
+
+                    DrawType::Rotating((angle,position))=>{
+                        self.draw_rotate_simple_object(index,position,angle,&draw_parameters)
+                    }
+                }
+            }
+
+            ObjectType::Textured=>{
+                match draw_type{
+                    DrawType::Common=>{
+                        self.draw_textured_object(index,&draw_parameters)
+                    }
+
+                    DrawType::Shifting(shift)=>{
+                        self.draw_shift_textured_object(index,shift,&draw_parameters)
+                    }
+
+                    DrawType::Rotating((angle,position))=>{
+                        self.draw_rotate_textured_object(index,position,angle,&draw_parameters)
+                    }
+                }
+            }
+
+            ObjectType::Text=>{
+                self.draw_text_object(index,&draw_parameters)
+            }
+        }
+    }
 }
 
 /// # Функции для работы с текстурными объектами. Functions to work with textured objects.
@@ -151,20 +200,6 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     )->Result<(),DrawError>{
         self.graphics2d.texture.draw_object(
             index,
-            draw_parameters,
-            self.frame,
-        )
-    }
-
-    /// Рисует все сохранённые текстурные объекты.
-    /// 
-    /// Draws all the saved textured objects.
-    #[inline(always)]
-    pub fn draw_all_textured_objects(
-        &mut self,
-        draw_parameters:&DrawParameters
-    )->Result<(),DrawError>{
-        self.graphics2d.texture.draw_all_objects(
             draw_parameters,
             self.frame,
         )
