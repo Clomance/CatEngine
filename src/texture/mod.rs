@@ -83,7 +83,7 @@ impl ImageBase{
         draw_parameters:&mut DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
-        graphics.draw_texture(self,texture,draw_parameters)
+        graphics.draw_image(self,texture,draw_parameters)
     }
 
     /// Рисует сдвинутое изображение.

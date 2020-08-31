@@ -215,19 +215,6 @@ impl TextBase{
         self.colour=colour
     }
 
-    /// Выводит уже готовый символ.
-    /// 
-    /// Draws the already built glyph.
-    #[inline(always)]
-    pub fn draw_glyph(
-        &self,
-        glyph:PositionedGlyph,
-        draw_parameters:&DrawParameters,
-        graphics:&mut Graphics
-    )->Result<(),DrawError>{
-        graphics.draw_glyph(glyph,self.colour,draw_parameters)
-    }
-
     /// Строит и выводит один символ.
     /// 
     /// Builds and draws a glyph.
@@ -250,6 +237,32 @@ impl TextBase{
         let glyph=font.glyph(character).scaled(scale).positioned(point);
 
         graphics.draw_glyph(glyph,self.colour,draw_parameters)
+    }
+
+    /// Строит и выводит один символ.
+    /// 
+    /// Builds and draws a glyph.
+    pub fn draw_rotate_char(
+        &self,
+        character:char,
+        rotation_center:[f32;2],
+        angle:f32,
+        font:&Font,
+        draw_parameters:&DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        let scale=Scale::uniform(self.font_size);
+
+        // позиция для вывода символа
+        let point=Point{
+            x:self.position[0],
+            y:self.position[1]
+        };
+
+        // Получение символа
+        let glyph=font.glyph(character).scaled(scale).positioned(point);
+
+        graphics.draw_rotate_glyph(glyph,self.colour,rotation_center,angle,draw_parameters)
     }
 
     /// Выводит строку.
@@ -281,6 +294,44 @@ impl TextBase{
             let glyph=scaled_glyph.positioned(point);
 
             graphics.draw_glyph(glyph,self.colour,draw_parameters)?;
+
+            point.x+=width_offset;
+        }
+
+        Ok(())
+    }
+
+    /// Выводит повёрнутую строку.
+    /// 
+    /// Draws a rotated string.
+    pub fn draw_rotate_str(
+        &self,
+        s:&str,
+        rotation_center:[f32;2],
+        angle:f32,
+        font:&Font,
+        draw_parameters:&DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        let scale=Scale::uniform(self.font_size);
+        // позиция для вывода символа
+        let mut point=Point{
+            x:self.position[0],
+            y:self.position[1]
+        };
+
+        let mut width_offset; // сдвиг для следующего символа
+
+        for character in s.chars(){
+            // Получение символа
+            let scaled_glyph=font.glyph(character).scaled(scale);
+
+            width_offset=scaled_glyph.h_metrics().advance_width;
+
+            // установка положения символа
+            let glyph=scaled_glyph.positioned(point);
+
+            graphics.draw_rotate_glyph(glyph,self.colour,rotation_center,angle,draw_parameters)?;
 
             point.x+=width_offset;
         }
@@ -328,6 +379,53 @@ impl TextBase{
             let glyph=scaled_glyph.positioned(point);
 
             graphics.draw_glyph(glyph,self.colour,draw_parameters)?;
+
+            point.x+=width_offset;
+        }
+
+        Ok(whole)
+    }
+
+    /// Выводит часть повёрнутой строки.
+    /// Если текст выведен полностью, возвращает true.
+    /// 
+    /// Draws a part of a rotated string.
+    /// Returns true, if the whole string is drawn.
+    pub fn draw_rotate_str_part(
+        &self,
+        s:&str,
+        chars:usize,
+        rotation_center:[f32;2],
+        angle:f32,
+        font:&Font,
+        draw_parameters:&DrawParameters,
+        graphics:&mut Graphics
+    )->Result<bool,DrawError>{
+        let mut whole=true; // Флаг вывода всего текста
+
+        let scale=Scale::uniform(self.font_size);
+        // позиция для вывода символа
+        let mut point=Point{
+            x:self.position[0],
+            y:self.position[1]
+        };
+
+        let mut width_offset; // сдвиг для следующего символа
+
+        for (i,character) in s.chars().enumerate(){
+            if i==chars{
+                whole=false;
+                break
+            }
+            // Получение символа
+            let scaled_glyph=font.glyph(character).scaled(scale);
+
+            width_offset=scaled_glyph.h_metrics().advance_width;
+
+            // установка положения символа
+            let glyph=scaled_glyph.positioned(point);
+
+            graphics.draw_rotate_glyph(glyph,self.colour,rotation_center,angle,draw_parameters)?;
 
             point.x+=width_offset;
         }

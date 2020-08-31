@@ -2,7 +2,7 @@
 
 ### Added
 
-An object system for text graphics and some function for rendering.
+An object system for text graphics and some function for rendering (but there is some artifacts, I will fix them later).
 
 General drawing functions.
 

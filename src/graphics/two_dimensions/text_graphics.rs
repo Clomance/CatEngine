@@ -247,7 +247,7 @@ impl TextGraphics{
             frame.draw(
                 &self.vertex_buffer,
                 NoIndices(PrimitiveType::TriangleStrip),
-                &self.draw_shift,
+                &self.draw_rotate,
                 &uni,
                 draw_parameters
             )?
