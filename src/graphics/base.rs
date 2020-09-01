@@ -166,7 +166,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
 impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// Рисует простой объект.
     /// 
-    /// Draws the simple object.
+    /// Draws a simple object.
     #[inline(always)]
     pub fn draw_simple<'o,O,V,I>(
         &mut self,
@@ -193,7 +193,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
 
     /// Рисует сдвинутый простой объект.
     /// 
-    /// Draws shifted simple object.
+    /// Draws a shifted simple object.
     #[inline(always)]
     pub fn draw_shift_simple<'o,O,V,I>(
         &mut self,
@@ -222,7 +222,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
 
     /// Рисует повёрнутый простой объект.
     /// 
-    /// Draws the rotated simple object.
+    /// Draws a rotated simple object.
     #[inline(always)]
     pub fn draw_rotate_simple<'o,O,V,I>(
         &mut self,
@@ -253,7 +253,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
 
     /// Рисует простой объект.
     /// 
-    /// Draws the simple object.
+    /// Draws a simple object.
     #[inline(always)]
     pub fn draw_simple_general<'o,O,V,I>(
         &mut self,

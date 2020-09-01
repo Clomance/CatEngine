@@ -342,7 +342,7 @@ impl TextBase{
     /// Выводит часть строки.
     /// Если текст выведен полностью, возвращает true.
     /// 
-    /// Draws a part of the string.
+    /// Draws a part of a string.
     /// Returns true, if the whole string is drawn.
     pub fn draw_str_part(
         &self,
