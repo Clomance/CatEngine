@@ -1,6 +1,6 @@
 [package]
 name = "cat_engine"
-version = "0.4.2"
+version = "0.4.3"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
 homepage = "https://github.com/Clomance/CatEngine"
@@ -52,8 +52,8 @@ features = [
 ]
 
 [dependencies]
-image = "0.23.8"
+image = "0.23.9"
 glium = "0.27.0"
 rusttype = { version = "0.9.2", optional = true }
 cpal = { version = "0.11.0", optional = true }
-minimp3 = { version = "0.3.5", optional = true }
+minimp3 = { version = "0.5.0", optional = true }

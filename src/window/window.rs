@@ -65,7 +65,7 @@ pub trait WindowPage<'a>{
     fn on_window_resized(&mut self,window:&mut Self::Window,new_size:[u32;2]);
     fn on_window_moved(&mut self,window:&mut Self::Window,position:[i32;2]);
 
-    /// Calls when the window loses or gains focus.
+    /// Called when the window loses or gains focus.
     fn on_window_focused(&mut self,window:&mut Self::Window,focused:bool);
 
     fn on_suspended(&mut self,window:&mut Self::Window);
@@ -83,7 +83,7 @@ pub trait WindowPage<'a>{
     #[cfg(feature="file_drop")]
     fn on_file_hovered_canceled(&mut self,window:&mut Self::Window);
 
-    /// The event loop has been stopped.
+    /// Called when the event loop has been stopped.
     /// 
     /// The 'page' (for the `PagedWindow`)/ window (for the `DynamicWindow`)
     /// is closed after this function is called.

@@ -83,7 +83,7 @@ impl ImageBase{
         draw_parameters:&mut DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
-        graphics.draw_image(self,texture,draw_parameters)
+        graphics.draw_texture(self,texture,draw_parameters)
     }
 
     /// Рисует сдвинутое изображение.
@@ -100,7 +100,7 @@ impl ImageBase{
         draw_parameters:&mut DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
-        graphics.draw_shift_image(self,texture,shift,draw_parameters)
+        graphics.draw_shift_texture(self,texture,shift,draw_parameters)
     }
 
     /// Рисует изображение под углом.
@@ -119,7 +119,7 @@ impl ImageBase{
         draw_parameters:&mut DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
-        graphics.draw_rotate_image(self,texture,rotation_center,angle,draw_parameters)
+        graphics.draw_rotate_texture(self,texture,rotation_center,angle,draw_parameters)
     }
 }
 

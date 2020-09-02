@@ -7,6 +7,7 @@ use crate::texture::{
 
 use super::two_dimensions::{
     Vertex2D,
+    TexturedVertex2D,
     Graphics2D
 };
 
@@ -299,35 +300,57 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
 
 
 
-/// # Функции для отрисовки изображений. Image rendering functions.
+/// # Функции для отрисовки текстур. Texture rendering functions.
 #[cfg(feature="texture_graphics")]
 impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// Рисует изображение.
     /// 
-    /// Draws an image.
+    /// Draws a texture.
     #[inline(always)]
-    pub fn draw_image(
+    pub fn draw_texture<'o,O,V,I>(
         &mut self,
-        image_base:&ImageBase,
+        base:&'o O,
         texture:&Texture,
         draw_parameters:&DrawParameters
-    )->Result<(),DrawError>{
-        self.graphics2d.texture.draw(image_base,texture,draw_parameters,self.frame)
+    )->Result<(),DrawError>
+        where
+            O:DependentObject<
+                'o,
+                TexturedVertex2D,
+                u8,
+                Vertices=V,
+                Indices=I
+            >,
+            V:AsRef<[TexturedVertex2D]>+'o,
+            I:AsRef<[u8]>+'o
+    {
+        self.graphics2d.texture.draw(base,texture,draw_parameters,self.frame)
     }
 
-    /// Рисует сдвинутое изображение.
+    /// Рисует сдвинутую текстуру.
     /// 
-    /// Draws a shifted image.
+    /// Draws a shifted texture.
     #[inline(always)]
-    pub fn draw_shift_image(
+    pub fn draw_shift_texture<'o,O,V,I>(
         &mut self,
-        image_base:&ImageBase,
+        base:&'o O,
         texture:&Texture,
         shift:[f32;2],
         draw_parameters:&DrawParameters
-    )->Result<(),DrawError>{
+    )->Result<(),DrawError>
+        where
+            O:DependentObject<
+                'o,
+                TexturedVertex2D,
+                u8,
+                Vertices=V,
+                Indices=I
+            >,
+            V:AsRef<[TexturedVertex2D]>+'o,
+            I:AsRef<[u8]>+'o
+    {
         self.graphics2d.texture.draw_shift(
-            image_base,
+            base,
             texture,
             shift,
             draw_parameters,
@@ -335,22 +358,33 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         )
     }
 
-    /// Рисует повёрнутое изображение.
+    /// Рисует повёрнутую текстуру.
     /// 
-    /// Draws a rotated image.
+    /// Draws a rotated texture.
     /// 
     /// angle - radians
     #[inline(always)]
-    pub fn draw_rotate_image<'o>(
+    pub fn draw_rotate_texture<'o,O,V,I>(
         &mut self,
-        image_base:&'o ImageBase,
+        base:&'o O,
         texture:&Texture,
         rotation_center:[f32;2],
         angle:f32,
         draw_parameters:&DrawParameters
-    )->Result<(),DrawError>{
+    )->Result<(),DrawError>
+        where
+            O:DependentObject<
+                'o,
+                TexturedVertex2D,
+                u8,
+                Vertices=V,
+                Indices=I
+            >,
+            V:AsRef<[TexturedVertex2D]>+'o,
+            I:AsRef<[u8]>+'o
+    {
         self.graphics2d.texture.draw_rotate(
-            image_base,
+            base,
             texture,
             rotation_center,
             angle,
@@ -359,27 +393,38 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         )
     }
 
-    /// Рисует изображение.
+    /// Рисует текстуру.
     /// 
-    /// Draws an image.
+    /// Draws a texture.
     #[inline(always)]
-    pub fn draw_image_general(
+    pub fn draw_texture_general<'o,O,V,I>(
         &mut self,
-        image_base:&ImageBase,
+        base:&'o O,
         texture:&Texture,
         draw_type:DrawType,
         draw_parameters:&DrawParameters
-    )->Result<(),DrawError>{
+    )->Result<(),DrawError>
+        where
+            O:DependentObject<
+                'o,
+                TexturedVertex2D,
+                u8,
+                Vertices=V,
+                Indices=I
+            >,
+            V:AsRef<[TexturedVertex2D]>+'o,
+            I:AsRef<[u8]>+'o
+    {
         match draw_type{
             DrawType::Common=>self.graphics2d.texture.draw(
-                image_base,
+                base,
                 texture,
                 draw_parameters,
                 self.frame
             ),
 
             DrawType::Shifting(shift)=>self.graphics2d.texture.draw_shift(
-                image_base,
+                base,
                 texture,
                 shift,
                 draw_parameters,
@@ -387,7 +432,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             ),
 
             DrawType::Rotating((angle,position))=>self.graphics2d.texture.draw_rotate(
-                image_base,
+                base,
                 texture,
                 position,
                 angle,

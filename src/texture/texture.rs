@@ -38,7 +38,7 @@ impl TextureCreationResult{
     }
 }
 
-/// Обёртка для 2D текстуры. Wrapper for a 2D texture.
+/// Обёртка для 2D текстуры. A wrapper for a 2D rgba texture.
 pub struct Texture(pub SrgbTexture2d);
 
 impl Texture{
@@ -97,7 +97,7 @@ impl Texture{
                 height:height,
             },
             RawImage2d::from_raw_rgba_reversed(img,(width,height)),
-        );
+        )
     }
 
     /// Возвращает ширину изображения.

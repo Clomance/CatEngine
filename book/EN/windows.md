@@ -1,6 +1,16 @@
 # General
 
-There are three types of windows. They differ in speed and capabilities (they will be discussed separately below).
+### Definitions
+
+'Page' - types that are implemented for `WindowPage`.
+
+There are three types of windows. They differ in speed and capabilities (they will be discussed separately below):
+
+- `DefaultWindow` - has widest range of capabalities, but is the most slowly one and has a lot of problems
+- `PagedWindow` - handles events faster than the others, but slowly switches 'pages', got two way of working, that can be alternated
+- `DynamicWindow` - a bit slower than `PagedWindow`, but switches 'pages' much more quickly
+
+### Building
 
 Threre are two functions to create a window:
  - with a closure - gives the default settings and a list of monitors (to set to fullscreen)
@@ -29,6 +39,8 @@ let mut window=PagedWindow::raw(
 ).unwrap();
 ```
 
+### Events
+
 Windows support the next events:
  - requests to close the window
  - changes of the size or the position of the window
@@ -45,19 +57,24 @@ Windows support the next events:
 
 # WindowBase
 
-A window base with graphics functions included.
+A window base with graphics functions,
+ an event loop and user's event generator included.
 
 You can create you own window with it.
 All it's field are public.
 
-It also includes almost all the features.
+Also almost all the features are included.
+
+
 
 # DefaultWindow
 
-This window has widest range of features, but is the most slowly one and has a lot of problems.
-
 All events are handled and added to the outer handling queue (Window.events)
 to work with them outside of the window structure.
+
+Doesn't support 'pages'.
+
+Breaking the cycle with `break`.
 
 ```
 let mut window=DefaultWindow::new(|_,_|{}).unwrap();
@@ -65,7 +82,7 @@ let mut window=DefaultWindow::new(|_,_|{}).unwrap();
 while let Some(event)=window.next_event(){
     match event{
         WindowEvent::CloseRequested=>{
-            // Must break the cycle
+            // Break the cycle manually
             break
         }
 
@@ -84,6 +101,8 @@ while let Some(event)=window.next_event(){
 
 
 # PagedWindow
+
+Breaking the cycle with `stop_events` function.
 
 ### Working with 'pages'
 
@@ -181,13 +200,13 @@ window.run(|window,event|{
 
 # DynamicWindow
 
-The fastest window, but very limited.
-
 All the events are implemented with `WindowPage` trait
 and handled immediately after emited.
 
 The window that uses 'pages' as `WindowPage` trait objects,
 so you can change one while running another.
+
+Breaking the cycle with `stop_events` function.
 
 ```
 pub struct Page;
@@ -246,8 +265,6 @@ fn main(){
 
     let mut page=Page;
 
-    window.change_page(&mut page);
-
-    window.run();
+    window.run(&mut page);
 }
 ```

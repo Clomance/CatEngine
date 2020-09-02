@@ -1,3 +1,9 @@
+# 0.4.3
+
+Updated crates: `minimp3` - 0.5.0; `image` - 0.23.9.
+
+Now image rendering functions are generalized for all textured objects.
+
 # 0.4.2
 
 ### Added
