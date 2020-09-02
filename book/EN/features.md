@@ -3,36 +3,33 @@
 Features help us to remove unnecessary code and modules and lessen the size of some structures.
 
 
+# Audio
 
-# General features
-
-### Audio
-
-##### audio
+### audio
 
 Enables to use audio output.
 
 
 
-### Graphics
+# Graphics
 
-##### texture_graphics
+### texture_graphics
 
 Enables to use functions to work with textured objects.
 
-##### text_graphics
+### text_graphics
 
 Enables to use functions to work with text.
 
-##### simple_graphics
+### simple_graphics
 
 Enables to use functions to work with plain (for now) objects.
 
 
 
-### Window additions
+# Window additions
 
-##### auto_hide
+### auto_hide
 
 The window gets minimized when loses focus.
 It gets back when gains focus.
@@ -46,11 +43,11 @@ Only the next events are able in minimized state:
 
 It's usefull for fullscreen application.
 
-##### fps_counter
+### fps_counter
 
 Adds a simple fps counter. The value updates every second.
 
-##### file_drop
+### file_drop
 
 Enables the next events:
  - `WindowEvent::HoveredFileCancelled`
@@ -61,7 +58,7 @@ and the related functions.
 
 
 
-# PagedWindow and DynamicWindow
+## PagedWindow and DynamicWindow
 
 ### lazy
 
