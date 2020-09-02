@@ -7,7 +7,7 @@ Features help us to remove unnecessary code and modules and lessen the size of s
 
 ### audio
 
-Enables to use audio output.
+Enables audio output.
 
 
 
@@ -15,15 +15,15 @@ Enables to use audio output.
 
 ### texture_graphics
 
-Enables to use functions to work with textured objects.
+Enables operating and rendering textured objects.
 
 ### text_graphics
 
-Enables to use functions to work with text.
+Enables operating and rendering text.
 
 ### simple_graphics
 
-Enables to use functions to work with plain (for now) objects.
+Enables operating and rendering plain (for now) objects.
 
 
 

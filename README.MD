@@ -33,19 +33,3 @@ If you use audio feature, alsa delevopment libraries are required for Linux: `li
 ## [Pre-release](https://github.com/Clomance/CatEngine/tree/pre-release)
 
 ## [The book](book/README.MD)
-
-## List of features
-[English version](book/EN/features.md)
-[Русская версия](book/RUS/features.md)
-
-Default features:
- - "texture_graphics"
- - "simple_graphics"
- - "text_graphics"
-
-Other features:
- - "audio"
- - "auto_hide"
- - "fps_counter"
- - "lazy"
- - "file_drop"
