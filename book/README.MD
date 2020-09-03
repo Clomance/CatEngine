@@ -1,6 +1,6 @@
-# Summary
-
 ![Caution](cat_worker.jpg)
+
+# Summary
 
  - [Rust features](EN/features.md)
  - [Windows](EN/windows.md)

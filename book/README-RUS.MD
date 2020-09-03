@@ -1,6 +1,6 @@
-# Содержание
+![Caution](cat_worker-rus.jpg)
 
-![Caution](cat_worker.jpg)
+# Содержание
 
  - ["Фичи" Rust](RUS/features.md)
  - [Windows](RUS/windows.md)
