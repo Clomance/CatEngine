@@ -1,3 +1,20 @@
+//! # Рендеринг текста. Text rendering. `feature = "text_graphics"`, `default_features`
+//! 
+//! Как рендерится символ:
+//! 1. С помощью библиотеки `rusttype` создаётся символ (или уже даётся готовый)
+//! 2. Этот символ записывается в массив как изображение
+//! 3. Изображение загружается в текстуру
+//! 4. Текстура выводится на экран
+//! 
+//! ###
+//! 
+//! How a sign is rendering:
+//! 1. A glyph is built with the `rusttype` crate (or is given the ready one)
+//! 2. The glyph is written to the array as an image
+//! 3. The image is loaded to the texture
+//! 4. The texture is rendered
+
+
 use crate::{
     // types
     Colour,

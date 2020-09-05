@@ -1,3 +1,9 @@
+# 0.4.4
+
+Now you can create an empty texture.
+
+Fixed the text rendering problem.
+
 # 0.4.3
 
 Updated crates: `minimp3` - 0.5.0; `image` - 0.23.9.

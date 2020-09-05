@@ -140,12 +140,9 @@ impl TextGraphics{
 
             self.texture.write(rect,raw_image);
 
-            self.image.clear();
-            let slice=self.vertex_buffer.slice(0..4).unwrap();
-
-            // размер изображения символа
-            let uwidth=width as f32/self.texture_size[0];
-            let uheight=height as f32/self.texture_size[1];
+            // Размер изображения символа (обрезка из-за наслоение предыдущего символа)
+            let uwidth=(width as f32-0.5f32)/self.texture_size[0];
+            let uheight=(height as f32-0.5f32)/self.texture_size[1];
 
 
             let x1=bounding_box.min.x as f32;
@@ -160,6 +157,7 @@ impl TextGraphics{
                 TexturedVertex2D::new([x2,y2],[uwidth,0.0])
             ];
 
+            let slice=self.vertex_buffer.slice(0..4).unwrap();
             slice.write(&vertices);
 
             Some(())

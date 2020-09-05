@@ -38,23 +38,33 @@ impl TextureCreationResult{
     }
 }
 
-/// Обёртка для 2D текстуры. A wrapper for a 2D rgba texture.
+/// Обёртка для 2D rgba текстуры. A wrapper for a 2D rgba texture.
 pub struct Texture(pub SrgbTexture2d);
 
 impl Texture{
     /// Создаёт текстуру из массива байт.
     /// 
     /// Creates a texture from byte array.
-    pub fn create<S:Into<[u32;2]>>(memory:&[u8],size:S,factory:&Display)->TextureCreationResult{
-        let [w,h]=size.into();
-
-        let image=RawImage2d::from_raw_rgba_reversed(memory,(w,h));
+    /// 
+    /// size - [width, height]
+    pub fn create(memory:&[u8],size:[u32;2],factory:&Display)->TextureCreationResult{
+        let image=RawImage2d::from_raw_rgba_reversed(memory,(size[0],size[1]));
 
         match SrgbTexture2d::new(factory,image){
             Ok(texture)=>TextureCreationResult::Ok(Texture(texture)),
-            Err(e)=>{
-                TextureCreationResult::TextureCreationError(e)
-            }
+            Err(e)=>TextureCreationResult::TextureCreationError(e),
+        }
+    }
+
+    /// Создаёт пустую текстуру.
+    /// 
+    /// Creates an empty texture.
+    /// 
+    /// size - [width, height]
+    pub fn empty(size:[u32;2],factory:&Display)->TextureCreationResult{
+        match SrgbTexture2d::empty(factory,size[0],size[1]){
+            Ok(texture)=>TextureCreationResult::Ok(Texture(texture)),
+            Err(e)=>TextureCreationResult::TextureCreationError(e),
         }
     }
 
