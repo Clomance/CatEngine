@@ -1,3 +1,21 @@
+# 0.4.5
+
+If an audio output device gets unavailable (for example, it has been unplugged),
+the engine tries to replace it with the new one (choose the default).
+
+Removed the `with_host_and_device`, `available_hosts`, `host_from_id`,
+`default_output_device`, `output_devices` functions.
+
+The `play_once`, `play_forever` functions are united in the `play_track` one.
+
+Reimported the `cpal` crate.
+
+The `AudioOutputType` enumeration renamed `AudioOutputFormat`.
+
+The audio engine converts all sound tracks to the 24-bit format.
+
+Removed `NoStream` from the `AudioCommandResult` enumeration.
+
 # 0.4.4
 
 Now you can create an empty texture.

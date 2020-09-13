@@ -1,5 +1,4 @@
-use super::sample_rate::SampleRateConverter;
-use super::sample::Sample;
+use super::sample::SampleTransform;
 
 use std::path::Path;
 use std::fs::File;
@@ -55,8 +54,7 @@ impl<T:std::fmt::Debug> TrackResult<T>{
 pub struct Track<T>{
     data:Vec<T>,
     channels:u16,
-    sample_rate:SampleRate,
-    sample_format:SampleFormat,
+    sample_rate:u32,
 }
 
 impl Track<i16>{
@@ -69,13 +67,12 @@ impl Track<i16>{
         };
 
         let mut decoder=Decoder::new(file);
-        let (channels,sample_rate,sample_format)=match decoder.next_frame(){
+        let (channels,sample_rate)=match decoder.next_frame(){
             Ok(mut frame)=>{
                 data.append(&mut frame.data);
                 (
                     frame.channels,
-                    SampleRate(frame.sample_rate as u32),
-                    SampleFormat::I16
+                    frame.sample_rate as u32,
                 )
             }
             Err(_)=>return TrackResult::NoData
@@ -89,12 +86,11 @@ impl Track<i16>{
             data,
             channels:channels as u16,
             sample_rate,
-            sample_format,
         })
     }
 }
 
-impl<T:Clone+Sample> Track<T>{
+impl<T:Clone+SampleTransform> Track<T>{
     pub fn data(&self)->&Vec<T>{
         &self.data
     }
@@ -103,24 +99,12 @@ impl<T:Clone+Sample> Track<T>{
         self.channels
     }
 
-    pub fn sample_rate(&self)->SampleRate{
+    pub fn sample_rate(&self)->u32{
         self.sample_rate
-    }
-
-    pub fn sample_format(&self)->SampleFormat{
-        self.sample_format
     }
 
     pub fn len(&self)->usize{
         self.data.len()
-    }
-
-    pub fn endless_iter(self,sample_rate:SampleRate)->SampleRateConverter<std::iter::Cycle<std::vec::IntoIter<T>>>{
-        SampleRateConverter::new(self.data.into_iter().cycle(),self.sample_rate,sample_rate,self.channels)
-    }
-
-    pub fn into_iter(self,sample_rate:SampleRate)->SampleRateConverter<std::vec::IntoIter<T>>{
-        SampleRateConverter::new(self.data.into_iter(),self.sample_rate,sample_rate,self.channels)
     }
 }
 
@@ -136,14 +120,14 @@ impl Into<Track<u16>> for Track<i16>{
         let mut track=Vec::<u16>::with_capacity(self.len());
 
         for sample in self.data.into_iter(){
-            track.push(sample.to_u16());
+            let sample=CSample::to_u16(&sample);
+            track.push(sample);
         }
 
         Track::<u16>{
             data:track,
             channels:self.channels,
             sample_rate:self.sample_rate,
-            sample_format:SampleFormat::U16,
         }
     }
 }
@@ -153,7 +137,7 @@ impl Into<Track<f32>> for Track<i16>{
         let mut track=Vec::<f32>::with_capacity(self.len());
 
         for sample in self.data.into_iter(){
-            let sample=sample as f32/i16::max_value() as f32;
+            let sample=CSample::to_f32(&sample);
             track.push(sample);
         }
 
@@ -161,7 +145,6 @@ impl Into<Track<f32>> for Track<i16>{
             data:track,
             channels:self.channels,
             sample_rate:self.sample_rate,
-            sample_format:SampleFormat::F32,
         }
     }
 }

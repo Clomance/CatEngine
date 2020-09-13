@@ -17,6 +17,11 @@ Supported platforms:
  - Windows, Linux
  - Mac, iOS might work anyway
 
+#### Features
+
+You can disable some unnecessary modules with Rust features (see [list of features](book/EN/features.md)).
+
+
 #### Dependencies
  - Graphics - [glium](https://github.com/glium/glium)
  - Images - [image](https://github.com/image-rs/image)
