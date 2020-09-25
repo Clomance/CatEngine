@@ -1,10 +1,11 @@
 use crate::{
     Colour,
     texture::Texture,
+    text::GlyphCache,
 };
 
 #[cfg(feature="text_graphics")]
-use crate::text::{TextBase,rusttype::Font};
+use crate::text::{TextBase};
 
 use super::{
     GraphicsSettings,
@@ -41,6 +42,8 @@ use glium::{
     Display,
 };
 
+#[cfg(feature="text_graphics")]
+use ttf_parser::Face;
 
 /// Графическая основа. A graphics base.
 pub struct Graphics2D{
@@ -60,7 +63,7 @@ impl Graphics2D{
             #[cfg(feature="simple_graphics")]
             simple:SimpleGraphics::new(window,settings.simple,glsl),
             #[cfg(feature="text_graphics")]
-            text:TextGraphics::new(window,settings.text_image_buffer_size,glsl),
+            text:TextGraphics::new(window,settings.text,glsl),
         }
     }
 }
@@ -278,21 +281,21 @@ impl Graphics2D{
 impl Graphics2D{
     /// Добавляет шрифт в массив.
     /// 
-    /// Adds a font to the array.
+    /// Adds a glyph cache to the array.
     #[inline(always)]
-    pub fn add_font(
+    pub fn add_glyph_cache(
         &mut self,
-        font:Font<'static>,
+        glyph_cache:GlyphCache,
     )->Option<usize>{
-        self.text.push_font(font)
+        self.text.push_glyph_cache(glyph_cache)
     }
 
     /// Возращает шрифт.
     /// 
-    /// Returns a font.
+    /// Returns a glyph cache.
     #[inline(always)]
-    pub fn get_font(&self,index:usize)->&Font<'static>{
-        self.text.get_font(index)
+    pub fn get_glyph_cache(&self,index:usize)->&GlyphCache{
+        self.text.get_glyph_cache(index)
     }
 
     /// Добавляет текстовой объект в массив.

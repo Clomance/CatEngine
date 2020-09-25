@@ -1,8 +1,10 @@
-use crate::Colour;
-
-use crate::texture::{
-    ImageBase,
-    Texture,
+use crate::{
+    Colour,
+    text::{GlyphCache,Glyph},
+    texture::{
+        ImageBase,
+        Texture,
+    }
 };
 
 use super::two_dimensions::{
@@ -22,9 +24,6 @@ use glium::{
     DrawError,
     Surface,
 };
-
-#[cfg(feature="text_graphics")]
-use rusttype::{PositionedGlyph,Font};
 
 
 
@@ -454,12 +453,16 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     #[inline(always)]
     pub fn draw_glyph(
         &mut self,
-        glyph:PositionedGlyph,
+        glyph:&Glyph,
         colour:Colour,
+        [x,y,width,height]:[f32;4],
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
+
+        self.graphics2d.text.write_vertices([x,y,width,height],[1f32,1f32]);
+
         self.graphics2d.text.draw_glyph(
-            glyph,
+            glyph.texture(),
             colour,
             draw_parameters,
             self.frame
@@ -472,13 +475,16 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     #[inline(always)]
     pub fn draw_shift_glyph(
         &mut self,
-        glyph:PositionedGlyph,
+        glyph:&Glyph,
         colour:Colour,
+        [x,y,width,height]:[f32;4],
         shift:[f32;2],
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
+        self.graphics2d.text.write_vertices([x,y,width,height],[1f32,1f32]);
+
         self.graphics2d.text.draw_shift_glyph(
-            glyph,
+            glyph.texture(),
             colour,
             shift,
             draw_parameters,
@@ -492,14 +498,17 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     #[inline(always)]
     pub fn draw_rotate_glyph(
         &mut self,
-        glyph:PositionedGlyph,
+        glyph:&Glyph,
         colour:Colour,
+        [x,y,width,height]:[f32;4],
         rotation_center:[f32;2],
         angle:f32,
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
+        self.graphics2d.text.write_vertices([x,y,width,height],[1f32,1f32]);
+
         self.graphics2d.text.draw_rotate_glyph(
-            glyph,
+            glyph.texture(),
             colour,
             rotation_center,
             angle,
@@ -513,20 +522,24 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// Draws a already built glyph.
     pub fn draw_glyph_general(
         &mut self,
-        glyph:PositionedGlyph,
+        glyph:&Glyph,
         colour:Colour,
+        [x,y,width,height]:[f32;4],
         draw_type:DrawType,
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
+        self.graphics2d.text.write_vertices([x,y,width,height],[1f32,1f32]);
+
         match draw_type{
             DrawType::Common=>self.graphics2d.text.draw_glyph(
-                glyph,colour,
+                glyph.texture(),
+                colour,
                 draw_parameters,
                 self.frame
             ),
 
             DrawType::Shifting(shift)=>self.graphics2d.text.draw_shift_glyph(
-                glyph,
+                glyph.texture(),
                 colour,
                 shift,
                 draw_parameters,
@@ -534,7 +547,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             ),
 
             DrawType::Rotating((angle,position))=>self.graphics2d.text.draw_rotate_glyph(
-                glyph,
+                glyph.texture(),
                 colour,
                 position,
                 angle,

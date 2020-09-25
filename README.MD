@@ -25,13 +25,13 @@ You can disable some unnecessary modules with Rust features (see [list of featur
 #### Dependencies
  - Graphics - [glium](https://github.com/glium/glium)
  - Images - [image](https://github.com/image-rs/image)
- - Fonts - [rusttype](https://gitlab.redox-os.org/redox-os/rusttype)
+ - Fonts - [ttf-parser](https://github.com/RazrFalcon/ttf-parser)
  - Audio - [cpal](https://github.com/RustAudio/cpal) and [minimp3](https://github.com/germangb/minimp3-rs)
 
 If you use audio feature, alsa delevopment libraries are required for Linux: `libasound2-dev` for Debian and Ubuntu, `alsa-lib-devel` for Fedora (see [cpal](https://github.com/RustAudio/cpal)).
 
 
-## [My own game](https://github.com/Clomance/Visual-Novel)
+<!-- ## [My own game](https://github.com/Clomance/Visual-Novel) -->
 
 ## [Release notes](RELEASE-NOTES.MD)
 

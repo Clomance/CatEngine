@@ -52,7 +52,7 @@ pub struct InnerGraphicsSettings{
     /// The default is 8.
     pub vertex_buffer_size:usize,
 
-    /// The range [0..offset] is for common drawing,
+    /// The [0..offset] range is for common drawing,
     /// [offset..] is for saving objects.
     /// 
     /// The default is 4.
@@ -63,7 +63,7 @@ pub struct InnerGraphicsSettings{
     /// The default is 8.
     pub index_buffer_size:usize,
 
-    /// The range [0..offset] is for common drawing,
+    /// The [0..offset] range is for common drawing,
     /// [offset..] is for saving objects.
     /// 
     /// The default is 4.
@@ -89,6 +89,24 @@ impl InnerGraphicsSettings{
     }
 }
 
+#[derive(Clone,Debug)]
+pub struct TextGraphicsSettings{
+    /// The size for dynamic glyph rendering.
+    /// 
+    /// The default is [256;2]
+    glyph_texture_size:[u32;2],
+
+}
+
+impl TextGraphicsSettings{
+    pub const fn new()->TextGraphicsSettings{
+        Self{
+            glyph_texture_size:[256;2]
+        }
+    }
+}
+
+
 /// Настройки графических основ.
 /// Settings for graphics bases.
 #[derive(Clone,Debug)]
@@ -101,11 +119,9 @@ pub struct GraphicsSettings{
     #[cfg(feature="simple_graphics")]
     pub simple:InnerGraphicsSettings,
 
-    /// The default is [256;2] - [width, height].
-    /// 
     /// feature = "text_graphics"
     #[cfg(feature="text_graphics")]
-    pub text_image_buffer_size:[u32;2],
+    pub text:TextGraphicsSettings,
 }
 
 impl GraphicsSettings{
@@ -118,7 +134,7 @@ impl GraphicsSettings{
             simple:InnerGraphicsSettings::new(),
 
             #[cfg(feature="text_graphics")]
-            text_image_buffer_size:[256u32;2],
+            text:TextGraphicsSettings::new(),
         }
     }
 }

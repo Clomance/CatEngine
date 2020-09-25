@@ -128,3 +128,7 @@ pub (crate) struct TextObject2D{
     pub colour:Colour,
     pub font:usize,
 }
+
+impl TextObject2D{
+    
+}

@@ -1,3 +1,22 @@
+# 0.5.0
+
+### A new text rendering system
+
+It is based on a glyph cache.
+Load all the needed characters as textures to the cache and then render them.
+
+It's possible to load different fonts in one cache, so you can create your own font.
+
+As usual you are able to save a glyph cache inside the graphics structure to use text as a dependent object.
+
+Works faster but takes much space.
+
+Also there is a new feature for the cache - `glyph_cache`.
+
+### The old one
+
+Now doesn't support saving objects.
+
 # 0.4.5
 
 If an audio output device gets unavailable (for example, it has been unplugged),
