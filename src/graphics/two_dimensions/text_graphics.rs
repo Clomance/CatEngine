@@ -9,7 +9,7 @@ use crate::{
     text::{
         TextBase,
         GlyphCache,
-        Glyph,
+        RawGlyph,
         OutlineCurveBuilder,
         OutlinedGlyph,
         TRect,
@@ -111,11 +111,11 @@ impl TextGraphics{
         }
     }
 
-    pub fn get_texture(&self)->&Texture2d{
+    pub fn texture(&self)->&Texture2d{
         &self.glyph_texture
     }
 
-    // Вписывает вершины
+    /// Вписывает вершины в локальный буфер.
     pub fn write_vertices(&self,[x,y,width,height]:[f32;4],[uvw,uvh]:[f32;2]){
         let [x1,y1,x2,y2]=[
             x,
@@ -134,8 +134,8 @@ impl TextGraphics{
         self.vertex_buffer.write(&vertices);
     }
 
-    // Записывает глиф в локальную тектстуру
-    pub fn write_glyph(&mut self,glyph:OutlinedGlyph,position:[f32;2]){
+    /// Записывает глиф в локальную тектстуру.
+    pub fn write_glyph(&mut self,glyph:&OutlinedGlyph){
         self.image.clear();
 
         glyph.draw(|_,a|{
@@ -166,7 +166,10 @@ impl TextGraphics{
         self.glyph_texture.write(rect,raw_image);
     }
 
-    // Рисует глиф с загруженными вершинами
+    /// Рисует глиф с загруженными вершинами.
+    /// 
+    /// Перед выводом нужно загрузить вершины
+    /// с помощью функции `write_vertices`.
     pub fn draw_glyph(
         &self,
         glyph:&Texture2d,

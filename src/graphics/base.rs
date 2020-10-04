@@ -1,6 +1,10 @@
 use crate::{
     Colour,
-    text::{GlyphCache,Glyph},
+    text::{
+        GlyphCache,
+        RawGlyph,
+        OutlinedGlyph,
+    },
     texture::{
         ImageBase,
         Texture,
@@ -444,21 +448,47 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
 
 
 
-/// # Фукнции для отрисовка символов. Rendering text functions.
+/// # Фукнции для отрисовки глифов. Glyph rendering functions.
 #[cfg(feature="text_graphics")]
 impl<'graphics,'frame> Graphics<'graphics,'frame>{
-    /// Выводит уже готовый символ.
+    /// Строит и выводит глиф.
     /// 
-    /// Draws an already built glyph.
+    /// Builds and draws a glyph.
     #[inline(always)]
     pub fn draw_glyph(
         &mut self,
-        glyph:&Glyph,
+        glyph:&OutlinedGlyph,
         colour:Colour,
         [x,y,width,height]:[f32;4],
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
+        // Отрисовывает глиф на текстуру
+        self.graphics2d.text.write_glyph(glyph);
+        // Строит вершины
+        self.graphics2d.text.write_vertices([x,y,width,height],[1f32,1f32]);
 
+        let texture=self.graphics2d.text.texture();
+
+        self.graphics2d.text.draw_glyph(
+            texture,
+            colour,
+            draw_parameters,
+            self.frame
+        )
+    }
+
+    /// Выводит уже готовый символ.
+    /// 
+    /// Draws an already built glyph.
+    #[inline(always)]
+    pub fn draw_glyph_cache(
+        &mut self,
+        glyph:&RawGlyph,
+        colour:Colour,
+        [x,y,width,height]:[f32;4],
+        draw_parameters:&DrawParameters,
+    )->Result<(),DrawError>{
+        // Строит вершины
         self.graphics2d.text.write_vertices([x,y,width,height],[1f32,1f32]);
 
         self.graphics2d.text.draw_glyph(
@@ -473,9 +503,9 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws a shifted, already built glyph.
     #[inline(always)]
-    pub fn draw_shift_glyph(
+    pub fn draw_shift_glyph_cache(
         &mut self,
-        glyph:&Glyph,
+        glyph:&RawGlyph,
         colour:Colour,
         [x,y,width,height]:[f32;4],
         shift:[f32;2],
@@ -496,9 +526,9 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws a rotated, already built glyph.
     #[inline(always)]
-    pub fn draw_rotate_glyph(
+    pub fn draw_rotate_glyph_cache(
         &mut self,
-        glyph:&Glyph,
+        glyph:&RawGlyph,
         colour:Colour,
         [x,y,width,height]:[f32;4],
         rotation_center:[f32;2],
@@ -520,9 +550,9 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// Выводит уже готовый символ.
     /// 
     /// Draws a already built glyph.
-    pub fn draw_glyph_general(
+    pub fn draw_glyph_cache_general(
         &mut self,
-        glyph:&Glyph,
+        glyph:&RawGlyph,
         colour:Colour,
         [x,y,width,height]:[f32;4],
         draw_type:DrawType,

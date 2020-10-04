@@ -1,3 +1,7 @@
+use super::{
+    OutlinedGlyph,
+};
+
 use glium::{
     Display,
     texture::{
@@ -8,27 +12,27 @@ use glium::{
     Rect,
 };
 
-pub struct Glyph{
+pub struct RawGlyph{
     texture:Texture2d,
+    // Размер полноразмерного изображения
     size:[f32;2],
-    // Сдвиг для полноразмерного символа
+    // Сдвиг для полноразмерного глифа
     offset:[f32;2],
-    // Расстояние до следующего символа
+    // Расстояние до следующего глифа
     advance:f32,
     // Собственное мастабирование
     // (нужно для правильного соотношения размеров букв)
     scale:f32,
 }
 
-impl Glyph{
+impl RawGlyph{
     pub fn raw(
         texture:Texture2d,
         size:[f32;2],
         offset:[f32;2],
         advance:f32,
         scale:f32
-    )->Glyph{
-
+    )->RawGlyph{
         Self{
             texture,
             size,
@@ -115,7 +119,7 @@ impl Glyph{
         [x,y,new_width,new_height]
     }
 
-    // Computes a bounding box and an advance width of a glyph
+    /// Computes a bounding box and an advance width of a glyph
     pub fn frame(&self,font_size:f32)->GlyphFrame{
         // Соотношение сторон: ширина на высоту
         let aspect_ratio=self.size[0]/self.size[1];
@@ -160,4 +164,13 @@ impl GlyphFrame{
             self.size[1]
         ]
     }
+}
+
+pub struct Glyph{
+    outline:OutlinedGlyph,
+    advance_width:f32,
+}
+
+impl Glyph{
+    
 }

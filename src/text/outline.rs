@@ -43,7 +43,7 @@ impl Scale{
 #[derive(Clone,Debug)]
 pub struct OutlinedGlyph{
     pub bounds:Rect,
-    scale:Scale,
+    pub scale:Scale,
     curves:Vec<OutlineCurve>,
 }
 

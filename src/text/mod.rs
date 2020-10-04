@@ -36,7 +36,10 @@ use crate::{
 };
 
 mod glyph;
-pub use glyph::Glyph;
+pub use glyph::{
+    RawGlyph,
+    GlyphFrame,
+};
 
 mod outline;
 pub (crate) use outline::{
@@ -49,6 +52,9 @@ pub (crate) use outline::{
 pub use outline::{
     Scale,
 };
+
+mod font;
+pub use font::{Font,FaceWrapper};
 
 mod glyph_cache;
 pub use glyph_cache::GlyphCache;
@@ -163,7 +169,7 @@ impl TextBase{
 
             let mut rect=frame.bounding_box(self.position);
 
-            graphics.draw_glyph(
+            graphics.draw_glyph_cache(
                 glyph,
                 self.colour,
                 rect,
@@ -197,7 +203,7 @@ impl TextBase{
 
             let mut rect=frame.bounding_box(self.position);
 
-            graphics.draw_rotate_glyph(
+            graphics.draw_rotate_glyph_cache(
                 glyph,
                 self.colour,
                 rect,
@@ -242,7 +248,7 @@ impl TextBase{
 
             let mut rect=frame.bounding_box(position);
 
-            graphics.draw_glyph(
+            graphics.draw_glyph_cache(
                 glyph,
                 self.colour,
                 rect,
@@ -288,7 +294,7 @@ impl TextBase{
 
             let mut rect=frame.bounding_box(position);
 
-            graphics.draw_rotate_glyph(
+            graphics.draw_rotate_glyph_cache(
                 glyph,
                 self.colour,
                 rect,
@@ -347,7 +353,7 @@ impl TextBase{
 
             let mut rect=frame.bounding_box(position);
 
-            graphics.draw_glyph(
+            graphics.draw_glyph_cache(
                 glyph,
                 self.colour,
                 rect,
@@ -404,7 +410,7 @@ impl TextBase{
 
             let mut rect=frame.bounding_box(position);
 
-            graphics.draw_rotate_glyph(
+            graphics.draw_rotate_glyph_cache(
                 glyph,
                 self.colour,
                 rect,

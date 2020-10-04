@@ -3,7 +3,7 @@ use super::{
     OutlinedGlyph,
     Scale,
     outline::Rect as TRect,
-    Glyph,
+    RawGlyph,
 };
 
 use glium::{
@@ -73,8 +73,8 @@ use std::{
 /// 
 /// A glyph cache.
 pub struct GlyphCache{
-    glyphs:HashMap<char,Glyph>,
-    undefined_glyph:Glyph,
+    glyphs:HashMap<char,RawGlyph>,
+    undefined_glyph:RawGlyph,
     // Коэффициент размера пробела - whitespace advance = self.whitespace advance * font size
     whitespace_advance:f32,
 }
@@ -114,11 +114,7 @@ impl GlyphCache{
 
         let space=font.glyph_hor_advance(GlyphId(3)).unwrap() as f32;
 
-        println!("space {}",space);
-
         let global_width=font.global_bounding_box().width() as f32;
-
-        println!("global {}",global_width);
 
         let space_advance=space/global_width;
 
@@ -172,14 +168,14 @@ impl GlyphCache{
     /// 
     /// Returns a unscaled glyph.
     #[inline(always)]
-    pub fn glyph(&self,character:char)->Option<&Glyph>{
+    pub fn glyph(&self,character:char)->Option<&RawGlyph>{
         self.glyphs.get(&character)
     }
 
     /// Возращает немасштабированный глиф.
     /// 
     /// Returns a unscaled glyph.
-    pub fn glyph_or_undefined(&self,character:char)->&Glyph{
+    pub fn glyph_or_undefined(&self,character:char)->&RawGlyph{
         if let Some(glyph)=self.glyphs.get(&character){
             glyph
         }
@@ -189,7 +185,7 @@ impl GlyphCache{
     }
 
     #[inline(always)]
-    pub fn undefined_glyph(&self)->&Glyph{
+    pub fn undefined_glyph(&self)->&RawGlyph{
         &self.undefined_glyph
     }
 
@@ -237,7 +233,7 @@ impl GlyphCache{
     }
 }
 
-fn build_glyph(id:GlyphId,global_height:f32,scale:Scale,face:&Face,display:&Display)->Option<Glyph>{
+fn build_glyph(id:GlyphId,global_height:f32,scale:Scale,face:&Face,display:&Display)->Option<RawGlyph>{
     let mut outline_builder=OutlineCurveBuilder::default();
 
     if let Some(bounds)=face.outline_glyph(id,&mut outline_builder){
@@ -303,7 +299,7 @@ fn build_glyph(id:GlyphId,global_height:f32,scale:Scale,face:&Face,display:&Disp
 
         let advance=face.glyph_hor_advance(id).unwrap() as f32*scale.horizontal;
 
-        let glyph=Glyph::raw(
+        let glyph=RawGlyph::raw(
             texture,
             size,
             offset,
