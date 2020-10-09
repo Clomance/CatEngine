@@ -94,7 +94,7 @@ pub struct TextGraphicsSettings{
     /// The size for dynamic glyph rendering.
     /// 
     /// The default is [256;2]
-    glyph_texture_size:[u32;2],
+    pub glyph_texture_size:[u32;2],
 
 }
 

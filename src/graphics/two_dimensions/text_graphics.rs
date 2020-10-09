@@ -12,7 +12,6 @@ use crate::{
         RawGlyph,
         OutlineCurveBuilder,
         OutlinedGlyph,
-        TRect,
         Scale,
     },
     graphics::TextGraphicsSettings,
@@ -92,13 +91,13 @@ impl TextGraphics{
             vertex_buffer:VertexBuffer::empty_dynamic(display,4).unwrap(),
             vertex_format:TexturedVertex2D::build_bindings(),
 
-            image:Vec::with_capacity(100),
+            image:Vec::with_capacity((settings.glyph_texture_size[0]*settings.glyph_texture_size[1]) as usize),
             glyph_texture:Texture2d::empty_with_format(
                 display,
                 UncompressedFloatFormat::U8,
                 MipmapsOption::NoMipmap,
-                20,
-                5,
+                settings.glyph_texture_size[0],
+                settings.glyph_texture_size[1],
             ).unwrap(),
             texture_size,
 
@@ -113,6 +112,10 @@ impl TextGraphics{
 
     pub fn texture(&self)->&Texture2d{
         &self.glyph_texture
+    }
+
+    pub fn texture_size(&self)->[f32;2]{
+        self.texture_size
     }
 
     /// Вписывает вершины в локальный буфер.
@@ -144,10 +147,7 @@ impl TextGraphics{
             self.image.push(byte);
         });
 
-        let size=[
-            glyph.bounds.width as u32,
-            glyph.bounds.height as u32
-        ];
+        let size=glyph.size();
 
         let rect=Rect{
             left:0,

@@ -2,7 +2,6 @@ use super::{
     OutlineCurveBuilder,
     OutlinedGlyph,
     Scale,
-    outline::Rect as TRect,
     RawGlyph,
 };
 
@@ -72,10 +71,11 @@ use std::{
 /// Хранилище глифов.
 /// 
 /// A glyph cache.
+// ᶠᵉᵉᵈ ᵐᵉ /ᐠ-ⱉ-ᐟ\ﾉ
 pub struct GlyphCache{
     glyphs:HashMap<char,RawGlyph>,
     undefined_glyph:RawGlyph,
-    // Коэффициент размера пробела - whitespace advance = self.whitespace advance * font size
+    // Коэффициент размера пробела - whitespace_advance = self.whitespace_advance * font_size
     whitespace_advance:f32,
 }
 
@@ -249,12 +249,12 @@ fn build_glyph(id:GlyphId,global_height:f32,scale:Scale,face:&Face,display:&Disp
             (bounds.height() as f32*scale.vertical).ceil(),
         ];
 
-        let rect=TRect::new(
+        let rect=[
             offset[0],
             offset[1],
             size[0],
             size[1]
-        );
+        ];
 
         let glyph=OutlinedGlyph::new(outline_builder.outline,rect,scale);
 

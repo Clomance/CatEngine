@@ -459,19 +459,131 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         glyph:&OutlinedGlyph,
         colour:Colour,
-        [x,y,width,height]:[f32;4],
+        [x,y]:[f32;2],
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
         // Отрисовывает глиф на текстуру
         self.graphics2d.text.write_glyph(glyph);
+
+        let offset=glyph.offset_y();
+
+        // Получение размера глифа
+        let [w,h]=glyph.size();
+        let [w,h]=[w as f32,h as f32];
+
+
+        // Получение размера текстуры
+        let [tw,th]=self.graphics2d.text.texture_size();
+
+        // Получение относительного размера глифа
+        let uv=[
+            w/tw,
+            h/th
+        ];
+
         // Строит вершины
-        self.graphics2d.text.write_vertices([x,y,width,height],[1f32,1f32]);
+        self.graphics2d.text.write_vertices(
+            [x,y-h-offset,w,h],
+            uv
+        );
 
         let texture=self.graphics2d.text.texture();
 
         self.graphics2d.text.draw_glyph(
             texture,
             colour,
+            draw_parameters,
+            self.frame
+        )
+    }
+
+    /// Строит и выводит сдвинутый глиф.
+    /// 
+    /// Builds and draws a shifted glyph.
+    #[inline(always)]
+    pub fn draw_shift_glyph(
+        &mut self,
+        glyph:&OutlinedGlyph,
+        colour:Colour,
+        [x,y]:[f32;2],
+        shift:[f32;2],
+        draw_parameters:&DrawParameters,
+    )->Result<(),DrawError>{
+        // Отрисовывает глиф на текстуру
+        self.graphics2d.text.write_glyph(glyph);
+
+        // Получение размера глифа
+        let [w,h]=glyph.size();
+        let [w,h]=[w as f32,h as f32];
+
+        // Получение размера текстуры
+        let [tw,th]=self.graphics2d.text.texture_size();
+
+        // Получение относительного размера глифа
+        let uv=[
+            w/tw,
+            h/th
+        ];
+
+        // Строит вершины
+        self.graphics2d.text.write_vertices(
+            [x,y,w,h],
+            uv
+        );
+
+        let texture=self.graphics2d.text.texture();
+
+        self.graphics2d.text.draw_shift_glyph(
+            texture,
+            colour,
+            shift,
+            draw_parameters,
+            self.frame
+        )
+    }
+
+    /// Строит и выводит повёрнутый глиф.
+    /// 
+    /// Builds and draws a rotated glyph.
+    #[inline(always)]
+    pub fn draw_rotate_glyph(
+        &mut self,
+        glyph:&OutlinedGlyph,
+        colour:Colour,
+        [x,y]:[f32;2],
+        rotation_center:[f32;2],
+        angle:f32,
+        draw_parameters:&DrawParameters,
+    )->Result<(),DrawError>{
+        // Отрисовывает глиф на текстуру
+        self.graphics2d.text.write_glyph(glyph);
+
+        // Получение размера глифа
+        let [w,h]=glyph.size();
+        let [w,h]=[w as f32,h as f32];
+
+        // Получение размера текстуры
+        let [tw,th]=self.graphics2d.text.texture_size();
+
+        // Получение относительного размера глифа
+        let uv=[
+            w/tw,
+            h/th
+        ];
+
+        // Строит вершины
+        self.graphics2d.text.write_vertices(
+            [x,y,w,h],
+            uv
+        );
+
+        let texture=self.graphics2d.text.texture();
+
+        self.graphics2d.text.draw_rotate_glyph(
+            texture,
+            colour,
+            rotation_center,
+            angle,
             draw_parameters,
             self.frame
         )

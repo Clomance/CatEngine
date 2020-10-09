@@ -6,25 +6,6 @@ use ab_glyph_rasterizer::{
 
 use ttf_parser::OutlineBuilder;
 
-#[derive(Copy,Clone,Debug)]
-pub struct Rect{
-    pub x:f32,
-    pub y:f32,
-    pub width:f32,
-    pub height:f32,
-}
-
-impl Rect {
-    pub fn new(x:f32,y:f32,width:f32,height:f32)->Rect{
-        Self{
-            x,
-            y,
-            width,
-            height
-        }
-    }
-}
-
 #[derive(Clone,Copy,Debug)]
 pub struct Scale{
     pub horizontal:f32,
@@ -37,64 +18,6 @@ impl Scale{
             horizontal:h,
             vertical:v
         }
-    }
-}
-
-#[derive(Clone,Debug)]
-pub struct OutlinedGlyph{
-    pub bounds:Rect,
-    pub scale:Scale,
-    curves:Vec<OutlineCurve>,
-}
-
-impl OutlinedGlyph{
-    #[inline]
-    pub fn new(curves:Vec<OutlineCurve>,bounds:Rect,scale:Scale)->Self{
-        Self{
-            bounds,
-            scale,
-            curves,
-        }
-    }
-
-    pub fn draw<O:FnMut(usize,f32)>(&self,mut o:O){
-        let scale_up=|&Point{x,y}|point(
-            (x*self.scale.horizontal)-self.bounds.x,
-            (y*self.scale.vertical)-self.bounds.y,
-        );
-
-        self.curves.iter().fold(
-            Rasterizer::new(
-                self.bounds.width as usize,
-                self.bounds.height as usize
-            ),
-            |mut rasterizer,curve|match curve{
-                OutlineCurve::Line(p0, p1)=>{
-                    rasterizer.draw_line(scale_up(p0),scale_up(p1));
-                    rasterizer
-                }
-                OutlineCurve::Quad(p0,p1,p2)=>{
-                    rasterizer.draw_quad(
-                        scale_up(p0),
-                        scale_up(p1),
-                        scale_up(p2),
-                    );
-                    rasterizer
-                }
-                OutlineCurve::Cubic(p0,p1,p2,p3)=>{
-                    rasterizer.draw_cubic(
-                        scale_up(p0),
-                        scale_up(p1),
-                        scale_up(p2),
-                        scale_up(p3),
-                    );
-                    rasterizer
-                }
-            }
-        )
-        .for_each_pixel(|c,f|{
-            o(c,f)
-        });
     }
 }
 

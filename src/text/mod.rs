@@ -19,11 +19,10 @@
 //!     s.vsync=true;
 //! }).unwrap();
 //! 
-//! let data=read("resources/font2").unwrap();
-//! 
-//! let font=Face::from_slice(&data,0).unwrap();
+//! let font=Font::load("resources/font1").unwrap();
 //! 
 //! let scale=Scale::new(0.4,0.4);
+//! // Creating a new glyph cache for the given characters
 //! let glyphs=GlyphCache::new_alphabet(&font,"HelloWorld?",scale,window.display());
 //! ```
 
@@ -36,17 +35,12 @@ use crate::{
 };
 
 mod glyph;
-pub use glyph::{
-    RawGlyph,
-    GlyphFrame,
-};
+pub use glyph::*;
 
 mod outline;
 pub (crate) use outline::{
     OutlineCurve,
     OutlineCurveBuilder,
-    OutlinedGlyph,
-    Rect as TRect,
 };
 
 pub use outline::{
@@ -84,7 +78,8 @@ use std::{
 };
 
 /// Основа для рендеринга текста.
-/// A base for  text rendering.
+/// 
+/// A base for text rendering.
 pub struct TextBase{
     pub position:[f32;2],
     pub font_size:f32,
@@ -150,11 +145,122 @@ impl TextBase{
     }
 }
 
-/// Rendering
+/// Рендеринг символов.
+/// 
+/// Character rendering.
 impl TextBase{
+    /// Выводит символ.
+    /// 
+    /// Draws a character.
+    #[inline(always)]
+    pub fn draw_char(
+        &self,
+        character:char,
+        font:&FaceWrapper,
+        draw_parameters:&DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        let glyph=if let Some(glyph)=font.glyph(character){
+            glyph
+        }
+        else{
+            if character.is_whitespace(){
+                return Ok(())
+            }
+            else{
+                font.undefined_glyph()
+            }
+        };
+
+        let outlined=glyph.outlined_glyph(self.font_size);
+
+        graphics.draw_glyph(
+            &outlined,
+            self.colour,
+            self.position,
+            draw_parameters
+        )
+    }
+
+    /// Выводит сдвинутый символ.
+    /// 
+    /// Draws a shifted character.
+    #[inline(always)]
+    pub fn draw_shift_char(
+        &self,
+        character:char,
+        font:&FaceWrapper,
+        shift:[f32;2],
+        draw_parameters:&DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        let glyph=if let Some(glyph)=font.glyph(character){
+            glyph
+        }
+        else{
+            if character.is_whitespace(){
+                return Ok(())
+            }
+            else{
+                font.undefined_glyph()
+            }
+        };
+
+        let outlined=glyph.outlined_glyph(self.font_size);
+
+        graphics.draw_shift_glyph(
+            &outlined,
+            self.colour,
+            self.position,
+            shift,
+            draw_parameters
+        )
+    }
+
+    /// Выводит повёрнутый символ.
+    /// 
+    /// Draws a rotated character.
+    #[inline(always)]
+    pub fn draw_rotate_char(
+        &self,
+        character:char,
+        font:&FaceWrapper,
+        rotation_center:[f32;2],
+        angle:f32,
+        draw_parameters:&DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        let glyph=if let Some(glyph)=font.glyph(character){
+            glyph
+        }
+        else{
+            if character.is_whitespace(){
+                return Ok(())
+            }
+            else{
+                font.undefined_glyph()
+            }
+        };
+
+        let outlined=glyph.outlined_glyph(self.font_size);
+
+        graphics.draw_rotate_glyph(
+            &outlined,
+            self.colour,
+            self.position,
+            rotation_center,
+            angle,
+            draw_parameters
+        )
+    }
+
     /// Строит и выводит один символ.
     /// 
-    /// Builds and draws a glyph.
+    /// Берёт соответствующий глиф из данного хранилища.
+    /// 
+    /// Builds and draws a character.
+    /// 
+    /// Takes a corresponding glyph from the given cache.
     #[inline(always)]
     pub fn draw_char_glyph_cache(
         &self,
@@ -163,31 +269,78 @@ impl TextBase{
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
-        if let Some(glyph)=glyph_cache.glyph(character){
-
-            let frame=glyph.frame(self.font_size);
-
-            let mut rect=frame.bounding_box(self.position);
-
-            graphics.draw_glyph_cache(
-                glyph,
-                self.colour,
-                rect,
-                draw_parameters
-            )
+        let glyph=if let Some(glyph)=glyph_cache.glyph(character){
+            glyph
         }
         else{
-            if character==' '{
-
+            if character.is_whitespace(){
+                return Ok(())
             }
+            else{
+                glyph_cache.undefined_glyph()
+            }
+        };
 
-            Ok(())
-        }
+        let frame=glyph.frame(self.font_size);
+
+        let mut rect=frame.bounding_box(self.position);
+
+        graphics.draw_glyph_cache(
+            glyph,
+            self.colour,
+            rect,
+            draw_parameters
+        )
     }
 
-    /// Строит и выводит один символ.
+    /// Выводит сдвинутый символ.
     /// 
-    /// Builds and draws a glyph.
+    /// Берёт соответствующий глиф из данного хранилища.
+    /// 
+    /// Draws a shifted character.
+    /// 
+    /// Takes a corresponding glyph from the given cache.
+    #[inline(always)]
+    pub fn draw_shift_char_glyph_cache(
+        &self,
+        character:char,
+        shift:[f32;2],
+        glyph_cache:&GlyphCache,
+        draw_parameters:&DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        let glyph=if let Some(glyph)=glyph_cache.glyph(character){
+            glyph
+        }
+        else{
+            if character.is_whitespace(){
+                return Ok(())
+            }
+            else{
+                glyph_cache.undefined_glyph()
+            }
+        };
+
+        let frame=glyph.frame(self.font_size);
+
+        let mut rect=frame.bounding_box(self.position);
+
+        graphics.draw_shift_glyph_cache(
+            glyph,
+            self.colour,
+            rect,
+            shift,
+            draw_parameters
+        )
+    }
+
+    /// Выводит символ.
+    /// 
+    /// Берёт соответствующий глиф из данного хранилища.
+    /// 
+    /// Draws a character.
+    /// 
+    /// Takes a corresponding glyph from the given cache.
     #[inline(always)]
     pub fn draw_rotate_char_glyph_cache(
         &self,
@@ -198,28 +351,90 @@ impl TextBase{
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
-        if let Some(glyph)=glyph_cache.glyph(character){
-            let frame=glyph.frame(self.font_size);
-
-            let mut rect=frame.bounding_box(self.position);
-
-            graphics.draw_rotate_glyph_cache(
-                glyph,
-                self.colour,
-                rect,
-                rotation_center,
-                angle,
-                draw_parameters
-            )
+        let glyph=if let Some(glyph)=glyph_cache.glyph(character){
+            glyph
         }
         else{
-            Ok(())
+            if character.is_whitespace(){
+                return Ok(())
+            }
+            else{
+                glyph_cache.undefined_glyph()
+            }
+        };
+
+        let frame=glyph.frame(self.font_size);
+
+        let mut rect=frame.bounding_box(self.position);
+
+        graphics.draw_rotate_glyph_cache(
+            glyph,
+            self.colour,
+            rect,
+            rotation_center,
+            angle,
+            draw_parameters
+        )
+    }
+}
+
+/// Рендеринг текста.
+/// 
+/// Text rendering.
+impl TextBase{
+    /// Выводит строку.
+    /// 
+    /// Draws a string.
+    pub fn draw_str(
+        &self,
+        s:&str,
+        font:&FaceWrapper,
+        draw_parameters:&DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        let mut position=self.position;
+
+        let mut glyph;
+
+        let whitespace_advance=font.whitespace_advance(self.font_size);
+
+        for character in s.chars(){
+            glyph=if let Some(glyph)=font.glyph(character){
+                glyph
+            }
+            else{
+                if character==' '{
+                    position[0]+=whitespace_advance;
+                    continue
+                }
+
+                font.undefined_glyph()
+            };
+
+            let advance_width=glyph.advance_width(self.font_size);
+
+            let outlined=glyph.outlined_glyph(self.font_size);
+
+            graphics.draw_glyph(
+                &outlined,
+                self.colour,
+                position,
+                draw_parameters
+            )?;
+
+            position[0]+=advance_width;
         }
+
+        Ok(())
     }
 
     /// Выводит строку.
     /// 
+    /// Берёт соответствующие глифы из данного хранилища.
+    /// 
     /// Draws a string.
+    /// 
+    /// Takes corresponding glyphs from the given cache.
     pub fn draw_str_glyph_cache(
         &self,
         s:&str,
@@ -263,7 +478,11 @@ impl TextBase{
 
     /// Выводит повёрнутую строку.
     /// 
+    /// Берёт соответствующие глифы из данного хранилища.
+    /// 
     /// Draws a rotated string.
+    /// 
+    /// Takes corresponding glyphs from the given cache.
     pub fn draw_rotate_str_glyph_cache(
         &self,
         s:&str,
@@ -312,10 +531,14 @@ impl TextBase{
     }
 
     /// Выводит часть строки.
-    /// Если текст выведен полностью, возвращает true.
+    /// Если текст выведен полностью, возвращает `true`.
+    /// 
+    /// Берёт соответствующие глифы из данного хранилища.
     /// 
     /// Draws a part of a string.
-    /// Returns true, if the whole string is drawn.
+    /// Returns `true`, if the whole string is drawn.
+    /// 
+    /// Takes corresponding glyphs from the given cache.
     pub fn draw_str_part_glyph_cache(
         &self,
         s:&str,
@@ -331,6 +554,7 @@ impl TextBase{
         let mut glyph;
 
         for (i,character) in s.chars().enumerate(){
+            // Выход из цикла при достижении лимита символов
             if i==chars{
                 whole=false;
                 break
@@ -388,6 +612,7 @@ impl TextBase{
         let mut glyph;
 
         for (i,character) in s.chars().enumerate(){
+            // Выход из цикла при достижении лимита символов
             if i==chars{
                 whole=false;
                 break
