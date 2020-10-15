@@ -3,7 +3,7 @@ use cat_engine::{
     Window,
     WindowEvent,
     text::{
-        Font,
+        FontOwner,
         TextBase,
         GlyphCache,
         Scale,
@@ -17,10 +17,10 @@ fn main(){
         s.graphics_base_settings.text.glyph_texture_size=[2000,2000];
     }).unwrap();
 
-    let font1=Font::load("resources/font1").unwrap();
+    let font1=FontOwner::load("resources/font1").unwrap();
     let face=font1.face_wrapper();
 
-    let font2=Font::load("resources/font2").unwrap();
+    let font2=FontOwner::load("resources/font2").unwrap();
 
     let scale=Scale::new(0.21,0.21);
     let mut glyphs=GlyphCache::new_alphabet(font1.face(),"Hello$",scale,window.display());

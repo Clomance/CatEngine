@@ -281,7 +281,11 @@ impl OutlinedGlyph{
         }
     }
 
-    pub fn offset_y(&self)->f32{
+    pub fn offset(&self)->f32{
+        self.offset[1]
+    }
+
+    pub (crate) fn offset_y(&self)->f32{
         self.offset[1]
     }
 

@@ -19,13 +19,44 @@
 //!     s.vsync=true;
 //! }).unwrap();
 //! 
-//! let font=Font::load("resources/font1").unwrap();
+//! let font=FontOwner::load("resources/font1").unwrap();
 //! 
 //! let scale=Scale::new(0.4,0.4);
 //! // Creating a new glyph cache for the given characters
 //! let glyphs=GlyphCache::new_alphabet(&font,"HelloWorld?",scale,window.display());
 //! ```
 
+// Определения \\
+
+// Глиф (glyph) - здесь изображение (текстура) символа.
+
+// Ascender (выносной элемент) - в типографике часть строчной буквы,
+// выходящая за пределы линии строчных знаков или базовой линии шрифта.
+// Здесь расстояние от строки до верхней границы этой части.
+// Примеры: загагулина у буквы f, палочка у букв h и b, крышка у буквы А.
+
+// Размер шрифта (font size) - здесь высота,
+// под которую выравниваются все текстуры символов.
+// Таким будет размер самого большого глифа при рендеринге.
+// Но определить точный размер этого глифа не всегда удобно, поэтому
+// чаще всего все символы будут чуть меньше. Используйте функцию `text_size`
+// для точного определения точных размеров текста.
+
+// Хранилище \\
+
+// Все символы хранятся в вместе с глифами в хранилище (`GlyphCache`).
+// Для каждого символа создаётся текстура и в неё загружается глиф.
+// Поиск глифов по символам выполняется с помощью функций `HashMap`.
+
+// Построение глифа \\
+
+// Сначала определяется максимальный размер символа у шрифта -
+// под него выравниваются все остальные символы.
+
+// Размер глифа при рендеринге определяется по следующей формуле.
+// ```
+// glyph_render_size = glyph_size / (glyph_global_height) * font_size
+// ```
 
 use crate::{
     // types
@@ -48,10 +79,7 @@ pub use outline::{
 };
 
 mod font;
-pub use font::{Font,FaceWrapper};
-
-mod glyph_cache;
-pub use glyph_cache::GlyphCache;
+pub use font::{FontOwner,FaceWrapper,GlyphCache};
 
 
 use glium::{
@@ -593,8 +621,12 @@ impl TextBase{
     /// Выводит часть повёрнутой строки.
     /// Если текст выведен полностью, возвращает true.
     /// 
+    /// Берёт соответствующие глифы из данного хранилища.
+    /// 
     /// Draws a part of a rotated string.
     /// Returns true, if the whole string is drawn.
+    /// 
+    /// Takes corresponding glyphs from the given cache.
     pub fn draw_rotate_str_part_glyph_cache(
         &self,
         s:&str,
