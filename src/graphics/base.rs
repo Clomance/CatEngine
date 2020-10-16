@@ -1,14 +1,10 @@
 use crate::{
     Colour,
     text::{
-        GlyphCache,
-        RawGlyph,
         OutlinedGlyph,
+        TexturedGlyph,
     },
-    texture::{
-        ImageBase,
-        Texture,
-    }
+    texture::Texture,
 };
 
 use super::two_dimensions::{
@@ -481,7 +477,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             h/th
         ];
 
-        // Строит вершины
+        // Строит вершины и загружает их в буфер
         self.graphics2d.text.write_vertices(
             [x,y-h-offset,w,h],
             uv
@@ -525,7 +521,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             h/th
         ];
 
-        // Строит вершины
+        // Строит вершины и загружает их в буфер
         self.graphics2d.text.write_vertices(
             [x,y,w,h],
             uv
@@ -571,7 +567,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             h/th
         ];
 
-        // Строит вершины
+        // Строит вершины и загружает их в буфер
         self.graphics2d.text.write_vertices(
             [x,y,w,h],
             uv
@@ -589,19 +585,20 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         )
     }
 
-    /// Выводит уже готовый символ.
+    /// Выводит уже построенный глиф.
     /// 
     /// Draws an already built glyph.
     #[inline(always)]
     pub fn draw_glyph_cache(
         &mut self,
-        glyph:&RawGlyph,
+        glyph:&TexturedGlyph,
         colour:Colour,
-        [x,y,width,height]:[f32;4],
+        [x,y]:[f32;2],
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
-        // Строит вершины
-        self.graphics2d.text.write_vertices([x,y,width,height],[1f32,1f32]);
+        let size=glyph.size();
+        // Строит вершины и загружает их в буфер
+        self.graphics2d.text.write_vertices([x,y,size[0],size[1]],[1f32,1f32]);
 
         self.graphics2d.text.draw_glyph(
             glyph.texture(),
@@ -611,19 +608,21 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         )
     }
 
-    /// Выводит сдвинутый, уже готовый символ.
+    /// Выводит сдвинутый уже построенный глиф.
     /// 
-    /// Draws a shifted, already built glyph.
+    /// Draws a shifted already built glyph.
     #[inline(always)]
     pub fn draw_shift_glyph_cache(
         &mut self,
-        glyph:&RawGlyph,
+        glyph:&TexturedGlyph,
         colour:Colour,
-        [x,y,width,height]:[f32;4],
+        [x,y]:[f32;2],
         shift:[f32;2],
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
-        self.graphics2d.text.write_vertices([x,y,width,height],[1f32,1f32]);
+        let size=glyph.size();
+        // Строит вершины и загружает их в буфер
+        self.graphics2d.text.write_vertices([x,y,size[0],size[1]],[1f32,1f32]);
 
         self.graphics2d.text.draw_shift_glyph(
             glyph.texture(),
@@ -634,20 +633,22 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         )
     }
 
-    /// Выводит повёрнутый, уже готовый символ.
+    /// Выводит повёрнутый уже построенный глиф.
     /// 
-    /// Draws a rotated, already built glyph.
+    /// Draws a rotated already built glyph.
     #[inline(always)]
     pub fn draw_rotate_glyph_cache(
         &mut self,
-        glyph:&RawGlyph,
+        glyph:&TexturedGlyph,
         colour:Colour,
-        [x,y,width,height]:[f32;4],
+        [x,y]:[f32;2],
         rotation_center:[f32;2],
         angle:f32,
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
-        self.graphics2d.text.write_vertices([x,y,width,height],[1f32,1f32]);
+        let size=glyph.size();
+        // Строит вершины и загружает их в буфер
+        self.graphics2d.text.write_vertices([x,y,size[0],size[1]],[1f32,1f32]);
 
         self.graphics2d.text.draw_rotate_glyph(
             glyph.texture(),
@@ -659,18 +660,20 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         )
     }
 
-    /// Выводит уже готовый символ.
+    /// Выводит уже построенный глиф.
     /// 
     /// Draws a already built glyph.
     pub fn draw_glyph_cache_general(
         &mut self,
-        glyph:&RawGlyph,
+        glyph:&TexturedGlyph,
         colour:Colour,
-        [x,y,width,height]:[f32;4],
+        [x,y]:[f32;2],
         draw_type:DrawType,
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
-        self.graphics2d.text.write_vertices([x,y,width,height],[1f32,1f32]);
+        let size=glyph.size();
+        // Строит вершины и загружает их в буфер
+        self.graphics2d.text.write_vertices([x,y,size[0],size[1]],[1f32,1f32]);
 
         match draw_type{
             DrawType::Common=>self.graphics2d.text.draw_glyph(

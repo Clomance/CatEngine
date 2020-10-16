@@ -1,9 +1,9 @@
 use super::{
     OutlineCurveBuilder,
-    Glyph,
+    RawGlyph,
     OutlinedGlyph,
     Scale,
-    RawGlyph,
+    OutlineCurve,
 };
 
 use glium::{
@@ -22,8 +22,6 @@ use ttf_parser::{
     Face,
     GlyphId,
 };
-
-use ab_glyph_rasterizer::point;
 
 use std::{
     collections::HashMap,
@@ -110,7 +108,7 @@ impl<'a> FaceWrapper<'a>{
     /// Строит глиф для данного символа.
     /// 
     /// Builds a glyph for the given character.
-    pub fn glyph(&self,character:char)->Option<Glyph>{
+    pub fn glyph(&self,character:char)->Option<RawGlyph<Vec<OutlineCurve>>>{
         // Поиск глифа
         if let Some(glyph_id)=self.0.glyph_index(character){
             let mut outline_builder=OutlineCurveBuilder::default();
@@ -135,12 +133,12 @@ impl<'a> FaceWrapper<'a>{
                 // Ширина до следующего символа
                 let advance_width=self.0.glyph_hor_advance(glyph_id).unwrap() as f32;
 
-                let glyph=Glyph::new(
-                    glyph_offset,
+                let glyph=RawGlyph::<Vec<OutlineCurve>>::raw(
+                    outline_builder.outline,
                     glyph_size,
+                    glyph_offset,
                     advance_width,
                     scale,
-                    outline_builder.outline
                 );
 
                 Some(glyph)
@@ -157,7 +155,7 @@ impl<'a> FaceWrapper<'a>{
     /// Строит глиф для неопределённого символа.
     /// 
     /// Builds a glyph for the undefined character.
-    pub fn undefined_glyph(&self)->Glyph{
+    pub fn undefined_glyph(&self)->RawGlyph<Vec<OutlineCurve>>{
         let glyph_id=GlyphId(0);
 
         let mut outline_builder=OutlineCurveBuilder::default();
@@ -182,12 +180,12 @@ impl<'a> FaceWrapper<'a>{
             // Ширина до следующего символа
             let advance_width=self.0.glyph_hor_advance(glyph_id).unwrap() as f32;
 
-            Glyph::new(
-                glyph_offset,
+            RawGlyph::<Vec<OutlineCurve>>::raw(
+                outline_builder.outline,
                 glyph_size,
+                glyph_offset,
                 advance_width,
                 scale,
-                outline_builder.outline
             )
         }
         else{
@@ -214,8 +212,8 @@ impl<'a> FaceWrapper<'a>{
 /// A glyph cache.
 // ᶠᵉᵉᵈ ᵐᵉ /ᐠ-ⱉ-ᐟ\ﾉ
 pub struct GlyphCache{
-    glyphs:HashMap<char,RawGlyph>,
-    undefined_glyph:RawGlyph,
+    glyphs:HashMap<char,RawGlyph<Texture2d>>,
+    undefined_glyph:RawGlyph<Texture2d>,
     // Коэффициент размера пробела - whitespace_advance = self.whitespace_advance * font_size
     whitespace_advance:f32,
 }
@@ -225,19 +223,15 @@ impl GlyphCache{
     /// 
     /// Игнорирует неопределённые символы.
     /// 
-    /// range = None - использует все символы шрифта.
+    /// range = `None` - использует все символы шрифта.
     /// 
     /// Creates a new glyph cache with the given range of characters ids.
     /// 
     /// Ignors undefined characters.
     /// 
-    /// range = None - takes all characters of the font.
+    /// range = `None` - takes all characters of the font.
     pub fn new(font:&Face,range:Option<Range<u16>>,scale:Scale,display:&Display)->GlyphCache{
-        let len=font.number_of_glyphs();
-
         let space=font.glyph_hor_advance(GlyphId(3)).unwrap() as f32;
-
-        let mut glyphs=HashMap::with_capacity(len as usize);
 
         let global_height=font.ascender() as f32*scale.vertical;
 
@@ -245,7 +239,16 @@ impl GlyphCache{
         let not_defined_id=GlyphId(0);
         let undefined_glyph=build_glyph(not_defined_id,global_height,scale,&font,display).unwrap();
 
-        for g in 1..len{
+        let range=if let Some(range)=range{
+            range
+        }
+        else{
+            1u16..font.number_of_glyphs()
+        };
+
+        let mut glyphs=HashMap::with_capacity(range.len());
+
+        for g in range{
             let id=GlyphId(g);
 
             if let Some(glyph)=build_glyph(id,global_height,scale,&font,display){
@@ -339,14 +342,14 @@ impl GlyphCache{
     /// 
     /// Returns an unscaled glyph.
     #[inline(always)]
-    pub fn glyph(&self,character:char)->Option<&RawGlyph>{
+    pub fn glyph(&self,character:char)->Option<&RawGlyph<Texture2d>>{
         self.glyphs.get(&character)
     }
 
     /// Возращает немасштабированный глиф для данного или неопределённого символа.
     /// 
     /// Returns an unscaled glyph of the given character or of the undefined one.
-    pub fn glyph_or_undefined(&self,character:char)->&RawGlyph{
+    pub fn glyph_or_undefined(&self,character:char)->&RawGlyph<Texture2d>{
         if let Some(glyph)=self.glyphs.get(&character){
             glyph
         }
@@ -359,7 +362,7 @@ impl GlyphCache{
     /// 
     /// Returns an unscaled glyph of the undefined character.
     #[inline(always)]
-    pub fn undefined_glyph(&self)->&RawGlyph{
+    pub fn undefined_glyph(&self)->&RawGlyph<Texture2d>{
         &self.undefined_glyph
     }
 
@@ -367,7 +370,7 @@ impl GlyphCache{
         let mut width=0f32;
         for character in text.chars(){
             if let Some(glyph)=self.glyph(character){
-                let glyph_size=glyph.height_advance(font_size);
+                let glyph_size=glyph.height_and_advance(font_size);
                 width+=glyph_size[0];
             }
             else{
@@ -375,7 +378,7 @@ impl GlyphCache{
                     width+=self.whitespace_advance(font_size);
                     continue
                 }
-                let glyph_size=self.undefined_glyph.height_advance(font_size);
+                let glyph_size=self.undefined_glyph.height_and_advance(font_size);
                 width+=glyph_size[0];
             }
         }
@@ -391,7 +394,7 @@ impl GlyphCache{
         let mut size=[0f32;2];
         for character in text.chars(){
             if let Some(glyph)=self.glyph(character){
-                let glyph_size=glyph.height_advance(font_size);
+                let glyph_size=glyph.height_and_advance(font_size);
                 if glyph_size[1]>size[1]{
                     size[1]=glyph_size[1];
                 }
@@ -406,7 +409,7 @@ impl GlyphCache{
     }
 }
 
-fn build_glyph(id:GlyphId,global_height:f32,scale:Scale,face:&Face,display:&Display)->Option<RawGlyph>{
+fn build_glyph(id:GlyphId,global_height:f32,scale:Scale,face:&Face,display:&Display)->Option<RawGlyph<Texture2d>>{
     let mut outline_builder=OutlineCurveBuilder::default();
 
     if let Some(bounds)=face.outline_glyph(id,&mut outline_builder){
@@ -434,10 +437,10 @@ fn build_glyph(id:GlyphId,global_height:f32,scale:Scale,face:&Face,display:&Disp
         let width=size[0] as usize;
         let height=size[1] as u32;
 
-        let mut len=width*height as usize;
+        let len=width*height as usize;
         let mut image=Vec::with_capacity(len);
 
-        glyph.draw(|c,a|{
+        glyph.draw(|_,a|{
             let gray=255f32*a;
             let byte=gray.round() as u8;
             image.push(byte);
@@ -472,7 +475,7 @@ fn build_glyph(id:GlyphId,global_height:f32,scale:Scale,face:&Face,display:&Disp
 
         let advance=face.glyph_hor_advance(id).unwrap() as f32*scale.horizontal;
 
-        let glyph=RawGlyph::raw(
+        let glyph=RawGlyph::<Texture2d>::raw(
             texture,
             size,
             offset,

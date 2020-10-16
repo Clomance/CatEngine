@@ -15,38 +15,42 @@ use glium::{
 
 use ab_glyph_rasterizer::{Point,point,Rasterizer};
 
-pub struct RawGlyph{
-    texture:Texture2d,
-    // Размер полноразмерного изображения
+/// Немастабированный глиф.
+/// 
+/// An unscaled glyph.
+pub struct RawGlyph<T>{
+    data:T,
+    // Размер полноразмерного
     size:[f32;2],
     // Сдвиг для полноразмерного глифа
     offset:[f32;2],
     // Расстояние до следующего глифа
-    advance:f32,
+    advance_width:f32,
     // Собственное мастабирование
     // (нужно для правильного соотношения размеров букв)
     scale:f32,
 }
 
-impl RawGlyph{
-    pub fn raw(
-        texture:Texture2d,
+
+/// Общие функции для глифов.
+/// 
+/// General functions.
+impl<T> RawGlyph<T>{
+    #[inline(always)]
+    pub const fn raw(
+        data:T,
         size:[f32;2],
         offset:[f32;2],
-        advance:f32,
+        advance_width:f32,
         scale:f32
-    )->RawGlyph{
+    )->RawGlyph<T>{
         Self{
-            texture,
+            data,
             size,
             offset,
-            advance,
+            advance_width,
             scale,
         }
-    }
-
-    pub fn texture(&self)->&Texture2d{
-        &self.texture
     }
 
     pub fn offset(&self,font_size:f32){
@@ -89,13 +93,20 @@ impl RawGlyph{
         ]
     }
 
+    pub fn advance_width(&self,font_size:f32)->f32{
+        let height=font_size*self.scale;
+        let k=height/self.size[1];
+
+        self.advance_width*k
+    }
+
     // the height and advance
-    pub fn height_advance(&self,font_size:f32)->[f32;2]{
+    pub fn height_and_advance(&self,font_size:f32)->[f32;2]{
         let new_height=self.scale*font_size;
 
         let k=new_height/self.size[1];
 
-        let new_advance=self.advance*k;
+        let new_advance=self.advance_width*k;
 
         [
             new_advance,
@@ -141,7 +152,7 @@ impl RawGlyph{
 
         k=new_width/self.size[0];
 
-        let new_advance=self.advance*k;
+        let new_advance=self.advance_width*k;
 
         GlyphFrame{
             offset:[x,y],
@@ -151,59 +162,14 @@ impl RawGlyph{
     }
 }
 
-#[derive(Debug)]
-pub struct GlyphFrame{
-    pub offset:[f32;2],
-    pub size:[f32;2],
-    pub advance:f32,
-}
 
-impl GlyphFrame{
-    pub fn bounding_box(&self,position:[f32;2])->[f32;4]{
-        [
-            position[0]+self.offset[0],
-            position[1]-self.offset[1]-self.size[1],
-            self.size[0],
-            self.size[1]
-        ]
+impl RawGlyph<Texture2d>{
+    pub fn texture(&self)->&Texture2d{
+        &self.data
     }
 }
 
-
-
-
-pub struct Glyph{
-    offset:[f32;2],
-    size:[f32;2],
-    advance_width:f32,
-    pub scale:f32,
-    curves:Vec<OutlineCurve>,
-}
-
-impl Glyph{
-    pub fn new(
-        offset:[f32;2],
-        size:[f32;2],
-        advance_width:f32,
-        scale:f32,
-        curves:Vec<OutlineCurve>
-    )->Glyph{
-        Self{
-            offset,
-            size,
-            advance_width,
-            scale,
-            curves
-        }
-    }
-
-    pub fn advance_width(&self,font_size:f32)->f32{
-        let height=font_size*self.scale;
-        let k=height/self.size[1];
-
-        self.advance_width*k
-    }
-
+impl RawGlyph<Vec<OutlineCurve>>{
     /// Возвращает мастабированный глиф.
     /// 
     /// Returns a scaled glyph.
@@ -238,23 +204,138 @@ impl Glyph{
             offset:offset,
             size,
             scale,
-            curves:self.curves.clone()
+            curves:self.data.clone()
         }
     }
 }
 
-// fully-scaled glyph
-#[derive(Clone,Debug)]
-pub struct ScaledGlyph{
-    // Scaled
-    offset:[f32;2],
-    // Scaled
+
+pub struct ScaledGlyph<T>{
+    data:T,
+    // Мастабированный размер
     size:[u32;2],
-    // Scaled
+    // Мастабированный сдвиг
+    offset:[f32;2],
+    // Мастабированное расстояние до следующего глифа
     advance_width:f32,
-    // Scale for `OutlineCurve`
-    scale:Scale,
-    curves:Vec<OutlineCurve>,
+    // Мастабирование
+    scale:Scale
+}
+
+impl<T> ScaledGlyph<T>{
+    /// width, height должны быть целыми
+    #[inline(always)]
+    pub const fn new(data:T,[x,y,width,height]:[f32;4],advance_width:f32,scale:Scale)->Self{
+        Self{
+            data,
+            offset:[x,y],
+            size:[width as u32,height as u32],
+            advance_width,
+            scale,
+        }
+    }
+
+    #[inline(always)]
+    pub fn offset_x(&self)->f32{
+        self.offset[0]
+    }
+
+    #[inline(always)]
+    pub fn offset_y(&self)->f32{
+        self.offset[1]
+    }
+
+    #[inline(always)]
+    pub fn size(&self)->[u32;2]{
+        self.size
+    }
+}
+
+impl ScaledGlyph<Vec<OutlineCurve>>{
+    pub fn draw<O:FnMut(usize,f32)>(&self,mut o:O){
+        let scale_up=|&Point{x,y}|point(
+            (x*self.scale.horizontal)-self.offset[0],
+            (y*self.scale.vertical)-self.offset[1],
+        );
+
+        self.data.iter().fold(
+            Rasterizer::new(
+                self.size[0] as usize,
+                self.size[1] as usize
+            ),
+            |mut rasterizer,curve|match curve{
+                OutlineCurve::Line(p0, p1)=>{
+                    rasterizer.draw_line(scale_up(p0),scale_up(p1));
+                    rasterizer
+                }
+                OutlineCurve::Quad(p0,p1,p2)=>{
+                    rasterizer.draw_quad(
+                        scale_up(p0),
+                        scale_up(p1),
+                        scale_up(p2),
+                    );
+                    rasterizer
+                }
+                OutlineCurve::Cubic(p0,p1,p2,p3)=>{
+                    rasterizer.draw_cubic(
+                        scale_up(p0),
+                        scale_up(p1),
+                        scale_up(p2),
+                        scale_up(p3),
+                    );
+                    rasterizer
+                }
+            }
+        )
+        .for_each_pixel(|c,f|{
+            o(c,f)
+        });
+    }
+}
+
+/// Глиф с текстурой основой.
+/// 
+/// Glyph based on a texture.
+pub struct TexturedGlyph<'a>{
+    // Текстура
+    texture:&'a Texture2d,
+    // Размер области для вставки текстуры
+    size:[f32;2],
+}
+
+impl<'a> TexturedGlyph<'a>{
+    pub fn raw(texture:&'a Texture2d,size:[f32;2])->TexturedGlyph<'a>{
+        Self{
+            texture,
+            size,
+        }
+    }
+
+    pub fn texture(&self)->&Texture2d{
+        self.texture
+    }
+
+    pub fn size(&self)->[f32;2]{
+        self.size
+    }
+}
+
+#[derive(Debug)]
+pub struct GlyphFrame{
+    pub offset:[f32;2],
+    pub size:[f32;2],
+    pub advance:f32,
+}
+
+impl GlyphFrame{
+    pub fn bounding_box(&self,position:[f32;2])->[f32;4]{
+        [
+            position[0]+self.offset[0],
+            position[1]-self.offset[1]-self.size[1],
+            self.size[0],
+            self.size[1]
+        ]
+    }
 }
 
 // fully-scaled glyph

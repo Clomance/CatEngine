@@ -42,9 +42,6 @@ use glium::{
     Display,
 };
 
-#[cfg(feature="text_graphics")]
-use ttf_parser::Face;
-
 /// Графическая основа. A graphics base.
 pub struct Graphics2D{
     #[cfg(feature="texture_graphics")]

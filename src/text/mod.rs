@@ -85,25 +85,11 @@ pub use font::{FontOwner,FaceWrapper,GlyphCache};
 use glium::{
     DrawParameters,
     DrawError,
-    texture::{
-        Texture2d,
-        RawImage2d,
-        ClientFormat,
-    },
-    Display,
-    Rect,
 };
 
 // re-export
 pub use ttf_parser;
 pub use ab_glyph_rasterizer;
-
-use std::{
-    fs::read,
-    path::Path,
-    collections::HashMap,
-    borrow::Cow,
-};
 
 /// Основа для рендеринга текста.
 /// 
@@ -311,12 +297,15 @@ impl TextBase{
 
         let frame=glyph.frame(self.font_size);
 
-        let mut rect=frame.bounding_box(self.position);
+        let rect=frame.bounding_box(self.position);
+
+        // Создание глифа для рендеринга
+        let textured=TexturedGlyph::raw(glyph.texture(),[rect[2],rect[3]]);
 
         graphics.draw_glyph_cache(
-            glyph,
+            &textured,
             self.colour,
-            rect,
+            [rect[0],rect[1]],
             draw_parameters
         )
     }
@@ -353,10 +342,13 @@ impl TextBase{
 
         let mut rect=frame.bounding_box(self.position);
 
+        // Создание глифа для рендеринга
+        let textured=TexturedGlyph::raw(glyph.texture(),[rect[2],rect[3]]);
+
         graphics.draw_shift_glyph_cache(
-            glyph,
+            &textured,
             self.colour,
-            rect,
+            [rect[0],rect[1]],
             shift,
             draw_parameters
         )
@@ -395,10 +387,13 @@ impl TextBase{
 
         let mut rect=frame.bounding_box(self.position);
 
+        // Создание глифа для рендеринга
+        let textured=TexturedGlyph::raw(glyph.texture(),[rect[2],rect[3]]);
+
         graphics.draw_rotate_glyph_cache(
-            glyph,
+            &textured,
             self.colour,
-            rect,
+            [rect[0],rect[1]],
             rotation_center,
             angle,
             draw_parameters
@@ -491,10 +486,13 @@ impl TextBase{
 
             let mut rect=frame.bounding_box(position);
 
+            // Создание глифа для рендеринга
+            let textured=TexturedGlyph::raw(glyph.texture(),[rect[2],rect[3]]);
+
             graphics.draw_glyph_cache(
-                glyph,
+                &textured,
                 self.colour,
-                rect,
+                [rect[0],rect[1]],
                 draw_parameters
             )?;
 
@@ -541,18 +539,19 @@ impl TextBase{
 
             let mut rect=frame.bounding_box(position);
 
+            // Создание глифа для рендеринга
+            let textured=TexturedGlyph::raw(glyph.texture(),[rect[2],rect[3]]);
+
             graphics.draw_rotate_glyph_cache(
-                glyph,
+                &textured,
                 self.colour,
-                rect,
+                [rect[0],rect[1]],
                 rotation_center,
                 angle,
                 draw_parameters
             )?;
 
             position[0]+=frame.advance;
-
-            
         }
 
         Ok(())
@@ -602,13 +601,15 @@ impl TextBase{
 
             let frame=glyph.frame(self.font_size);
 
-
             let mut rect=frame.bounding_box(position);
 
+            // Создание глифа для рендеринга
+            let textured=TexturedGlyph::raw(glyph.texture(),[rect[2],rect[3]]);
+
             graphics.draw_glyph_cache(
-                glyph,
+                &textured,
                 self.colour,
-                rect,
+                [rect[0],rect[1]],
                 draw_parameters
             )?;
 
@@ -664,13 +665,15 @@ impl TextBase{
 
             let frame=glyph.frame(self.font_size);
 
+            let rect=frame.bounding_box(position);
 
-            let mut rect=frame.bounding_box(position);
+            // Создание глифа для рендеринга
+            let textured=TexturedGlyph::raw(glyph.texture(),[rect[2],rect[3]]);
 
             graphics.draw_rotate_glyph_cache(
-                glyph,
+                &textured,
                 self.colour,
-                rect,
+                [rect[0],rect[1]],
                 rotation_center,
                 angle,
                 draw_parameters

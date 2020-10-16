@@ -1,5 +1,4 @@
 use ab_glyph_rasterizer::{
-    Rasterizer,
     Point,
     point,
 };

@@ -9,10 +9,7 @@ use crate::{
     text::{
         TextBase,
         GlyphCache,
-        RawGlyph,
-        OutlineCurveBuilder,
         OutlinedGlyph,
-        Scale,
     },
     graphics::TextGraphicsSettings,
 };
@@ -41,12 +38,6 @@ use glium::{
         ClientFormat,
     },
     Rect,
-};
-
-
-use ttf_parser::{
-    Face,
-    GlyphId,
 };
 
 use std::borrow::Cow;
@@ -110,6 +101,7 @@ impl TextGraphics{
         }
     }
 
+    /// Локальная тектстура.
     pub fn texture(&self)->&Texture2d{
         &self.glyph_texture
     }
@@ -141,6 +133,7 @@ impl TextGraphics{
     pub fn write_glyph(&mut self,glyph:&OutlinedGlyph){
         self.image.clear();
 
+        // Запись изображения
         glyph.draw(|_,a|{
             let gray=255f32*a;
             let byte=gray.round() as u8;
@@ -242,12 +235,6 @@ impl TextGraphics{
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
-        let vertices=VerticesSource::VertexBuffer(
-            self.vertex_buffer.as_slice_any(),
-            &self.vertex_format,
-            false
-        );
-
         let (sin,cos)=angle.sin_cos();
 
         let uni=uniform!{
@@ -337,7 +324,7 @@ impl TextGraphics{
 
             let glyph_frame=glyph.frame(object.font_size);
 
-            let mut rect=glyph_frame.bounding_box(position);
+            let rect=glyph_frame.bounding_box(position);
 
             // Запись в буфер вершин
             self.write_vertices(rect,[1f32,1f32]);
