@@ -10,6 +10,9 @@ use crate::{
         TextBase,
         GlyphCache,
         OutlinedGlyph,
+        Scale,
+        CachedFont,
+        RawGlyphCache,
     },
     graphics::TextGraphicsSettings,
 };
@@ -51,7 +54,7 @@ pub struct TextGraphics{
     texture_size:[f32;2],
 
     objects:Vec<TextObject2D>,
-    glyph_cache:Vec<GlyphCache>,
+    cached_font:Vec<CachedFont>,
 
     draw:Program,
     draw_shift:Program,
@@ -93,7 +96,7 @@ impl TextGraphics{
             texture_size,
 
             objects:Vec::with_capacity(10),
-            glyph_cache:Vec::with_capacity(10),
+            cached_font:Vec::with_capacity(10),
 
             draw:Program::from_source(display,common,fragment,None).unwrap(),
             draw_shift:Program::from_source(display,shift,fragment,None).unwrap(),
@@ -258,32 +261,34 @@ impl TextGraphics{
 
 // Функции для работы с объектами
 impl TextGraphics{
-    pub fn push_glyph_cache(
+    pub fn push_font(
         &mut self,
-        glyph_cache:GlyphCache,
+        cached_font:CachedFont,
     )->Option<usize>{
         let index=self.objects.len();
 
-        self.glyph_cache.push(glyph_cache);
+        self.cached_font.push(cached_font);
 
         Some(index)
     }
 
-    pub fn get_glyph_cache(&self,index:usize)->&GlyphCache{
-        &self.glyph_cache[index]
+    pub fn get_font(&self,index:usize)->&CachedFont{
+        &self.cached_font[index]
     }
 
     pub fn push_object(
         &mut self,
         text:String,
-        text_base:&TextBase,
+        position:[f32;2],
+        scale:Scale,
+        colour:Colour,
         font:usize,
     )->Option<usize>{
         let object=TextObject2D{
             text,
-            position:text_base.position,
-            font_size:text_base.font_size,
-            colour:text_base.colour,
+            position:position,
+            scale,
+            colour:colour,
             font,
         };
 
@@ -308,35 +313,33 @@ impl TextGraphics{
 
         let mut position=object.position;
 
-        let glyph_cache=&self.glyph_cache[object.font];
+        let font=&self.cached_font[object.font];
 
         for character in object.text.chars(){
-            let glyph=if let Some(glyph)=glyph_cache.glyph(character){
+            let glyph=if let Some(glyph)=font.scaled_glyph(character,object.scale){
                 glyph
             }
             else{
                 if character==' '{
-                    position[0]+=glyph_cache.whitespace_advance(object.font_size);
+                    position[0]+=font.whitespace_advance(object.scale.horizontal);
                     continue
                 }
-                glyph_cache.undefined_glyph()
+                font.scaled_undefined_glyph(object.scale)
             };
 
-            let glyph_frame=glyph.frame(object.font_size);
-
-            let rect=glyph_frame.bounding_box(position);
+            let rect=glyph.positioned_bounding_box(position);
 
             // Запись в буфер вершин
             self.write_vertices(rect,[1f32,1f32]);
 
             self.draw_glyph(
-                glyph.texture(),
+                glyph.data(), // текстура в данном случае
                 object.colour,
                 draw_parameters,
                 frame
             )?;
 
-            position[0]+=glyph_frame.advance;
+            position[0]+=glyph.advance_width();
         }
         Ok(())
     }
@@ -352,36 +355,34 @@ impl TextGraphics{
 
         let mut position=object.position;
 
-        let glyph_cache=&self.glyph_cache[object.font];
+        let font=&self.cached_font[object.font];
 
         for character in object.text.chars(){
-            let glyph=if let Some(glyph)=glyph_cache.glyph(character){
+            let glyph=if let Some(glyph)=font.scaled_glyph(character,object.scale){
                 glyph
             }
             else{
                 if character==' '{
-                    position[0]+=glyph_cache.whitespace_advance(object.font_size);
+                    position[0]+=font.whitespace_advance(object.scale.horizontal);
                     continue
                 }
-                glyph_cache.undefined_glyph()
+                font.scaled_undefined_glyph(object.scale)
             };
 
-            let glyph_frame=glyph.frame(object.font_size);
-
-            let mut rect=glyph_frame.bounding_box(position);
+            let rect=glyph.positioned_bounding_box(position);
 
             // Запись в буфер вершин
             self.write_vertices(rect,[1f32,1f32]);
 
             self.draw_shift_glyph(
-                glyph.texture(),
+                glyph.data(), // текстура в данном случае
                 object.colour,
                 shift,
                 draw_parameters,
                 frame
             )?;
 
-            position[0]+=glyph_frame.advance;
+            position[0]+=glyph.advance_width();
         }
 
         Ok(())
@@ -399,29 +400,27 @@ impl TextGraphics{
 
         let mut position=object.position;
 
-        let glyph_cache=&self.glyph_cache[object.font];
+        let font=&self.cached_font[object.font];
 
         for character in object.text.chars(){
-            let glyph=if let Some(glyph)=glyph_cache.glyph(character){
+            let glyph=if let Some(glyph)=font.scaled_glyph(character,object.scale){
                 glyph
             }
             else{
                 if character==' '{
-                    position[0]+=glyph_cache.whitespace_advance(object.font_size);
+                    position[0]+=font.whitespace_advance(object.scale.horizontal);
                     continue
                 }
-                glyph_cache.undefined_glyph()
+                font.scaled_undefined_glyph(object.scale)
             };
 
-            let glyph_frame=glyph.frame(object.font_size);
-
-            let mut rect=glyph_frame.bounding_box(position);
+            let rect=glyph.positioned_bounding_box(position);
 
             // Запись в буфер вершин
             self.write_vertices(rect,[1f32,1f32]);
 
             self.draw_rotate_glyph(
-                glyph.texture(),
+                glyph.data(), // текстура в данном случае
                 object.colour,
                 rotation_center,
                 angle,
@@ -429,7 +428,7 @@ impl TextGraphics{
                 frame
             )?;
 
-            position[0]+=glyph_frame.advance;
+            position[0]+=glyph.advance_width();
         }
 
         Ok(())

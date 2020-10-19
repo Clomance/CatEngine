@@ -1,6 +1,8 @@
-use crate::Colour;
-
-use crate::texture::Texture;
+use crate::{
+    Colour,
+    text::Scale,
+    texture::Texture
+};
 
 use glium::{
     implement_vertex,
@@ -124,7 +126,7 @@ impl TexturedObject2D{
 pub (crate) struct TextObject2D{
     pub text:String,
     pub position:[f32;2],
-    pub font_size:f32,
+    pub scale:Scale,
     pub colour:Colour,
     pub font:usize,
 }

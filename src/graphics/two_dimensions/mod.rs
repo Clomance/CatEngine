@@ -1,7 +1,7 @@
 use crate::{
     Colour,
     texture::Texture,
-    text::GlyphCache,
+    text::CachedFont,
 };
 
 #[cfg(feature="text_graphics")]
@@ -278,21 +278,21 @@ impl Graphics2D{
 impl Graphics2D{
     /// Добавляет шрифт в массив.
     /// 
-    /// Adds a glyph cache to the array.
+    /// Adds a cached font to the array.
     #[inline(always)]
-    pub fn add_glyph_cache(
+    pub fn add_font(
         &mut self,
-        glyph_cache:GlyphCache,
+        cached_font:CachedFont,
     )->Option<usize>{
-        self.text.push_glyph_cache(glyph_cache)
+        self.text.push_font(cached_font)
     }
 
     /// Возращает шрифт.
     /// 
-    /// Returns a glyph cache.
+    /// Returns a cached font.
     #[inline(always)]
-    pub fn get_glyph_cache(&self,index:usize)->&GlyphCache{
-        self.text.get_glyph_cache(index)
+    pub fn get_glyph_cache(&self,index:usize)->&CachedFont{
+        self.text.get_font(index)
     }
 
     /// Добавляет текстовой объект в массив.
@@ -305,7 +305,13 @@ impl Graphics2D{
         text_base:&TextBase,
         font:usize,
     )->Option<usize>{
-        self.text.push_object(text,text_base,font)
+        self.text.push_object(
+            text,
+            text_base.position,
+            text_base.scale,
+            text_base.colour,
+            font
+        )
     }
 
     /// Удаляет последний текстовой объект в массиве,

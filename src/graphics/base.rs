@@ -461,8 +461,6 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         // Отрисовывает глиф на текстуру
         self.graphics2d.text.write_glyph(glyph);
 
-        let offset=glyph.offset_y();
-
         // Получение размера глифа
         let [w,h]=glyph.size();
         let [w,h]=[w as f32,h as f32];
@@ -479,7 +477,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
 
         // Строит вершины и загружает их в буфер
         self.graphics2d.text.write_vertices(
-            [x,y-h-offset,w,h],
+            [x,y,w,h],
             uv
         );
 
