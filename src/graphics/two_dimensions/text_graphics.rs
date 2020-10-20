@@ -316,6 +316,10 @@ impl TextGraphics{
         self.objects.pop();
     }
 
+    pub fn clear_object_array(&mut self){
+        self.objects.clear();
+    }
+
     /// Выводит сохранённый объект.
     pub fn draw_object(
         &self,

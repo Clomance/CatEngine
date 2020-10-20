@@ -323,4 +323,12 @@ impl Graphics2D{
     pub fn delete_last_text_object(&mut self){
         self.text.delete_last_object();
     }
+
+    /// Отчищает массив объектов.
+    /// 
+    /// Clears the object array.
+    #[inline(always)]
+    pub fn clear_text_object_array(&mut self){
+        self.text.clear_object_array()
+    }
 }
