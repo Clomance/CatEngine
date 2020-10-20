@@ -239,7 +239,7 @@ impl Font for CachedFont{
 
 impl RawGlyphCache for CachedFont{
     fn whitespace_advance_width(&self,horizontal_scale:f32)->f32{
-        self.cache.whitespace_advance_width()*horizontal_scale
+        self.cache.whitespace_advance_width(horizontal_scale)
     }
 
     fn raw_glyph(&self,character:char)->Option<&RawGlyph<Texture2d>>{
