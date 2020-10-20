@@ -169,45 +169,6 @@ impl GlyphCache{
             self.insert_char(character,font,scale,display);
         }
     }
-
-    // pub fn text_width(&self,text:&str,scale:Scale)->f32{
-    //     let mut width=0f32;
-    //     for character in text.chars(){
-    //         if let Some(glyph)=self.glyph(character){
-    //             let height=glyph.height(scale.vertical);
-    //             let advance_width=glyph.
-    //             let glyph_size=glyph.height_and_advance(font_size);
-    //             width+=glyph_size[0];
-    //         }
-    //         else{
-    //             if character==' '{
-    //                 width+=self.whitespace_advance(scale.horizontal);
-    //                 continue
-    //             }
-    //             let glyph_size=self.undefined_glyph.height_and_advance(font_size);
-    //             width+=glyph_size[0];
-    //         }
-    //     }
-    //     width
-    // }
-
-    // pub fn text_size(&self,text:&str,font_size:f32)->[f32;2]{
-    //     let mut size=[0f32;2];
-    //     for character in text.chars(){
-    //         if let Some(glyph)=self.glyph(character){
-    //             let glyph_size=glyph.height_and_advance(font_size);
-    //             if glyph_size[1]>size[1]{
-    //                 size[1]=glyph_size[1];
-    //             }
-    //             size[0]+=glyph_size[0];
-    //         }
-    //         else{
-    //             size[0]+=self.whitespace_advance(font_size);
-    //         }
-    //     }
-
-    //     size
-    // }
 }
 
 impl RawGlyphCache for GlyphCache{
@@ -302,11 +263,6 @@ fn build_glyph(id:GlyphId,scale:Scale,face:&Face,display:&Display)->Option<RawGl
 /// 
 /// A trait for defining glyph cache.
 pub trait RawGlyphCache{
-    /// Возращает масштабированную ширину пробела.
-    /// 
-    /// Returns whitespace's scaled width.
-    fn whitespace_advance_width(&self,horizontal_scale:f32)->f32;
-
     /// Возращает немасштабированный глиф.
     /// 
     /// Returns an unscaled glyph.
@@ -359,4 +315,56 @@ pub trait RawGlyphCache{
             self.raw_undefined_glyph().scale(scale)
         }
     }
+
+    fn text_width(&self,text:&str,scale:Scale)->f32{
+        let mut width=0f32;
+        for character in text.chars(){
+            width+=if let Some(glyph)=self.scaled_glyph(character,scale){
+                let advance_width=glyph.advance_width();
+                advance_width
+            }
+            else{
+                if character==' '{
+                    self.whitespace_advance_width(scale.horizontal)
+                }
+                else{
+                    self.scaled_undefined_glyph(scale).advance_width()
+                }
+            }
+        }
+        width
+    }
+
+    fn text_size(&self,text:&str,scale:Scale)->[f32;2]{
+        let mut size=[0f32;2];
+        for character in text.chars(){
+            if let Some(glyph)=self.scaled_glyph(character,scale){
+                let glyph_size=glyph.size();
+                if glyph_size[1] as f32>size[1]{
+                    size[1]=glyph_size[1] as f32;
+                }
+                size[0]+=glyph.advance_width();
+            }
+            else{
+                if character==' '{
+                    size[0]+=self.whitespace_advance_width(scale.horizontal);
+                }
+                else{
+                    let glyph=self.scaled_undefined_glyph(scale);
+                    let glyph_size=glyph.size();
+                    if glyph_size[1] as f32>size[1]{
+                        size[1]=glyph_size[1] as f32;
+                    }
+                    size[0]+=glyph.advance_width();
+                }
+            }
+        }
+
+        size
+    }
+
+    /// Возращает масштабированную ширину пробела.
+    /// 
+    /// Returns whitespace's scaled width.
+    fn whitespace_advance_width(&self,horizontal_scale:f32)->f32;
 }

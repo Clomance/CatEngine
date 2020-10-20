@@ -260,11 +260,6 @@ impl RawGlyphCache for CachedFont{
 /// Типаж для определения шрифтов.
 /// A trait for defining fonts.
 pub trait Font{
-    /// Возвращает масштабированную ширину пробела.
-    /// 
-    /// Returns whitespace's scaled advance width.
-    fn whitespace_advance_width(&self,horizontal_scale:f32)->f32;
-
     /// Возвращает масштаб, при котором
     /// все глифы шрифта подходят под данную высоту.
     /// 
@@ -280,4 +275,9 @@ pub trait Font{
     /// 
     /// Builds a glyph for the undefined character.
     fn build_raw_undefined_glyph(&self)->RawGlyph<Vec<OutlineCurve>>;
+
+    /// Возвращает масштабированную ширину пробела.
+    /// 
+    /// Returns whitespace's scaled advance width.
+    fn whitespace_advance_width(&self,horizontal_scale:f32)->f32;
 }
