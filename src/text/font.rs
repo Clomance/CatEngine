@@ -78,7 +78,6 @@ impl OwnedFont{
 
 
 /// Хранилище для шрифта.
-/// 
 /// A font owner.
 pub struct FontOwner{
     font:Box<OwnedFont>,
@@ -109,7 +108,6 @@ impl FontOwner{
 // Ссылка на данные шрифта
 // /ᐠ｡ꞈ｡ᐟ\
 /// Обёртка позволяющая работать со шрифтом.
-/// 
 /// A wrapper that provides methods to work with fonts.
 pub struct FaceWrapper<'a>(pub Face<'a>);
 
@@ -184,14 +182,15 @@ impl<'a> Font for FaceWrapper<'a>{
         )
     }
 
-    fn whitespace_advance(&self,horizontal_scale:f32)->f32{
+    fn whitespace_advance_width(&self,horizontal_scale:f32)->f32{
         // 3 - whitespace
         self.0.glyph_hor_advance(GlyphId(3)).expect("No whitespace glyph") as f32*horizontal_scale
     }
 }
 
 
-/// Шрифт
+/// Шрифт с хранилищем глифов.
+/// A font with glyph cache.
 pub struct CachedFont{
     font:FontOwner,
     cache:GlyphCache,
@@ -218,13 +217,6 @@ impl CachedFont{
     pub fn scaled_undefined_glyph(&self,scale:Scale)->ScaledGlyph<Texture2d>{
         self.cache.raw_undefined_glyph().scale(scale)
     }
-
-    /// Возвращает ширину пробела.
-    /// 
-    /// Returns the whitespace advance width.
-    pub fn whitespace_advance(&self,horizontal_scale:f32)->f32{
-        self.font.face_wrapper().whitespace_advance(horizontal_scale)
-    }
 }
 
 impl Font for CachedFont{
@@ -240,12 +232,16 @@ impl Font for CachedFont{
         self.font.face_wrapper().build_raw_undefined_glyph()
     }
 
-    fn whitespace_advance(&self,horizontal_scale:f32)->f32{
-        self.font.face_wrapper().whitespace_advance(horizontal_scale)
+    fn whitespace_advance_width(&self,horizontal_scale:f32)->f32{
+        self.font.face_wrapper().whitespace_advance_width(horizontal_scale)
     }
 }
 
 impl RawGlyphCache for CachedFont{
+    fn whitespace_advance_width(&self,horizontal_scale:f32)->f32{
+        self.cache.whitespace_advance_width()*horizontal_scale
+    }
+
     fn raw_glyph(&self,character:char)->Option<&RawGlyph<Texture2d>>{
         if let Some(glyph)=self.cache.raw_glyph(character){
             Some(glyph)
@@ -262,9 +258,13 @@ impl RawGlyphCache for CachedFont{
 
 
 /// Типаж для определения шрифтов.
-/// 
 /// A trait for defining fonts.
 pub trait Font{
+    /// Возвращает масштабированную ширину пробела.
+    /// 
+    /// Returns whitespace's scaled advance width.
+    fn whitespace_advance_width(&self,horizontal_scale:f32)->f32;
+
     /// Возвращает масштаб, при котором
     /// все глифы шрифта подходят под данную высоту.
     /// 
@@ -280,9 +280,4 @@ pub trait Font{
     /// 
     /// Builds a glyph for the undefined character.
     fn build_raw_undefined_glyph(&self)->RawGlyph<Vec<OutlineCurve>>;
-
-    /// Возвращает масштабированную ширину пробела.
-    /// 
-    /// Returns whitespace's scaled advance width.
-    fn whitespace_advance(&self,horizontal_scale:f32)->f32;
 }

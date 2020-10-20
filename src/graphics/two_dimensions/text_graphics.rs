@@ -196,7 +196,7 @@ impl TextGraphics{
 
 
 
-    // Рисует глиф с загруженными вершинами
+    /// Рисует глиф с загруженными вершинами.
     pub fn draw_shift_glyph(
         &self,
         glyph:&Texture2d,
@@ -228,7 +228,7 @@ impl TextGraphics{
     }
 
 
-    // Рисует глиф с загруженными вершинами
+    /// Рисует глиф с загруженными вершинами.
     pub fn draw_rotate_glyph(
         &self,
         glyph:&Texture2d,
@@ -259,8 +259,9 @@ impl TextGraphics{
     }
 }
 
-// Функции для работы с объектами
+/// Функции для работы с объектами
 impl TextGraphics{
+    /// Добавляет шрифт.
     pub fn push_font(
         &mut self,
         cached_font:CachedFont,
@@ -272,10 +273,15 @@ impl TextGraphics{
         Some(index)
     }
 
+    /// Возвращает шрифт.
     pub fn get_font(&self,index:usize)->&CachedFont{
         &self.cached_font[index]
     }
 
+    /// Добавляет объект в конец массива.
+    /// 
+    /// Возвращает индекс объекта,
+    /// если он добавлен.
     pub fn push_object(
         &mut self,
         text:String,
@@ -294,15 +300,23 @@ impl TextGraphics{
 
         let index=self.objects.len();
 
-        self.objects.push(object);
-
-        Some(index)
+        // Если есть место в массиве,
+        // добавляет объект
+        if index<self.objects.capacity(){
+            self.objects.push(object);
+            Some(index)
+        }
+        else{
+            None
+        }
     }
 
+    /// Удаляет последний объект.
     pub fn delete_last_object(&mut self){
         self.objects.pop();
     }
 
+    /// Выводит сохранённый объект.
     pub fn draw_object(
         &self,
         index:usize,
@@ -321,7 +335,7 @@ impl TextGraphics{
             }
             else{
                 if character==' '{
-                    position[0]+=font.whitespace_advance(object.scale.horizontal);
+                    position[0]+=font.whitespace_advance_width(object.scale.horizontal);
                     continue
                 }
                 font.scaled_undefined_glyph(object.scale)
@@ -344,6 +358,7 @@ impl TextGraphics{
         Ok(())
     }
 
+    /// Выводит сдвинутый сохранённый объект.
     pub fn draw_shift_object(
         &self,
         index:usize,
@@ -363,7 +378,7 @@ impl TextGraphics{
             }
             else{
                 if character==' '{
-                    position[0]+=font.whitespace_advance(object.scale.horizontal);
+                    position[0]+=font.whitespace_advance_width(object.scale.horizontal);
                     continue
                 }
                 font.scaled_undefined_glyph(object.scale)
@@ -388,6 +403,7 @@ impl TextGraphics{
         Ok(())
     }
 
+    /// Выводит повёрнутый сохранённый объект.
     pub fn draw_rotate_object(
         &self,
         index:usize,
@@ -408,7 +424,7 @@ impl TextGraphics{
             }
             else{
                 if character==' '{
-                    position[0]+=font.whitespace_advance(object.scale.horizontal);
+                    position[0]+=font.whitespace_advance_width(object.scale.horizontal);
                     continue
                 }
                 font.scaled_undefined_glyph(object.scale)

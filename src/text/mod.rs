@@ -1,29 +1,65 @@
 //! # Рендеринг текста. Text rendering. `feature = "text_graphics"`, `default_features`
 //! 
-//! Как рендерится символ:
-//! 1. С помощью библиотеки `rusttype` создаётся символ (или уже даётся готовый)
-//! 2. Этот символ записывается в массив как изображение
-//! 3. Изображение загружается в текстуру
-//! 4. Текстура выводится на экран
-//! 
+//! Как рендерятся символы:
+//! 1. Первый вариант - с помощью обычных шрифтов:
+//!    - 
+//!     1. Создаётся контур символа
+//!     2. Этот символ записывается в массив как изображение
+//!     3. Изображение загружается в текстуру
+//!     4. Текстура выводится на экран
+//! 2. Второй вариант - с помощью хранилищ глифов
+//!    - 
+//!     1. Глиф достаётся из хранилища
+//!     2. Он масштабируется
+//!     3. Его текстура выводится на экран
 //! ###
 //! 
-//! How a sign is rendering:
-//! 1. A glyph is built with the `rusttype` crate (or is given the ready one)
-//! 2. The glyph is written to the array as an image
-//! 3. The image is loaded to the texture
-//! 4. The texture is rendered
+//! How characters are rendering:
+//! 1. The first way - with common fonts:
+//!    -
+//!     1. Building glyph's outline
+//!     2. Converting the glyph to an image
+//!     3. Loading the image a texture
+//!     4. Rendering the texture
+//! 2. The second way - with glyph caches
+//!    -
+//!     1. Taking a glyph from a glyph cache
+//!     2. Scaling the glyph
+//!     3. Rendering it's texture
 //! 
+//! ### A simple example
+//! ```
+//! let mut window=PagedWindow::new(|_,s|{
+//!     s.vsync=true;
+//!     // Max size for glyph images
+//!     s.graphics_base_settings.text.glyph_texture_size=[500,500];
+//! }).unwrap();
+//! 
+//! let font=FontOwner::load("resources/font").unwrap();
+//! let wfont=font.face_wrapper();
+//! 
+//! ... in the cycle:
+//!     let base=TextBase::new([300f32,400f32],Scale::new(0.1,0.1),[1f32;4]);
+//!     base.draw_str("HelloWorld$?",&wfont,p,g);
+//! 
+//! ```
+//! 
+//! ### A glyph cache example
 //! ```
 //! let mut window=PagedWindow::new(|_,s|{
 //!     s.vsync=true;
 //! }).unwrap();
 //! 
-//! let font=FontOwner::load("resources/font1").unwrap();
+//! let font=FontOwner::load("resources/font").unwrap();
 //! 
 //! let scale=Scale::new(0.4,0.4);
 //! // Creating a new glyph cache for the given characters
 //! let glyphs=GlyphCache::new_alphabet(&font,"HelloWorld?",scale,window.display());
+//! 
+//! ... in the cycle:
+//!     let base=TextBase::new([300f32,400f32],Scale::new(0.1,0.1),[1f32;4]);
+//!     base.draw_str_glyph_cache("HelloWorld?",&glyphs,p,g);
+//! 
 //! ```
 
 // Определения \\
@@ -47,16 +83,6 @@
 // Все символы хранятся в вместе с глифами в хранилище (`GlyphCache`).
 // Для каждого символа создаётся текстура и в неё загружается глиф.
 // Поиск глифов по символам выполняется с помощью функций `HashMap`.
-
-// Построение глифа \\
-
-// Сначала определяется максимальный размер символа у шрифта -
-// под него выравниваются все остальные символы.
-
-// Размер глифа при рендеринге определяется по следующей формуле.
-// ```
-// glyph_render_size = glyph_size / (glyph_global_height) * font_size
-// ```
 
 use crate::{
     // types
@@ -201,10 +227,20 @@ impl TextBase{
         // Глиф для рендеринга
         let outlined=glyph.outlined_glyph(self.scale);
 
+        // Позиция для глифа для рендеринга
+        let position={
+            let size=outlined.size();
+            let offset=outlined.offset();
+            [
+                self.position[0],
+                self.position[1]-offset[1]-size[1] as f32,
+            ]
+        };
+
         graphics.draw_glyph(
             &outlined,
             self.colour,
-            self.position,
+            position,
             draw_parameters
         )
     }
@@ -236,10 +272,20 @@ impl TextBase{
         // Глиф для рендеринга
         let outlined=glyph.outlined_glyph(self.scale);
 
+        // Позиция для глифа для рендеринга
+        let position={
+            let size=outlined.size();
+            let offset=outlined.offset();
+            [
+                self.position[0],
+                self.position[1]-offset[1]-size[1] as f32,
+            ]
+        };
+
         graphics.draw_shift_glyph(
             &outlined,
             self.colour,
-            self.position,
+            position,
             shift,
             draw_parameters
         )
@@ -273,10 +319,20 @@ impl TextBase{
         // Глиф для рендеринга
         let outlined=glyph.outlined_glyph(self.scale);
 
+        // Позиция для глифа для рендеринга
+        let position={
+            let size=outlined.size();
+            let offset=outlined.offset();
+            [
+                self.position[0],
+                self.position[1]-offset[1]-size[1] as f32,
+            ]
+        };
+
         graphics.draw_rotate_glyph(
             &outlined,
             self.colour,
-            self.position,
+            position,
             rotation_center,
             angle,
             draw_parameters
@@ -298,7 +354,7 @@ impl TextBase{
         let mut glyph; // Немасштабированный глиф
 
         // Расстояние до следующего глифа для пробела
-        let whitespace_advance=font.whitespace_advance(self.scale.horizontal);
+        let whitespace_advance=font.whitespace_advance_width(self.scale.horizontal);
 
         for character in s.chars(){
             glyph=if let Some(glyph)=font.build_raw_glyph(character){
@@ -316,16 +372,18 @@ impl TextBase{
             // Масштабированный глиф
             let scaled=glyph.scale(self.scale);
 
+            let mut rect=scaled.positioned_bounding_box(position);
+
             // Расстояние до следующего глифа по горизонтали
             let advance_width=scaled.advance_width();
 
             // Глиф для рендеринга
-            let outlined=glyph.outlined_glyph(self.scale);
+            let outlined=scaled.outline();
 
             graphics.draw_glyph(
                 &outlined,
                 self.colour,
-                position,
+                [rect[0],rect[1]],
                 draw_parameters
             )?;
 
@@ -351,7 +409,7 @@ impl TextBase{
         let mut glyph; // Немасштабированный глиф
 
         // Расстояние до следующего глифа для пробела
-        let whitespace_advance=font.whitespace_advance(self.scale.horizontal);
+        let whitespace_advance=font.whitespace_advance_width(self.scale.horizontal);
 
         for character in s.chars(){
             glyph=if let Some(glyph)=font.build_raw_glyph(character){
@@ -369,16 +427,18 @@ impl TextBase{
             // Масштабированный глиф
             let scaled=glyph.scale(self.scale);
 
+            let mut rect=scaled.positioned_bounding_box(position);
+
             // Расстояние до следующего глифа по горизонтали
             let advance_width=scaled.advance_width();
 
             // Глиф для рендеринга
-            let outlined=glyph.outlined_glyph(self.scale);
+            let outlined=scaled.outline();
 
             graphics.draw_shift_glyph(
                 &outlined,
                 self.colour,
-                position,
+                [rect[0],rect[1]],
                 shift,
                 draw_parameters,
             )?;
@@ -406,7 +466,7 @@ impl TextBase{
         let mut glyph; // Немасштабированный глиф
 
         // Расстояние до следующего глифа для пробела
-        let whitespace_advance=font.whitespace_advance(self.scale.horizontal);
+        let whitespace_advance=font.whitespace_advance_width(self.scale.horizontal);
 
         for character in s.chars(){
             glyph=if let Some(glyph)=font.build_raw_glyph(character){
@@ -424,16 +484,18 @@ impl TextBase{
             // Масштабированный глиф
             let scaled=glyph.scale(self.scale);
 
+            let mut rect=scaled.positioned_bounding_box(position);
+
             // Расстояние до следующего глифа
             let advance_width=scaled.advance_width();
 
             // Глиф для рендеринга
-            let outlined=glyph.outlined_glyph(self.scale);
+            let outlined=scaled.outline();
 
             graphics.draw_rotate_glyph(
                 &outlined,
                 self.colour,
-                position,
+                [rect[0],rect[1]],
                 rotation_center,
                 angle,
                 draw_parameters,
@@ -584,10 +646,10 @@ impl TextBase{
     /// Draws a string.
     /// 
     /// Takes corresponding glyphs from the given cache.
-    pub fn draw_str_glyph_cache(
+    pub fn draw_str_glyph_cache<C:RawGlyphCache>(
         &self,
         s:&str,
-        font:&CachedFont,
+        glyph_cache:&C,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -596,16 +658,16 @@ impl TextBase{
         let mut glyph;
 
         for character in s.chars(){
-            glyph=if let Some(glyph)=font.scaled_glyph(character,self.scale){
+            glyph=if let Some(glyph)=glyph_cache.scaled_glyph(character,self.scale){
                 glyph
             }
             else{
                 if character==' '{
-                    position[0]+=font.whitespace_advance(self.scale.horizontal);
+                    position[0]+=glyph_cache.whitespace_advance_width(self.scale.horizontal);
                     continue
                 }
 
-                font.scaled_undefined_glyph(self.scale)
+                glyph_cache.scaled_undefined_glyph(self.scale)
             };
 
             let mut rect=glyph.positioned_bounding_box(position);
@@ -633,11 +695,11 @@ impl TextBase{
     /// Draws a shifted string.
     /// 
     /// Takes corresponding glyphs from the given cache.
-    pub fn draw_shift_str_glyph_cache(
+    pub fn draw_shift_str_glyph_cache<C:RawGlyphCache>(
         &self,
         s:&str,
         shift:[f32;2],
-        font:&CachedFont,
+        glyph_cache:&C,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -646,16 +708,16 @@ impl TextBase{
         let mut glyph; // Мастабированный глиф
 
         for character in s.chars(){
-            glyph=if let Some(glyph)=font.scaled_glyph(character,self.scale){
+            glyph=if let Some(glyph)=glyph_cache.scaled_glyph(character,self.scale){
                 glyph
             }
             else{
                 if character==' '{
-                    position[0]+=font.whitespace_advance(self.scale.horizontal);
+                    position[0]+=glyph_cache.whitespace_advance_width(self.scale.horizontal);
                     continue
                 }
 
-                font.scaled_undefined_glyph(self.scale)
+                glyph_cache.scaled_undefined_glyph(self.scale)
             };
 
             let mut rect=glyph.positioned_bounding_box(position);
@@ -686,12 +748,12 @@ impl TextBase{
     /// Draws a rotated string.
     /// 
     /// Takes corresponding glyphs from the given cache.
-    pub fn draw_rotate_str_glyph_cache(
+    pub fn draw_rotate_str_glyph_cache<C:RawGlyphCache>(
         &self,
         s:&str,
         rotation_center:[f32;2],
         angle:f32,
-        font:&CachedFont,
+        glyph_cache:&C,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -700,16 +762,16 @@ impl TextBase{
         let mut glyph; // Мастабированный глиф
 
         for character in s.chars(){
-            glyph=if let Some(glyph)=font.scaled_glyph(character,self.scale){
+            glyph=if let Some(glyph)=glyph_cache.scaled_glyph(character,self.scale){
                 glyph
             }
             else{
                 if character==' '{
-                    position[0]+=font.whitespace_advance(self.scale.horizontal);
+                    position[0]+=glyph_cache.whitespace_advance_width(self.scale.horizontal);
                     continue
                 }
 
-                font.scaled_undefined_glyph(self.scale)
+                glyph_cache.scaled_undefined_glyph(self.scale)
             };
 
             let mut rect=glyph.positioned_bounding_box(position);
@@ -741,11 +803,11 @@ impl TextBase{
     /// Returns `true`, if the whole string is drawn.
     /// 
     /// Takes corresponding glyphs from the given cache.
-    pub fn draw_str_part_glyph_cache(
+    pub fn draw_str_part_glyph_cache<C:RawGlyphCache>(
         &self,
         s:&str,
         chars:usize,
-        font:&CachedFont,
+        glyph_cache:&C,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<bool,DrawError>{
@@ -762,16 +824,16 @@ impl TextBase{
                 break
             }
 
-            glyph=if let Some(glyph)=font.scaled_glyph(character,self.scale){
+            glyph=if let Some(glyph)=glyph_cache.scaled_glyph(character,self.scale){
                 glyph
             }
             else{
                 if character==' '{
-                    position[0]+=font.whitespace_advance(self.scale.horizontal);
+                    position[0]+=glyph_cache.whitespace_advance_width(self.scale.horizontal);
                     continue
                 }
 
-                font.scaled_undefined_glyph(self.scale)
+                glyph_cache.scaled_undefined_glyph(self.scale)
             };
 
             let mut rect=glyph.positioned_bounding_box(position);
@@ -801,12 +863,12 @@ impl TextBase{
     /// Returns `true`, if the whole string is drawn.
     /// 
     /// Takes corresponding glyphs from the given cache.
-    pub fn draw_shift_str_part_glyph_cache(
+    pub fn draw_shift_str_part_glyph_cache<C:RawGlyphCache>(
         &self,
         s:&str,
         chars:usize,
         shift:[f32;2],
-        font:&CachedFont,
+        glyph_cache:&C,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<bool,DrawError>{
@@ -823,16 +885,16 @@ impl TextBase{
                 break
             }
 
-            glyph=if let Some(glyph)=font.scaled_glyph(character,self.scale){
+            glyph=if let Some(glyph)=glyph_cache.scaled_glyph(character,self.scale){
                 glyph
             }
             else{
                 if character==' '{
-                    position[0]+=font.whitespace_advance(self.scale.horizontal);
+                    position[0]+=glyph_cache.whitespace_advance_width(self.scale.horizontal);
                     continue
                 }
 
-                font.scaled_undefined_glyph(self.scale)
+                glyph_cache.scaled_undefined_glyph(self.scale)
             };
 
             let mut rect=glyph.positioned_bounding_box(position);
@@ -863,13 +925,13 @@ impl TextBase{
     /// Returns true, if the whole string is drawn.
     /// 
     /// Takes corresponding glyphs from the given cache.
-    pub fn draw_rotate_str_part_glyph_cache(
+    pub fn draw_rotate_str_part_glyph_cache<C:RawGlyphCache>(
         &self,
         s:&str,
         chars:usize,
         rotation_center:[f32;2],
         angle:f32,
-        font:&CachedFont,
+        glyph_cache:&C,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<bool,DrawError>{
@@ -886,16 +948,16 @@ impl TextBase{
                 break
             }
 
-            glyph=if let Some(glyph)=font.scaled_glyph(character,self.scale){
+            glyph=if let Some(glyph)=glyph_cache.scaled_glyph(character,self.scale){
                 glyph
             }
             else{
                 if character==' '{
-                    position[0]+=font.whitespace_advance(self.scale.horizontal);
+                    position[0]+=glyph_cache.whitespace_advance_width(self.scale.horizontal);
                     continue
                 }
 
-                font.scaled_undefined_glyph(self.scale)
+                glyph_cache.scaled_undefined_glyph(self.scale)
             };
 
             let rect=glyph.positioned_bounding_box(position);

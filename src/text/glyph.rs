@@ -9,8 +9,7 @@ use glium::{
 
 use ab_glyph_rasterizer::{Point,point,Rasterizer};
 
-/// Немастабированный глиф.
-/// 
+/// Немасштабированный глиф.
 /// An unscaled glyph.
 pub struct RawGlyph<T>{
     // Данные изображения символа:
@@ -26,7 +25,6 @@ pub struct RawGlyph<T>{
 
 
 /// Общие функции для немасштабированных глифов.
-/// 
 /// General functions for unscaled glyphs.
 impl<T> RawGlyph<T>{
     #[inline(always)]
@@ -156,7 +154,8 @@ impl RawGlyph<Vec<OutlineCurve>>{
     }
 }
 
-
+/// Мастабированный глиф.
+/// A scaled glyph.
 pub struct ScaledGlyph<'a,T:'a>{
     data:&'a T,
     // Мастабированный размер
@@ -216,49 +215,18 @@ impl<'a,T> ScaledGlyph<'a,T>{
 }
 
 impl<'a> ScaledGlyph<'a,Vec<OutlineCurve>>{
-    pub fn draw<O:FnMut(usize,f32)>(&self,mut o:O){
-        let scale_up=|&Point{x,y}|point(
-            (x*self.scale.horizontal)-self.offset[0],
-            (y*self.scale.vertical)-self.offset[1],
-        );
-
-        self.data.iter().fold(
-            Rasterizer::new(
-                self.size[0] as usize,
-                self.size[1] as usize
-            ),
-            |mut rasterizer,curve|match curve{
-                OutlineCurve::Line(p0, p1)=>{
-                    rasterizer.draw_line(scale_up(p0),scale_up(p1));
-                    rasterizer
-                }
-                OutlineCurve::Quad(p0,p1,p2)=>{
-                    rasterizer.draw_quad(
-                        scale_up(p0),
-                        scale_up(p1),
-                        scale_up(p2),
-                    );
-                    rasterizer
-                }
-                OutlineCurve::Cubic(p0,p1,p2,p3)=>{
-                    rasterizer.draw_cubic(
-                        scale_up(p0),
-                        scale_up(p1),
-                        scale_up(p2),
-                        scale_up(p3),
-                    );
-                    rasterizer
-                }
-            }
-        )
-        .for_each_pixel(|c,f|{
-            o(c,f)
-        });
+    /// Create an outlined glyph with copied data.
+    pub fn outline(self)->OutlinedGlyph{
+        OutlinedGlyph{
+            offset:self.offset,
+            size:self.size,
+            scale:self.scale,
+            curves:self.data.clone(),
+        }
     }
 }
 
 /// Глиф с текстурой основой.
-/// 
 /// Glyph based on a texture.
 pub struct TexturedGlyph<'a>{
     // Текстура
@@ -285,7 +253,6 @@ impl<'a> TexturedGlyph<'a>{
 }
 
 /// Глиф с контурной основой.
-/// 
 /// Glyph based on an outline.
 #[derive(Clone,Debug)]
 pub struct OutlinedGlyph{
@@ -301,9 +268,9 @@ pub struct OutlinedGlyph{
 impl OutlinedGlyph{
     /// width, height должны быть целыми
     #[inline(always)]
-    pub const fn new(curves:Vec<OutlineCurve>,[x,y,width,height]:[f32;4],scale:Scale)->Self{
+    pub const fn raw(curves:Vec<OutlineCurve>,offset:[f32;2],[width,height]:[f32;2],scale:Scale)->Self{
         Self{
-            offset:[x,y],
+            offset,
             size:[width as u32,height as u32],
             scale,
             curves,
@@ -366,16 +333,4 @@ pub struct GlyphFrame{
     pub offset:[f32;2],
     pub size:[f32;2],
     pub advance_width:f32,
-}
-
-impl GlyphFrame{
-    /// Returns the bounding box.
-    pub fn positioned_bounding_box(&self,position:[f32;2])->[f32;4]{
-        [
-            position[0]+self.offset[0],
-            position[1]-self.offset[1]-self.size[1],
-            self.size[0],
-            self.size[1]
-        ]
-    }
 }

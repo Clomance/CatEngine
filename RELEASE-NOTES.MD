@@ -1,21 +1,21 @@
-# 0.5.0
+# 0.5.0-alpha
 
 ### A new text rendering system
 
 It is based on a glyph cache.
 Load all the needed characters as textures to the cache and then render them.
 
-It's possible to load different fonts in one cache, so you can create your own font.
+It's possible to load different fonts in one cache, so you can create your own font, but it still have problems with scaling. (I'm on my way to fix it).
 
-As usual you are able to save a glyph cache inside the graphics structure to use text as a dependent object.
+As usual you are able to save a glyph cache (in `CachedFont`) inside the graphics structure to use text as a dependent object.
 
 Works faster but takes much space.
 
-Also there is a new feature for the cache - `glyph_cache`.
-
 ### The old one
 
-Now doesn't support saving objects.
+Now saved objects support only `CachedFont`.
+
+Fully-rebuilded, too.
 
 # 0.4.5
 

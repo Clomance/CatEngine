@@ -32,14 +32,15 @@ use std::{
     fs::read,
 };
 
-/// Хранилище глифов.
-/// 
-/// A glyph cache.
-
 // ᶠᵉᵉᵈ ᵐᵉ /ᐠ-ⱉ-ᐟ\ﾉ
+/// Хранилище глифов.
+/// A glyph cache.
 pub struct GlyphCache{
     glyphs:HashMap<char,RawGlyph<Texture2d>>,
     undefined_glyph:RawGlyph<Texture2d>,
+    // Немасштабированная ширина пробела
+    whitespace_advance:f32,
+    bounding_size:[f32;2],
 }
 
 impl GlyphCache{
@@ -55,9 +56,20 @@ impl GlyphCache{
     /// 
     /// range = `None` - takes all characters of the font.
     pub fn new(font:&Face,range:Option<Range<u16>>,scale:Scale,display:&Display)->GlyphCache{
+        let global_box=font.global_bounding_box();
+
+        let bounding_size=[
+            global_box.width() as f32*scale.horizontal,
+            global_box.height() as f32*scale.vertical,
+        ];
+
         // Неопределённый символ
         let not_defined_id=GlyphId(0);
         let undefined_glyph=build_glyph(not_defined_id,scale,&font,display).unwrap();
+
+        // Ширина пробела
+        let whitespace_advance_id=GlyphId(3);
+        let whitespace_advance=font.glyph_hor_advance(whitespace_advance_id).unwrap() as f32*scale.horizontal;
 
         let range=if let Some(range)=range{
             range
@@ -80,6 +92,8 @@ impl GlyphCache{
         Self{
             glyphs,
             undefined_glyph,
+            whitespace_advance,
+            bounding_size,
         }
     }
 
@@ -91,15 +105,22 @@ impl GlyphCache{
     /// 
     /// Ignors undefined characters.
     pub fn new_alphabet(font:&Face,alphabet:&str,scale:Scale,display:&Display)->GlyphCache{
-        let mut glyphs=HashMap::with_capacity(alphabet.len());
+        let global_box=font.global_bounding_box();
 
-        // The maximal height of all glyphs.
-        let global_height=font.ascender() as f32*scale.vertical;
+        let bounding_size=[
+            global_box.width() as f32*scale.horizontal,
+            global_box.height() as f32*scale.vertical,
+        ];
+
+        let mut glyphs=HashMap::with_capacity(alphabet.len());
 
         // Неопределённый символ
         let not_defined_id=GlyphId(0);
         let undefined_glyph=build_glyph(not_defined_id,scale,&font,display).unwrap();
 
+        // Ширина пробела
+        let whitespace_advance_id=GlyphId(3);
+        let whitespace_advance=font.glyph_hor_advance(whitespace_advance_id).unwrap() as f32*scale.horizontal;
 
         for character in alphabet.chars(){
             let id=font.glyph_index(character).unwrap();
@@ -112,6 +133,8 @@ impl GlyphCache{
         Self{
             glyphs,
             undefined_glyph,
+            whitespace_advance,
+            bounding_size
         }
     }
 
@@ -146,9 +169,6 @@ impl GlyphCache{
             self.insert_char(character,font,scale,display);
         }
     }
-
-    
-    
 
     // pub fn text_width(&self,text:&str,scale:Scale)->f32{
     //     let mut width=0f32;
@@ -192,6 +212,11 @@ impl GlyphCache{
 
 impl RawGlyphCache for GlyphCache{
     #[inline(always)]
+    fn whitespace_advance_width(&self,horizontal_scale:f32)->f32{
+        self.whitespace_advance*horizontal_scale
+    }
+
+    #[inline(always)]
     fn raw_glyph(&self,character:char)->Option<&RawGlyph<Texture2d>>{
         self.glyphs.get(&character)
     }
@@ -218,14 +243,7 @@ fn build_glyph(id:GlyphId,scale:Scale,face:&Face,display:&Display)->Option<RawGl
             (bounds.height() as f32*scale.vertical).ceil(),
         ];
 
-        let rect=[
-            offset[0],
-            offset[1],
-            size[0],
-            size[1]
-        ];
-
-        let glyph=OutlinedGlyph::new(outline_builder.outline,rect,scale);
+        let glyph=OutlinedGlyph::raw(outline_builder.outline,offset,size,scale);
 
         let width=size[0] as usize;
         let height=size[1] as u32;
@@ -284,6 +302,11 @@ fn build_glyph(id:GlyphId,scale:Scale,face:&Face,display:&Display)->Option<RawGl
 /// 
 /// A trait for defining glyph cache.
 pub trait RawGlyphCache{
+    /// Возращает масштабированную ширину пробела.
+    /// 
+    /// Returns whitespace's scaled width.
+    fn whitespace_advance_width(&self,horizontal_scale:f32)->f32;
+
     /// Возращает немасштабированный глиф.
     /// 
     /// Returns an unscaled glyph.
@@ -291,7 +314,7 @@ pub trait RawGlyphCache{
 
     /// Возращает немасштабированный глиф неопределённого символа.
     /// 
-    /// Returns an unscaled glyph of the undefined character.
+    /// Returns an unscaled undefined character glyph.
     fn raw_undefined_glyph(&self)->&RawGlyph<Texture2d>;
 
     /// Возращает немасштабированный глиф для данного или неопределённого символа.
