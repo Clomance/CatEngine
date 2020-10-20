@@ -242,6 +242,12 @@ impl RawGlyphCache for CachedFont{
         self.cache.whitespace_advance_width(horizontal_scale)
     }
 
+    fn scale_for_height(&self, height:f32)->Scale{
+        let height0 = self.cache.bounding_size()[1];
+        let k = height/height0;
+        Scale::new(k, k)
+    }
+
     fn raw_glyph(&self,character:char)->Option<&RawGlyph<Texture2d>>{
         if let Some(glyph)=self.cache.raw_glyph(character){
             Some(glyph)

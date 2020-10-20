@@ -52,7 +52,7 @@ impl GlyphCache{
     /// 
     /// Creates a new glyph cache with the given range of characters ids.
     /// 
-    /// Ignors undefined characters.
+    /// Ignores undefined characters.
     /// 
     /// range = `None` - takes all characters of the font.
     pub fn new(font:&Face,range:Option<Range<u16>>,scale:Scale,display:&Display)->GlyphCache{
@@ -169,6 +169,9 @@ impl GlyphCache{
             self.insert_char(character,font,scale,display);
         }
     }
+    pub fn bounding_size(&self)->[f32; 2]{
+        self.bounding_size
+    }
 }
 
 impl RawGlyphCache for GlyphCache{
@@ -185,6 +188,12 @@ impl RawGlyphCache for GlyphCache{
     #[inline(always)]
     fn raw_undefined_glyph(&self)->&RawGlyph<Texture2d>{
         &self.undefined_glyph
+    }
+
+    fn scale_for_height(&self, height:f32)->Scale{
+        let height0 = self.bounding_size[1];
+        let k = height/height0;
+        Scale::new(k, k)
     }
 }
 
@@ -367,4 +376,7 @@ pub trait RawGlyphCache{
     /// 
     /// Returns whitespace's scaled width.
     fn whitespace_advance_width(&self,horizontal_scale:f32)->f32;
+
+
+    fn scale_for_height(&self,height:f32)->Scale;
 }
