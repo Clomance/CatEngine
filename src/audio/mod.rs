@@ -60,10 +60,10 @@ use play_buffer::PlayingTrack;
 mod rate_converter;
 use rate_converter::RateConverter;
 
-mod audio_track;
+mod track;
 mod sample;
 
-use audio_track::*;
+use track::*;
 use sample::SampleTransform;
 
 use cpal::{

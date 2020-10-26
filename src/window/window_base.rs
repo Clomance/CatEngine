@@ -278,7 +278,7 @@ fn default_draw_parameters<'a>()->DrawParameters<'a>{
                 source:LinearBlendingFactor::One,
                 destination:LinearBlendingFactor::One,
             },
-            constant_value:(0.0,0.0,0.0,0.0),
+            constant_value:(1f32,1f32,1f32,1f32),
         },
 
         backface_culling:BackfaceCullingMode::CullingDisabled,

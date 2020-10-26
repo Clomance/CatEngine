@@ -49,7 +49,7 @@ impl<T:std::fmt::Debug> TrackResult<T>{
 
 /// Аудио трек.
 /// 
-/// Audio track.
+/// An audio track.
 #[derive(Clone,Debug)]
 pub struct Track<T>{
     data:Vec<T>,
@@ -147,4 +147,10 @@ impl Into<Track<f32>> for Track<i16>{
             sample_rate:self.sample_rate,
         }
     }
+}
+
+/// Одноканальный трек
+pub struct MonoTrack{
+    data:Vec<f32>,
+    sample_rate:u32,
 }

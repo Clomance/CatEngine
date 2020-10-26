@@ -12,7 +12,7 @@ fn main(){
     let audio=Audio::new(host,settings.clone()).unwrap();
 
     // Add a track to the array before running
-    audio.add_track("resources/audio.mp3"); // a track index = 0
+    audio.add_track("resources/audio3.mp3"); // a track index = 0
 
     audio.play_track(0,1); // plays the track once
 

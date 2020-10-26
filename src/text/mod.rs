@@ -91,6 +91,9 @@ use crate::{
     graphics::Graphics
 };
 
+#[cfg(feature="colour_filter")]
+use crate::graphics::ColourFilter;
+
 mod glyph;
 pub use glyph::*;
 
@@ -209,6 +212,7 @@ impl TextBase{
         &self,
         character:char,
         font:&F,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -241,6 +245,7 @@ impl TextBase{
             &outlined,
             self.colour,
             position,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters
         )
     }
@@ -254,6 +259,7 @@ impl TextBase{
         character:char,
         shift:[f32;2],
         font:&F,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -287,6 +293,7 @@ impl TextBase{
             self.colour,
             position,
             shift,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters
         )
     }
@@ -301,6 +308,7 @@ impl TextBase{
         rotation_center:[f32;2],
         angle:f32,
         font:&F,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -335,6 +343,7 @@ impl TextBase{
             position,
             rotation_center,
             angle,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters
         )
     }
@@ -346,6 +355,7 @@ impl TextBase{
         &self,
         s:&str,
         font:&F,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -384,6 +394,7 @@ impl TextBase{
                 &outlined,
                 self.colour,
                 [rect[0],rect[1]],
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters
             )?;
 
@@ -401,6 +412,7 @@ impl TextBase{
         s:&str,
         shift:[f32;2],
         font:&F,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -440,6 +452,7 @@ impl TextBase{
                 self.colour,
                 [rect[0],rect[1]],
                 shift,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
             )?;
 
@@ -458,6 +471,7 @@ impl TextBase{
         rotation_center:[f32;2],
         angle:f32,
         font:&F,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -498,6 +512,7 @@ impl TextBase{
                 [rect[0],rect[1]],
                 rotation_center,
                 angle,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
             )?;
 
@@ -525,6 +540,7 @@ impl TextBase{
         &self,
         character:char,
         glyph_cache:&C,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -549,6 +565,7 @@ impl TextBase{
             &textured,
             self.colour,
             [rect[0],rect[1]],
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters
         )
     }
@@ -566,6 +583,7 @@ impl TextBase{
         character:char,
         shift:[f32;2],
         glyph_cache:&C,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -591,6 +609,7 @@ impl TextBase{
             self.colour,
             [rect[0],rect[1]],
             shift,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters
         )
     }
@@ -609,6 +628,7 @@ impl TextBase{
         rotation_center:[f32;2],
         angle:f32,
         glyph_cache:&C,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -635,6 +655,7 @@ impl TextBase{
             [rect[0],rect[1]],
             rotation_center,
             angle,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters
         )
     }
@@ -650,6 +671,7 @@ impl TextBase{
         &self,
         s:&str,
         glyph_cache:&C,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -679,6 +701,7 @@ impl TextBase{
                 &textured,
                 self.colour,
                 [rect[0],rect[1]],
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters
             )?;
 
@@ -700,6 +723,7 @@ impl TextBase{
         s:&str,
         shift:[f32;2],
         glyph_cache:&C,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -730,6 +754,7 @@ impl TextBase{
                 self.colour,
                 [rect[0],rect[1]],
                 shift,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters
             )?;
 
@@ -754,6 +779,7 @@ impl TextBase{
         rotation_center:[f32;2],
         angle:f32,
         glyph_cache:&C,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
@@ -785,6 +811,7 @@ impl TextBase{
                 [rect[0],rect[1]],
                 rotation_center,
                 angle,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters
             )?;
 
@@ -808,6 +835,7 @@ impl TextBase{
         s:&str,
         chars:usize,
         glyph_cache:&C,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<bool,DrawError>{
@@ -845,6 +873,7 @@ impl TextBase{
                 &textured,
                 self.colour,
                 [rect[0],rect[1]],
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters
             )?;
 
@@ -869,6 +898,7 @@ impl TextBase{
         chars:usize,
         shift:[f32;2],
         glyph_cache:&C,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<bool,DrawError>{
@@ -907,6 +937,7 @@ impl TextBase{
                 self.colour,
                 [rect[0],rect[1]],
                 shift,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters
             )?;
 
@@ -932,6 +963,7 @@ impl TextBase{
         rotation_center:[f32;2],
         angle:f32,
         glyph_cache:&C,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<bool,DrawError>{
@@ -971,6 +1003,7 @@ impl TextBase{
                 [rect[0],rect[1]],
                 rotation_center,
                 angle,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters
             )?;
 

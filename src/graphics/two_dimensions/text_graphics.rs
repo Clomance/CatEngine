@@ -17,6 +17,9 @@ use crate::{
     graphics::TextGraphicsSettings,
 };
 
+#[cfg(feature="colour_filter")]
+use crate::graphics::ColourFilter;
+
 use glium::{
     uniform,
     // enums
@@ -169,7 +172,8 @@ impl TextGraphics{
     pub fn draw_glyph(
         &self,
         glyph:&Texture2d,
-        colour:Colour,
+        mut colour:Colour,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
@@ -178,6 +182,10 @@ impl TextGraphics{
             &self.vertex_format,
             false
         );
+
+        // Фильтрация цвета объекта
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
 
         let uni=uniform!{
             texture2d:glyph,
@@ -200,8 +208,9 @@ impl TextGraphics{
     pub fn draw_shift_glyph(
         &self,
         glyph:&Texture2d,
-        colour:Colour,
+        mut colour:Colour,
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
@@ -210,6 +219,10 @@ impl TextGraphics{
             &self.vertex_format,
             false
         );
+
+        // Фильтрация цвета объекта
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
 
         let uni=uniform!{
             texture2d:glyph,
@@ -232,13 +245,18 @@ impl TextGraphics{
     pub fn draw_rotate_glyph(
         &self,
         glyph:&Texture2d,
-        colour:Colour,
+        mut colour:Colour,
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
         let (sin,cos)=angle.sin_cos();
+
+        // Фильтрация цвета объекта
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
 
         let uni=uniform!{
             texture2d:glyph,
@@ -324,6 +342,7 @@ impl TextGraphics{
     pub fn draw_object(
         &self,
         index:usize,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
@@ -353,6 +372,7 @@ impl TextGraphics{
             self.draw_glyph(
                 glyph.data(), // текстура в данном случае
                 object.colour,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
                 frame
             )?;
@@ -367,6 +387,7 @@ impl TextGraphics{
         &self,
         index:usize,
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
@@ -397,6 +418,7 @@ impl TextGraphics{
                 glyph.data(), // текстура в данном случае
                 object.colour,
                 shift,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
                 frame
             )?;
@@ -413,6 +435,7 @@ impl TextGraphics{
         index:usize,
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
@@ -444,6 +467,7 @@ impl TextGraphics{
                 object.colour,
                 rotation_center,
                 angle,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
                 frame
             )?;

@@ -7,6 +7,9 @@ use crate::{
     texture::Texture,
 };
 
+#[cfg(feature="colour_filter")]
+use crate::graphics::ColourFilter;
+
 use super::two_dimensions::{
     Vertex2D,
     TexturedVertex2D,
@@ -79,7 +82,8 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         index:usize,
         object_type:ObjectType,
         draw_type:DrawType,
-        draw_parameters:&DrawParameters
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
         match object_type{
             #[cfg(feature="simple_graphics")]
@@ -87,12 +91,14 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                 match draw_type{
                     DrawType::Common=>self.draw_simple_object(
                         index,
+                        #[cfg(feature="colour_filter")]colour_filter,
                         &draw_parameters
                     ),
 
                     DrawType::Shifting(shift)=>self.draw_shift_simple_object(
                         index,
                         shift,
+                        #[cfg(feature="colour_filter")]colour_filter,
                         &draw_parameters
                     ),
 
@@ -100,6 +106,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                         index,
                         position,
                         angle,
+                        #[cfg(feature="colour_filter")]colour_filter,
                         &draw_parameters
                     ),
                 }
@@ -110,12 +117,14 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                 match draw_type{
                     DrawType::Common=>self.draw_textured_object(
                         index,
+                        #[cfg(feature="colour_filter")]colour_filter,
                         &draw_parameters
                     ),
 
                     DrawType::Shifting(shift)=>self.draw_shift_textured_object(
                         index,
                         shift,
+                        #[cfg(feature="colour_filter")]colour_filter,
                         &draw_parameters
                     ),
 
@@ -123,6 +132,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                         index,
                         position,
                         angle,
+                        #[cfg(feature="colour_filter")]colour_filter,
                         &draw_parameters
                     )
                 }
@@ -133,12 +143,14 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                 match draw_type{
                     DrawType::Common=>self.draw_text_object(
                         index,
+                        #[cfg(feature="colour_filter")]colour_filter,
                         &draw_parameters
                     ),
 
                     DrawType::Shifting(shift)=>self.draw_shift_text_object(
                         index,
                         shift,
+                        #[cfg(feature="colour_filter")]colour_filter,
                         &draw_parameters
                     ),
 
@@ -146,6 +158,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                         index,
                         position,
                         angle,
+                        #[cfg(feature="colour_filter")]colour_filter,
                         &draw_parameters
                     ),
                 }
@@ -171,6 +184,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     pub fn draw_simple<'o,O,V,I>(
         &mut self,
         object:&'o O,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
         where
@@ -186,6 +200,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     {
         self.graphics2d.simple.draw(
             object,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -199,6 +214,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         object:&'o O,
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
         where
@@ -215,6 +231,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         self.graphics2d.simple.draw_shift(
             object,
             shift,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -229,6 +246,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         object:&'o O,
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
         where
@@ -246,6 +264,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             object,
             rotation_center,
             angle,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -259,6 +278,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         object:&'o O,
         draw_type:DrawType,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
         where
@@ -275,6 +295,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         match draw_type{
             DrawType::Common=>self.graphics2d.simple.draw(
                 object,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
                 self.frame
             ),
@@ -282,6 +303,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             DrawType::Shifting(shift)=>self.graphics2d.simple.draw_shift(
                 object,
                 shift,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
                 self.frame
             ),
@@ -290,6 +312,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                 object,
                 position,
                 angle,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
                 self.frame
             ),
@@ -310,6 +333,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         base:&'o O,
         texture:&Texture,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
         where
@@ -323,7 +347,13 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             V:AsRef<[TexturedVertex2D]>+'o,
             I:AsRef<[u8]>+'o
     {
-        self.graphics2d.texture.draw(base,texture,draw_parameters,self.frame)
+        self.graphics2d.texture.draw(
+            base,
+            texture,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters,
+            self.frame
+        )
     }
 
     /// Рисует сдвинутую текстуру.
@@ -335,6 +365,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         base:&'o O,
         texture:&Texture,
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
         where
@@ -352,6 +383,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             base,
             texture,
             shift,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -369,6 +401,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         texture:&Texture,
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
         where
@@ -387,6 +420,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             texture,
             rotation_center,
             angle,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame,
         )
@@ -401,6 +435,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         base:&'o O,
         texture:&Texture,
         draw_type:DrawType,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
         where
@@ -418,6 +453,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             DrawType::Common=>self.graphics2d.texture.draw(
                 base,
                 texture,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
                 self.frame
             ),
@@ -426,6 +462,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                 base,
                 texture,
                 shift,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
                 self.frame
             ),
@@ -435,6 +472,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                 texture,
                 position,
                 angle,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
                 self.frame
             )
@@ -456,6 +494,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         glyph:&OutlinedGlyph,
         colour:Colour,
         [x,y]:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
         // Отрисовывает глиф на текстуру
@@ -486,6 +525,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         self.graphics2d.text.draw_glyph(
             texture,
             colour,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -501,6 +541,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         colour:Colour,
         [x,y]:[f32;2],
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
         // Отрисовывает глиф на текстуру
@@ -531,6 +572,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             texture,
             colour,
             shift,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -547,6 +589,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         [x,y]:[f32;2],
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
         // Отрисовывает глиф на текстуру
@@ -578,6 +621,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             colour,
             rotation_center,
             angle,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -592,6 +636,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         glyph:&TexturedGlyph,
         colour:Colour,
         [x,y]:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
         let size=glyph.size();
@@ -601,6 +646,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         self.graphics2d.text.draw_glyph(
             glyph.texture(),
             colour,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -616,6 +662,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         colour:Colour,
         [x,y]:[f32;2],
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
         let size=glyph.size();
@@ -626,6 +673,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             glyph.texture(),
             colour,
             shift,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -642,6 +690,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         [x,y]:[f32;2],
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
         let size=glyph.size();
@@ -653,6 +702,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             colour,
             rotation_center,
             angle,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -667,6 +717,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         colour:Colour,
         [x,y]:[f32;2],
         draw_type:DrawType,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
     )->Result<(),DrawError>{
         let size=glyph.size();
@@ -677,6 +728,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
             DrawType::Common=>self.graphics2d.text.draw_glyph(
                 glyph.texture(),
                 colour,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
                 self.frame
             ),
@@ -685,6 +737,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                 glyph.texture(),
                 colour,
                 shift,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
                 self.frame
             ),
@@ -694,6 +747,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                 colour,
                 position,
                 angle,
+                #[cfg(feature="colour_filter")]colour_filter,
                 draw_parameters,
                 self.frame
             ),
@@ -715,10 +769,12 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     pub fn draw_simple_object(
         &mut self,
         index:usize,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.simple.draw_object(
             index,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -732,11 +788,13 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         index:usize,
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.simple.draw_shift_object(
             index,
             shift,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -751,12 +809,14 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         index:usize,
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.simple.draw_rotate_object(
             index,
             rotation_center,
             angle,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -770,17 +830,20 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         index:usize,
         draw_type:DrawType,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         match draw_type{
             DrawType::Common=>self.draw_simple_object(
                 index,
+                #[cfg(feature="colour_filter")]colour_filter,
                 &draw_parameters
             ),
 
             DrawType::Shifting(shift)=>self.draw_shift_simple_object(
                 index,
                 shift,
+                #[cfg(feature="colour_filter")]colour_filter,
                 &draw_parameters
             ),
 
@@ -788,6 +851,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                 index,
                 position,
                 angle,
+                #[cfg(feature="colour_filter")]colour_filter,
                 &draw_parameters
             ),
         }
@@ -806,10 +870,12 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     pub fn draw_textured_object(
         &mut self,
         index:usize,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.texture.draw_object(
             index,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame,
         )
@@ -823,11 +889,13 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         index:usize,
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.texture.draw_shift_object(
             index,
             shift,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -845,12 +913,14 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         index:usize,
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.texture.draw_rotate_object(
             index,
             rotation_center,
             angle,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame
         )
@@ -864,17 +934,20 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         index:usize,
         draw_type:DrawType,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         match draw_type{
             DrawType::Common=>self.draw_textured_object(
                 index,
+                #[cfg(feature="colour_filter")]colour_filter,
                 &draw_parameters
             ),
 
             DrawType::Shifting(shift)=>self.draw_shift_textured_object(
                 index,
                 shift,
+                #[cfg(feature="colour_filter")]colour_filter,
                 &draw_parameters
             ),
 
@@ -882,6 +955,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                 index,
                 position,
                 angle,
+                #[cfg(feature="colour_filter")]colour_filter,
                 &draw_parameters
             )
         }
@@ -900,10 +974,12 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     pub fn draw_text_object(
         &mut self,
         index:usize,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.text.draw_object(
             index,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame,
         )
@@ -917,11 +993,13 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         index:usize,
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.text.draw_shift_object(
             index,
             shift,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame,
         )
@@ -936,12 +1014,14 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         index:usize,
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.text.draw_rotate_object(
             index,
             rotation_center,
             angle,
+            #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame,
         )
@@ -954,17 +1034,20 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         &mut self,
         index:usize,
         draw_type:DrawType,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         match draw_type{
             DrawType::Common=>self.draw_text_object(
                 index,
+                #[cfg(feature="colour_filter")]colour_filter,
                 &draw_parameters
             ),
 
             DrawType::Shifting(shift)=>self.draw_shift_text_object(
                 index,
                 shift,
+                #[cfg(feature="colour_filter")]colour_filter,
                 &draw_parameters
             ),
 
@@ -972,6 +1055,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
                 index,
                 position,
                 angle,
+                #[cfg(feature="colour_filter")]colour_filter,
                 &draw_parameters
             ),
         }

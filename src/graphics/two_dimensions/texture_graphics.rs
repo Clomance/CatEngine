@@ -8,6 +8,9 @@ use crate::{
     graphics::InnerGraphicsSettings,
 };
 
+#[cfg(feature="colour_filter")]
+use crate::graphics::ColourFilter;
+
 use super::{
     TexturedObject2D,
     SimpleObject2D,
@@ -116,6 +119,7 @@ impl TextureGraphics{
         &self,
         object:&'o O,
         texture:&Texture,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame,
     )->Result<(),DrawError>
@@ -140,9 +144,14 @@ impl TextureGraphics{
         let indices_source=object.write_indices(&self.index_buffer)
                 .expect("IndexBuffer: Not enough space");
 
+        // Фильтрация цвета объекта
+        let mut colour=object.colour();
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
+
         let uni=uniform!{
             texture2d:&texture.0,
-            colour_filter:object.colour(),
+            colour_filter:colour,
             window_center:unsafe{window_center}
         };
 
@@ -156,6 +165,7 @@ impl TextureGraphics{
         object:&'o O,
         texture:&Texture,
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame,
     )->Result<(),DrawError>
@@ -180,9 +190,14 @@ impl TextureGraphics{
         let indices_source=object.write_indices(&self.index_buffer)
                 .expect("IndexBuffer: Not enough space");
 
+        // Фильтрация цвета объекта
+        let mut colour=object.colour();
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
+
         let uni=uniform!{
             texture2d:&texture.0,
-            colour_filter:object.colour(),
+            colour_filter:colour,
             shift:shift,
             window_center:unsafe{window_center},
         };
@@ -204,6 +219,7 @@ impl TextureGraphics{
         texture:&Texture,
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame,
     )->Result<(),DrawError>
@@ -224,6 +240,11 @@ impl TextureGraphics{
             &self.bindings
         ).expect("VertexBuffer: Not enough space");
 
+        // Фильтрация цвета объекта
+        let mut colour=object.colour();
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
+
         // Вписывание индексов и подготовка к выводу
         let indices_source=object.write_indices(&self.index_buffer)
                 .expect("IndexBuffer: Not enough space");
@@ -236,7 +257,7 @@ impl TextureGraphics{
             sin:sin,
             rotation_center:rotation_center,
             window_center:unsafe{window_center},
-            colour_filter:object.colour(),
+            colour_filter:colour,
         };
 
         frame.draw(
@@ -375,6 +396,7 @@ impl TextureGraphics{
     pub fn draw_object(
         &self,
         index:usize,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
@@ -382,9 +404,14 @@ impl TextureGraphics{
 
         let index_source=object.indices_source(&self.index_buffer);
 
+        // Фильтрация цвета объекта
+        let mut colour=object.base.colour;
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
+
         let uni=uniform!{
             texture2d:&object.texture.0,
-            colour_filter:object.base.colour,
+            colour_filter:colour,
             window_center:unsafe{window_center},
         };
 
@@ -403,6 +430,7 @@ impl TextureGraphics{
         &self,
         index:usize,
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
@@ -410,9 +438,14 @@ impl TextureGraphics{
 
         let index_source=object.indices_source(&self.index_buffer);
 
+        // Фильтрация цвета объекта
+        let mut colour=object.base.colour;
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
+
         let uni=uniform!{
             texture2d:&object.texture.0,
-            colour_filter:object.base.colour,
+            colour_filter:colour,
             window_center:unsafe{window_center},
             shift:shift,
         };
@@ -433,12 +466,18 @@ impl TextureGraphics{
         index:usize,
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
         let object=&self.objects[index];
 
         let index_source=object.indices_source(&self.index_buffer);
+
+        // Фильтрация цвета объекта
+        let mut colour=object.base.colour;
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
 
         let (sin,cos)=angle.sin_cos();
 
@@ -448,7 +487,7 @@ impl TextureGraphics{
             sin:sin,
             rotation_center:rotation_center,
             window_center:unsafe{window_center},
-            colour_filter:object.base.colour,
+            colour_filter:colour,
         };
 
         let vertex_slice=object.vertices_source(&self.vertex_buffer,&self.bindings);

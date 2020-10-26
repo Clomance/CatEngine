@@ -1,6 +1,6 @@
 [package]
 name = "cat_engine"
-version = "0.5.0-alpha"
+version = "0.5.0-alpha2"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
 homepage = "https://github.com/Clomance/CatEngine"
@@ -24,7 +24,7 @@ exclude = [
 [features]
 default = ["text_graphics","simple_graphics","texture_graphics"]
 
-# audio
+### AUDIO
 audio = ["cpal","minimp3"]
 
 # I will add them later
@@ -33,14 +33,20 @@ audio = ["cpal","minimp3"]
 # choose_audio_output_device_on_error = []
 # choose_audio_output_device_format_on_error = []
 
+
+
+### GRAPHICS
 # text
 text_graphics = ["ttf-parser","ab_glyph_rasterizer"]
-glyph_cache = []
-
+# plain objects
 simple_graphics = []
+# textures
 texture_graphics = []
+# colour filter
+colour_filter = []
 
-# window
+
+### WINDOW
 auto_hide = []
 fps_counter = []
 lazy = []

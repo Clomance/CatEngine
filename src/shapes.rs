@@ -1,10 +1,14 @@
-use super::Colour;
-
-use super::graphics::{
-    Graphics,
-    DependentObject,
-    Vertex2D
+use super::{
+    graphics::{
+        Graphics,
+        DependentObject,
+        Vertex2D
+    },
+    Colour,
 };
+
+#[cfg(feature="colour_filter")]
+use super::graphics::ColourFilter;
 
 use glium::{
     DrawError,
@@ -26,16 +30,49 @@ impl Quadrilateral{
         }
     }
 
-    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_simple(self,draw_parameters)
+    pub fn draw(
+        &self,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        graphics.draw_simple(
+            self,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 
-    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
+    pub fn draw_rotate(
+        &self,
+        rotation_center:[f32;2],
+        angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        graphics.draw_rotate_simple(
+            self,
+            rotation_center,
+            angle,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 
-    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_shift_simple(self,shift,draw_parameters)
+    pub fn draw_shift(
+        &self,
+        shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        graphics.draw_shift_simple(
+            self,
+            shift,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 }
 
@@ -92,16 +129,49 @@ impl Rectangle{
         }
     }
 
-    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_simple(self,draw_parameters)
+    pub fn draw(
+        &self,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        graphics.draw_simple(
+            self,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 
-    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
+    pub fn draw_rotate(
+        &self,
+        rotation_center:[f32;2],
+        angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        graphics.draw_rotate_simple(
+            self,
+            rotation_center,
+            angle,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 
-    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_shift_simple(self,shift,draw_parameters)
+    pub fn draw_shift(
+        &self,
+        shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        graphics.draw_shift_simple(
+            self,
+            shift,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 }
 
@@ -177,19 +247,52 @@ impl RectangleBorder{
         }
     }
 
-    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+    pub fn draw(
+        &self,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
         draw_parameters.line_width=Some(self.width);
-        graphics.draw_simple(self,draw_parameters)
+        graphics.draw_simple(
+            self,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 
-    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+    pub fn draw_rotate(
+        &self,
+        rotation_center:[f32;2],
+        angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
         draw_parameters.line_width=Some(self.width);
-        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
+        graphics.draw_rotate_simple(
+            self,
+            rotation_center,
+            angle,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 
-    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+    pub fn draw_shift(
+        &self,
+        shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
         draw_parameters.line_width=Some(self.width);
-        graphics.draw_shift_simple(self,shift,draw_parameters)
+        graphics.draw_shift_simple(
+            self,
+            shift,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 }
 
@@ -251,22 +354,70 @@ impl RectangleWithBorder{
         self
     }
 
-    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        self.rect.draw(draw_parameters,graphics)?;
+    pub fn draw(
+        &self,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        self.rect.draw(
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters,
+            graphics
+        )?;
         let border=RectangleBorder::rectangle_base(self.rect.clone(),self.border_width,self.border_colour);
-        border.draw(draw_parameters,graphics)
+        border.draw(
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters,
+            graphics
+        )
     }
 
-    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        self.rect.draw_rotate(rotation_center,angle,draw_parameters,graphics)?;
+    pub fn draw_rotate(
+        &self,
+        rotation_center:[f32;2],
+        angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        self.rect.draw_rotate(
+            rotation_center,
+            angle,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters,
+            graphics
+        )?;
         let border=RectangleBorder::rectangle_base(self.rect.clone(),self.border_width,self.border_colour);
-        border.draw_rotate(rotation_center,angle,draw_parameters,graphics)
+        border.draw_rotate(
+            rotation_center,
+            angle,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters,
+            graphics
+        )
     }
 
-    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        self.rect.draw_shift(shift,draw_parameters,graphics)?;
+    pub fn draw_shift(
+        &self,
+        shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        self.rect.draw_shift(
+            shift,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters,
+            graphics
+        )?;
         let border=RectangleBorder::rectangle_base(self.rect.clone(),self.border_width,self.border_colour);
-        border.draw_shift(shift,draw_parameters,graphics)
+        border.draw_shift(
+            shift,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters,
+            graphics
+        )
     }
 }
 
@@ -313,19 +464,52 @@ impl Line{
         self.y2+=dy;
     }
 
-    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+    pub fn draw(
+        &self,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
         draw_parameters.line_width=Some(self.radius);
-        graphics.draw_simple(self,draw_parameters)
+        graphics.draw_simple(
+            self,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 
-    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+    pub fn draw_rotate(
+        &self,
+        rotation_center:[f32;2],
+        angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
         draw_parameters.line_width=Some(self.radius);
-        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
+        graphics.draw_rotate_simple(
+            self,
+            rotation_center,
+            angle,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 
-    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
+    pub fn draw_shift(
+        &self,
+        shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
         draw_parameters.line_width=Some(self.radius);
-        graphics.draw_shift_simple(self,shift,draw_parameters)
+        graphics.draw_shift_simple(
+            self,
+            shift,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 }
 
@@ -374,16 +558,49 @@ impl Circle{
         }
     }
 
-    pub fn draw(&self,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_simple(self,draw_parameters)
+    pub fn draw(
+        &self,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        graphics.draw_simple(
+            self,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 
-    pub fn draw_rotate(&self,rotation_center:[f32;2],angle:f32,draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_rotate_simple(self,rotation_center,angle,draw_parameters)
+    pub fn draw_rotate(
+        &self,
+        rotation_center:[f32;2],
+        angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        graphics.draw_rotate_simple(
+            self,
+            rotation_center,
+            angle,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 
-    pub fn draw_shift(&self,shift:[f32;2],draw_parameters:&mut DrawParameters,graphics:&mut Graphics)->Result<(),DrawError>{
-        graphics.draw_shift_simple(self,shift,draw_parameters)
+    pub fn draw_shift(
+        &self,
+        shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&mut DrawParameters,
+        graphics:&mut Graphics
+    )->Result<(),DrawError>{
+        graphics.draw_shift_simple(
+            self,
+            shift,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 }
 

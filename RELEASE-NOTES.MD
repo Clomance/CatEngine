@@ -1,3 +1,9 @@
+# 0.5.0-alpha2
+
+### Added
+
+A colour filter and a feature for it. You may use it to make different UI layers with their own filters.
+
 # 0.5.0-alpha
 
 ### A new text rendering system
@@ -5,7 +11,7 @@
 It is based on a glyph cache.
 Load all the needed characters as textures to the cache and then render them.
 
-It's possible to load different fonts in one cache, so you can create your own font, but it still have problems with scaling. (I'm on my way to fix it).
+It's possible to load different fonts in one cache, so you can create your own, but it still have problems with scaling.
 
 As usual you are able to save a glyph cache (in `CachedFont`) inside the graphics structure to use text as a dependent object.
 

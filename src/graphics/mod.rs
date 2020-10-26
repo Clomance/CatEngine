@@ -12,6 +12,8 @@
 //! 2. Textures (images)
 //! 3. Text
 
+use crate::Colour;
+
 // #[cfg(feature="2D")]
 pub (crate) mod two_dimensions;
 
@@ -30,6 +32,14 @@ pub use base::Graphics;
 
 mod objects;
 pub use objects::DependentObject;
+
+#[cfg(feature="colour_filter")]
+mod colour_filter;
+#[cfg(feature="colour_filter")]
+pub use colour_filter::{
+    FilteringFunction,
+    ColourFilter,
+};
 
 #[derive(Clone,Debug)]
 pub enum ObjectType{

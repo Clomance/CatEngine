@@ -1,5 +1,5 @@
 //! # Основы работы с изображениями. Image basics.
-
+//! 
 use super::{
     // types
     Colour,
@@ -10,6 +10,10 @@ use super::{
         DependentObject,
     },
 };
+
+#[cfg(feature="colour_filter")]
+use super::graphics::ColourFilter;
+
 
 mod texture;
 pub use texture::{Texture,TextureCreationResult};
@@ -80,10 +84,16 @@ impl ImageBase{
     pub fn draw(
         &self,
         texture:&Texture,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&mut DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
-        graphics.draw_texture(self,texture,draw_parameters)
+        graphics.draw_texture(
+            self,
+            texture,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 
     /// Рисует сдвинутое изображение.
@@ -97,10 +107,17 @@ impl ImageBase{
         &self,
         texture:&Texture,
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&mut DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
-        graphics.draw_shift_texture(self,texture,shift,draw_parameters)
+        graphics.draw_shift_texture(
+            self,
+            texture,
+            shift,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 
     /// Рисует изображение под углом.
@@ -116,10 +133,18 @@ impl ImageBase{
         texture:&Texture,
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&mut DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
-        graphics.draw_rotate_texture(self,texture,rotation_center,angle,draw_parameters)
+        graphics.draw_rotate_texture(
+            self,
+            texture,
+            rotation_center,
+            angle,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters
+        )
     }
 }
 

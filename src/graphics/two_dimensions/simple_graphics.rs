@@ -7,6 +7,9 @@ use crate::{
     graphics::InnerGraphicsSettings,
 };
 
+#[cfg(feature="colour_filter")]
+use crate::graphics::ColourFilter;
+
 use super::{
     SimpleObject2D,
     Vertex2D,
@@ -107,6 +110,7 @@ impl SimpleGraphics{
     pub fn draw<'o,O,V,I>(
         &self,
         object:&'o O,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>
@@ -131,8 +135,13 @@ impl SimpleGraphics{
         let indices_source=object.write_indices(&self.index_buffer)
                 .expect("IndexBuffer: Not enough space");
 
+        // Фильтрация цвета объекта
+        let mut colour=object.colour();
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
+
         let uni=uniform!{
-            colour:object.colour(),
+            colour:colour,
             window_center:unsafe{window_center}
         };
 
@@ -143,6 +152,7 @@ impl SimpleGraphics{
         &self,
         object:&'o O,
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>
@@ -167,8 +177,13 @@ impl SimpleGraphics{
         let indices_source=object.write_indices(&self.index_buffer)
                 .expect("IndexBuffer: Not enough space");
 
+        // Фильтрация цвета объекта
+        let mut colour=object.colour();
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
+
         let uni=uniform!{
-            colour:object.colour(),
+            colour:colour,
             shift:shift,
             window_center:unsafe{window_center}
         };
@@ -181,6 +196,7 @@ impl SimpleGraphics{
         object:&'o O,
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>
@@ -207,12 +223,17 @@ impl SimpleGraphics{
 
         let (sin,cos)=angle.sin_cos();
 
+        // Фильтрация цвета объекта
+        let mut colour=object.colour();
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
+
         let uni=uniform!{
             cos:cos,
             sin:sin,
             rotation_center:rotation_center,
             window_center:unsafe{window_center},
-            colour:object.colour(),
+            colour:colour,
         };
 
         frame.draw(
@@ -225,9 +246,9 @@ impl SimpleGraphics{
     }
 }
 
-// Функции для добаления/удаления объектов
+/// Функции для добаления/удаления объектов.
 impl SimpleGraphics{
-    // Добавляет объект в конец списка
+    /// Добавляет объект в конец списка.
     pub fn push_object<'o,O,V,I>(&mut self,object:&'o O)->Option<usize>
         where
             O:DependentObject<
@@ -301,7 +322,7 @@ impl SimpleGraphics{
     }
 }
 
-// Редактирование объектов
+/// Редактирование объектов.
 impl SimpleGraphics{
     pub fn get_object_colour(&mut self,index:usize)->&mut Colour{
         &mut self.objects[index].colour
@@ -315,7 +336,7 @@ impl SimpleGraphics{
         self.objects[index].primitive_type=primitive_type
     }
 
-    // Если размер новых данных не соответсвует выделенному ранее размеру, то ПАНИКА!
+    /// Если размер новых данных не соответсвует выделенному ранее размеру, то ПАНИКА!
     pub fn rewrite_object_vertices(&mut self,index:usize,vertices:&[Vertex2D]){
         let object=&self.objects[index];
 
@@ -323,7 +344,7 @@ impl SimpleGraphics{
         vertex_slice.write(vertices);
     }
 
-    // Если размер новых данных не соответсвует выделенному ранее размеру, то ПАНИКА!
+    /// Если размер новых данных не соответсвует выделенному ранее размеру, то ПАНИКА!
     pub fn rewrite_object_indices(&mut self,index:usize,indices:&[u8]){
         let object=&self.objects[index];
 
@@ -337,6 +358,7 @@ impl SimpleGraphics{
     pub fn draw_object(
         &self,
         index:usize,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
@@ -344,8 +366,13 @@ impl SimpleGraphics{
 
         let index_source=object.indices_source(&self.index_buffer);
 
+        // Фильтрация цвета объекта
+        let mut colour=object.colour;
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
+
         let uni=uniform!{
-            colour:object.colour,
+            colour:colour,
             window_center:unsafe{window_center},
         };
 
@@ -364,6 +391,7 @@ impl SimpleGraphics{
         &self,
         index:usize,
         shift:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
@@ -371,8 +399,13 @@ impl SimpleGraphics{
 
         let index_source=object.indices_source(&self.index_buffer);
 
+        // Фильтрация цвета объекта
+        let mut colour=object.colour;
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
+
         let uni=uniform!{
-            colour:object.colour,
+            colour:colour,
             window_center:unsafe{window_center},
             shift:shift,
         };
@@ -393,6 +426,7 @@ impl SimpleGraphics{
         index:usize,
         rotation_center:[f32;2],
         angle:f32,
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
     )->Result<(),DrawError>{
@@ -402,12 +436,17 @@ impl SimpleGraphics{
 
         let (sin,cos)=angle.sin_cos();
 
+        // Фильтрация цвета объекта
+        let mut colour=object.colour;
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
+
         let uni=uniform!{
             cos:cos,
             sin:sin,
             rotation_center:rotation_center,
             window_center:unsafe{window_center},
-            colour:object.colour,
+            colour:colour,
         };
 
         let vertex_slice=object.vertices_source(&self.vertex_buffer,&self.bindings);
