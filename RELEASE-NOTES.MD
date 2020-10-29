@@ -1,8 +1,16 @@
-# 0.5.0-alpha2
+# 0.5.0
 
 ### Added
 
 A colour filter and a feature for it. You may use it to make different UI layers with their own filters.
+
+### Updated
+
+The `image` crate to `0.23.11`.
+
+### A new audio system
+
+
 
 # 0.5.0-alpha
 

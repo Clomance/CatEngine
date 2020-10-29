@@ -51,6 +51,8 @@ pub use glium::{
 // re-exports
 pub use image;
 
+mod support;
+
 #[cfg(feature="audio")]
 pub mod audio;
 

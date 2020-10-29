@@ -88,6 +88,32 @@ impl Track<i16>{
             sample_rate,
         })
     }
+
+    pub fn to_mono_tracks(&self)->Vec<MonoTrack>{
+        let channels=self.channels as usize;
+        let len=self.len()/channels;
+        let mut tracks=Vec::with_capacity(channels);
+
+        for c in 0..channels{
+            let mut channel=Vec::with_capacity(len);
+
+            for &s in self.data()[c..].iter().step_by(channels){
+                channel.push(if c%2==0{
+                    s.into_f32()
+                }
+                else{
+                    -s.into_f32()
+                });
+            }
+
+            tracks.push(MonoTrack{
+                sample_rate:self.sample_rate,
+                data:channel,
+            })
+        }
+
+        tracks
+    }
 }
 
 impl<T:Clone+SampleTransform> Track<T>{
@@ -149,8 +175,18 @@ impl Into<Track<f32>> for Track<i16>{
     }
 }
 
-/// Одноканальный трек
+/// Одноканальный трек.
 pub struct MonoTrack{
-    data:Vec<f32>,
-    sample_rate:u32,
+    pub data:Vec<f32>,
+    pub sample_rate:u32,
+}
+
+impl MonoTrack{
+    pub fn len(&self)->usize{
+        self.data.len()
+    }
+
+    pub fn sample_rate(&self)->u32{
+        self.sample_rate
+    }
 }

@@ -21,6 +21,7 @@ exclude = [
     "RELEASE-NOTES.MD"
 ]
 
+
 [features]
 default = ["text_graphics","simple_graphics","texture_graphics"]
 
@@ -66,7 +67,7 @@ features = [
 
 [dependencies]
 # main
-image = "0.23.10"
+image = "0.23.11"
 glium = "0.28.0"
 # text
 ttf-parser = { version = "0.8.2", optional = true }
