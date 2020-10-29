@@ -51,6 +51,8 @@ pub use glium::{
 // re-exports
 pub use image;
 
+/// Общий модуль для функций или типов,
+/// неотносящихся ни к одному из других модулей.
 mod support;
 
 #[cfg(feature="audio")]

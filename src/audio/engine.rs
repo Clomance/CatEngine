@@ -161,7 +161,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                         format.channels=audio_output_channels;
 
                         // Установка новой частоты дискретизации
-                        channel_system.set_sample_rate(format.sample_rate.0);
+                        channel_system.set_system_sample_rate(format.sample_rate.0);
 
                         let new_stream=event_loop.build_output_stream(&new_device,&format).expect("Build a new stream");
 

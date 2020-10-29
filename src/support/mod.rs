@@ -1,3 +1,5 @@
+pub mod math;
+
 /// 
 pub struct SyncRawPtr<T>{
     ptr:*const T,
