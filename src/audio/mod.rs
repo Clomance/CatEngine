@@ -1,36 +1,25 @@
-//! # Простой аудио движок. A simple audio engine. `feature = "audio"`.
+//! # Многоканальный аудио движок. A multichannel audio engine. `feature = "audio"`.
 //! 
 //! Аудио движок имеет свой поток для работы со звуком.
 //! Также в нём есть массив аудио треков, которые можно запустить.
 //! 
-//! Использует только один канал для проигрывания треков
-//! и только формат `mp3`.
+//! Поддерживает только вывод.
+//! Пока что позволяет декодировать только треки формата `mp3`.
+//! Все треки переводятся в 24-битный формат.
 //! 
-//! Поддерживает Mono и Stereo 2.0.
 //! 
 //! Поток закрывается с паникой, так что не паникуте!
 //! 
-//! Некоторый код был взят из [rodio](https://github.com/RustAudio/rodio).
-//! 
-//! При переключении трека в режиме паузы, слышен странный звук.
-//! 
 //! #
 //! 
-//! The audio engine has it's own thread for working with sound.
-//! Also it has audio track array.
+//! The audio engine has it's own thread to work with sound.
+//! Also it has an audio track array.
 //! 
-//! Uses only one stream for playing tracks
-//! and only `mp3` format.
-//! 
-//! The audio engine converts all sound tracks to the 24-bit format.
-//! 
-//! Supports Mono and Stereo 2.0.
+//! Supports only output.
+//! For now only 'mp3' format decoding is supported.
+//! All tracks are converted to the 24-bit format.
 //! 
 //! The thread closes with panic, so don't panic!
-//! 
-//! Some code was taken from [rodio](https://github.com/RustAudio/rodio).
-//! 
-//! A strange sound appears when a track is switched in pause.
 //! 
 //! #
 //! 
@@ -61,10 +50,13 @@ mod track_iterator;
 use track_iterator::*;
 
 mod track;
-mod sample;
-
 pub use track::*;
+
+mod sample;
 use sample::SampleTransform;
+
+mod wrapper;
+pub use wrapper::AudioWrapper;
 
 use cpal::{
     Host,
@@ -86,6 +78,7 @@ use cpal::{
     Sample,
     Format,
     StreamError,
+    SampleFormat
 };
 
 use std::{
@@ -114,7 +107,7 @@ pub (crate) enum AudioSystemCommand{
     /// Channels - Vec<usize>,
     /// Repeats - u32:
     /// 0 - forever, 1 - once, 2.. - repeat twice and so on
-    PlayMonoOnChannels(usize,Vec<usize>,u32),
+    PlayMonoOnChannels(TrackSet),
 
     /// Plays mono-channel tracks on the given channels.
     /// 
@@ -122,11 +115,17 @@ pub (crate) enum AudioSystemCommand{
     /// Channels - Vec<usize>,
     /// Repeats - u32:
     /// 0 - forever, 1 - once, 2.. - repeat twice and so on
-    PlayMonosOnChannels(Vec<(usize,Vec<usize>,u32)>),
+    PlayMonosOnChannels(Vec<TrackSet>),
 
-    Stop,
+    /// Отчищает плейлист (список текущих играющих треков).
+    /// 
+    /// Clears a playlist (the list of currently playing tracks).
+    ClearPlaylist,
 
-    SetVolume(f32),
+    /// Устанавливает общую громкость.
+    /// 
+    /// Sets the general volume.
+    SetGeneralVolume(f32),
     Close,
 }
 
@@ -134,9 +133,10 @@ pub (crate) enum AudioSystemCommand{
 #[derive(Clone,Debug,PartialEq)]
 pub enum AudioCommandResult{
     Ok,
-    NoSuchTrack,
     ThreadClosed,
     TrackError,
+    TrackArrayOverflow,
+    PlaylistOverflow,
 }
 
 impl AudioCommandResult{
@@ -165,13 +165,12 @@ unsafe impl std::marker::Send for AudioSystemCommand{}
 
 #[derive(Clone)]
 pub struct AudioSettings{
-    /// Громкость. По умолчанию 0.5.
-    /// 
+    /// Общая громкость, применяемая прямо перед выводом.
+    /// По умолчанию 0.5.
+    ///
+    /// Applies right before an output.
     /// The default is 0.5.
-    pub volume:f32,
-
-    /// The default is 2.
-    pub audio_output_channels:u16,
+    pub general_volume:f32,
 
     /// Вместимость массива для треков.
     /// 
@@ -185,18 +184,27 @@ pub struct AudioSettings{
     /// The maximum amount of playing tracks at one time.
     /// 
     /// The default is 8.
-    pub playing_track_array_capacity:usize,
+    pub track_playlist_capacity:usize,
 }
 
 impl AudioSettings{
     pub fn new()->AudioSettings{
         Self{
-            volume:0.5f32,
-            audio_output_channels:2u16,
+            general_volume:0.5f32,
             track_array_capacity:8,
-            playing_track_array_capacity:8,
+            track_playlist_capacity:8,
         }
     }
+}
+
+/// Внутренние настройки системы.
+pub (crate) struct AudioSystemSettings{
+    pub general_volume:f32,
+    pub output_channels:u16,
+    pub format:Format,
+
+    pub track_array_capacity:usize,
+    pub track_playlist:usize,
 }
 
 
@@ -225,6 +233,14 @@ pub struct Audio{
 
     command:Sender<AudioSystemCommand>,
     thread:Option<JoinHandle<()>>,
+
+    /// Количество треков во внутреннем буфере.
+    track_array_len:usize,
+    track_array_cap:usize,
+
+    // Количество проигрываемых треков
+    playlist_len:usize,
+    playlist_cap:usize,
 }
 
 impl Audio{
@@ -235,9 +251,13 @@ impl Audio{
     /// Creates an audio engine.
     /// 
     /// Returns the result of starting an audio thread.
-    pub fn new(//<D:Fn(&Host)->Device+Send+Sync+'static>(
+    pub fn new<
+        D:Fn(&Host)->Device+Send+Sync+'static,
+        F:Fn(&Device)->Format+Send+Sync+'static,
+    >(
         host:Host,
-        //choose_device:D,
+        choose_device:D,
+        choose_format:F,
         settings:AudioSettings
     )->io::Result<Audio>{
         //
@@ -246,28 +266,40 @@ impl Audio{
 
         let event_loop=Arc::new(host.event_loop());
         let el=event_loop.clone();
-        // Передача команд от управляющего потока выполняющему
+        // Канал для передачи команд от управляющего потока выполняющему
         let (sender,receiver)=channel::<AudioSystemCommand>();
 
         let owner_host=Arc::new(host);
         let host=owner_host.clone();
+
+        let track_array_cap=settings.track_array_capacity;
+
+        let playlist_cap=settings.track_playlist_capacity;
 
         let thread_result=Builder::new()
                 .name("CatEngine's audio thread".to_string())
                 .stack_size(audio_thread_stack_size)
                 .spawn(move||{
 
-            let mut device=host.default_output_device().expect("No available device");
-            //let device=choose_device(&host);
-            let mut format=device.default_output_format().expect("No available device");
+            // Выполнение замыкания
+            let mut device=choose_device(host.as_ref());
 
-            format.channels=settings.audio_output_channels;
+            let mut format=choose_format(&device);
 
             let main_stream=event_loop.build_output_stream(&device,&format).expect("stream");
 
             *stream.lock().unwrap()=Some(main_stream.clone());
 
             event_loop.play_stream(main_stream.clone()).unwrap();
+
+            let system_settings=AudioSystemSettings{
+                general_volume:settings.general_volume,
+                output_channels:format.channels,
+                format,
+
+                track_array_capacity:settings.track_array_capacity,
+                track_playlist:settings.track_playlist_capacity,
+            };
 
             // Забирает контроль над потоком и начинает обработку аудио потоков
             // Takes control of the current thread and begins the stream processing
@@ -276,10 +308,8 @@ impl Audio{
                 //choose_device,
                 stream,
                 event_loop,
-                format,
-                settings.audio_output_channels,
                 receiver,
-                settings.volume,
+                system_settings,
             )
         });
 
@@ -295,18 +325,112 @@ impl Audio{
             event_loop:el,
             command:sender,
             thread:Some(thread),
+
+            track_array_len:0usize,
+            track_array_cap,
+
+            playlist_len:0usize,
+            playlist_cap,
         })
+    }
+
+    pub fn default(settings:AudioSettings)->io::Result<Audio>{
+        let host=cpal::default_host();
+        //
+        let stream=Arc::new(Mutex::new(None));
+        let s=stream.clone();
+
+        let event_loop=Arc::new(host.event_loop());
+        let el=event_loop.clone();
+        // Канал для передачи команд от управляющего потока выполняющему
+        let (sender,receiver)=channel::<AudioSystemCommand>();
+
+        let owner_host=Arc::new(host);
+        let host=owner_host.clone();
+
+        let track_array_cap=settings.track_array_capacity;
+
+        let playlist_cap=settings.track_playlist_capacity;
+
+        let thread_result=Builder::new()
+                .name("CatEngine's audio thread".to_string())
+                .stack_size(audio_thread_stack_size)
+                .spawn(move||{
+
+            let mut device=host.default_output_device().expect("No available device");
+
+            let mut format=device.default_output_format().expect("No available device");
+
+            let main_stream=event_loop.build_output_stream(&device,&format).expect("stream");
+
+            *stream.lock().unwrap()=Some(main_stream.clone());
+
+            event_loop.play_stream(main_stream.clone()).unwrap();
+
+            let system_settings=AudioSystemSettings{
+                general_volume:settings.general_volume,
+                output_channels:format.channels,
+                format,
+
+                track_array_capacity:settings.track_array_capacity,
+                track_playlist:settings.track_playlist_capacity,
+            };
+
+            // Забирает контроль над потоком и начинает обработку аудио потоков
+            // Takes control of the current thread and begins the stream processing
+            event_loop_handler(
+                host,
+                stream,
+                event_loop,
+                receiver,
+                system_settings,
+            )
+        });
+
+        let thread=match thread_result{
+            Ok(thread)=>thread,
+            Err(e)=>return Err(e),
+        };
+
+        Ok(Self{
+            host:owner_host,
+            stream:s,
+
+            event_loop:el,
+            command:sender,
+            thread:Some(thread),
+
+            track_array_len:0usize,
+            track_array_cap,
+
+            playlist_len:0usize,
+            playlist_cap,
+        })
+    }
+
+    pub fn tracks_amount(&self)->usize{
+        self.track_array_len
+    }
+
+    pub fn playlist_len(&self)->usize{
+        self.playlist_len
     }
 
     /// Добавляет трек в массив треков.
     /// 
     /// Adds the track to the track array.
-    pub fn add_track(&self,track:MonoTrack)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::AddMono(track)){
-            Ok(_)=>{
-                AudioCommandResult::Ok
-            },
-            Err(_)=>AudioCommandResult::ThreadClosed,
+    pub fn add_track(&mut self,track:MonoTrack)->AudioCommandResult{
+        if self.track_array_len<self.track_array_cap{
+            match self.command.send(AudioSystemCommand::AddMono(track)){
+                Ok(_)=>{
+                    self.track_array_len+=1;
+                    AudioCommandResult::Ok
+                },
+                Err(_)=>AudioCommandResult::ThreadClosed,
+            }
+        }
+        else{
+            AudioCommandResult::TrackArrayOverflow
         }
     }
 
@@ -343,29 +467,29 @@ impl Audio{
     /// Plays a track.
     /// 
     /// 0 - forever, 1 - once, 2.. - repeat twice and so on
-    pub fn play_track(&self,index:usize,channels:&[usize],repeats:u32)->AudioCommandResult{
-        let stream_lock=match self.stream.lock(){
-            LockResult::Ok(lock)=>lock,
-            LockResult::Err(_)=>return AudioCommandResult::ThreadClosed
-        };
+    pub fn play_track(&self,set:TrackSet)->AudioCommandResult{
+        if self.playlist_len<self.playlist_cap{
+            let stream_lock=match self.stream.lock(){
+                LockResult::Ok(lock)=>lock,
+                LockResult::Err(_)=>return AudioCommandResult::ThreadClosed
+            };
 
-        let mut channels_vec=Vec::with_capacity(channels.len());
-        for &c in channels{
-            channels_vec.push(c)
+            // Отправка команды
+            let result=match self.command.send(
+                AudioSystemCommand::PlayMonoOnChannels(set)
+            ){
+                Ok(())=>AudioCommandResult::Ok,
+                Err(_)=>return AudioCommandResult::ThreadClosed
+            };
+
+            if let Some(stream)=stream_lock.as_ref(){
+                self.event_loop.play_stream(stream.clone());
+            }
+            result
         }
-
-        let result=match self.command.send(
-            AudioSystemCommand::PlayMonoOnChannels(index,channels_vec,repeats)
-        ){
-            Ok(())=>AudioCommandResult::Ok,
-            Err(_)=>return AudioCommandResult::ThreadClosed
-        };
-
-        if let Some(stream)=stream_lock.as_ref(){
-            self.event_loop.play_stream(stream.clone());
+        else{
+            AudioCommandResult::PlaylistOverflow
         }
-
-        result
     }
 
     /// Запускает треки.
@@ -375,29 +499,35 @@ impl Audio{
     /// Plays tracks.
     /// 
     /// 0 - forever, 1 - once, 2.. - repeat twice and so on
-    pub fn play_tracks(&self,sets:Vec<(usize,Vec<usize>,u32)>)->AudioCommandResult{
-        let stream_lock=match self.stream.lock(){
-            LockResult::Ok(lock)=>lock,
-            LockResult::Err(_)=>return AudioCommandResult::ThreadClosed
-        };
+    pub fn play_tracks(&self,sets:Vec<TrackSet>)->AudioCommandResult{
+        if self.playlist_len+sets.len()<self.playlist_cap{
+            let stream_lock=match self.stream.lock(){
+                LockResult::Ok(lock)=>lock,
+                LockResult::Err(_)=>return AudioCommandResult::ThreadClosed
+            };
 
-        let result=match self.command.send(
-            AudioSystemCommand::PlayMonosOnChannels(sets)
-        ){
-            Ok(())=>AudioCommandResult::Ok,
-            Err(_)=>return AudioCommandResult::ThreadClosed
-        };
+            // Отправка команды
+            let result=match self.command.send(
+                AudioSystemCommand::PlayMonosOnChannels(sets)
+            ){
+                Ok(())=>AudioCommandResult::Ok,
+                Err(_)=>return AudioCommandResult::ThreadClosed
+            };
 
-        if let Some(stream)=stream_lock.as_ref(){
-            self.event_loop.play_stream(stream.clone());
+            if let Some(stream)=stream_lock.as_ref(){
+                self.event_loop.play_stream(stream.clone());
+            }
+
+            result
         }
-
-        result
+        else{
+            AudioCommandResult::PlaylistOverflow
+        }
     }
 
-    /// Запускает проигрывание канала.
+    /// Запускает поток проигрывания.
     /// 
-    /// Starts playing the stream.
+    /// Starts playing the output stream.
     pub fn play(&self)->AudioCommandResult{
         let stream_lock=match self.stream.lock(){
             LockResult::Ok(stream)=>stream,
@@ -411,9 +541,9 @@ impl Audio{
         AudioCommandResult::Ok
     }
 
-    /// Ставит на паузу проигрывание канала.
+    /// Ставит на паузу поток проигрывания.
     /// 
-    /// Pauses the stream.
+    /// Pauses the output stream.
     pub fn pause(&self)->AudioCommandResult{
         let stream_lock=match self.stream.lock(){
             LockResult::Ok(stream)=>stream,
@@ -427,11 +557,11 @@ impl Audio{
         AudioCommandResult::Ok
     }
 
-    /// Останавливает проигрывание путём удаления трека из буфера для вывода.
+    /// Очищает весь плейлист.
     /// 
-    /// Stops playing by removing current track from the playing buffer.
-    pub fn stop(&self)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::Stop){
+    /// Clears a playlist.
+    pub fn clear_playlist(&self)->AudioCommandResult{
+        match self.command.send(AudioSystemCommand::ClearPlaylist){
             Ok(())=>AudioCommandResult::Ok,
             Err(_)=>AudioCommandResult::ThreadClosed
         }
@@ -439,9 +569,9 @@ impl Audio{
 
     /// Устанавливает громкость.
     /// 
-    /// Sets the volume.
-    pub fn set_volume(&self,volume:f32)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::SetVolume(volume)){
+    /// Sets the general volume.
+    pub fn set_general_volume(&self,volume:f32)->AudioCommandResult{
+        match self.command.send(AudioSystemCommand::SetGeneralVolume(volume)){
             Ok(())=>AudioCommandResult::Ok,
             Err(_)=>AudioCommandResult::ThreadClosed
         }

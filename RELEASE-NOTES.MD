@@ -10,7 +10,21 @@ The `image` crate to `0.23.11`.
 
 ### A new audio system
 
+Now you are able to control each audio channel yourself.
 
+```
+
+```
+
+##### Post-processing
+
+Audio post-processing is enabled with the `audio_post_processing` feature.
+It gives you an ability to add a closure to render a channel output frame (one iteration of all audio channels).
+
+Example:
+```
+
+```
 
 
 # 0.5.0-alpha

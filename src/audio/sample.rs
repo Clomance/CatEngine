@@ -1,6 +1,4 @@
-// taken from rodio
-
-use cpal::Sample as CpalSample;
+use cpal::Sample;
 
 /// Represents a value of a single sample.
 ///
@@ -15,9 +13,8 @@ use cpal::Sample as CpalSample;
 ///
 /// You can implement this trait on your own type as well if you wish so.
 
-pub trait SampleTransform:CpalSample{
+pub trait SampleTransform:Sample{
     fn into_f32(self)->f32;
-
 
     fn to_u16(self,volume:f32)->u16;
 
@@ -31,12 +28,12 @@ pub trait SampleTransform:CpalSample{
     ///
     /// The result should be equal to
     /// `first * numerator / denominator + second * (1 - numerator / denominator)`.
-    fn lerp(first: Self, second: Self, numerator: u32, denominator: u32) -> Self;
+    fn lerp(first:Self,second:Self,numerator:u32,denominator:u32)->Self;
     /// Multiplies the value of this sample by the given amount.
-    fn amplify(self, value: f32) -> Self;
+    fn amplify(self,value:f32)->Self;
 
     /// Calls `saturating_add` on the sample.
-    fn saturating_add(self, other: Self) -> Self;
+    fn saturating_add(self, other: Self)->Self;
 
     /// Returns the value corresponding to the absence of sound.
     fn zero_value()->Self;
@@ -141,8 +138,8 @@ impl SampleTransform for u16{
 
     #[inline]
     fn amplify(self, value: f32) -> u16 {
-        let s=CpalSample::to_i16(&self).amplify(value);
-        CpalSample::to_u16(&s)
+        let s=Sample::to_i16(&self).amplify(value);
+        Sample::to_u16(&s)
     }
 
     #[inline]

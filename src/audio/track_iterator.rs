@@ -6,13 +6,17 @@ use crate::support::{
 
 use super::{
     SampleTransform,
-    MonoTrack
+    MonoTrack,
 };
 
 enum PlayType{
+    /// Перестаёт играть
     None,
+    /// Сыграть один раз
     Once,
+    /// Повторять
     Repeat,
+    /// Проигрывать вечно
     Forever,
 }
 
@@ -26,16 +30,23 @@ struct Repeats{
     repeats:u32,
 }
 
+/// Итератор по треку.
+/// 
+/// Имеет возможность повторять трек и конвертировать его частоту.
 pub struct TrackIter{
     data:SyncRawPtr<Vec<f32>>,
-    /// Частота дискретизации
+    /// Частота дискретизации.
     track_sample_rate:u32,
     /// Длина трека
     track_len:usize,
-    /// Индекс текущего значения
+    /// Индекс текущего значения.
     track_current_frame:usize,
+    /// Режим повторений.
     play_type:PlayType,
-    repeats:u32, // Повторений осталось
+    /// Повторений осталось.
+    repeats:u32,
+    /// Громкость трека.
+    volume:f32,
 
     // Поля конвертера (не использовал Option для оптимизации и упрощения кода)
 
@@ -60,7 +71,7 @@ pub struct TrackIter{
 }
 
 impl TrackIter{
-    pub fn new(track:&MonoTrack,system_sample_rate:u32,repeats:u32)->TrackIter{
+    pub fn new(track:&MonoTrack,system_sample_rate:u32,repeats:u32,volume:f32)->TrackIter{
         let mut iter=Self{
             data:SyncRawPtr::new(&track.data),
             track_sample_rate:track.sample_rate(),
@@ -68,10 +79,12 @@ impl TrackIter{
             track_len:track.len(),
 
             track_current_frame:0usize,
-            play_type:PlayType::None,
-            repeats:0u32,
+            play_type:PlayType::None, // Определяется позже
+            repeats:0u32, // Определяется позже
 
-            converter_enabled:false,
+            volume,
+
+            converter_enabled:false, // Определяется позже
             from:0u32,
             to:0u32,
             current_frame:0f32,
@@ -145,7 +158,6 @@ impl TrackIter{
 
     /// Следующее значение трека.
     pub fn next_track_sample(&mut self)->f32{
-        // println!("Next sample");
         match self.play_type{
             PlayType::None=>{
                 return 0f32
@@ -178,7 +190,7 @@ impl TrackIter{
 
         self.track_current_frame+=1;
 
-        sample
+        sample*self.volume
     }
 
     fn next_input_frame(&mut self){
@@ -232,12 +244,17 @@ impl TrackIter{
         sample
     }
 
-    pub fn next(&mut self)->f32{
-        if self.converter_enabled{
-            self.next_converter_sample()
+    pub fn next(&mut self)->Option<f32>{
+        if let PlayType::None=self.play_type{
+            None
         }
         else{
-            self.next_track_sample()
+            Some(if self.converter_enabled{
+                self.next_converter_sample()
+            }
+            else{
+                self.next_track_sample()
+            })
         }
     }
 }

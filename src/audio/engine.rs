@@ -1,15 +1,10 @@
-use crate::support::{
-    SyncRawPtr,
-    SyncRawMutPtr
-};
-
 use super::{
     AudioCommandResult,
     AudioSystemCommand,
-    AudioSettings,
     track::*,
     sample::SampleTransform,
     ChannelSystem,
+    AudioSystemSettings,
 };
 
 use cpal::{
@@ -60,54 +55,59 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
     //choose_device:D,
     main_stream:Arc<Mutex<Option<StreamId>>>,
     event_loop:Arc<EventLoop>,
-    mut format:Format,
-    audio_output_channels:u16,
     receiver:Receiver<AudioSystemCommand>,
-    mut volume:f32,
+    mut settings:AudioSystemSettings,
 )->!{
     // Локальный массив одноканальных треков
-    let mut o_tracks=Vec::<MonoTrack>::with_capacity(8);
+    let mut tracks_container=Vec::<MonoTrack>::with_capacity(settings.track_array_capacity);
 
-    let mut tracks=SyncRawMutPtr::new(&mut o_tracks);
-
-    let mut channel_system=ChannelSystem::new(format.sample_rate.0,8,format.channels as usize);
+    let mut channel_system=ChannelSystem::new(
+        settings.format.sample_rate.0,
+        settings.track_playlist,
+        settings.format.channels as usize
+    );
 
     event_loop.clone().run(move|stream,result|{
         // Обработчик команд
         match receiver.try_recv(){
             Ok(command)=>match command{
+                // Добавление трека в массив
                 AudioSystemCommand::AddMono(track)=>{
-                    let tracks=tracks.as_mut();
-                    if tracks.len()<tracks.capacity(){
-                        tracks.push(track);
+                    // Здесь проверка не нужна, так как уже есть внешняя,
+                    // но эта может потом пригодится
+                    //if tracks_container.len()<tracks_container.capacity(){
+                        tracks_container.push(track);
+                    //}
+                }
+
+                // Добавление трека в плейлист
+                AudioSystemCommand::PlayMonoOnChannels(TrackSet{index,channels,repeats,volume})=>{
+                    // Здесь проверка не нужна, так как уже есть внешняя,
+                    // но она в любом случае выполняется при обращении через индекс
+                    if let Some(track)=tracks_container.get(index){
+                        // Здесь проверка не нужна, так как уже есть внешняя -
+                        // переполнения не должно быть
+                        channel_system.add_track(track,channels,repeats,volume);
                     }
                 }
-                // Добавление трека для проигрывания
-                AudioSystemCommand::PlayMonoOnChannels(index,channels,repeats)=>{
-                    let track=&tracks.as_ref()[index];
 
-                    channel_system.add_track(track,channels,repeats);
-                }
-                // Добавление множества треков для проигрывания
+                // Добавление множества треков в плейлист
                 AudioSystemCommand::PlayMonosOnChannels(sets)=>{
-                    for (index,channels,repeats) in sets{
-                        let track=&tracks.as_ref()[index];
-
-                        channel_system.add_track(track,channels,repeats);
+                    for TrackSet{index,channels,repeats,volume} in sets{
+                        if let Some(track)=tracks_container.get(index){
+                            // Здесь проверка не нужна, так как уже есть внешняя -
+                            // переполнения не должно быть
+                            channel_system.add_track(track,channels,repeats,volume);
+                        }
                     }
                 }
 
-                AudioSystemCommand::Stop=>{
-                    //track.stop()
-                }
+                // Очищает весь плейлист
+                AudioSystemCommand::ClearPlaylist=>channel_system.clear_playlist(),
 
-                AudioSystemCommand::SetVolume(v)=>{
-                    volume=v;
-                }
+                AudioSystemCommand::SetGeneralVolume(v)=>settings.general_volume=v,
 
-                AudioSystemCommand::Close=>{
-                    panic!("Closing CatEngine's audio thread")
-                },
+                AudioSystemCommand::Close=>panic!("Closing CatEngine's audio thread"),
             }
             Err(_)=>{
                 // Ошибки игнорируются,
@@ -125,24 +125,24 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                     StreamData::Output{buffer:UnknownTypeOutputBuffer::I16(mut buffer)}
                     =>output(
                         &mut channel_system,
-                        format.channels,
-                        volume,
+                        settings.format.channels,
+                        settings.general_volume,
                         buffer
                     ),
 
                     StreamData::Output{buffer:UnknownTypeOutputBuffer::U16(mut buffer)}
                     =>output(
                         &mut channel_system,
-                        format.channels,
-                        volume,
+                        settings.format.channels,
+                        settings.general_volume,
                         buffer
                     ),
 
                     StreamData::Output{buffer:UnknownTypeOutputBuffer::F32(mut buffer)}
                     =>output(
                         &mut channel_system,
-                        format.channels,
-                        volume,
+                        settings.format.channels,
+                        settings.general_volume,
                         buffer
                     ),
 
@@ -156,14 +156,14 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                     StreamError::DeviceNotAvailable=>{
                         let new_device=host.default_output_device().expect("No available device");
 
-                        format=new_device.default_output_format().expect("No available device");
-
-                        format.channels=audio_output_channels;
+                        settings.format=new_device.default_output_format().expect("No available device");
 
                         // Установка новой частоты дискретизации
-                        channel_system.set_system_sample_rate(format.sample_rate.0);
+                        channel_system.set_system_sample_rate(settings.format.sample_rate.0);
 
-                        let new_stream=event_loop.build_output_stream(&new_device,&format).expect("Build a new stream");
+                        channel_system.set_system_channels(settings.format.channels);
+
+                        let new_stream=event_loop.build_output_stream(&new_device,&settings.format).expect("Build a new stream");
 
                         *main_stream.lock().unwrap()=Some(new_stream.clone());
 
@@ -180,15 +180,23 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
     })
 }
 
-fn output<S:SampleTransform>(
+/// Вывод звука и постобработка (`feature="audio_post_processing"`)
+fn output<
+    S:SampleTransform,
+    #[cfg(feature="audio_post_processing")]P:FnMut(&mut Vec<f32>)
+>(
     channel_system:&mut ChannelSystem,
     channels:u16,
     volume:f32,
-    mut buffer:OutputBuffer<S>
+    mut buffer:OutputBuffer<S>,
+    #[cfg(feature="audio_post_processing")]post_processing:P,
 ){
     let mut c=0usize;
 
     let mut frame=channel_system.next_frame();
+
+    #[cfg(feature="audio_post_processing")]
+    post_processing(frame);
 
     for b in buffer.iter_mut(){
         if c==channels as usize{

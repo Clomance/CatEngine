@@ -6,12 +6,19 @@ use super::{
     SampleTransform,
 };
 
+use std::{
+    ops::AddAssign,
+    cmp::Ordering
+};
+
 pub struct ChannelSystem{
     /// Выходящая (системная) частота дискретизации.
     sample_rate:u32,
-    /// Треки с циклом повторений и переводчиком частот.
+    /// Спискок проигрываемых треков
+    /// с циклом повторений и переводчиком частот.
     tracks:Vec<TrackIter>,
 
+    /// Матрица (нет) распределения треков по каналам.
     channels:Vec<Vec<usize>>,
 
     /// Массива каналов.
@@ -42,10 +49,31 @@ impl ChannelSystem{
         }
     }
 
+    /// Устанавливает нового количество каналов.
+    pub fn set_system_channels(&mut self,channels:u16){
+        let current_channels=self.channel_frame.len();
+        match current_channels.cmp(&(channels as usize)){
+            Ordering::Equal=>{} // Количество каналов не изменилось
+
+            Ordering::Greater=>unsafe{ // Количество каналов уменьшилось
+                self.channel_frame.set_len(channels as usize);
+            }
+
+            Ordering::Less=>{ // Количество каналов увеличилось
+                let add=channels as usize-current_channels;
+                self.channel_frame.reserve_exact(add);
+                for _ in 0..add{
+                    self.channel_frame.push(0f32);
+                }
+
+            }
+        }
+    }
+
     /// Добавляет моно-канальный трек для проигрывания.
-    pub fn add_track(&mut self,track:&MonoTrack,channels:Vec<usize>,repeats:u32){
+    pub fn add_track(&mut self,track:&MonoTrack,channels:Vec<usize>,repeats:u32,volume:f32){
         let index=self.tracks.len();
-        let iter=TrackIter::new(track,self.sample_rate,repeats);
+        let iter=TrackIter::new(track,self.sample_rate,repeats,volume);
 
         self.tracks.push(iter);
         let track_iter=&mut self.tracks[index];
@@ -53,16 +81,29 @@ impl ChannelSystem{
         self.channels.push(channels);
     }
 
+    /// Удаляет трек из списка проигрываемых.
+    pub fn remove_track(&mut self,index:usize){
+        self.tracks.remove(index);
+        self.channels.remove(index);
+    }
+
+    /// Удаляет все треки из списка проигрываемых.
+    pub fn clear_playlist(&mut self){
+        self.tracks.clear();
+        self.channels.clear();
+    }
+
     /// Возвращает фрейм каналов.
     /// Распределяет все треки по каналам.
-    pub fn next_frame(&mut self)->&Vec<f32>{
-        // Отчистка фрейма
+    pub fn next_frame(&mut self)->&mut Vec<f32>{
+        // Отчистка фрейма каналов
         for channel in &mut self.channel_frame{
             *channel=0f32;
         }
 
-        // Перебор треков (65-66)
-        for c in 0..self.tracks.len(){
+        // Перебор треков
+        let mut c=0usize;
+        'tracks:while c<self.tracks.len(){
             let track=&mut self.tracks[c];
 
             // Каналы для вывода трека
@@ -70,10 +111,22 @@ impl ChannelSystem{
 
             // Перебор индексов каналов
             for &channel in channels{
-                self.channel_frame[channel]+=track.next();
+                if let Some(sample)=track.next(){
+                    // Добавляем значение трека в канал, если такой есть
+                    if let Some(channel)=self.channel_frame.get_mut(channel){
+                        channel.add_assign(sample);
+                    }
+                }
+                else{
+                    // Удаление завершённых треков
+                    // (полностью проигранных)
+                    self.remove_track(c);
+                    continue 'tracks
+                }
             }
+            c+=1;
         }
 
-        &self.channel_frame
+        &mut self.channel_frame
     }
 }
