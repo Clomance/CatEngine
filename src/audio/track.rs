@@ -50,7 +50,7 @@ impl<T:std::fmt::Debug> TrackResult<T>{
 /// Аудио трек.
 /// An audio track.
 #[derive(Clone,Debug)]
-struct Track<T:Clone+SampleTransform>{
+pub struct Track<T:Clone+SampleTransform>{
     data:Vec<T>,
     channels:u16,
     sample_rate:u32,
@@ -66,6 +66,7 @@ impl Track<i16>{
         };
 
         let mut decoder=Decoder::new(file);
+
         let (channels,sample_rate)=match decoder.next_frame(){
             Ok(mut frame)=>{
                 data.append(&mut frame.data);
@@ -195,9 +196,6 @@ impl ChanneledTrack{
         // Частота фрейма - берётся как абсолютная
         let sample_rate:u32;
 
-        // Размер каналов фрейма
-        let mut len:usize;
-
         // Каналы распределения
         let mut output_channels:Vec<Vec<usize>>;
 
@@ -211,23 +209,26 @@ impl ChanneledTrack{
                 }
 
                 sample_rate=frame.sample_rate as u32;
-                //
-                len=frame.data.len()/frame.channels;
+
+                // Размер каналов фрейма
+                let len=frame.data.len()/frame.channels;
 
                 // Выделение памяти под каналы трека
                 channels=Vec::with_capacity(frame.channels);
-                for _ in 0..frame.channels{
-                    channels.push(Vec::with_capacity(len));
-                }
+
+                let data=frame.data;
 
                 // Распределение данных по отдельным каналам
-                let mut c=0usize;
-                for s in frame.data.into_iter().step_by(frame.channels){
-                    if c==frame.channels{
-                        c=0usize
+                for c in 0..frame.channels{
+                    channels.push(Vec::with_capacity(len));
+
+                    let step=frame.channels as isize;
+
+                    let track_channel=&mut channels[c];
+
+                    for &s in data[c..].iter().step_by(frame.channels){
+                        track_channel.push(s.into_f32());
                     }
-                    channels[c].push(s.into_f32());
-                    c+=1;
                 }
             }
             Err(_)=>return TrackResult::NoData
@@ -235,21 +236,28 @@ impl ChanneledTrack{
 
         // Считывание оставшихся данных
         while let Ok(frame)=decoder.next_frame(){
-            len=frame.data.len()/frame.channels;
+            let len=frame.data.len()/frame.channels;
 
-            // Выделение памяти под каналы трека
-            for c in 0..frame.channels{
-                channels[c].reserve_exact(len);
-            }
+            let data=frame.data.as_ptr();
+            let data_len=frame.data.len() as isize;
+
+            let step=frame.channels as isize;
 
             // Распределение данных по отдельным каналам
-            let mut c=0usize;
-            for s in frame.data.into_iter().step_by(frame.channels){
-                if c==frame.channels{
-                    c=0usize
+            for c in 0..frame.channels{
+                let track_channel=&mut channels[c];
+                // Выделение памяти под канал трека
+                track_channel.reserve_exact(len);
+
+                // Вписывание данных в канал
+                let mut offset=c as isize;
+                while offset<data_len{
+                    unsafe{
+                        let s=data.offset(offset).read();
+                        track_channel.push(s.into_f32());
+                    }
+                    offset+=step;
                 }
-                channels[c].push(s.into_f32());
-                c+=1;
             }
         }
 
