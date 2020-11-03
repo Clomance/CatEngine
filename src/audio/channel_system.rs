@@ -65,8 +65,14 @@ impl ChannelSystem{
                 for _ in 0..add{
                     self.channel_frame.push(0f32);
                 }
-
             }
+        }
+    }
+
+    /// Устанавливает громкость трека.
+    pub fn set_track_volume(&mut self,index:usize,volume:f32){
+        if let Some(track)=self.tracks.get_mut(index){
+            track.set_volume(volume)
         }
     }
 
@@ -83,8 +89,10 @@ impl ChannelSystem{
 
     /// Удаляет трек из списка проигрываемых.
     pub fn remove_track(&mut self,index:usize){
-        self.tracks.remove(index);
-        self.channels.remove(index);
+        if index<self.tracks.len(){
+            self.tracks.remove(index);
+            self.channels.remove(index);
+        }
     }
 
     /// Удаляет все треки из списка проигрываемых.

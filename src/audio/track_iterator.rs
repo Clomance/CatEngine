@@ -156,6 +156,10 @@ impl TrackIter{
         }
     }
 
+    pub fn set_volume(&mut self,volume:f32){
+        self.volume=volume
+    }
+
     /// Следующее значение трека.
     pub fn next_track_sample(&mut self)->f32{
         match self.play_type{

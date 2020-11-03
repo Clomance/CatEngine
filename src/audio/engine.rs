@@ -103,11 +103,19 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                 }
 
                 // Очищает весь плейлист
-                AudioSystemCommand::ClearPlaylist=>channel_system.clear_playlist(),
+                AudioSystemCommand::ClearPlaylist=>
+                    channel_system.clear_playlist(),
 
-                AudioSystemCommand::SetGeneralVolume(v)=>settings.general_volume=v,
+                AudioSystemCommand::SetMonoVolume(index,volume)=>
+                    channel_system.set_track_volume(index,volume),
 
-                AudioSystemCommand::Close=>panic!("Closing CatEngine's audio thread"),
+                AudioSystemCommand::SetGeneralVolume(v)=>
+                    settings.general_volume=v,
+
+                AudioSystemCommand::Close=>
+                    panic!("Closing CatEngine's audio thread"),
+
+                _=>{}
             }
             Err(_)=>{
                 // Ошибки игнорируются,

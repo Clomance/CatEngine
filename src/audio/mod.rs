@@ -98,8 +98,19 @@ use std::{
 const audio_thread_stack_size:usize=1024;
 
 pub (crate) enum AudioSystemCommand{
+    /// Добавляет одноканальный трек во внутренний массив.
+    /// 
     /// Adds a mono-channel track to the inner array.
     AddMono(MonoTrack),
+
+    /// Убирает одноканальный трек из внутреннего массива.
+    /// 
+    /// Также убирает его из плейлиста.
+    /// 
+    /// Removes a mono-channel track from the inner array.
+    /// 
+    /// Removes it from the playlist, too.
+    RemoveMono(usize),
 
     /// Plays a mono-channel track on the given channels.
     /// 
@@ -117,10 +128,20 @@ pub (crate) enum AudioSystemCommand{
     /// 0 - forever, 1 - once, 2.. - repeat twice and so on
     PlayMonosOnChannels(Vec<TrackSet>),
 
+    /// Убирает одноканальный трек из плейлиста.
+    /// 
+    /// Removes a mono-channel track from the playlist.
+    RemoveMonoFromPlaylist(usize),
+
     /// Отчищает плейлист (список текущих играющих треков).
     /// 
     /// Clears a playlist (the list of currently playing tracks).
     ClearPlaylist,
+
+    /// Устанавливает громкость треку в плейлисте.
+    /// 
+    /// Sets the volume to a track in the playlist.
+    SetMonoVolume(usize,f32),
 
     /// Устанавливает общую громкость.
     /// 
@@ -562,6 +583,16 @@ impl Audio{
     /// Clears a playlist.
     pub fn clear_playlist(&self)->AudioCommandResult{
         match self.command.send(AudioSystemCommand::ClearPlaylist){
+            Ok(())=>AudioCommandResult::Ok,
+            Err(_)=>AudioCommandResult::ThreadClosed
+        }
+    }
+
+    /// Устанавливет громкость играющего трека.
+    /// 
+    /// Sets the volume of a playing track.
+    pub fn set_track_volume(&self,track:usize,volume:f32)->AudioCommandResult{
+        match self.command.send(AudioSystemCommand::SetGeneralVolume(volume)){
             Ok(())=>AudioCommandResult::Ok,
             Err(_)=>AudioCommandResult::ThreadClosed
         }

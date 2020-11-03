@@ -184,7 +184,12 @@ pub struct ChanneledTrack{
 
 impl ChanneledTrack{
     pub fn new<P:AsRef<Path>>(path:P)->TrackResult<ChanneledTrack>{
-        let mut track=Track::new(path).unwrap();
+        let mut track=match Track::new(path){
+            TrackResult::Ok(track)=>track,
+            TrackResult::NoData=>return TrackResult::NoData,
+            TrackResult::FileError(err)=>return TrackResult::FileError(err),
+        };
+        
         let mut monos=track.to_mono_tracks();
 
         let sample_rate=track.sample_rate();
