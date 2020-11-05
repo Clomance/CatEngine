@@ -176,7 +176,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                     }
 
                 // Очищает список треков
-                AudioSystemCommand::ClearTrackArray=>{
+                AudioSystemCommand::ClearStorage=>{
                     track_list_ref.as_mut().clear();
                     channel_system.clear_playlist()
                 }

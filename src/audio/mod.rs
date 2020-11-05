@@ -10,7 +10,7 @@
 //! 
 //! Поток закрывается с паникой, так что не паникуте!
 //! 
-//! Больше вы сможете узнать из (книги)[https://github.com/Clomance/CatEngine/blob/master/book/README-RUS.MD].
+//! Больше вы сможете узнать из [книги](https://github.com/Clomance/CatEngine/blob/master/book/README-RUS.MD).
 //! 
 //! #
 //! 
@@ -23,7 +23,7 @@
 //! 
 //! The thread closes with panic, so don't panic!
 //! 
-//! You can learn more from the (book)[https://github.com/Clomance/CatEngine/blob/master/book/README.MD].
+//! You can learn more from the [book](https://github.com/Clomance/CatEngine/blob/master/book/README.MD).
 //! 
 //! #
 //! 
@@ -34,9 +34,13 @@
 //! 
 //! // For easier access to the audio engine
 //! let mut wrapper=AudioWrapper::new(audio);
+//! 
+//! wrapper.load_track("audio.mp3","test".to_string());
+//! 
+//! wrapper.play_track("test").unwrap();
 //! ```
 
-// re-import
+// re-export
 pub use cpal;
 
 mod engine;
@@ -96,49 +100,43 @@ use std::{
 
 const audio_thread_stack_size:usize=1024;
 
-/// Команды аудио системе.
+/// Команды аудио системы.
 /// 
-/// Audio system Commands.
+/// Audio system commands.
 pub (crate) enum AudioSystemCommand{
-    /// Добавляет одноканальный трек во внутренний массив.
+    /// Добавляет одноканальный трек в хранилище.
     /// 
-    /// Adds a mono-channel track to the inner array.
+    /// Adds a mono-channel track to the storage.
     AddMono(MonoTrack),
 
-    /// Добавляет одноканальные треки во внутренний массив.
+    /// Добавляет одноканальные треки в хранилище.
     /// 
-    /// Adds mono-channel tracks to the inner array.
+    /// Adds mono-channel tracks to the storage.
     AddMonos(Vec<MonoTrack>),
 
-    /// Убирает одноканальный трек из внутреннего массива.
+    /// Убирает одноканальный трек из хранилища.
     /// 
-    /// Removes a mono-channel track from the inner array.
+    /// Removes a mono-channel track from the storage.
     RemoveMono(usize),
 
-    /// Убирает одноканальные треки из внутреннего массива.
+    /// Убирает одноканальные треки из хранилища.
     /// 
-    /// Removes a mono-channel track from the inner array.
+    /// Removes a mono-channel track from the storage.
     RemoveMonos(Vec<usize>),
 
-    /// Очищает внутренний массив.
+    /// Очищает хранилище.
     /// 
-    /// Clears the inner array.
-    ClearTrackArray,
+    /// Clears the storage.
+    ClearStorage,
 
-    /// Plays a mono-channel track on the given channels.
+    /// Проигрывает одноканальный трек на данных каналах.
     /// 
-    /// A track index - usize,
-    /// Channels - Vec<usize>,
-    /// Repeats - u32:
-    /// 0 - forever, 1 - once, 2.. - repeat twice and so on
+    /// Plays a mono-channel track on the given channels.
     PlayMonoOnChannels(TrackSet),
 
-    /// Plays mono-channel tracks on the given channels.
+    /// Проигрывает одноканальные треки на данных каналах.
     /// 
-    /// A track index - usize,
-    /// Channels - Vec<usize>,
-    /// Repeats - u32:
-    /// 0 - forever, 1 - once, 2.. - repeat twice and so on
+    /// Plays mono-channel tracks on the given channels.
     PlayMonosOnChannels(Vec<TrackSet>),
 
     /// Ставит трек проигрываться.
@@ -167,17 +165,17 @@ pub (crate) enum AudioSystemCommand{
     /// Clears a playlist (the list of currently playing tracks).
     ClearPlaylist,
 
-    /// Устанавливает громкость треку в плейлисте.
+    /// Устанавливает громкость трека в плейлисте.
     /// 
     /// Sets a volume to a track in the playlist.
     SetMonoVolume(usize,f32),
 
-    /// Устанавливает громкость трекам в плейлисте.
+    /// Устанавливает громкость треков в плейлисте.
     /// 
     /// Sets a volume to tracks in the playlist.
     SetMonosVolume(Vec<usize>,f32),
 
-    /// Устанавливает громкости трекам в плейлисте.
+    /// Устанавливает громкости треков в плейлисте.
     /// 
     /// Sets volumes to tracks in the playlist.
     SetMonosVolumes(Vec<(usize,f32)>),
@@ -482,18 +480,9 @@ impl Audio{
 /// 
 /// Adding/removing tracks.
 impl Audio{
-    /// Возвращает количество треков
-    /// в плейлисте.
+    /// Добавляет трек в хранилище.
     /// 
-    /// Returns the amount of track
-    /// in the playlist.
-    // pub fn playlist_len(&self)->usize{
-    //     self.playlist_len
-    // }
-
-    /// Добавляет трек во внутренний массив треков.
-    /// 
-    /// Adds the track to the inner track array.
+    /// Adds the track to the storage.
     pub fn add_track(&mut self,track:MonoTrack)->AudioCommandResult{
         if self.track_array_len<self.track_array_cap{
             match self.command.send(AudioSystemCommand::AddMono(track)){
@@ -509,9 +498,9 @@ impl Audio{
         }
     }
 
-    /// Добавляет треки во внутренний массив треков.
+    /// Добавляет треки в хранилище.
     /// 
-    /// Adds tracks to the inner track array.
+    /// Adds tracks to the storage.
     pub fn add_tracks(&mut self,tracks:Vec<MonoTrack>)->AudioCommandResult{
         let len=tracks.len();
         if self.track_array_len+len<self.track_array_cap{
@@ -528,11 +517,11 @@ impl Audio{
         }
     }
 
-    /// Удаляет трек из массива треков.
+    /// Удаляет трек из хранилища.
     /// 
     /// Если такого трека нет, то ничего не происходит.
     /// 
-    /// Removes the track from the track array.
+    /// Removes the track from the storage.
     /// 
     /// If there are no such track, nothing happens.
     pub fn remove_track(&mut self,index:usize)->AudioCommandResult{
@@ -550,11 +539,11 @@ impl Audio{
         }
     }
 
-    /// Удаляет трек из массива треков.
+    /// Удаляет трек из хранилища.
     /// 
     /// Если такого трека нет, то ничего не происходит.
     /// 
-    /// Removes tracks from the track array.
+    /// Removes tracks from the storage.
     /// 
     /// If there are no such tracks, nothing happens.
     pub fn remove_tracks(&mut self,indices:Vec<usize>)->AudioCommandResult{
@@ -573,11 +562,11 @@ impl Audio{
         }
     }
 
-    /// Очищает внутренний массив треков.
+    /// Очищает хранилища.
     /// 
-    /// Clears the inner track array.
+    /// Clears the storage.
     pub fn clear_track_array(&mut self)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::ClearTrackArray){
+        match self.command.send(AudioSystemCommand::ClearStorage){
             Ok(_)=>{
                 self.track_array_len=0;
                 AudioCommandResult::Ok
@@ -591,13 +580,9 @@ impl Audio{
 /// 
 /// Play tracks.
 impl Audio{
-    /// Запускает трек.
-    /// 
-    /// 0 - постоянно, 1 - один раз, 2.. - повторить дважды и так далее
+    /// Проигрывает трек.
     /// 
     /// Plays a track.
-    /// 
-    /// 0 - forever, 1 - once, 2.. - repeat twice and so on
     pub fn play_track(&self,set:TrackSet)->AudioCommandResult{
         let stream_lock=match self.stream.lock(){
             LockResult::Ok(lock)=>lock,
@@ -617,7 +602,10 @@ impl Audio{
         }
         result
     }
-
+     
+    /// Останаливает трек.
+    /// 
+    /// Stops a track.
     pub fn stop_track(&self,index:usize)->AudioCommandResult{
         match self.command.send(
             AudioSystemCommand::RemoveMonoFromPlaylist(index)
@@ -629,11 +617,7 @@ impl Audio{
 
     /// Запускает треки.
     /// 
-    /// 0 - постоянно, 1 - один раз, 2.. - повторить дважды и так далее
-    /// 
     /// Plays tracks.
-    /// 
-    /// 0 - forever, 1 - once, 2.. - repeat twice and so on
     pub fn play_tracks(&self,sets:Vec<TrackSet>)->AudioCommandResult{
         // Проверка размера плейлиста
         let stream_lock=match self.stream.lock(){
@@ -656,6 +640,9 @@ impl Audio{
         result
     }
 
+    /// Останавливает треки.
+    /// 
+    /// Stops tracks.
     pub fn stop_tracks(&self,indices:Vec<usize>)->AudioCommandResult{
         match self.command.send(
             AudioSystemCommand::RemoveMonosFromPlaylist(indices)

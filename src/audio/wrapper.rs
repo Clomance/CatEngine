@@ -15,7 +15,7 @@ use std::{
 /// Простой интерфейс для управления аудио движком.
 /// A simple interface for operating the audio engine.
 pub struct AudioWrapper{
-    audio:Audio,
+    pub audio:Audio,
     track_table:HashMap<String,usize>,
     track_sets:Vec<Vec<Set>>,
 }
