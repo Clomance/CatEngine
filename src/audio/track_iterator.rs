@@ -12,6 +12,12 @@ use super::{
 enum PlayType{
     /// Перестаёт играть
     None,
+    /// Пауза при однократном проигрывании
+    PausedOnce,
+    /// 
+    PausedRepeat,
+    /// 
+    PausedForever,
     /// Сыграть один раз
     Once,
     /// Повторять
@@ -71,18 +77,18 @@ pub struct TrackIter{
 }
 
 impl TrackIter{
-    pub fn new(track:&MonoTrack,system_sample_rate:u32,repeats:u32,volume:f32)->TrackIter{
-        let mut iter=Self{
-            data:SyncRawPtr::new(&track.data),
-            track_sample_rate:track.sample_rate(),
+    pub fn empty()->TrackIter{
+        Self{
+            data:SyncRawPtr::zero(),
+            track_sample_rate:0u32,
 
-            track_len:track.len(),
+            track_len:0usize,
 
             track_current_frame:0usize,
             play_type:PlayType::None, // Определяется позже
             repeats:0u32, // Определяется позже
 
-            volume,
+            volume:0f32,
 
             converter_enabled:false, // Определяется позже
             from:0u32,
@@ -91,57 +97,91 @@ impl TrackIter{
             current_frame_pos_in_chunk:0u32,
             next_frame:0f32,
             next_output_frame_pos_in_chunk:0u32,
-        };
-
-        match repeats{
-            0=>iter.play_type=PlayType::Forever,
-            1=>iter.play_type=PlayType::Once,
-            _=>{
-                iter.play_type=PlayType::Repeat;
-                iter.repeats=repeats
-            }
         }
-
-        if system_sample_rate!=iter.track_sample_rate{
-            iter.converter_enabled=true;
-            // Вычисление максимального общего делителя
-            let gcd=gcd(iter.track_sample_rate,system_sample_rate);
-
-            iter.from=iter.track_sample_rate/gcd;
-            iter.to=system_sample_rate/gcd;
-
-            iter.current_frame=iter.next_track_sample();
-            iter.next_frame=iter.next_track_sample();
-        }
-
-        iter
     }
 
+    /// Возвращает частоту трека.
     pub fn sample_rate(&self)->u32{
         self.track_sample_rate
     }
 
-    pub fn stop(&mut self){
-        self.play_type=PlayType::None
-    }
+    /// Ставит трек проигрываться.
+    /// 
+    /// Если уже проигрывается, ничего не происходит.
+    pub fn play(&mut self){
+        self.play_type=match self.play_type{
+            PlayType::PausedOnce=>PlayType::Once,
 
-    pub fn set_mono_track(&mut self,track:&MonoTrack,repeats:u32){
-        self.data=SyncRawPtr::new(&track.data);
+            PlayType::PausedRepeat=>PlayType::Repeat,
 
-        self.track_current_frame=0;
+            PlayType::PausedForever=>PlayType::Forever,
 
-        self.track_len=track.len();
-
-        match repeats{
-            0=>self.play_type=PlayType::Forever,
-            1=>self.play_type=PlayType::Once,
-            _=>{
-                self.play_type=PlayType::Repeat;
-                self.repeats=repeats
-            }
+            _=>return
         }
     }
 
+    /// Ставит трек на паузу.
+    /// 
+    /// Если уже на паузе, ничего не происходит.
+    pub fn pause(&mut self){
+        self.play_type=match self.play_type{
+            PlayType::Once=>PlayType::PausedOnce,
+
+            PlayType::Repeat=>PlayType::PausedRepeat,
+
+            PlayType::Forever=>PlayType::PausedForever,
+
+            _=>return
+        }
+    }
+
+    /// Останавливает трек
+    /// без возвожности возобновления.
+    pub fn stop(&mut self){
+        self.play_type=PlayType::None
+    }
+}
+
+/// Установка параметров.
+impl TrackIter{
+        /// Установка новой итерации трека.
+        pub fn set_track(&mut self,track:&MonoTrack,system_sample_rate:u32,repeats:u32,volume:f32){
+            self.data=SyncRawPtr::new(&track.data);
+            self.track_sample_rate=track.sample_rate;
+            self.volume=volume;
+            self.track_current_frame=0;
+            self.track_len=track.len();
+    
+            match repeats{
+                0=>self.play_type=PlayType::Forever,
+                1=>self.play_type=PlayType::Once,
+                _=>{
+                    self.play_type=PlayType::Repeat;
+                    self.repeats=repeats
+                }
+            }
+    
+            // Проверка частоты и настройка конвертера
+            if system_sample_rate!=self.track_sample_rate{
+                self.current_frame_pos_in_chunk=0;
+                self.next_output_frame_pos_in_chunk=0;
+    
+                self.converter_enabled=true;
+                // Вычисление максимального общего делителя
+                let gcd=gcd(self.track_sample_rate,system_sample_rate);
+    
+                self.from=self.track_sample_rate/gcd;
+                self.to=system_sample_rate/gcd;
+    
+                self.current_frame=self.next_track_sample();
+                self.next_frame=self.next_track_sample();
+            }
+            else{
+                self.converter_enabled=false;
+            }
+        }
+
+    /// Устанавливает частоту вывода (системную частоту).
     pub fn set_system_sample_rate(&mut self,sample_rate:u32){
         if sample_rate==self.track_sample_rate{
             self.converter_enabled=false;
@@ -156,17 +196,18 @@ impl TrackIter{
         }
     }
 
+    /// Устанавливает громкость трека.
     pub fn set_volume(&mut self,volume:f32){
         self.volume=volume
     }
+}
 
+
+/// Итерации.
+impl TrackIter{
     /// Следующее значение трека.
     pub fn next_track_sample(&mut self)->f32{
         match self.play_type{
-            PlayType::None=>{
-                return 0f32
-            }
-
             PlayType::Once=>{
                 if self.track_current_frame==self.track_len-1{
                     self.play_type=PlayType::None
@@ -188,6 +229,9 @@ impl TrackIter{
                     self.track_current_frame=0
                 }
             }
+
+            // Паузы и остановка
+            _=>return 0f32,
         }
 
         let sample=self.data.as_ref()[self.track_current_frame];
@@ -205,6 +249,7 @@ impl TrackIter{
         self.next_frame=self.next_track_sample();
     }
 
+    /// Перевод в нужную частоту.
     pub fn next_converter_sample(&mut self)->f32{
         // The frame we are going to return from this function will be a linear interpolation
         // between `self.current_frame` and `self.next_frame`.
@@ -248,6 +293,8 @@ impl TrackIter{
         sample
     }
 
+    /// Возвращает следующее значение итератора или 
+    /// уведомляет о его завершении.
     pub fn next(&mut self)->Option<f32>{
         if let PlayType::None=self.play_type{
             None

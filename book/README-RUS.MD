@@ -3,5 +3,6 @@
 # Содержание
 
  - ["Фичи" Rust](RUS/features.md)
- - [Windows](RUS/windows.md)
- - [Graphics](RUS/graphics.md)
+ - [Аудио](RUS/audio.md)
+ - [Окна](RUS/windows.md)
+ - [Графика](RUS/graphics.md)

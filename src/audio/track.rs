@@ -199,7 +199,7 @@ impl ChanneledTrack{
 
         let mut output_channels:Vec<Vec<usize>>=Vec::with_capacity(channels_amount);
 
-        for (c,mono) in monos.into_iter().enumerate().rev(){
+        for (c,mono) in monos.into_iter().enumerate(){
             let output_channel=vec![c];
             output_channels.push(output_channel);
             channels.push(mono.data);

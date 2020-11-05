@@ -10,6 +10,8 @@
 //! 
 //! Поток закрывается с паникой, так что не паникуте!
 //! 
+//! Больше вы сможете узнать из (книги)[https://github.com/Clomance/CatEngine/blob/master/book/README-RUS.MD].
+//! 
 //! #
 //! 
 //! The audio engine has it's own thread to work with sound.
@@ -21,20 +23,17 @@
 //! 
 //! The thread closes with panic, so don't panic!
 //! 
+//! You can learn more from the (book)[https://github.com/Clomance/CatEngine/blob/master/book/README.MD].
+//! 
 //! #
 //! 
 //! ```
 //! let settings=AudioSettings::new();
 //! 
-//! let host=cpal::default_host();
+//! let audio=Audio::default(settings.clone()).unwrap();
 //! 
-//! let audio=Audio::new(host,|host|{
-//!     host.default_output_device().unwrap()
-//! },settings.clone()).unwrap();
-//! 
-//! audio.add_track("audio.mp3"); // a track index = 0
-//! 
-//! audio.play_track(0,1); // plays the track once
+//! // For easier access to the audio engine
+//! let mut wrapper=AudioWrapper::new(audio);
 //! ```
 
 // re-import
@@ -97,20 +96,34 @@ use std::{
 
 const audio_thread_stack_size:usize=1024;
 
+/// Команды аудио системе.
+/// 
+/// Audio system Commands.
 pub (crate) enum AudioSystemCommand{
     /// Добавляет одноканальный трек во внутренний массив.
     /// 
     /// Adds a mono-channel track to the inner array.
     AddMono(MonoTrack),
 
+    /// Добавляет одноканальные треки во внутренний массив.
+    /// 
+    /// Adds mono-channel tracks to the inner array.
+    AddMonos(Vec<MonoTrack>),
+
     /// Убирает одноканальный трек из внутреннего массива.
     /// 
-    /// Также убирает его из плейлиста.
+    /// Removes a mono-channel track from the inner array.
+    RemoveMono(usize),
+
+    /// Убирает одноканальные треки из внутреннего массива.
     /// 
     /// Removes a mono-channel track from the inner array.
+    RemoveMonos(Vec<usize>),
+
+    /// Очищает внутренний массив.
     /// 
-    /// Removes it from the playlist, too.
-    RemoveMono(usize),
+    /// Clears the inner array.
+    ClearTrackArray,
 
     /// Plays a mono-channel track on the given channels.
     /// 
@@ -128,10 +141,26 @@ pub (crate) enum AudioSystemCommand{
     /// 0 - forever, 1 - once, 2.. - repeat twice and so on
     PlayMonosOnChannels(Vec<TrackSet>),
 
+    /// Ставит трек проигрываться.
+    /// 
+    /// Если уже проигрывается, ничего не происходит.
+    PlayMono(usize),
+
+    PlayMonos(Vec<usize>),
+
+    /// Ставит трек на паузу.
+    /// 
+    /// Если уже на паузе, ничего не происходит.
+    PauseMono(usize),
+
+    PauseMonos(Vec<usize>),
+
     /// Убирает одноканальный трек из плейлиста.
     /// 
     /// Removes a mono-channel track from the playlist.
     RemoveMonoFromPlaylist(usize),
+
+    RemoveMonosFromPlaylist(Vec<usize>),
 
     /// Отчищает плейлист (список текущих играющих треков).
     /// 
@@ -140,13 +169,27 @@ pub (crate) enum AudioSystemCommand{
 
     /// Устанавливает громкость треку в плейлисте.
     /// 
-    /// Sets the volume to a track in the playlist.
+    /// Sets a volume to a track in the playlist.
     SetMonoVolume(usize,f32),
+
+    /// Устанавливает громкость трекам в плейлисте.
+    /// 
+    /// Sets a volume to tracks in the playlist.
+    SetMonosVolume(Vec<usize>,f32),
+
+    /// Устанавливает громкости трекам в плейлисте.
+    /// 
+    /// Sets volumes to tracks in the playlist.
+    SetMonosVolumes(Vec<(usize,f32)>),
 
     /// Устанавливает общую громкость.
     /// 
     /// Sets the general volume.
     SetGeneralVolume(f32),
+
+    /// Закрывает аудио поток.
+    /// 
+    /// Closes the audio thead.
     Close,
 }
 
@@ -155,9 +198,8 @@ pub (crate) enum AudioSystemCommand{
 pub enum AudioCommandResult{
     Ok,
     ThreadClosed,
-    TrackError,
+    TrackArrayIsEmpty,
     TrackArrayOverflow,
-    PlaylistOverflow,
 }
 
 impl AudioCommandResult{
@@ -258,10 +300,6 @@ pub struct Audio{
     /// Количество треков во внутреннем буфере.
     track_array_len:usize,
     track_array_cap:usize,
-
-    // Количество проигрываемых треков
-    playlist_len:usize,
-    playlist_cap:usize,
 }
 
 impl Audio{
@@ -349,12 +387,16 @@ impl Audio{
 
             track_array_len:0usize,
             track_array_cap,
-
-            playlist_len:0usize,
-            playlist_cap,
         })
     }
 
+    /// Строит аудио движок с настройками по умолчанию.
+    /// 
+    /// Возвращает результат создания аудио потока.
+    /// 
+    /// Creates an audio engine with default settings.
+    /// 
+    /// Returns the result of starting an audio thread.
     pub fn default(settings:AudioSettings)->io::Result<Audio>{
         let host=cpal::default_host();
         //
@@ -382,11 +424,11 @@ impl Audio{
 
             let mut format=device.default_output_format().expect("No available device");
 
-            let main_stream=event_loop.build_output_stream(&device,&format).expect("stream");
+            let main_stream=event_loop.build_output_stream(&device,&format).expect("No available device");
 
-            *stream.lock().unwrap()=Some(main_stream.clone());
+            *stream.lock().expect("The audio thread is down")=Some(main_stream.clone());
 
-            event_loop.play_stream(main_stream.clone()).unwrap();
+            event_loop.play_stream(main_stream.clone()).expect("No available device");
 
             let system_settings=AudioSystemSettings{
                 general_volume:settings.general_volume,
@@ -423,23 +465,35 @@ impl Audio{
 
             track_array_len:0usize,
             track_array_cap,
-
-            playlist_len:0usize,
-            playlist_cap,
         })
     }
 
+    /// Возвращает количество треков
+    /// во внутреннем массиве.
+    /// 
+    /// Returns the amount of track
+    /// in the inner array.
     pub fn tracks_amount(&self)->usize{
         self.track_array_len
     }
+}
 
-    pub fn playlist_len(&self)->usize{
-        self.playlist_len
-    }
-
-    /// Добавляет трек в массив треков.
+/// Добавление/удаление треков.
+/// 
+/// Adding/removing tracks.
+impl Audio{
+    /// Возвращает количество треков
+    /// в плейлисте.
     /// 
-    /// Adds the track to the track array.
+    /// Returns the amount of track
+    /// in the playlist.
+    // pub fn playlist_len(&self)->usize{
+    //     self.playlist_len
+    // }
+
+    /// Добавляет трек во внутренний массив треков.
+    /// 
+    /// Adds the track to the inner track array.
     pub fn add_track(&mut self,track:MonoTrack)->AudioCommandResult{
         if self.track_array_len<self.track_array_cap{
             match self.command.send(AudioSystemCommand::AddMono(track)){
@@ -455,32 +509,88 @@ impl Audio{
         }
     }
 
-    // /// Удаляет трек из массива треков.
-    // /// 
-    // /// Removes the track from the track array.
-    // pub fn remove_track(&self,index:usize)->AudioCommandResult{
-    //     let mut lock=match self.tracks.lock(){
-    //         Ok(lock)=>lock,
-    //         Err(_)=>return AudioCommandResult::ThreadClosed,
-    //     };
+    /// Добавляет треки во внутренний массив треков.
+    /// 
+    /// Adds tracks to the inner track array.
+    pub fn add_tracks(&mut self,tracks:Vec<MonoTrack>)->AudioCommandResult{
+        let len=tracks.len();
+        if self.track_array_len+len<self.track_array_cap{
+            match self.command.send(AudioSystemCommand::AddMonos(tracks)){
+                Ok(_)=>{
+                    self.track_array_len+=len;
+                    AudioCommandResult::Ok
+                },
+                Err(_)=>AudioCommandResult::ThreadClosed,
+            }
+        }
+        else{
+            AudioCommandResult::TrackArrayOverflow
+        }
+    }
 
-    //     if index<lock.len(){
-    //         lock.remove(index);
-    //         AudioCommandResult::Ok
-    //     }
-    //     else{
-    //         AudioCommandResult::NoSuchTrack
-    //     }
-    // }
+    /// Удаляет трек из массива треков.
+    /// 
+    /// Если такого трека нет, то ничего не происходит.
+    /// 
+    /// Removes the track from the track array.
+    /// 
+    /// If there are no such track, nothing happens.
+    pub fn remove_track(&mut self,index:usize)->AudioCommandResult{
+        if self.track_array_len>0{
+            match self.command.send(AudioSystemCommand::RemoveMono(index)){
+                Ok(_)=>{
+                    self.track_array_len-=1;
+                    AudioCommandResult::Ok
+                },
+                Err(_)=>AudioCommandResult::ThreadClosed,
+            }
+        }
+        else{
+            AudioCommandResult::TrackArrayIsEmpty
+        }
+    }
 
-    // /// Удаляет все треки из массива треков.
-    // /// 
-    // /// Removes all tracks from the track array.
-    // pub fn remove_all_tracks(&self)->AudioCommandResult{
-    //     self.tracks.lock().unwrap().clear();
-    //     AudioCommandResult::Ok
-    // }
+    /// Удаляет трек из массива треков.
+    /// 
+    /// Если такого трека нет, то ничего не происходит.
+    /// 
+    /// Removes tracks from the track array.
+    /// 
+    /// If there are no such tracks, nothing happens.
+    pub fn remove_tracks(&mut self,indices:Vec<usize>)->AudioCommandResult{
+        let len=indices.len();
+        if self.track_array_len>=len{
+            match self.command.send(AudioSystemCommand::RemoveMonos(indices)){
+                Ok(_)=>{
+                    self.track_array_len-=len;
+                    AudioCommandResult::Ok
+                },
+                Err(_)=>AudioCommandResult::ThreadClosed,
+            }
+        }
+        else{
+            AudioCommandResult::TrackArrayIsEmpty
+        }
+    }
 
+    /// Очищает внутренний массив треков.
+    /// 
+    /// Clears the inner track array.
+    pub fn clear_track_array(&mut self)->AudioCommandResult{
+        match self.command.send(AudioSystemCommand::ClearTrackArray){
+            Ok(_)=>{
+                self.track_array_len=0;
+                AudioCommandResult::Ok
+            },
+            Err(_)=>AudioCommandResult::ThreadClosed,
+        }
+    }
+}
+
+/// Проигрывание треков.
+/// 
+/// Play tracks.
+impl Audio{
     /// Запускает трек.
     /// 
     /// 0 - постоянно, 1 - один раз, 2.. - повторить дважды и так далее
@@ -489,27 +599,31 @@ impl Audio{
     /// 
     /// 0 - forever, 1 - once, 2.. - repeat twice and so on
     pub fn play_track(&self,set:TrackSet)->AudioCommandResult{
-        if self.playlist_len<self.playlist_cap{
-            let stream_lock=match self.stream.lock(){
-                LockResult::Ok(lock)=>lock,
-                LockResult::Err(_)=>return AudioCommandResult::ThreadClosed
-            };
+        let stream_lock=match self.stream.lock(){
+            LockResult::Ok(lock)=>lock,
+            LockResult::Err(_)=>return AudioCommandResult::ThreadClosed
+        };
 
-            // Отправка команды
-            let result=match self.command.send(
-                AudioSystemCommand::PlayMonoOnChannels(set)
-            ){
-                Ok(())=>AudioCommandResult::Ok,
-                Err(_)=>return AudioCommandResult::ThreadClosed
-            };
+        // Отправка команды
+        let result=match self.command.send(
+            AudioSystemCommand::PlayMonoOnChannels(set)
+        ){
+            Ok(())=>AudioCommandResult::Ok,
+            Err(_)=>return AudioCommandResult::ThreadClosed
+        };
 
-            if let Some(stream)=stream_lock.as_ref(){
-                self.event_loop.play_stream(stream.clone());
-            }
-            result
+        if let Some(stream)=stream_lock.as_ref(){
+            self.event_loop.play_stream(stream.clone());
         }
-        else{
-            AudioCommandResult::PlaylistOverflow
+        result
+    }
+
+    pub fn stop_track(&self,index:usize)->AudioCommandResult{
+        match self.command.send(
+            AudioSystemCommand::RemoveMonoFromPlaylist(index)
+        ){
+            Ok(())=>AudioCommandResult::Ok,
+            Err(_)=>return AudioCommandResult::ThreadClosed
         }
     }
 
@@ -521,28 +635,43 @@ impl Audio{
     /// 
     /// 0 - forever, 1 - once, 2.. - repeat twice and so on
     pub fn play_tracks(&self,sets:Vec<TrackSet>)->AudioCommandResult{
-        if self.playlist_len+sets.len()<self.playlist_cap{
-            let stream_lock=match self.stream.lock(){
-                LockResult::Ok(lock)=>lock,
-                LockResult::Err(_)=>return AudioCommandResult::ThreadClosed
-            };
+        // Проверка размера плейлиста
+        let stream_lock=match self.stream.lock(){
+            LockResult::Ok(lock)=>lock,
+            LockResult::Err(_)=>return AudioCommandResult::ThreadClosed
+        };
 
-            // Отправка команды
-            let result=match self.command.send(
-                AudioSystemCommand::PlayMonosOnChannels(sets)
-            ){
-                Ok(())=>AudioCommandResult::Ok,
-                Err(_)=>return AudioCommandResult::ThreadClosed
-            };
+        // Отправка команды
+        let result=match self.command.send(
+            AudioSystemCommand::PlayMonosOnChannels(sets)
+        ){
+            Ok(())=>AudioCommandResult::Ok,
+            Err(_)=>return AudioCommandResult::ThreadClosed
+        };
 
-            if let Some(stream)=stream_lock.as_ref(){
-                self.event_loop.play_stream(stream.clone());
-            }
-
-            result
+        if let Some(stream)=stream_lock.as_ref(){
+            self.event_loop.play_stream(stream.clone());
         }
-        else{
-            AudioCommandResult::PlaylistOverflow
+
+        result
+    }
+
+    pub fn stop_tracks(&self,indices:Vec<usize>)->AudioCommandResult{
+        match self.command.send(
+            AudioSystemCommand::RemoveMonosFromPlaylist(indices)
+        ){
+            Ok(())=>AudioCommandResult::Ok,
+            Err(_)=>return AudioCommandResult::ThreadClosed
+        }
+    }
+
+    /// Очищает весь плейлист.
+    /// 
+    /// Clears a playlist.
+    pub fn clear_playlist(&self)->AudioCommandResult{
+        match self.command.send(AudioSystemCommand::ClearPlaylist){
+            Ok(())=>AudioCommandResult::Ok,
+            Err(_)=>AudioCommandResult::ThreadClosed
         }
     }
 
@@ -578,27 +707,86 @@ impl Audio{
         AudioCommandResult::Ok
     }
 
-    /// Очищает весь плейлист.
+    /// Ставит трек проигрываться.
     /// 
-    /// Clears a playlist.
-    pub fn clear_playlist(&self)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::ClearPlaylist){
+    /// Если уже проигрывается
+    /// или такого трека нет, ничего не происходит.
+    /// 
+    /// Unpauses a track.
+    /// 
+    /// If it's already playing or
+    /// there is no such track, nothing happens.
+    pub fn unpause_track(&self,index:usize)->AudioCommandResult{
+        match self.command.send(AudioSystemCommand::PlayMono(index)){
             Ok(())=>AudioCommandResult::Ok,
-            Err(_)=>AudioCommandResult::ThreadClosed
+            Err(_)=>return AudioCommandResult::ThreadClosed
         }
     }
 
+    /// Ставит треки проигрываться.
+    /// 
+    /// Если уже проигрываются
+    /// или таких треков нет, ничего не происходит.
+    /// 
+    /// Unpauses tracks.
+    /// 
+    /// If they're already playing or
+    /// there are no such tracks, nothing happens.
+    pub fn unpause_tracks(&self,indices:Vec<usize>)->AudioCommandResult{
+        match self.command.send(AudioSystemCommand::PlayMonos(indices)){
+            Ok(())=>AudioCommandResult::Ok,
+            Err(_)=>return AudioCommandResult::ThreadClosed
+        }
+    }
+
+    /// Ставит трек на паузу.
+    /// 
+    /// Если уже на паузе
+    /// или такого трека нет, ничего не происходит.
+    /// 
+    /// Pauses a track.
+    /// 
+    /// If it's already paused or
+    /// there is no such track, nothing happens.
+    pub fn pause_track(&self,index:usize)->AudioCommandResult{
+        match self.command.send(AudioSystemCommand::PauseMono(index)){
+            Ok(())=>AudioCommandResult::Ok,
+            Err(_)=>return AudioCommandResult::ThreadClosed
+        }
+    }
+
+    /// Ставит треки на паузу.
+    /// 
+    /// Если уже на паузе
+    /// или таких треков нет, ничего не происходит.
+    /// 
+    /// Pauses tracks.
+    /// 
+    /// If trey're already paused or
+    /// there are no such tracks, nothing happens.
+    pub fn pause_tracks(&self,indices:Vec<usize>)->AudioCommandResult{
+        match self.command.send(AudioSystemCommand::PauseMonos(indices)){
+            Ok(())=>AudioCommandResult::Ok,
+            Err(_)=>return AudioCommandResult::ThreadClosed
+        }
+    }
+}
+
+/// Функции установки параметров.
+/// 
+/// Setting functions.
+impl Audio{
     /// Устанавливет громкость играющего трека.
     /// 
     /// Sets the volume of a playing track.
-    pub fn set_track_volume(&self,track:usize,volume:f32)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::SetGeneralVolume(volume)){
+    pub fn set_track_volume(&self,index:usize,volume:f32)->AudioCommandResult{
+        match self.command.send(AudioSystemCommand::SetMonoVolume(index,volume)){
             Ok(())=>AudioCommandResult::Ok,
             Err(_)=>AudioCommandResult::ThreadClosed
         }
     }
 
-    /// Устанавливает громкость.
+    /// Устанавливает общую громкость.
     /// 
     /// Sets the general volume.
     pub fn set_general_volume(&self,volume:f32)->AudioCommandResult{

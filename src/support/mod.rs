@@ -1,6 +1,9 @@
 pub mod math;
 
-/// 
+/// Сырой указатель,
+/// который можно передавать
+/// по потокам.
+#[derive(Clone)]
 pub struct SyncRawPtr<T>{
     ptr:*const T,
 }
@@ -9,6 +12,12 @@ impl<T> SyncRawPtr<T>{
     pub fn new(item:&T)->SyncRawPtr<T>{
         Self{
             ptr:item as *const T,
+        }
+    }
+
+    pub fn zero()->SyncRawPtr<T>{
+        Self{
+            ptr:0u64 as *const T,
         }
     }
 
@@ -30,7 +39,11 @@ impl<T> AsRef<T> for SyncRawPtr<T>{
     }
 }
 
-/// 
+/// Сырой указатель,
+/// который можно передавать
+/// по потокам и который позволяет
+/// менять данные.
+#[derive(Clone)]
 pub struct SyncRawMutPtr<T>{
     ptr:*mut T,
 }
@@ -40,6 +53,12 @@ impl<T> SyncRawMutPtr<T>{
     pub fn new(item:&mut T)->SyncRawMutPtr<T>{
         Self{
             ptr:item as *mut T,
+        }
+    }
+
+    pub fn zero()->SyncRawMutPtr<T>{
+        Self{
+            ptr:0u64 as *mut T,
         }
     }
 

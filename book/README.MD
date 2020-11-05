@@ -3,6 +3,7 @@
 # Summary
 
  - [Rust features](EN/features.md)
+ - [Audio](EN/audio.md)
  - [Windows](EN/windows.md)
  - [Graphics](EN/graphics.md)
  
