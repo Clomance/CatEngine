@@ -96,7 +96,7 @@ impl TexturedVertex2D{
 
 pub (crate) struct TexturedObject2D{
     pub base:SimpleObject2D,
-    pub texture:Texture,
+    pub texture:usize,
 }
 
 impl TexturedObject2D{

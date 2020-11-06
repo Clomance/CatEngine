@@ -55,6 +55,7 @@ pub struct TextureGraphics{
     index_buffer_edge:usize, // Сколько уже занято
 
     objects:Vec<TexturedObject2D>,
+    textures:Vec<Texture>,
     draw:Program,
     draw_shift:Program,
     draw_rotate:Program,
@@ -104,8 +105,9 @@ impl TextureGraphics{
 
             index_buffer_active_edge:settings.index_buffer_offset,
             index_buffer_edge:settings.index_buffer_offset,
-            
+
             objects:Vec::<TexturedObject2D>::with_capacity(settings.object_buffer_size),
+            textures:Vec::<Texture>::with_capacity(settings.object_buffer_size),
 
             draw:Program::from_source(display,vertex_shader,fragment_shader,None).unwrap(),
             draw_shift:Program::from_source(display,shift,fragment_shader,None).unwrap(),
@@ -273,10 +275,14 @@ impl TextureGraphics{
 
 // Функции для добавления/удаления объектов
 impl TextureGraphics{
+    pub fn add_texture(&mut self,texture:Texture){
+        self.textures.push(texture)
+    }
+
     pub fn push_object<'o,O,V,I>(
         &mut self,
         object:&'o O,
-        texture:Texture
+        texture:usize
     )->Option<usize>
         where
             O:DependentObject<
@@ -363,7 +369,7 @@ impl TextureGraphics{
     }
 
     pub fn get_object_texture(&mut self,index:usize)->&mut Texture{
-        &mut self.objects[index].texture
+        &mut self.textures[self.objects[index].texture]
     }
 
     pub fn set_object_colour(&mut self,index:usize,colour:Colour){
@@ -410,7 +416,7 @@ impl TextureGraphics{
         colour_filter.filter_colour(&mut colour);
 
         let uni=uniform!{
-            texture2d:&object.texture.0,
+            texture2d:&self.textures[object.texture].0,
             colour_filter:colour,
             window_center:unsafe{window_center},
         };
@@ -444,7 +450,7 @@ impl TextureGraphics{
         colour_filter.filter_colour(&mut colour);
 
         let uni=uniform!{
-            texture2d:&object.texture.0,
+            texture2d:&self.textures[object.texture].0,
             colour_filter:colour,
             window_center:unsafe{window_center},
             shift:shift,
@@ -482,7 +488,7 @@ impl TextureGraphics{
         let (sin,cos)=angle.sin_cos();
 
         let uni=uniform!{
-            texture2d:&object.texture.0,
+            texture2d:&self.textures[object.texture].0,
             cos:cos,
             sin:sin,
             rotation_center:rotation_center,

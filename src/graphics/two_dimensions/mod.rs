@@ -167,6 +167,10 @@ impl Graphics2D{
 /// # Функции для работы с текстурными объектами. Functions to work with textured objects.
 #[cfg(feature="texture_graphics")]
 impl Graphics2D{
+    pub fn add_texture(&mut self,texture:Texture){
+        self.texture.add_texture(texture)
+    }
+
     /// Добавляет простой объект в массив.
     /// 
     /// Adds the simple object to the array.
@@ -174,7 +178,7 @@ impl Graphics2D{
     pub fn add_textured_object<'o,O,V,I>(
         &mut self,
         object:&'o O,
-        texture:Texture
+        texture:usize
     )->Option<usize>
         where
             O:DependentObject<
