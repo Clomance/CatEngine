@@ -53,7 +53,7 @@ pub use image;
 
 /// Общий модуль для функций или типов,
 /// неотносящихся ни к одному из других модулей.
-mod support;
+pub mod support;
 
 #[cfg(feature="audio")]
 pub mod audio;

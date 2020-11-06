@@ -311,7 +311,6 @@ fn load_mp3_separate(mut decoder:Decoder<File>,channels:&mut Vec<Vec<f32>>){
 }
 
 /// Одноканальный трек.
-/// 
 /// A mono channel track.
 pub struct MonoTrack{
     pub data:Vec<f32>,
@@ -334,6 +333,8 @@ pub struct TrackSet{
     /// A track index.
     pub index:usize,
     /// Каналы для распределения.
+    /// 
+    /// Output channels.
     pub channels:Vec<usize>,
     /// Количество повторенй.
     /// 

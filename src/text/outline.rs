@@ -1,6 +1,7 @@
 use ab_glyph_rasterizer::{
     Point,
     point,
+    Rasterizer,
 };
 
 use ttf_parser::OutlineBuilder;
@@ -76,3 +77,9 @@ impl OutlineBuilder for OutlineCurveBuilder{
         }
     }
 }
+
+// pub struct GlyphBuilder{
+//     raster:Rasterizer,
+//     scale:Scale,
+//     offset:[f32;2],
+// }
