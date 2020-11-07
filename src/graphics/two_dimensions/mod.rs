@@ -171,6 +171,10 @@ impl Graphics2D{
         self.texture.add_texture(texture)
     }
 
+    pub fn remove_texture(&mut self,index:usize){
+        self.texture.remove_texture(index)
+    }
+
     /// Добавляет простой объект в массив.
     /// 
     /// Adds the simple object to the array.

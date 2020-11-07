@@ -279,6 +279,10 @@ impl TextureGraphics{
         self.textures.push(texture)
     }
 
+    pub fn remove_texture(&mut self,index:usize){
+        self.textures.remove(index);
+    }
+
     pub fn push_object<'o,O,V,I>(
         &mut self,
         object:&'o O,
