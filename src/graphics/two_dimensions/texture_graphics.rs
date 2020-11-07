@@ -551,7 +551,7 @@ impl TextureGraphics{
         frame.draw(
             vertex_slice,
             index_source,
-            &self.draw_rotate,
+            &self.draw_trans,
             &uni,
             draw_parameters
         )

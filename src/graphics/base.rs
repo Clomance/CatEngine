@@ -927,7 +927,7 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     }
 
     #[inline(always)]
-    pub fn draw_scale_textured_object(
+    pub fn draw_transform_textured_object(
         &mut self,
         index:usize,
         shift:[f32;2],
