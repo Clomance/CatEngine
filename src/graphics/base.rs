@@ -926,6 +926,25 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
         )
     }
 
+    #[inline(always)]
+    pub fn draw_scale_textured_object(
+        &mut self,
+        index:usize,
+        shift:[f32;2],
+        scale:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&DrawParameters
+    )->Result<(),DrawError>{
+        self.graphics2d.texture.draw_trans_object(
+            index,
+            shift,
+            scale,
+            #[cfg(feature="colour_filter")]colour_filter,
+            draw_parameters,
+            self.frame
+        )
+    }
+
     /// Рисует сохранённый текстурный объект.
     /// 
     /// Draws the saved textured object.

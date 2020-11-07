@@ -59,6 +59,7 @@ pub struct TextureGraphics{
     draw:Program,
     draw_shift:Program,
     draw_rotate:Program,
+    draw_trans:Program,
 }
 
 impl TextureGraphics{
@@ -67,18 +68,21 @@ impl TextureGraphics{
             rotation,
             shift,
             vertex_shader,
-            fragment_shader
+            fragment_shader,
+            trans,
         )=if glsl==120{(
             include_str!("shaders/120/texture/rotation_vertex_shader.glsl"),
             include_str!("shaders/120/texture/shift_vertex_shader.glsl"),
             include_str!("shaders/120/texture/vertex_shader.glsl"),
             include_str!("shaders/120/texture/fragment_shader.glsl"),
+            include_str!("shaders/120/texture/transform_vertex_shader.glsl"),
         )}
         else{(
             include_str!("shaders/texture/rotation_vertex_shader.glsl"),
             include_str!("shaders/texture/shift_vertex_shader.glsl"),
             include_str!("shaders/texture/vertex_shader.glsl"),
             include_str!("shaders/texture/fragment_shader.glsl"),
+            include_str!("shaders/texture/transform_vertex_shader.glsl"),
         )};
 
         let vertex_buffer_size=settings.vertex_buffer_size*size_of::<TexturedVertex2D>();
@@ -112,6 +116,7 @@ impl TextureGraphics{
             draw:Program::from_source(display,vertex_shader,fragment_shader,None).unwrap(),
             draw_shift:Program::from_source(display,shift,fragment_shader,None).unwrap(),
             draw_rotate:Program::from_source(display,rotation,fragment_shader,None).unwrap(),
+            draw_trans:Program::from_source(display,trans,fragment_shader,None).unwrap(),
         }
     }
 
@@ -279,6 +284,10 @@ impl TextureGraphics{
         self.textures.push(texture)
     }
 
+    pub fn delete_last_texture(&mut self){
+        self.textures.pop();
+    }
+    
     pub fn remove_texture(&mut self,index:usize){
         self.textures.remove(index);
     }
@@ -496,6 +505,43 @@ impl TextureGraphics{
             cos:cos,
             sin:sin,
             rotation_center:rotation_center,
+            window_center:unsafe{window_center},
+            colour_filter:colour,
+        };
+
+        let vertex_slice=object.vertices_source(&self.vertex_buffer,&self.bindings);
+
+        frame.draw(
+            vertex_slice,
+            index_source,
+            &self.draw_rotate,
+            &uni,
+            draw_parameters
+        )
+    }
+
+    pub fn draw_trans_object(
+        &self,
+        index:usize,
+        shift:[f32;2],
+        scale:[f32;2],
+        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
+        draw_parameters:&DrawParameters,
+        frame:&mut Frame
+    )->Result<(),DrawError>{
+        let object=&self.objects[index];
+
+        let index_source=object.indices_source(&self.index_buffer);
+
+        // Фильтрация цвета объекта
+        let mut colour=object.base.colour;
+        #[cfg(feature="colour_filter")]
+        colour_filter.filter_colour(&mut colour);
+
+        let uni=uniform!{
+            texture2d:&self.textures[object.texture].0,
+            scale:scale,
+            shift:shift,
             window_center:unsafe{window_center},
             colour_filter:colour,
         };
