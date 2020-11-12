@@ -763,11 +763,31 @@ impl Audio{
 /// 
 /// Setting functions.
 impl Audio{
-    /// Устанавливет громкость играющего трека.
+    /// Устанавливает громкость играющего трека.
     /// 
     /// Sets the volume of a playing track.
     pub fn set_track_volume(&self,index:usize,volume:f32)->AudioCommandResult{
         match self.command.send(AudioSystemCommand::SetMonoVolume(index,volume)){
+            Ok(())=>AudioCommandResult::Ok,
+            Err(_)=>AudioCommandResult::ThreadClosed
+        }
+    }
+
+    /// Устанавливает громкость играющих треков.
+    /// 
+    /// Sets the volume of playing tracks.
+    pub fn set_tracks_volume(&self,indices:Vec<usize>,volume:f32)->AudioCommandResult{
+        match self.command.send(AudioSystemCommand::SetMonosVolume(indices,volume)){
+            Ok(())=>AudioCommandResult::Ok,
+            Err(_)=>AudioCommandResult::ThreadClosed
+        }
+    }
+
+    /// Устанавливает громкости играющих треков.
+    /// 
+    /// Sets volumes of playing tracks.
+    pub fn set_tracks_volumes(&self,sets:Vec<(usize,f32)>)->AudioCommandResult{
+        match self.command.send(AudioSystemCommand::SetMonosVolumes(sets)){
             Ok(())=>AudioCommandResult::Ok,
             Err(_)=>AudioCommandResult::ThreadClosed
         }

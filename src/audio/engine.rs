@@ -61,7 +61,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
     mut settings:AudioSystemSettings,
 )->!{
     // Локальное хранилище одноканальных треков, не должно превышать заданного размера
-    // При изменении размера придётся переопределить все треки в плейлисте,
+    // При изменении размера (скорее всего с перемещением) придётся переопределить все треки в плейлисте,
     // так как они прямо ссылаются на ячейки в хранилище
     let mut track_container=Vec::<MonoTrack>::with_capacity(settings.track_array_capacity);
 
@@ -262,6 +262,12 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                     }
                 }
 
+                AudioSystemCommand::SetMonosVolumes(sets)=>{
+                    for set in sets{
+                        channel_system.set_track_volume(set.0,set.1)
+                    }
+                }
+
                 // Устанавливает общую громкость
                 AudioSystemCommand::SetGeneralVolume(v)=>
                     settings.general_volume=v,
@@ -269,8 +275,6 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                 // Закрывает поток
                 AudioSystemCommand::Close=> // Поток умер :)
                     panic!("Closing CatEngine's audio thread"),
-
-                _=>{}
             }
             Err(_)=>{
                 // Ошибки игнорируются,
