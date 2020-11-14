@@ -2,8 +2,10 @@ use cat_engine::{
     DefaultWindow,
     WindowEvent,
     Window,
-    shapes::Rectangle
+    shapes::Rectangle,
 };
+#[cfg(feature="colour_filter")]
+use cat_engine::graphics::ColourFilter;
 
 fn main(){
     let mut window=DefaultWindow::new(|_,sets|{
@@ -59,7 +61,11 @@ fn main(){
 
                 window.draw(|p,g|{
                     g.clear_colour([1.0;4]);
+                    #[cfg(feature="colour_filter")]
+                    rect.draw(ColourFilter::new_mul([1f32;4]),p,g).unwrap();
+                    #[cfg(not(feature="colour_filter"))]
                     rect.draw(p,g).unwrap();
+
                 }).unwrap();
             }
             _=>{}

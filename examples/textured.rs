@@ -97,10 +97,11 @@ fn main(){
         s.vsync=true;
     }).unwrap();
 
-    
     let texture=Texture::from_path("logo_400x400.png",window.display()).unwrap();
 
-    let texture=window.graphics2d().add_textured_object(&image_base,texture).unwrap();
+    window.graphics2d().add_texture(texture);
+
+    let texture=window.graphics2d().add_textured_object(&image_base,0).unwrap();
 
     let mut page=Page{
         angle:0f32,

@@ -51,6 +51,13 @@ use std::{
     },
 };
 
+// Хранилище (хранилище треков, `track_storage`) - массив треков,
+// на которые ссылкаются итераторы в буфере.
+
+// Буфер (буфер итераторов, `play_buffer`) - массив итераторов,
+// на которые индексно ссылаются плейлист
+// и матрица распределения итераторов.
+
 /// Создание и запуск потока обработки.
 pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
     host:Arc<Host>,
@@ -60,35 +67,37 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
     receiver:Receiver<AudioSystemCommand>,
     mut settings:AudioSystemSettings,
 )->!{
-    // Локальное хранилище одноканальных треков, не должно превышать заданного размера
-    // При изменении размера (скорее всего с перемещением) придётся переопределить все треки в плейлисте,
+    // Локальное хранилище одноканальных треков,
+    // не должно превышать заданного размера
+    // При изменении размера (скорее всего с перемещением)
+    // придётся переопределить все треки в буфере,
     // так как они прямо ссылаются на ячейки в хранилище
-    let mut track_container=Vec::<MonoTrack>::with_capacity(settings.track_array_capacity);
+    let mut track_storage=Vec::<MonoTrack>::with_capacity(settings.track_array_capacity);
 
     // Матрица распределения треков по буферу
     // Номера итераторов
     let mut iter_indices=Vec::<Vec<usize>>::with_capacity(settings.track_array_capacity);
 
-    // Свободные ячейки для треков
-    let mut free_container_slots=Vec::<usize>::with_capacity(settings.track_array_capacity);
+    // Список свободных ячеек хранилища
+    let mut free_storage_slots=Vec::<usize>::with_capacity(settings.track_array_capacity);
 
-    // Ссылки на треки в хранилище (список загруженных треков)
+    // Список треков (ссылки на треки в хранилище)
     let mut track_list=Vec::<usize>::with_capacity(settings.track_array_capacity);
 
     // Подготовка
     for c in 0..settings.track_array_capacity{
-        track_container.push(MonoTrack{data:Vec::new(),sample_rate:0u32});
+        track_storage.push(MonoTrack{data:Vec::new(),sample_rate:0u32});
         iter_indices.push(Vec::with_capacity(1));
-        free_container_slots.push(c);
+        free_storage_slots.push(c);
     }
 
     // Ссылки нужны, чтобы передать их потоку,
     // в ином случае данные могут копироваться или передвигаться
     // (в случае с `iter_indices` точно, так как она используется ещё и в `channel_system`)
     // из-за того, что функция `run` (находится ниже) забирает все права на переменные
-    let mut track_container_ref=SyncRawMutPtr::new(&mut track_container);
+    let mut track_storage_ref=SyncRawMutPtr::new(&mut track_storage);
     let mut iter_indices_ref=SyncRawMutPtr::new(&mut iter_indices);
-    let mut free_container_slots_ref=SyncRawMutPtr::new(&mut free_container_slots);
+    let mut free_storage_slots_ref=SyncRawMutPtr::new(&mut free_storage_slots);
     let mut track_list_ref=SyncRawMutPtr::new(&mut track_list);
 
     // Создание системы распределения треков и каналов
@@ -103,38 +112,18 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
         // Обработчик команд
         match receiver.try_recv(){
             Ok(command)=>match command{
+            // ХРАНИЛИЩЕ \\
                 // Добавление трека в список и хранилище
                 // Если хранилище переполнено, то ничего не происходит
                 AudioSystemCommand::AddMono(track)=>
-                    // Здесь проверка не нужна, так как уже есть внешняя,
-                    // но без неё никак
                     // Получение свободной номера ячейки
-                    if let Some(index)=free_container_slots_ref.as_mut().pop(){
+                    if let Some(index)=free_storage_slots_ref.as_mut().pop(){
                         // Добавление номера в список треков
                         track_list_ref.as_mut().push(index);
                         // Установка трека
-                        track_container_ref.as_mut()[index]=track;
+                        track_storage_ref.as_mut()[index]=track;
                         // Очистка списка итераторов
                         iter_indices_ref.as_mut()[index].clear();
-                    }
-
-                // Удаление трека из списка и хранилища
-                // Если такого трека нет, то ничего не происходит
-                AudioSystemCommand::RemoveMono(index)=>
-                    // Здесь проверка не нужна, так как уже есть внешняя,
-                    // но пусть пока будет
-                    if index<track_list_ref.as_ref().len(){
-                        // Получение номера трека в буфере
-                        let track_index=track_list_ref.as_mut().remove(index);
- 
-                        // Добавление номера ячейки в очередь
-                        free_container_slots_ref.as_mut().push(track_index);
-
-                        // Остановка итераторов (установка флагов PlayType::None)
-                        let iters=&iter_indices_ref.as_mut()[track_index];
-                        for &i in iters{
-                            channel_system.stop_iter(i);
-                        }
                     }
 
                 // Добавление треков в список и хранилище
@@ -144,13 +133,30 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                         // Здесь проверка не нужна, так как уже есть внешняя,
                         // но без неё никак
                         // Получение свободной номера ячейки
-                        if let Some(index)=free_container_slots_ref.as_mut().pop(){
+                        if let Some(index)=free_storage_slots_ref.as_mut().pop(){
                             // Добавление номера в список треков
                             track_list_ref.as_mut().push(index);
                             // Установка трека
-                            track_container_ref.as_mut()[index]=track;
+                            track_storage_ref.as_mut()[index]=track;
                             // Очистка списка итераторов
                             iter_indices_ref.as_mut()[index].clear();
+                        }
+                    }
+
+                // Удаление трека из списка и хранилища
+                // Если такого трека нет, то ничего не происходит
+                AudioSystemCommand::RemoveMono(index)=>
+                    if index<track_list_ref.as_ref().len(){
+                        // Получение номера трека в буфере
+                        let track_index=track_list_ref.as_mut().remove(index);
+ 
+                        // Добавление номера ячейки в очередь
+                        free_storage_slots_ref.as_mut().push(track_index);
+
+                        // Остановка итераторов (установка флагов PlayType::None)
+                        let iters=&iter_indices_ref.as_mut()[track_index];
+                        for &i in iters{
+                            channel_system.stop_iter(i);
                         }
                     }
 
@@ -158,14 +164,12 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                 // Если таких треков нет, то ничего не происходит
                 AudioSystemCommand::RemoveMonos(indices)=>
                     for index in indices.into_iter().rev(){
-                        // Здесь проверка не нужна, так как уже есть внешняя,
-                        // но пусть пока будет
                         if index<track_list_ref.as_ref().len(){
                             // Получение номера трека в буфере
                             let track_index=track_list_ref.as_mut().remove(index);
 
                             // Добавление номера ячейки в очередь
-                            free_container_slots_ref.as_mut().push(track_index);
+                            free_storage_slots_ref.as_mut().push(track_index);
 
                             // Остановка итераторов (установка флагов PlayType::None)
                             let iters=&iter_indices_ref.as_mut()[track_index];
@@ -176,17 +180,107 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                     }
 
                 // Очищает список треков
+                // Также очищает плейлист
                 AudioSystemCommand::ClearStorage=>{
                     track_list_ref.as_mut().clear();
                     channel_system.clear_playlist()
                 }
+
+                // Снимает паузу с треков, привязанных к треку из хранилища
+                AudioSystemCommand::UnpauseMonoFromStorage(index)=>
+                    if let Some(&slot)=track_list_ref.as_ref().get(index){
+                        for &iter in &iter_indices_ref.as_ref()[slot]{
+                            channel_system.unpause_buffer_iter(iter)
+                        }
+                    }
+
+                // Снимает паузу с треков, привязанных к трекам из хранилища
+                AudioSystemCommand::UnpauseMonosFromStorage(indices)=>
+                    for index in indices{
+                        if let Some(&slot)=track_list_ref.as_ref().get(index){
+                            for &iter in &iter_indices_ref.as_ref()[slot]{
+                                channel_system.unpause_buffer_iter(iter)
+                            }
+                        }
+                    }
+
+                // Ставит на паузу треки, привязанные к треку из хранилища
+                AudioSystemCommand::PauseMonoFromStorage(index)=>
+                    if let Some(&slot)=track_list_ref.as_ref().get(index){
+                        for &iter in &iter_indices_ref.as_ref()[slot]{
+                            channel_system.pause_buffer_iter(iter)
+                        }
+                    }
+
+                // Ставит на паузу треки, привязанные к трекам из хранилища
+                AudioSystemCommand::PauseMonosFromStorage(indices)=>
+                    for index in indices{
+                        if let Some(&slot)=track_list_ref.as_ref().get(index){
+                            for &iter in &iter_indices_ref.as_ref()[slot]{
+                                channel_system.pause_buffer_iter(iter)
+                            }
+                        }
+                    }
+                
+                // Останавливает треки из плейлиста,
+                // привязанные к треку из хранилища
+                AudioSystemCommand::StopMonoFromStorage(index)=>
+                    if let Some(&slot)=track_list_ref.as_ref().get(index){
+                        for &iter in &iter_indices_ref.as_ref()[slot]{
+                            channel_system.stop_buffer_iter(iter)
+                        }
+                    }
+
+                // Останавливает треки из плейлиста,
+                // привязанные к трекам из хранилища
+                AudioSystemCommand::StopMonosFromStorage(indices)=>
+                    for index in indices{
+                        if let Some(&slot)=track_list_ref.as_ref().get(index){
+                            for &iter in &iter_indices_ref.as_ref()[slot]{
+                                channel_system.stop_buffer_iter(iter)
+                            }
+                        }
+                    }
+
+                // Устанавливает громкость треков из плейлиста,
+                // привязанных к треку из хранилища
+                AudioSystemCommand::SetMonoVolumeFromStorage(index,volume)=>
+                    if let Some(&slot)=track_list_ref.as_ref().get(index){
+                        for &iter in &iter_indices_ref.as_ref()[slot]{
+                            channel_system.set_volume_buffer_iter(iter,volume)
+                        }
+                    }
+
+                // Устанавливает громкость треков из плейлиста,
+                // привязанных к трекам из хранилища
+                AudioSystemCommand::SetMonosVolumeFromStorage(indices,volume)=>
+                    for index in indices{
+                        if let Some(&slot)=track_list_ref.as_ref().get(index){
+                            for &iter in &iter_indices_ref.as_ref()[slot]{
+                                channel_system.set_volume_buffer_iter(iter,volume)
+                            }
+                        }
+                    }
+
+                // Устанавливает громкости треков из плейлиста,
+                // привязанных к трекам из хранилища
+                AudioSystemCommand::SetMonosVolumesFromStorage(sets)=>
+                    for (index,volume) in sets{
+                        if let Some(&slot)=track_list_ref.as_ref().get(index){
+                            for &iter in &iter_indices_ref.as_ref()[slot]{
+                                channel_system.set_volume_buffer_iter(iter,volume)
+                            }
+                        }
+                    }
+
+            // ПЛЕЙЛИСТ \\
 
                 // Добавление трека в плейлист
                 // Если плейлист переполнен, то ничего не происходит
                 AudioSystemCommand::PlayMonoOnChannels(TrackSet{index,channels,repeats,volume})=>
                     // Получение номера трека в хранилище
                     if let Some(&track_index)=track_list_ref.as_ref().get(index){
-                        let track=track_container_ref.as_ref().get(track_index).unwrap();
+                        let track=track_storage_ref.as_ref().get(track_index).unwrap();
                         // Здесь проверка не нужна, так как уже есть внутреняя -
                         // переполнения плейлиста не должно быть
                         channel_system.add_track(track_index,track,channels,repeats,volume);
@@ -203,7 +297,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                 AudioSystemCommand::PlayMonosOnChannels(sets)=>
                     for TrackSet{index,channels,repeats,volume} in sets{
                         if let Some(&track_index)=track_list_ref.as_ref().get(index){
-                            let track=track_container_ref.as_ref().get(track_index).unwrap();
+                            let track=track_storage_ref.as_ref().get(track_index).unwrap();
                             // Здесь проверка не нужна, так как уже есть внешняя -
                             // переполнения не должно быть
                             channel_system.add_track(track_index,track,channels,repeats,volume);
@@ -221,27 +315,27 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                 // Ставит трек из плейлиста проигрываться
                 // Если уже проигрывается или нет такого трека,
                 // ничего не происходит
-                AudioSystemCommand::PlayMono(index)=>
-                    channel_system.play(index),
-
-                // Ставит трек из плейлиста на паузу
-                // Если уже проигрывается или нет такого трека,
-                // ничего не происходит
-                AudioSystemCommand::PauseMono(index)=>
-                    channel_system.pause(index),
+                AudioSystemCommand::UnpauseMonoFromPlaylist(index)=>
+                    channel_system.unpause(index),
 
                 // Ставит треки из плейлиста проигрываться
                 // Если уже проигрывается или нет таких треков,
                 // ничего не происходит
-                AudioSystemCommand::PlayMonos(indices)=>
-                    for index in indices{
-                        channel_system.play(index)
-                    }
+                AudioSystemCommand::UnpauseMonosFromPlaylist(indices)=>
+                for index in indices{
+                    channel_system.unpause(index)
+                }
+
+                // Ставит трек из плейлиста на паузу
+                // Если уже проигрывается или нет такого трека,
+                // ничего не происходит
+                AudioSystemCommand::PauseMonoFromPlaylist(index)=>
+                    channel_system.pause(index),
 
                 // Ставит треки из плейлиста на паузу
                 // Если уже на паузе или нет таких треков,
                 // ничего не происходит
-                AudioSystemCommand::PauseMonos(indices)=>
+                AudioSystemCommand::PauseMonosFromPlaylist(indices)=>
                     for index in indices{
                         channel_system.pause(index)
                     }
@@ -271,7 +365,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                 // Устанавливает общую громкость
                 AudioSystemCommand::SetGeneralVolume(v)=>
                     settings.general_volume=v,
-
+            // ОСТАЛЬНОЕ \\
                 // Закрывает поток
                 AudioSystemCommand::Close=> // Поток умер :)
                     panic!("Closing CatEngine's audio thread"),

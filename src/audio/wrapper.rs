@@ -9,14 +9,15 @@ use super::{
 
 use std::{
     path::Path,
-    collections::HashMap
+    collections::HashMap,
+    cmp::Ordering,
 };
 
 /// Простой интерфейс для управления аудио движком.
 /// A simple interface for operating the audio engine.
 pub struct AudioWrapper{
     pub audio:Audio,
-    track_table:HashMap<String,usize>,
+    names:Vec<String>,
     track_sets:Vec<Vec<Set>>,
 }
 
@@ -32,14 +33,38 @@ impl AudioWrapper{
     pub fn new(audio:Audio)->AudioWrapper{
         Self{
             audio,
-            track_table:HashMap::new(),
+            names:Vec::new(),
             track_sets:Vec::new(),
         }
     }
 
-    /// Загружает трек.
+    fn search_track(&self,name:&str)->Option<usize>{
+        for (c,track_name) in self.names.iter().enumerate(){
+            if name.cmp(track_name)==Ordering::Equal{
+                return Some(c)
+            }
+        }
+
+        None
+    }
+
+    fn remove_track_inner(&mut self,name:&str)->Option<Vec<Set>>{
+        if let Some(set)=self.search_track(name){
+            self.names.remove(set);
+            Some(self.track_sets.remove(set))
+        }
+        else{
+            None
+        }
+    }
+
+    /// Загружает трек в хранилище.
     /// 
-    /// Loads a track.
+    /// Возвращает `true`, если загрузка прошла без ошибок.
+    /// 
+    /// Loads a track to the storage.
+    /// 
+    /// Returns `true` if loaded with no errors.
     pub fn load_track<P:AsRef<Path>>(&mut self,path:P,name:String)->bool{
         let track=if let TrackResult::Ok(track)=ChanneledTrack::new(path){
             track
@@ -55,7 +80,7 @@ impl AudioWrapper{
         for (data,channels) in track.into_iter(){
             let index=self.audio.tracks_amount();
 
-            if let AudioCommandResult::Ok=self.audio.add_track(MonoTrack{
+            if let AudioCommandResult::Sent=self.audio.add_track(MonoTrack{
                 data,
                 sample_rate,
             }){
@@ -71,10 +96,9 @@ impl AudioWrapper{
             }
         }
 
-        let index=self.track_sets.len();
+        // Добавление трека
+        self.names.push(name);
         self.track_sets.push(track_sets);
-
-        self.track_table.insert(name,index);
 
         true
     }
@@ -83,9 +107,7 @@ impl AudioWrapper{
     /// 
     /// Remove a track from the storage.
     pub fn remove_track(&mut self,name:&str)->AudioCommandResult{
-        if let Some(track_sets_index)=self.track_table.remove(name){
-            let track_sets=self.track_sets.remove(track_sets_index);
-
+        if let Some(track_sets)=self.remove_track_inner(name){
             let len=track_sets.len();
 
             let track_indices:Vec<usize>=track_sets.into_iter().map(|set|set.index).collect();
@@ -99,15 +121,24 @@ impl AudioWrapper{
             self.audio.remove_tracks(track_indices)
         }
         else{
-            AudioCommandResult::Ok
+            AudioCommandResult::Sent
         }
     }
 
-    /// Возвращает настройки трека.
+    /// Очищает хранилище треков.
+    /// 
+    /// Clears the track storage.
+    pub fn clear_storage(&mut self)->AudioCommandResult{
+        self.names.clear();
+        self.track_sets.clear();
+        self.audio.clear_storage()
+    }
+
+    /// Возвращает сет трека.
     /// 
     /// Returns track's sets.
     pub fn get_track_sets(&self,name:&str)->Option<&Vec<Set>>{
-        if let Some(&track_sets_index)=self.track_table.get(name){
+        if let Some(track_sets_index)=self.search_track(name){
             Some(&self.track_sets[track_sets_index])
         }
         else{
@@ -123,8 +154,11 @@ impl AudioWrapper{
     /// Запускает трек.
     /// 
     /// Plays a track.
-    pub fn play_track(&self,name:&str)->AudioCommandResult{
-        if let Some(&track_sets_index)=self.track_table.get(name){
+    /// 
+    /// Repeats:
+    /// 0 - forever, 1 - once, 2 - twice and so on...
+    pub fn play_track(&self,name:&str,repeats:u32)->AudioCommandResult{
+        if let Some(track_sets_index)=self.search_track(name){
             let track_sets=&self.track_sets[track_sets_index];
             let mut full_track_sets=Vec::with_capacity(track_sets.len());
 
@@ -132,7 +166,7 @@ impl AudioWrapper{
                 let track_set=TrackSet{
                     index:set.index,
                     channels:set.channels.clone(),
-                    repeats:1u32,
+                    repeats,
                     volume:1f32,
                 };
                 full_track_sets.push(track_set)
@@ -141,7 +175,7 @@ impl AudioWrapper{
             self.audio.play_tracks(full_track_sets)
         }
         else{
-            AudioCommandResult::Ok
+            AudioCommandResult::NoSuchTrack
         }
     }
 
@@ -149,16 +183,16 @@ impl AudioWrapper{
     /// 
     /// Stops a track.
     pub fn stop_track(&self,name:&str)->AudioCommandResult{
-        if let Some(&track_sets_index)=self.track_table.get(name){
+        if let Some(track_sets_index)=self.search_track(name){
             let track_sets=&self.track_sets[track_sets_index];
 
             // Получение индексов треков
             let track_indices:Vec<usize>=track_sets.iter().map(|set|set.index).collect();
 
-            self.audio.stop_tracks(track_indices)
+            self.audio.stop_tracks_storage(track_indices)
         }
         else{
-            AudioCommandResult::Ok
+            AudioCommandResult::NoSuchTrack
         }
     }
 
@@ -180,16 +214,16 @@ impl AudioWrapper{
     /// 
     /// Unpauses a track.
     pub fn unpause_track(&self,name:&str)->AudioCommandResult{
-        if let Some(&track_sets_index)=self.track_table.get(name){
+        if let Some(track_sets_index)=self.search_track(name){
             let track_sets=&self.track_sets[track_sets_index];
 
             // Получение индексов треков
             let track_indices:Vec<usize>=track_sets.iter().map(|set|set.index).collect();
 
-            self.audio.unpause_tracks(track_indices)
+            self.audio.unpause_tracks_storage(track_indices)
         }
         else{
-            AudioCommandResult::Ok
+            AudioCommandResult::NoSuchTrack
         }
     }
 
@@ -197,16 +231,16 @@ impl AudioWrapper{
     /// 
     /// Pauses a track.
     pub fn pause_track(&self,name:&str)->AudioCommandResult{
-        if let Some(&track_sets_index)=self.track_table.get(name){
+        if let Some(track_sets_index)=self.search_track(name){
             let track_sets=&self.track_sets[track_sets_index];
 
             // Получение индексов треков
             let track_indices:Vec<usize>=track_sets.iter().map(|set|set.index).collect();
 
-            self.audio.pause_tracks(track_indices)
+            self.audio.pause_tracks_storage(track_indices)
         }
         else{
-            AudioCommandResult::Ok
+            AudioCommandResult::NoSuchTrack
         }
     }
 
@@ -226,14 +260,14 @@ impl AudioWrapper{
     /// 
     /// Sets the general volume.
     pub fn set_track_volume(&self,name:&str,volume:f32)->AudioCommandResult{
-        if let Some(&track_sets_index)=self.track_table.get(name){
+        if let Some(track_sets_index)=self.search_track(name){
             // Получение индексов треков
             let tracks:Vec<usize>=self.track_sets[track_sets_index].iter().map(|set|set.index).collect();
 
-            self.audio.set_tracks_volume(tracks,volume)
+            self.audio.set_tracks_volume_storage(tracks,volume)
         }
         else{
-            AudioCommandResult::Ok
+            AudioCommandResult::NoSuchTrack
         }
     }
 

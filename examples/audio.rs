@@ -3,18 +3,19 @@
 use cat_engine::audio::{
     AudioSettings,
     Audio,
-    cpal,
+    AudioWrapper,
 };
 
 fn main(){
     let settings=AudioSettings::new();
-    let host=cpal::default_host();
-    let audio=Audio::new(host,settings.clone()).unwrap();
+    let audio=Audio::default(settings.clone()).unwrap();
 
-    // Add a track to the array before running
-    audio.add_track("resources/audio3.mp3"); // a track index = 0
+    let mut wrapper=AudioWrapper::new(audio);
 
-    audio.play_track(0,1); // plays the track once
+    // Add a track to the storage before running
+    wrapper.load_track("resources/audio3.mp3","audio3".to_string());
+
+    wrapper.play_track("audio3",1u32); // plays the track once
 
     std::thread::sleep(std::time::Duration::from_millis(3000));
 }

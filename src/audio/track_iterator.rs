@@ -105,10 +105,10 @@ impl TrackIter{
         self.track_sample_rate
     }
 
-    /// Ставит трек проигрываться.
+    /// Снимает трек с паузы.
     /// 
     /// Если уже проигрывается, ничего не происходит.
-    pub fn play(&mut self){
+    pub fn unpause(&mut self){
         self.play_type=match self.play_type{
             PlayType::PausedOnce=>PlayType::Once,
 
@@ -151,7 +151,7 @@ impl TrackIter{
             self.volume=volume;
             self.track_current_frame=0;
             self.track_len=track.len();
-    
+
             match repeats{
                 0=>self.play_type=PlayType::Forever,
                 1=>self.play_type=PlayType::Once,
