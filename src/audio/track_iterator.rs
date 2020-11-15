@@ -1,7 +1,6 @@
 use crate::support::{
     math::gcd,
     SyncRawPtr,
-    SyncRawMutPtr
 };
 
 use super::{
@@ -98,11 +97,6 @@ impl TrackIter{
             next_frame:0f32,
             next_output_frame_pos_in_chunk:0u32,
         }
-    }
-
-    /// Возвращает частоту трека.
-    pub fn sample_rate(&self)->u32{
-        self.track_sample_rate
     }
 
     /// Снимает трек с паузы.

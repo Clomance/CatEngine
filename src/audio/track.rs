@@ -5,11 +5,7 @@ use std::fs::File;
 
 use minimp3::Decoder;
 
-use cpal::{
-    Sample,
-    SampleRate,
-    SampleFormat,
-};
+use cpal::Sample;
 
 /// Результат загрузки трека.
 /// 
@@ -184,13 +180,13 @@ pub struct ChanneledTrack{
 
 impl ChanneledTrack{
     pub fn new<P:AsRef<Path>>(path:P)->TrackResult<ChanneledTrack>{
-        let mut track=match Track::new(path){
+        let track=match Track::new(path){
             TrackResult::Ok(track)=>track,
             TrackResult::NoData=>return TrackResult::NoData,
             TrackResult::FileError(err)=>return TrackResult::FileError(err),
         };
         
-        let mut monos=track.to_mono_tracks();
+        let monos=track.to_mono_tracks();
 
         let sample_rate=track.sample_rate();
         let channels_amount=track.channels() as usize;

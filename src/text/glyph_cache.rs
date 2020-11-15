@@ -4,7 +4,6 @@ use super::{
     ScaledGlyph,
     OutlinedGlyph,
     Scale,
-    OutlineCurve,
 };
 
 use glium::{
@@ -28,8 +27,6 @@ use std::{
     collections::HashMap,
     borrow::Cow,
     ops::Range,
-    path::Path,
-    fs::read,
 };
 
 // ᶠᵉᵉᵈ ᵐᵉ /ᐠ-ⱉ-ᐟ\ﾉ

@@ -382,7 +382,7 @@ impl TextBase{
             // Масштабированный глиф
             let scaled=glyph.scale(self.scale);
 
-            let mut rect=scaled.positioned_bounding_box(position);
+            let rect=scaled.positioned_bounding_box(position);
 
             // Расстояние до следующего глифа по горизонтали
             let advance_width=scaled.advance_width();
@@ -439,7 +439,7 @@ impl TextBase{
             // Масштабированный глиф
             let scaled=glyph.scale(self.scale);
 
-            let mut rect=scaled.positioned_bounding_box(position);
+            let rect=scaled.positioned_bounding_box(position);
 
             // Расстояние до следующего глифа по горизонтали
             let advance_width=scaled.advance_width();
@@ -498,7 +498,7 @@ impl TextBase{
             // Масштабированный глиф
             let scaled=glyph.scale(self.scale);
 
-            let mut rect=scaled.positioned_bounding_box(position);
+            let rect=scaled.positioned_bounding_box(position);
 
             // Расстояние до следующего глифа
             let advance_width=scaled.advance_width();
@@ -644,7 +644,7 @@ impl TextBase{
             }
         };
 
-        let mut rect=glyph.positioned_bounding_box(self.position);
+        let rect=glyph.positioned_bounding_box(self.position);
 
         // Создание глифа для рендеринга
         let textured=TexturedGlyph::raw(glyph.data(),[rect[2],rect[3]]);
@@ -692,7 +692,7 @@ impl TextBase{
                 glyph_cache.scaled_undefined_glyph(self.scale)
             };
 
-            let mut rect=glyph.positioned_bounding_box(position);
+            let rect=glyph.positioned_bounding_box(position);
 
             // Создание глифа для рендеринга
             let textured=TexturedGlyph::raw(glyph.data(),[rect[2],rect[3]]);
@@ -744,7 +744,7 @@ impl TextBase{
                 glyph_cache.scaled_undefined_glyph(self.scale)
             };
 
-            let mut rect=glyph.positioned_bounding_box(position);
+            let rect=glyph.positioned_bounding_box(position);
 
             // Создание глифа для рендеринга
             let textured=TexturedGlyph::raw(glyph.data(),[rect[2],rect[3]]);
@@ -800,7 +800,7 @@ impl TextBase{
                 glyph_cache.scaled_undefined_glyph(self.scale)
             };
 
-            let mut rect=glyph.positioned_bounding_box(position);
+            let rect=glyph.positioned_bounding_box(position);
 
             // Создание глифа для рендеринга
             let textured=TexturedGlyph::raw(glyph.data(),[rect[2],rect[3]]);
@@ -864,7 +864,7 @@ impl TextBase{
                 glyph_cache.scaled_undefined_glyph(self.scale)
             };
 
-            let mut rect=glyph.positioned_bounding_box(position);
+            let rect=glyph.positioned_bounding_box(position);
 
             // Создание глифа для рендеринга
             let textured=TexturedGlyph::raw(glyph.data(),[rect[2],rect[3]]);
@@ -927,7 +927,7 @@ impl TextBase{
                 glyph_cache.scaled_undefined_glyph(self.scale)
             };
 
-            let mut rect=glyph.positioned_bounding_box(position);
+            let rect=glyph.positioned_bounding_box(position);
 
             // Создание глифа для рендеринга
             let textured=TexturedGlyph::raw(glyph.data(),[rect[2],rect[3]]);

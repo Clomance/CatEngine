@@ -3,7 +3,6 @@ use crate::support::SyncRawMutPtr;
 use super::{
     MonoTrack,
     TrackIter,
-    SampleTransform,
 };
 
 use std::{

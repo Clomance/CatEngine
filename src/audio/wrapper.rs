@@ -9,7 +9,6 @@ use super::{
 
 use std::{
     path::Path,
-    collections::HashMap,
     cmp::Ordering,
 };
 
@@ -75,32 +74,27 @@ impl AudioWrapper{
 
         let sample_rate=track.sample_rate();
 
+        let mut tracks=Vec::with_capacity(track.channels());
+
         let mut track_sets=Vec::with_capacity(track.channels());
 
         for (data,channels) in track.into_iter(){
-            let index=self.audio.tracks_amount();
-
-            if let AudioCommandResult::Sent=self.audio.add_track(MonoTrack{
-                data,
-                sample_rate,
-            }){
-                let set=Set{
-                    index,
-                    channels,
-                };
-
-                track_sets.push(set)
-            }
-            else{
-                return false
-            }
+            tracks.push(MonoTrack{data,sample_rate});
+            track_sets.push(Set{index:0,channels});
         }
 
-        // Добавление трека
-        self.names.push(name);
-        self.track_sets.push(track_sets);
-
-        true
+        if let AudioCommandResult::Indices(indices)=self.audio.add_tracks(tracks){
+            for (c,index) in indices.into_iter().enumerate(){
+                track_sets[c].index=index
+            }
+            // Добавление трека
+            self.names.push(name);
+            self.track_sets.push(track_sets);
+            true
+        }
+        else{
+            false
+        }
     }
 
     /// Удаляет трек из хранилища.
@@ -108,15 +102,7 @@ impl AudioWrapper{
     /// Remove a track from the storage.
     pub fn remove_track(&mut self,name:&str)->AudioCommandResult{
         if let Some(track_sets)=self.remove_track_inner(name){
-            let len=track_sets.len();
-
             let track_indices:Vec<usize>=track_sets.into_iter().map(|set|set.index).collect();
-
-            for sets in &mut self.track_sets{
-                for set in sets{
-                    set.index-=len;
-                }
-            }
 
             self.audio.remove_tracks(track_indices)
         }
@@ -125,21 +111,41 @@ impl AudioWrapper{
         }
     }
 
-    /// Очищает хранилище треков.
+    /// Очищает хранилище и плейлист.
     /// 
-    /// Clears the track storage.
+    /// Clears the storage and the playlist.
     pub fn clear_storage(&mut self)->AudioCommandResult{
         self.names.clear();
         self.track_sets.clear();
         self.audio.clear_storage()
     }
 
-    /// Возвращает сет трека.
+    /// Добавляет новые сеты.
+    /// 
+    /// Adds new sets.
+    pub fn push_sets(&mut self,name:String,sets:Vec<Set>){
+        self.names.push(name);
+        self.track_sets.push(sets);
+    }
+
+    /// Возвращает сеты трека.
     /// 
     /// Returns track's sets.
     pub fn get_track_sets(&self,name:&str)->Option<&Vec<Set>>{
         if let Some(track_sets_index)=self.search_track(name){
             Some(&self.track_sets[track_sets_index])
+        }
+        else{
+            None
+        }
+    }
+
+    /// Возвращает сеты трека.
+    /// 
+    /// Returns track's sets.
+    pub fn get_mut_track_sets(&mut self,name:&str)->Option<&mut Vec<Set>>{
+        if let Some(track_sets_index)=self.search_track(name){
+            Some(&mut self.track_sets[track_sets_index])
         }
         else{
             None

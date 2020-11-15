@@ -1,12 +1,11 @@
 //! # Многоканальный аудио движок. A multichannel audio engine. `feature = "audio"`.
 //! 
 //! Аудио движок имеет свой поток для работы со звуком.
-//! Также в нём есть массив аудио треков, которые можно запустить.
+//! Также в нём есть хранилище аудио треков, которые можно запустить.
 //! 
 //! Поддерживает только вывод.
 //! Пока что позволяет декодировать только треки формата `mp3`.
 //! Все треки переводятся в 24-битный формат.
-//! 
 //! 
 //! Поток закрывается с паникой, так что не паникуте!
 //! 
@@ -15,7 +14,7 @@
 //! #
 //! 
 //! The audio engine has it's own thread to work with sound.
-//! Also it has an audio track array.
+//! Also it has a storage of audio tracks that could be played.
 //! 
 //! Supports only output.
 //! For now only 'mp3' format decoding is supported.
@@ -63,38 +62,25 @@ pub use wrapper::AudioWrapper;
 
 use cpal::{
     Host,
-    HostId,
-    HostUnavailable,
     Device,
-    DevicesError,
-    Devices,
-    OutputDevices,
     traits::{
         HostTrait,
         DeviceTrait,
         EventLoopTrait
     },
-    UnknownTypeOutputBuffer,
-    StreamData,
     StreamId,
     EventLoop,
-    Sample,
     Format,
-    StreamError,
-    SampleFormat
 };
 
 use std::{
     io,
-    vec::IntoIter,
-    iter::Cycle,
-    path::Path,
     thread::{Builder,JoinHandle},
     sync::{
         Arc,
         Mutex,
         LockResult,
-        mpsc::{Sender,Receiver,channel,SendError},
+        mpsc::{Sender,channel,SendError},
     },
 };
 
@@ -105,23 +91,23 @@ const audio_thread_stack_size:usize=1024;
 /// Audio system commands.
 pub (crate) enum AudioSystemCommand{
 // ХРАНИЛИЩЕ \\
-    /// Добавляет одноканальный трек в хранилище.
+    /// Добавляет одноканальный трек в ячейку хранилища.
     /// 
-    /// Если недостаточно места, то ничего не происходит.
+    /// Если нет такой ячейки, то ничего не происходит.
     /// 
-    /// Adds a mono-channel track to the storage.
+    /// Adds a mono-channel track to a storage slot.
     /// 
-    /// If there is not enough space, nothing happens.
-    AddMono(MonoTrack),
+    /// If there is no such slot, nothing happens.
+    AddMono(MonoTrack,usize),
 
-    /// Добавляет несколько одноканальных треков в хранилище.
+    /// Добавляет несколько одноканальных треков в ячейки хранилища.
     /// 
-    /// Если недостаточно места, то ничего не происходит.
+    /// Если нет таких ячеек, то ничего не происходит.
     /// 
     /// Adds some mono-channel tracks to the storage.
     /// 
-    /// If there is not enough space, nothing happens.
-    AddMonos(Vec<MonoTrack>),
+    /// If there is no such slots, nothing happens.
+    AddMonos(Vec<(MonoTrack,usize)>),
 
     /// Убирает одноканальный трек из хранилища.
     /// 
@@ -140,11 +126,6 @@ pub (crate) enum AudioSystemCommand{
     /// 
     /// If there are no such tracks, nothing happens.
     RemoveMonos(Vec<usize>),
-
-    /// Очищает хранилище.
-    /// 
-    /// Clears the storage.
-    ClearStorage,
 
     /// Снимает паузу с треков из плейлиста,
     /// привязанных к треку из хранилища.
@@ -284,6 +265,10 @@ pub enum AudioCommandResult{
     /// 
     /// A command is sent.
     Sent,
+
+    Index(usize),
+    Indices(Vec<usize>),
+
     /// Аудио поток остановлен.
     /// 
     /// The audio thread is closed.
@@ -308,8 +293,12 @@ impl AudioCommandResult{
     /// 
     /// Panics if the result isn't `Ok`.
     pub fn unwrap(self){
-        if self!=AudioCommandResult::Sent{
-            panic!("{:?}",self)
+        match self{
+            AudioCommandResult::ThreadClosed |
+                AudioCommandResult::StorageOverflow |
+                    AudioCommandResult::NoSuchTrack=>
+                        panic!("{:?}",self),
+            _=>{}
         }
     }
 
@@ -345,7 +334,7 @@ pub struct AudioSettings{
     /// The capacity of the track storage.
     /// 
     /// The default is 8.
-    pub track_array_capacity:usize,
+    pub track_storage_capacity:usize,
 
     /// Максимальное количество одновременно играющих треков.
     /// 
@@ -361,7 +350,7 @@ impl AudioSettings{
     pub fn new()->AudioSettings{
         Self{
             general_volume:0.5f32,
-            track_array_capacity:8,
+            track_storage_capacity:8,
             track_playlist_capacity:8,
         }
     }
@@ -373,7 +362,7 @@ pub (crate) struct AudioSystemSettings{
     pub output_channels:u16,
     pub format:Format,
 
-    pub track_array_capacity:usize,
+    pub track_storage_capacity:usize,
     pub track_playlist:usize,
 }
 
@@ -395,8 +384,6 @@ pub (crate) struct AudioSystemSettings{
 /// 
 /// Only output is available now.
 pub struct Audio{
-    host:Arc<Host>,
-    //device:Arc<Mutex<Device>>,
     stream:Arc<Mutex<Option<StreamId>>>,
 
     event_loop:Arc<EventLoop>,
@@ -404,9 +391,9 @@ pub struct Audio{
     command:Sender<AudioSystemCommand>,
     thread:Option<JoinHandle<()>>,
 
-    /// Количество треков во внутреннем буфере.
-    track_array_len:usize,
-    track_array_cap:usize,
+    // Флаги занятости слотов
+    storage_slots:Vec<bool>,
+    free_storage_slots:Vec<usize>,
 }
 
 impl Audio{
@@ -435,12 +422,15 @@ impl Audio{
         // Канал для передачи команд от управляющего потока выполняющему
         let (sender,receiver)=channel::<AudioSystemCommand>();
 
+        let mut storage_slots=Vec::with_capacity(settings.track_storage_capacity);
+        let mut free_storage_slots=Vec::with_capacity(settings.track_storage_capacity);
+        for c in 0..settings.track_storage_capacity{
+            free_storage_slots.push(c);
+            storage_slots.push(false);
+        }
+
         let owner_host=Arc::new(host);
         let host=owner_host.clone();
-
-        let track_array_cap=settings.track_array_capacity;
-
-        let playlist_cap=settings.track_playlist_capacity;
 
         let thread_result=Builder::new()
                 .name("CatEngine's audio thread".to_string())
@@ -448,9 +438,9 @@ impl Audio{
                 .spawn(move||{
 
             // Выполнение замыкания
-            let mut device=choose_device(host.as_ref());
+            let device=choose_device(host.as_ref());
 
-            let mut format=choose_format(&device);
+            let format=choose_format(&device);
 
             let main_stream=event_loop.build_output_stream(&device,&format).expect("stream");
 
@@ -463,7 +453,7 @@ impl Audio{
                 output_channels:format.channels,
                 format,
 
-                track_array_capacity:settings.track_array_capacity,
+                track_storage_capacity:settings.track_storage_capacity,
                 track_playlist:settings.track_playlist_capacity,
             };
 
@@ -472,10 +462,10 @@ impl Audio{
             event_loop_handler(
                 host,
                 //choose_device,
+                system_settings,
                 stream,
                 event_loop,
                 receiver,
-                system_settings,
             )
         });
 
@@ -485,15 +475,14 @@ impl Audio{
         };
 
         Ok(Self{
-            host:owner_host,
             stream:s,
 
             event_loop:el,
             command:sender,
             thread:Some(thread),
 
-            track_array_len:0usize,
-            track_array_cap,
+            storage_slots,
+            free_storage_slots,
         })
     }
 
@@ -515,21 +504,24 @@ impl Audio{
         // Канал для передачи команд от управляющего потока выполняющему
         let (sender,receiver)=channel::<AudioSystemCommand>();
 
+        let mut storage_slots=Vec::with_capacity(settings.track_storage_capacity);
+        let mut free_storage_slots=Vec::with_capacity(settings.track_storage_capacity);
+        for c in 0..settings.track_storage_capacity{
+            free_storage_slots.push(c);
+            storage_slots.push(false);
+        }
+
         let owner_host=Arc::new(host);
         let host=owner_host.clone();
-
-        let track_array_cap=settings.track_array_capacity;
-
-        let playlist_cap=settings.track_playlist_capacity;
 
         let thread_result=Builder::new()
                 .name("CatEngine's audio thread".to_string())
                 .stack_size(audio_thread_stack_size)
                 .spawn(move||{
 
-            let mut device=host.default_output_device().expect("No available device");
+            let device=host.default_output_device().expect("No available device");
 
-            let mut format=device.default_output_format().expect("No available device");
+            let format=device.default_output_format().expect("No available device");
 
             let main_stream=event_loop.build_output_stream(&device,&format).expect("No available device");
 
@@ -542,7 +534,7 @@ impl Audio{
                 output_channels:format.channels,
                 format,
 
-                track_array_capacity:settings.track_array_capacity,
+                track_storage_capacity:settings.track_storage_capacity,
                 track_playlist:settings.track_playlist_capacity,
             };
 
@@ -550,10 +542,10 @@ impl Audio{
             // Takes control of the current thread and begins the stream processing
             event_loop_handler(
                 host,
+                system_settings,
                 stream,
                 event_loop,
                 receiver,
-                system_settings,
             )
         });
 
@@ -563,29 +555,30 @@ impl Audio{
         };
 
         Ok(Self{
-            host:owner_host,
             stream:s,
 
             event_loop:el,
             command:sender,
             thread:Some(thread),
 
-            track_array_len:0usize,
-            track_array_cap,
+            free_storage_slots,
+
+            storage_slots
         })
     }
 
-    /// Возвращает количество треков
-    /// во внутреннем массиве.
+    /// Возвращает количество треков в хранилище.
     /// 
-    /// Returns the amount of track
-    /// in the inner array.
+    /// Returns the amount of track in the storage.
     pub fn tracks_amount(&self)->usize{
-        self.track_array_len
+        self.storage_slots.len()-self.free_storage_slots.len()
     }
 
-    fn send_command(&self,command:AudioSystemCommand)
-            ->Result<(),SendError<AudioSystemCommand>>{
+    #[cfg(feature="unsafe_audio")]
+    unsafe fn send_command(
+        &self,
+        command:AudioSystemCommand
+    )->Result<(),SendError<AudioSystemCommand>>{
         self.command.send(command)
     }
 }
@@ -602,12 +595,11 @@ impl Audio{
     /// 
     /// If there is not enough space, returns `AudioCommandResult::StorageOverflow`.
     pub fn add_track(&mut self,track:MonoTrack)->AudioCommandResult{
-        if self.track_array_len<self.track_array_cap{
-            match self.command.send(AudioSystemCommand::AddMono(track)){
-                Ok(_)=>{
-                    self.track_array_len+=1;
-                    AudioCommandResult::Sent
-                },
+        if let Some(slot)=self.free_storage_slots.pop(){
+            self.storage_slots[slot]=true;
+
+            match self.command.send(AudioSystemCommand::AddMono(track,slot)){
+                Ok(_)=>AudioCommandResult::Index(slot),
                 Err(_)=>AudioCommandResult::ThreadClosed,
             }
         }
@@ -624,13 +616,20 @@ impl Audio{
     /// 
     /// If there is not enough space, returns `AudioCommandResult::StorageOverflow`.
     pub fn add_tracks(&mut self,tracks:Vec<MonoTrack>)->AudioCommandResult{
-        let len=tracks.len();
-        if self.track_array_len+len<self.track_array_cap{
-            match self.command.send(AudioSystemCommand::AddMonos(tracks)){
-                Ok(_)=>{
-                    self.track_array_len+=len;
-                    AudioCommandResult::Sent
-                },
+        let mut indices=Vec::with_capacity(tracks.len());
+        let mut track_sets=Vec::with_capacity(tracks.len());
+
+        for track in tracks{
+            if let Some(slot)=self.free_storage_slots.pop(){
+                self.storage_slots[slot]=true;
+                indices.push(slot);
+                track_sets.push((track,slot))
+            }
+        }
+
+        if !indices.is_empty(){
+            match self.command.send(AudioSystemCommand::AddMonos(track_sets)){
+                Ok(_)=>AudioCommandResult::Indices(indices),
                 Err(_)=>AudioCommandResult::ThreadClosed,
             }
         }
@@ -641,20 +640,19 @@ impl Audio{
 
     /// Удаляет трек из хранилища.
     /// 
-    /// Если такого трека нет, то ничего не происходит.
-    /// 
     /// Removes the track from the storage.
-    /// 
-    /// If there are no such track, nothing happens.
     pub fn remove_track(&mut self,index:usize)->AudioCommandResult{
-        if self.track_array_len>0{
-            // Казна пустеет, милорд!
-            match self.command.send(AudioSystemCommand::RemoveMono(index)){
-                Ok(_)=>{
-                    self.track_array_len-=1;
-                    AudioCommandResult::Sent
-                },
-                Err(_)=>AudioCommandResult::ThreadClosed,
+        if let Some(slot)=self.storage_slots.get_mut(index){
+            if *slot{
+                *slot=false;
+                // Казна пустеет, милорд!
+                match self.command.send(AudioSystemCommand::RemoveMono(index)){
+                    Ok(_)=>AudioCommandResult::Sent,
+                    Err(_)=>AudioCommandResult::ThreadClosed,
+                }
+            }
+            else{
+                AudioCommandResult::NoSuchTrack
             }
         }
         else{
@@ -662,27 +660,25 @@ impl Audio{
         }
     }
 
-    /// Удаляет трек из хранилища.
-    /// 
-    /// Если нет таких треков, то ничего не происходит.
-    /// Если размер `indices` больше, чем треков в хранилище,
-    /// то возвращает `AudioCommandResult::NoSuchTrack`.
+    /// Удаляет треки из хранилища.
     /// 
     /// Removes tracks from the storage.
-    /// 
-    /// If there are no such tracks, nothing happens.
-    /// If the size of `indices` is greater than
-    /// the amount of tracks in the storage,
-    /// then returns AudioCommandResult::NoSuchTrack`.
     pub fn remove_tracks(&mut self,indices:Vec<usize>)->AudioCommandResult{
-        let len=indices.len();
-        // Казна пустеет, милорд!
-        if self.track_array_len>=len{
-            match self.command.send(AudioSystemCommand::RemoveMonos(indices)){
-                Ok(_)=>{
-                    self.track_array_len-=len;
-                    AudioCommandResult::Sent
-                },
+        let mut track_indices=Vec::with_capacity(indices.len());
+
+        for index in indices{
+            if let Some(slot)=self.storage_slots.get_mut(index){
+                if *slot{
+                    *slot=false;
+                    track_indices.push(index);
+                }
+            }
+        }
+
+        if !track_indices.is_empty(){
+            // Казна пустеет, милорд!
+            match self.command.send(AudioSystemCommand::RemoveMonos(track_indices)){
+                Ok(_)=>AudioCommandResult::Sent,
                 Err(_)=>AudioCommandResult::ThreadClosed,
             }
         }
@@ -691,15 +687,18 @@ impl Audio{
         }
     }
 
-    /// Очищает хранилище.
+    /// Очищает хранилище и плейлист.
     /// 
-    /// Clears the storage.
+    /// Clears the storage and the playlist.
     pub fn clear_storage(&mut self)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::ClearStorage){
-            Ok(_)=>{
-                self.track_array_len=0;
-                AudioCommandResult::Sent
-            },
+        self.free_storage_slots.clear();
+        for (c,slot) in self.storage_slots.iter_mut().enumerate(){
+            *slot=false;
+            self.free_storage_slots.push(c);
+        }
+
+        match self.command.send(AudioSystemCommand::ClearPlaylist){
+            Ok(_)=>AudioCommandResult::Sent,
             Err(_)=>AudioCommandResult::ThreadClosed,
         }
     }
@@ -727,21 +726,9 @@ impl Audio{
         };
 
         if let Some(stream)=stream_lock.as_ref(){
-            self.event_loop.play_stream(stream.clone());
+            self.event_loop.play_stream(stream.clone()).unwrap();
         }
         result
-    }
-    
-    /// Останаливает трек из плейлиста.
-    /// 
-    /// Stops a track from the playlist.
-    pub fn stop_track(&self,index:usize)->AudioCommandResult{
-        match self.command.send(
-            AudioSystemCommand::RemoveMonoFromPlaylist(index)
-        ){
-            Ok(())=>AudioCommandResult::Sent,
-            Err(_)=>return AudioCommandResult::ThreadClosed
-        }
     }
 
     /// Запускает треки.
@@ -763,10 +750,22 @@ impl Audio{
         };
 
         if let Some(stream)=stream_lock.as_ref(){
-            self.event_loop.play_stream(stream.clone());
+            self.event_loop.play_stream(stream.clone()).unwrap();
         }
 
         result
+    }
+
+    /// Останаливает трек из плейлиста.
+    /// 
+    /// Stops a track from the playlist.
+    pub fn stop_track(&self,index:usize)->AudioCommandResult{
+        match self.command.send(
+            AudioSystemCommand::RemoveMonoFromPlaylist(index)
+        ){
+            Ok(())=>AudioCommandResult::Sent,
+            Err(_)=>return AudioCommandResult::ThreadClosed
+        }
     }
 
     /// Останавливает треки из плейлиста.
@@ -801,7 +800,7 @@ impl Audio{
         };
 
         if let Some(stream)=stream_lock.as_ref(){
-            self.event_loop.play_stream(stream.clone());
+            self.event_loop.play_stream(stream.clone()).unwrap();
         }
 
         AudioCommandResult::Sent
@@ -817,7 +816,7 @@ impl Audio{
         };
 
         if let Some(stream)=stream_lock.as_ref(){
-            self.event_loop.pause_stream(stream.clone());
+            self.event_loop.pause_stream(stream.clone()).unwrap();
         }
 
         AudioCommandResult::Sent
@@ -1072,7 +1071,7 @@ impl Drop for Audio{
         let _=self.command.send(AudioSystemCommand::Close);
 
         if let Some(stream)=self.stream.lock().unwrap().as_ref(){
-            self.event_loop.play_stream(stream.clone());
+            let _=self.event_loop.play_stream(stream.clone());
         }
 
         if let Some(thread)=self.thread.take(){

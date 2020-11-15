@@ -107,11 +107,11 @@ impl SampleTransform for u16{
         }
     }
 
-    fn to_u16(self,volume:f32)->u16{
+    fn to_u16(self,_volume:f32)->u16{
         self
     }
 
-    fn to_i16(self,volume:f32)->i16{
+    fn to_i16(self,_volume:f32)->i16{
         if self >= 32768 {
             (self - 32768) as i16
         } else {
@@ -119,7 +119,7 @@ impl SampleTransform for u16{
         }
     }
 
-    fn to_f32(self,volume:f32)->f32{
+    fn to_f32(self,_volume:f32)->f32{
         if self >= 32768 {
             (self - 32768) as f32/ 32768f32
         } else {

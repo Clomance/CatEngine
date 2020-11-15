@@ -1,7 +1,6 @@
 use super::{
     OutlineCurveBuilder,
     RawGlyph,
-    OutlinedGlyph,
     Scale,
     OutlineCurve,
     GlyphCache,
@@ -11,14 +10,7 @@ use super::{
 
 use glium::{
     Display,
-    texture::{
-        Texture2d,
-        UncompressedFloatFormat,
-        MipmapsOption,
-        RawImage2d,
-        ClientFormat,
-    },
-    Rect,
+    texture::Texture2d,
 };
 
 use ttf_parser::{
@@ -27,9 +19,6 @@ use ttf_parser::{
 };
 
 use std::{
-    collections::HashMap,
-    borrow::Cow,
-    ops::Range,
     path::Path,
     fs::read,
 };
