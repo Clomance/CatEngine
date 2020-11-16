@@ -27,9 +27,7 @@
 //! #
 //! 
 //! ```
-//! let settings=AudioSettings::new();
-//! 
-//! let audio=Audio::default(settings.clone()).unwrap();
+//! let audio=Audio::default(AudioSettings::new()).unwrap();
 //! 
 //! // For easier access to the audio engine
 //! let mut wrapper=AudioWrapper::new(audio);
@@ -486,11 +484,11 @@ impl Audio{
         })
     }
 
-    /// Строит аудио движок с настройками по умолчанию.
+    /// Строит аудио движок с хостом, устройством и потоком по умолчанию.
     /// 
     /// Возвращает результат создания аудио потока.
     /// 
-    /// Creates an audio engine with default settings.
+    /// Creates an audio engine with default host, device and streams.
     /// 
     /// Returns the result of starting an audio thread.
     pub fn default(settings:AudioSettings)->io::Result<Audio>{
@@ -610,11 +608,13 @@ impl Audio{
 
     /// Добавляет несколько треков в хранилище.
     /// 
-    /// Если недостаточно места, возвращает `AudioCommandResult::StorageOverflow`.
+    /// Если недостаточно места даже для одного,
+    /// возвращает `AudioCommandResult::StorageOverflow`.
     /// 
     /// Adds some tracks to the storage.
     /// 
-    /// If there is not enough space, returns `AudioCommandResult::StorageOverflow`.
+    /// If there is not enough space even for one,
+    /// returns `AudioCommandResult::StorageOverflow`.
     pub fn add_tracks(&mut self,tracks:Vec<MonoTrack>)->AudioCommandResult{
         let mut indices=Vec::with_capacity(tracks.len());
         let mut track_sets=Vec::with_capacity(tracks.len());
@@ -735,7 +735,6 @@ impl Audio{
     /// 
     /// Plays tracks.
     pub fn play_tracks(&self,sets:Vec<TrackSet>)->AudioCommandResult{
-        // Проверка размера плейлиста
         let stream_lock=match self.stream.lock(){
             LockResult::Ok(lock)=>lock,
             LockResult::Err(_)=>return AudioCommandResult::ThreadClosed

@@ -14,6 +14,8 @@ use cpal::Sample;
 /// You can implement this trait on your own type as well if you wish so.
 
 pub trait SampleTransform:Sample{
+    fn into_i16(self)->i16;
+    fn into_u16(self)->u16;
     fn into_f32(self)->f32;
 
     fn to_u16(self,volume:f32)->u16;
@@ -40,6 +42,14 @@ pub trait SampleTransform:Sample{
 }
 
 impl SampleTransform for i16{
+    fn into_i16(self)->i16{
+        self
+    }
+
+    fn into_u16(self)->u16{
+        0u16
+    }
+
     fn into_f32(self)->f32{
         if self<0{
             self as f32 / -(std::i16::MIN as f32)
@@ -98,6 +108,14 @@ impl SampleTransform for i16{
 }
 
 impl SampleTransform for u16{
+    fn into_i16(self)->i16{
+        0i16
+    }
+
+    fn into_u16(self)->u16{
+        self
+    }
+
     fn into_f32(self)->f32{
         if self >= 32768 {
             (self - 32768) as f32 / std::i16::MAX as f32
@@ -154,6 +172,14 @@ impl SampleTransform for u16{
 }
 
 impl SampleTransform for f32{
+    fn into_i16(self)->i16{
+        0i16
+    }
+
+    fn into_u16(self)->u16{
+        0u16
+    }
+
     fn into_f32(self)->f32{
         self
     }

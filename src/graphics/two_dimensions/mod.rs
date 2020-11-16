@@ -171,6 +171,10 @@ impl Graphics2D{
         self.texture.add_texture(texture)
     }
 
+    pub fn delete_last_texture(&mut self){
+        self.texture.delete_last_texture()
+    }
+
     pub fn remove_texture(&mut self,index:usize){
         self.texture.remove_texture(index)
     }

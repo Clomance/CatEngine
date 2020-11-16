@@ -24,8 +24,10 @@ pub struct AudioWrapper{
 /// 
 /// Track's index and channels.
 pub struct Set{
-    index:usize,
-    channels:Vec<usize>
+    /// Track's storage index.
+    pub index:usize,
+    /// Channels for output.
+    pub channels:Vec<usize>
 }
 
 impl AudioWrapper{
@@ -99,7 +101,7 @@ impl AudioWrapper{
 
     /// Удаляет трек из хранилища.
     /// 
-    /// Remove a track from the storage.
+    /// Removes a track from the storage.
     pub fn remove_track(&mut self,name:&str)->AudioCommandResult{
         if let Some(track_sets)=self.remove_track_inner(name){
             let track_indices:Vec<usize>=track_sets.into_iter().map(|set|set.index).collect();
@@ -155,7 +157,7 @@ impl AudioWrapper{
 
 /// Проигрывание треков.
 /// 
-/// Play tracks.
+/// Playing tracks.
 impl AudioWrapper{
     /// Запускает трек.
     /// 

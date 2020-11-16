@@ -1,22 +1,36 @@
 # 0.5.0
 
-### Added
+<!-- ### Added
 
-A colour filter and a feature for it. You may use it to make different UI layers with their own filters.
+A colour filter and a feature for it. You may use it to make different UI layers with their own filters. -->
 
 ### Updated
 
 The `image` crate to `0.23.11`.
+The `ttf-parser` crate to `0.8.3`.
+
+### Changed
+
+`TexturedObject` doesn't owe a texture, it should be added seperatly.
 
 ### A new audio system
 
 Now you are able to control each audio channel yourself.
 
 ```
+let audio=Audio::default(AudioSettings::new()).unwrap();
 
+let mut wrapper=AudioWrapper::new(audio);
+
+wrapper.load_track("audio.mp3","test".to_string());
+
+wrapper.play_track("test").unwrap();
+
+// Pausing one channel of the track
+wrapper.audio.pause_track(0).unwrap();
 ```
 
-##### Post-processing
+<!-- ##### Post-processing
 
 Audio post-processing is enabled with the `audio_post_processing` feature.
 It gives you an ability to add a closure to render a channel output frame (one iteration of all audio channels).
@@ -24,7 +38,7 @@ It gives you an ability to add a closure to render a channel output frame (one i
 Example:
 ```
 
-```
+``` -->
 
 
 # 0.5.0-alpha
