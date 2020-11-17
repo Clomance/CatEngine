@@ -1,4 +1,4 @@
-//! # Многоканальный аудио движок. A multichannel audio engine. `feature = "audio"`.
+//! # Многоканальный аудио движок. A multichannel audio engine. `feature = "audio"`
 //! 
 //! Аудио движок имеет свой поток для работы со звуком.
 //! Также в нём есть хранилище аудио треков, которые можно запустить.
@@ -34,14 +34,14 @@
 //! 
 //! wrapper.load_track("audio.mp3","test".to_string());
 //! 
-//! wrapper.play_track("test").unwrap();
+//! wrapper.play_track("test",0u32).unwrap();
 //! ```
 
 // re-export
 pub use cpal;
 
-mod engine;
-use engine::event_loop_handler;
+mod engine_core;
+use engine_core::event_loop_handler;
 
 mod channel_system;
 use channel_system::*;

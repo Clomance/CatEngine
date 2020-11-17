@@ -1,6 +1,6 @@
 [package]
 name = "cat_engine"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
 homepage = "https://github.com/Clomance/CatEngine"

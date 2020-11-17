@@ -264,9 +264,9 @@ impl AudioWrapper{
 /// 
 /// Setting functions.
 impl AudioWrapper{
-    /// Устанавливает общую громкость.
+    /// Устанавливает громкость трека.
     /// 
-    /// Sets the general volume.
+    /// Sets track's volume.
     pub fn set_track_volume(&self,name:&str,volume:f32)->AudioCommandResult{
         if let Some(track_sets_index)=self.search_track(name){
             // Получение индексов треков
@@ -286,38 +286,3 @@ impl AudioWrapper{
         self.audio.set_general_volume(volume)
     }
 }
-
-// /// Низкоуровневые функции.
-// /// 
-// /// Low-level functions.
-// impl AudioWrapper{
-//     pub fn remove_mono_track(&mut self,index:usize)->AudioCommandResult{
-//         self.audio.remove_track(index)
-//     }
-
-//     // pub fn remove_mono_track_from_playlist(&mut self,index:usize)->AudioCommandResult{
-//     //     self.audio.remove_track_from_playlist(index)
-//     // }
-
-//     /// Ставит трек проигрываться.
-//     /// 
-//     /// Если уже проигрывается или такого трека нет, ничего не происходит.
-//     /// 
-//     /// Unpauses a track.
-//     /// 
-//     /// If it's already playing or there is no such track, nothing happens.
-//     pub fn unpause_mono_track(&self,index:usize)->AudioCommandResult{
-//         self.audio.unpause_track(index)
-//     }
-
-//     /// Ставит трек на паузу.
-//     /// 
-//     /// Если уже на паузе или такого трека нет, ничего не происходит.
-//     /// 
-//     /// Pauses a track.
-//     /// 
-//     /// If it's already paused or there is no such track, nothing happens.
-//     pub fn pause_mono_track(&self,index:usize)->AudioCommandResult{
-//         self.audio.pause_track(index)
-//     }
-// }
