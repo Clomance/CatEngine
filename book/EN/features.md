@@ -1,21 +1,26 @@
-# Why do we need features
-
-Features help us to remove unnecessary code and modules and lessen the size of some structures.
-
-
 # Audio
 
 ### audio
 
-Enables audio output.
+Enables the audio output engine.
+Standard functions.
 
+### extended_audio
+
+Enables the audio output engine with direct command acces to the core as an addition.
+Standard functions remain.
+
+### raw_audio
+
+Enables the audio output engine only with direct command acces to the core.
+Standard functions are removed.
 
 
 # Graphics
 
 ### texture_graphics
 
-Enables operating and rendering textured objects.
+Enable operating and rendering textured objects.
 
 ### text_graphics
 

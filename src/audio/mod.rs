@@ -9,7 +9,7 @@
 //! 
 //! Поток закрывается с паникой, так что не паникуте!
 //! 
-//! Больше вы сможете узнать из [книги](https://github.com/Clomance/CatEngine/blob/master/book/README-RUS.MD).
+//! Больше вы сможете узнать из [книги](https://github.com/Clomance/CatEngine/blob/master/book/RUS/audio.md).
 //! 
 //! #
 //! 
@@ -22,7 +22,7 @@
 //! 
 //! The thread closes with panic, so don't panic!
 //! 
-//! You can learn more from the [book](https://github.com/Clomance/CatEngine/blob/master/book/README.MD).
+//! You can learn more from the [book](https://github.com/Clomance/CatEngine/blob/master/book/EN/audio.md).
 //! 
 //! #
 //! 
@@ -55,8 +55,19 @@ pub use track::*;
 mod sample;
 use sample::SampleTransform;
 
+#[cfg(not(feature="raw_audio"))]
 mod wrapper;
+#[cfg(not(feature="raw_audio"))]
 pub use wrapper::AudioWrapper;
+
+mod engine_commands;
+
+#[cfg(not(feature="extended_audio"))]
+use engine_commands::AudioEngineCommand;
+#[cfg(feature="extended_audio")]
+pub use engine_commands::AudioEngineCommand;
+
+pub use engine_commands::AudioCommandResult;
 
 use cpal::{
     Host,
@@ -83,235 +94,6 @@ use std::{
 };
 
 const audio_thread_stack_size:usize=1024;
-
-/// Команды аудио системы.
-/// 
-/// Audio system commands.
-pub (crate) enum AudioSystemCommand{
-// ХРАНИЛИЩЕ \\
-    /// Добавляет одноканальный трек в ячейку хранилища.
-    /// 
-    /// Если нет такой ячейки, то ничего не происходит.
-    /// 
-    /// Adds a mono-channel track to a storage slot.
-    /// 
-    /// If there is no such slot, nothing happens.
-    AddMono(MonoTrack,usize),
-
-    /// Добавляет несколько одноканальных треков в ячейки хранилища.
-    /// 
-    /// Если нет таких ячеек, то ничего не происходит.
-    /// 
-    /// Adds some mono-channel tracks to the storage.
-    /// 
-    /// If there is no such slots, nothing happens.
-    AddMonos(Vec<(MonoTrack,usize)>),
-
-    /// Убирает одноканальный трек из хранилища.
-    /// 
-    /// Если нет такого трека, то ничего не происходит.
-    /// 
-    /// Removes a mono-channel track from the storage.
-    /// 
-    /// If there is no such track, nothing happens.
-    RemoveMono(usize),
-
-    /// Убирает несколько одноканальных треков из хранилища.
-    /// 
-    /// Если нет таких треков, то ничего не происходит.
-    /// 
-    /// Removes some mono-channel tracks from the storage.
-    /// 
-    /// If there are no such tracks, nothing happens.
-    RemoveMonos(Vec<usize>),
-
-    /// Снимает паузу с треков из плейлиста,
-    /// привязанных к треку из хранилища.
-    /// 
-    /// Unpauses tracks from the playlist
-    /// attached to a track from the storage.
-    UnpauseMonoFromStorage(usize),
-
-    /// Снимает паузу с треков из плейлиста,
-    /// привязанных к трекам из хранилища.
-    /// 
-    /// Unpauses tracks from the playlist
-    /// attached to tracks from the storage.
-    UnpauseMonosFromStorage(Vec<usize>),
-
-    /// Ставит на паузу треки из плейлиста,
-    /// привязанные к треку из хранилища.
-    /// 
-    /// Pauses tracks from the playlist
-    /// attached to a track from the storage.
-    PauseMonoFromStorage(usize),
-
-    /// Ставит на паузу треки из плейлиста,
-    /// привязанные к трекам из хранилища.
-    /// 
-    /// Stops tracks from the playlist
-    /// attached to tracks from the storage.
-    PauseMonosFromStorage(Vec<usize>),
-
-    /// Останавливает треки из плейлиста,
-    /// привязанные к треку из хранилища.
-    /// 
-    /// Stops tracks from the playlist
-    /// attached to a track from the storage.
-    StopMonoFromStorage(usize),
-
-    /// Останавливает треки из плейлиста,
-    /// привязанные к трекам из хранилища.
-    /// 
-    /// Stops tracks from the playlist
-    /// attached to tracks from the storage.
-    StopMonosFromStorage(Vec<usize>),
-
-    /// Устанавливает громкость треков из плейлиста,
-    /// привязанных к треку из хранилища.
-    /// 
-    /// Sets a volume of tracks from the playlist
-    /// attached to a track from the storage.
-    SetMonoVolumeFromStorage(usize,f32),
-
-    /// Устанавливает громкость треков из плейлиста,
-    /// привязанных к трекам из хранилища.
-    /// 
-    /// Sets a volume of tracks from the playlist
-    /// attached to tracks from the storage.
-    SetMonosVolumeFromStorage(Vec<usize>,f32),
-
-    /// Устанавливает громкости треков из плейлиста,
-    /// привязанных к трекам из хранилища.
-    /// 
-    /// Sets volumes of tracks from the playlist
-    /// attached to tracks from the storage.
-    SetMonosVolumesFromStorage(Vec<(usize,f32)>),
-
-// ПЛЕЙЛИСТ \\
-    /// Проигрывает одноканальный трек на данных каналах.
-    /// 
-    /// Plays a mono-channel track on the given channels.
-    PlayMonoOnChannels(TrackSet),
-
-    /// Проигрывает несколько одноканальных треков на данных каналах.
-    /// 
-    /// Plays some mono-channel tracks on the given channels.
-    PlayMonosOnChannels(Vec<TrackSet>),
-
-    /// Снимает с паузы трек из плейлиста.
-    /// 
-    /// Если уже проигрывается, ничего не происходит.
-    UnpauseMonoFromPlaylist(usize),
-
-    /// Снимает с паузы трек из плейлиста.
-    /// 
-    /// Если уже проигрывается, ничего не происходит.
-    UnpauseMonosFromPlaylist(Vec<usize>),
-
-    /// Ставит трек из плейлиста на паузу.
-    /// 
-    /// Если уже на паузе, ничего не происходит.
-    PauseMonoFromPlaylist(usize),
-
-    PauseMonosFromPlaylist(Vec<usize>),
-
-    /// Убирает одноканальный трек из плейлиста.
-    /// 
-    /// Removes a mono-channel track from the playlist.
-    RemoveMonoFromPlaylist(usize),
-
-    RemoveMonosFromPlaylist(Vec<usize>),
-
-    /// Отчищает плейлист (список текущих играющих треков).
-    /// 
-    /// Clears a playlist (the list of currently playing tracks).
-    ClearPlaylist,
-
-// Параметры \\
-    /// Устанавливает громкость трека в плейлисте.
-    /// 
-    /// Sets a volume to a track in the playlist.
-    SetMonoVolume(usize,f32),
-
-    /// Устанавливает громкость треков в плейлисте.
-    /// 
-    /// Sets a volume to tracks in the playlist.
-    SetMonosVolume(Vec<usize>,f32),
-
-    /// Устанавливает громкости треков в плейлисте.
-    /// 
-    /// Sets volumes to tracks in the playlist.
-    SetMonosVolumes(Vec<(usize,f32)>),
-
-    /// Устанавливает общую громкость.
-    /// 
-    /// Sets the general volume.
-    SetGeneralVolume(f32),
-
-// Остальное \\
-    /// Закрывает аудио поток.
-    /// 
-    /// Closes the audio thead.
-    Close,
-}
-
-/// Результат выполнения команды. The result of command accomplishing.
-#[derive(Clone,Debug,PartialEq)]
-pub enum AudioCommandResult{
-    /// Команда отправлена.
-    /// 
-    /// A command is sent.
-    Sent,
-
-    Index(usize),
-    Indices(Vec<usize>),
-
-    /// Аудио поток остановлен.
-    /// 
-    /// The audio thread is closed.
-    ThreadClosed,
-    /// Хранилище треков переполнено.
-    /// 
-    /// The track storage is overflown.
-    StorageOverflow,
-    // /// Хранилище треков пусто.
-    // /// 
-    // /// The track storage is empty.
-    // StorageIsEmpty,
-
-    /// Нет такого трека (в хранилище или плейлисте).
-    /// 
-    /// No such track (in the storage or playlist).
-    NoSuchTrack,
-}
-
-impl AudioCommandResult{
-    /// Паникует, если результат не `Ok`.
-    /// 
-    /// Panics if the result isn't `Ok`.
-    pub fn unwrap(self){
-        match self{
-            AudioCommandResult::ThreadClosed |
-                AudioCommandResult::StorageOverflow |
-                    AudioCommandResult::NoSuchTrack=>
-                        panic!("{:?}",self),
-            _=>{}
-        }
-    }
-
-    /// Паникует и выводит сообщение, если результат не `Ok`.
-    /// 
-    /// Panics и prints the message if the result isn't `Ok`.
-    pub fn expect(self,msg:&str){
-        if self!=AudioCommandResult::Sent{
-            panic!("{} {:?}",msg,self)
-        }
-    }
-}
-
-unsafe impl std::marker::Sync for AudioSystemCommand{}
-unsafe impl std::marker::Send for AudioSystemCommand{}
 
 
 #[derive(Clone)]
@@ -386,11 +168,13 @@ pub struct Audio{
 
     event_loop:Arc<EventLoop>,
 
-    command:Sender<AudioSystemCommand>,
+    command:Sender<AudioEngineCommand>,
     thread:Option<JoinHandle<()>>,
 
     // Флаги занятости слотов
+    #[cfg(not(feature="raw_audio"))]
     storage_slots:Vec<bool>,
+    #[cfg(not(feature="raw_audio"))]
     free_storage_slots:Vec<usize>,
 }
 
@@ -418,10 +202,13 @@ impl Audio{
         let event_loop=Arc::new(host.event_loop());
         let el=event_loop.clone();
         // Канал для передачи команд от управляющего потока выполняющему
-        let (sender,receiver)=channel::<AudioSystemCommand>();
+        let (sender,receiver)=channel::<AudioEngineCommand>();
 
+        #[cfg(not(feature="raw_audio"))]
         let mut storage_slots=Vec::with_capacity(settings.track_storage_capacity);
+        #[cfg(not(feature="raw_audio"))]
         let mut free_storage_slots=Vec::with_capacity(settings.track_storage_capacity);
+        #[cfg(not(feature="raw_audio"))]
         for c in 0..settings.track_storage_capacity{
             free_storage_slots.push(c);
             storage_slots.push(false);
@@ -479,7 +266,9 @@ impl Audio{
             command:sender,
             thread:Some(thread),
 
+            #[cfg(not(feature="raw_audio"))]
             storage_slots,
+            #[cfg(not(feature="raw_audio"))]
             free_storage_slots,
         })
     }
@@ -500,10 +289,13 @@ impl Audio{
         let event_loop=Arc::new(host.event_loop());
         let el=event_loop.clone();
         // Канал для передачи команд от управляющего потока выполняющему
-        let (sender,receiver)=channel::<AudioSystemCommand>();
+        let (sender,receiver)=channel::<AudioEngineCommand>();
 
+        #[cfg(not(feature="raw_audio"))]
         let mut storage_slots=Vec::with_capacity(settings.track_storage_capacity);
+        #[cfg(not(feature="raw_audio"))]
         let mut free_storage_slots=Vec::with_capacity(settings.track_storage_capacity);
+        #[cfg(not(feature="raw_audio"))]
         for c in 0..settings.track_storage_capacity{
             free_storage_slots.push(c);
             storage_slots.push(false);
@@ -559,8 +351,9 @@ impl Audio{
             command:sender,
             thread:Some(thread),
 
+            #[cfg(not(feature="raw_audio"))]
             free_storage_slots,
-
+            #[cfg(not(feature="raw_audio"))]
             storage_slots
         })
     }
@@ -568,22 +361,48 @@ impl Audio{
     /// Возвращает количество треков в хранилище.
     /// 
     /// Returns the amount of track in the storage.
+    #[cfg(not(feature="raw_audio"))]
     pub fn tracks_amount(&self)->usize{
         self.storage_slots.len()-self.free_storage_slots.len()
     }
+}
 
-    #[cfg(feature="unsafe_audio")]
-    unsafe fn send_command(
+/// feature="extended_audio"
+#[cfg(feature="extended_audio")]
+impl Audio{
+    /// Отправляет команду аудио системе.
+    /// 
+    /// Sends a audio system command.
+    pub fn send_command(
         &self,
-        command:AudioSystemCommand
-    )->Result<(),SendError<AudioSystemCommand>>{
+        command:AudioEngineCommand
+    )->Result<(),SendError<AudioEngineCommand>>{
         self.command.send(command)
+    }
+
+    /// Возращает флаги ячеек хранилища.
+    /// true - занято, false - свободно
+    /// 
+    /// Returns storage slot flags.
+    /// true - busy, false - free
+    #[cfg(not(feature="raw_audio"))]
+    pub fn storage_slots(&mut self)->&mut Vec<bool>{
+        &mut self.storage_slots
+    }
+
+    /// Возращает индексы свободных ячеек хранилища.
+    /// 
+    /// Returns indices of free storage slots.
+    #[cfg(not(feature="raw_audio"))]
+    pub fn free_storage_slots(&mut self)->&mut Vec<usize>{
+        &mut self.free_storage_slots
     }
 }
 
 /// Добавление/удаление треков.
 /// 
 /// Adding/removing tracks.
+#[cfg(not(feature="raw_audio"))]
 impl Audio{
     /// Добавляет трек в хранилище.
     /// 
@@ -596,7 +415,7 @@ impl Audio{
         if let Some(slot)=self.free_storage_slots.pop(){
             self.storage_slots[slot]=true;
 
-            match self.command.send(AudioSystemCommand::AddMono(track,slot)){
+            match self.command.send(AudioEngineCommand::AddMono(track,slot)){
                 Ok(_)=>AudioCommandResult::Index(slot),
                 Err(_)=>AudioCommandResult::ThreadClosed,
             }
@@ -628,7 +447,7 @@ impl Audio{
         }
 
         if !indices.is_empty(){
-            match self.command.send(AudioSystemCommand::AddMonos(track_sets)){
+            match self.command.send(AudioEngineCommand::AddMonos(track_sets)){
                 Ok(_)=>AudioCommandResult::Indices(indices),
                 Err(_)=>AudioCommandResult::ThreadClosed,
             }
@@ -646,7 +465,7 @@ impl Audio{
             if *slot{
                 *slot=false;
                 // Казна пустеет, милорд!
-                match self.command.send(AudioSystemCommand::RemoveMono(index)){
+                match self.command.send(AudioEngineCommand::RemoveMono(index)){
                     Ok(_)=>AudioCommandResult::Sent,
                     Err(_)=>AudioCommandResult::ThreadClosed,
                 }
@@ -677,7 +496,7 @@ impl Audio{
 
         if !track_indices.is_empty(){
             // Казна пустеет, милорд!
-            match self.command.send(AudioSystemCommand::RemoveMonos(track_indices)){
+            match self.command.send(AudioEngineCommand::RemoveMonos(track_indices)){
                 Ok(_)=>AudioCommandResult::Sent,
                 Err(_)=>AudioCommandResult::ThreadClosed,
             }
@@ -697,7 +516,7 @@ impl Audio{
             self.free_storage_slots.push(c);
         }
 
-        match self.command.send(AudioSystemCommand::ClearPlaylist){
+        match self.command.send(AudioEngineCommand::ClearPlaylist){
             Ok(_)=>AudioCommandResult::Sent,
             Err(_)=>AudioCommandResult::ThreadClosed,
         }
@@ -707,6 +526,7 @@ impl Audio{
 /// Проигрывание треков.
 /// 
 /// Play tracks.
+#[cfg(not(feature="raw_audio"))]
 impl Audio{
     /// Проигрывает трек.
     /// 
@@ -719,7 +539,7 @@ impl Audio{
 
         // Отправка команды
         let result=match self.command.send(
-            AudioSystemCommand::PlayMonoOnChannels(set)
+            AudioEngineCommand::PlayMonoOnChannels(set)
         ){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
@@ -742,7 +562,7 @@ impl Audio{
 
         // Отправка команды
         let result=match self.command.send(
-            AudioSystemCommand::PlayMonosOnChannels(sets)
+            AudioEngineCommand::PlayMonosOnChannels(sets)
         ){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
@@ -760,7 +580,7 @@ impl Audio{
     /// Stops a track from the playlist.
     pub fn stop_track(&self,index:usize)->AudioCommandResult{
         match self.command.send(
-            AudioSystemCommand::RemoveMonoFromPlaylist(index)
+            AudioEngineCommand::RemoveMonoFromPlaylist(index)
         ){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
@@ -772,7 +592,7 @@ impl Audio{
     /// Stops tracks in the playlist.
     pub fn stop_tracks(&self,indices:Vec<usize>)->AudioCommandResult{
         match self.command.send(
-            AudioSystemCommand::RemoveMonosFromPlaylist(indices)
+            AudioEngineCommand::RemoveMonosFromPlaylist(indices)
         ){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
@@ -783,7 +603,7 @@ impl Audio{
     /// 
     /// Clears a playlist.
     pub fn clear_playlist(&self)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::ClearPlaylist){
+        match self.command.send(AudioEngineCommand::ClearPlaylist){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>AudioCommandResult::ThreadClosed
         }
@@ -831,7 +651,7 @@ impl Audio{
     /// If it's already playing or
     /// there is no such track, nothing happens.
     pub fn unpause_track(&self,index:usize)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::UnpauseMonoFromPlaylist(index)){
+        match self.command.send(AudioEngineCommand::UnpauseMonoFromPlaylist(index)){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
         }
@@ -847,7 +667,7 @@ impl Audio{
     /// If they're already playing or
     /// there are no such tracks, nothing happens.
     pub fn unpause_tracks(&self,indices:Vec<usize>)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::UnpauseMonosFromPlaylist(indices)){
+        match self.command.send(AudioEngineCommand::UnpauseMonosFromPlaylist(indices)){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
         }
@@ -863,7 +683,7 @@ impl Audio{
     /// If it's already paused or
     /// there is no such track, nothing happens.
     pub fn pause_track(&self,index:usize)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::PauseMonoFromPlaylist(index)){
+        match self.command.send(AudioEngineCommand::PauseMonoFromPlaylist(index)){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
         }
@@ -879,7 +699,7 @@ impl Audio{
     /// If trey're already paused or
     /// there are no such tracks, nothing happens.
     pub fn pause_tracks(&self,indices:Vec<usize>)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::PauseMonosFromPlaylist(indices)){
+        match self.command.send(AudioEngineCommand::PauseMonosFromPlaylist(indices)){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
         }
@@ -889,12 +709,13 @@ impl Audio{
 /// Установка параметров.
 /// 
 /// Setting parameters.
+#[cfg(not(feature="raw_audio"))]
 impl Audio{
     /// Устанавливает громкость играющего трека.
     /// 
     /// Sets the volume of a playing track.
     pub fn set_track_volume(&self,index:usize,volume:f32)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::SetMonoVolume(index,volume)){
+        match self.command.send(AudioEngineCommand::SetMonoVolume(index,volume)){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>AudioCommandResult::ThreadClosed
         }
@@ -904,7 +725,7 @@ impl Audio{
     /// 
     /// Sets the volume of playing tracks.
     pub fn set_tracks_volume(&self,indices:Vec<usize>,volume:f32)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::SetMonosVolume(indices,volume)){
+        match self.command.send(AudioEngineCommand::SetMonosVolume(indices,volume)){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>AudioCommandResult::ThreadClosed
         }
@@ -914,7 +735,7 @@ impl Audio{
     /// 
     /// Sets volumes of playing tracks.
     pub fn set_tracks_volumes(&self,sets:Vec<(usize,f32)>)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::SetMonosVolumes(sets)){
+        match self.command.send(AudioEngineCommand::SetMonosVolumes(sets)){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>AudioCommandResult::ThreadClosed
         }
@@ -924,7 +745,7 @@ impl Audio{
     /// 
     /// Sets the general volume.
     pub fn set_general_volume(&self,volume:f32)->AudioCommandResult{
-        match self.command.send(AudioSystemCommand::SetGeneralVolume(volume)){
+        match self.command.send(AudioEngineCommand::SetGeneralVolume(volume)){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>AudioCommandResult::ThreadClosed
         }
@@ -934,6 +755,7 @@ impl Audio{
 /// Упраление через хранилище треков.
 /// 
 /// Operating through the track storage.
+#[cfg(not(feature="raw_audio"))]
 impl Audio{
     /// Снимает паузу с треков из плейлиста,
     /// привязанных к треку из хранилища.
@@ -942,7 +764,7 @@ impl Audio{
     /// attached to a track from the storage.
     pub fn unpause_track_storage(&self,index:usize)->AudioCommandResult{
         match self.command.send(
-            AudioSystemCommand::UnpauseMonoFromStorage(index)
+            AudioEngineCommand::UnpauseMonoFromStorage(index)
         ){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
@@ -956,7 +778,7 @@ impl Audio{
     /// attached to tracks from the storage.
     pub fn unpause_tracks_storage(&self,indices:Vec<usize>)->AudioCommandResult{
         match self.command.send(
-            AudioSystemCommand::UnpauseMonosFromStorage(indices)
+            AudioEngineCommand::UnpauseMonosFromStorage(indices)
         ){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
@@ -970,7 +792,7 @@ impl Audio{
     /// attached to a track from the storage.
     pub fn pause_track_storage(&self,index:usize)->AudioCommandResult{
         match self.command.send(
-            AudioSystemCommand::PauseMonoFromStorage(index)
+            AudioEngineCommand::PauseMonoFromStorage(index)
         ){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
@@ -984,7 +806,7 @@ impl Audio{
     /// from the storage.
     pub fn pause_tracks_storage(&self,indices:Vec<usize>)->AudioCommandResult{
         match self.command.send(
-            AudioSystemCommand::PauseMonosFromStorage(indices)
+            AudioEngineCommand::PauseMonosFromStorage(indices)
         ){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
@@ -998,7 +820,7 @@ impl Audio{
     /// attached to a track from the storage.
     pub fn stop_track_storage(&self,index:usize)->AudioCommandResult{
         match self.command.send(
-            AudioSystemCommand::StopMonoFromStorage(index)
+            AudioEngineCommand::StopMonoFromStorage(index)
         ){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
@@ -1012,7 +834,7 @@ impl Audio{
     /// attached to tracks from the storage.
     pub fn stop_tracks_storage(&self,indices:Vec<usize>)->AudioCommandResult{
         match self.command.send(
-            AudioSystemCommand::StopMonosFromStorage(indices)
+            AudioEngineCommand::StopMonosFromStorage(indices)
         ){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
@@ -1026,7 +848,7 @@ impl Audio{
     /// attached to a track from the storage.
     pub fn set_track_volume_storage(&self,index:usize,volume:f32)->AudioCommandResult{
         match self.command.send(
-            AudioSystemCommand::SetMonoVolumeFromStorage(index,volume)
+            AudioEngineCommand::SetMonoVolumeFromStorage(index,volume)
         ){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
@@ -1040,7 +862,7 @@ impl Audio{
     /// attached to tracks from the storage.
     pub fn set_tracks_volume_storage(&self,indices:Vec<usize>,volume:f32)->AudioCommandResult{
         match self.command.send(
-            AudioSystemCommand::SetMonosVolumeFromStorage(indices,volume)
+            AudioEngineCommand::SetMonosVolumeFromStorage(indices,volume)
         ){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
@@ -1054,7 +876,7 @@ impl Audio{
     /// attached to tracks from the storage.
     pub fn set_tracks_volumes_storage(&self,sets:Vec<(usize,f32)>)->AudioCommandResult{
         match self.command.send(
-            AudioSystemCommand::SetMonosVolumesFromStorage(sets)
+            AudioEngineCommand::SetMonosVolumesFromStorage(sets)
         ){
             Ok(())=>AudioCommandResult::Sent,
             Err(_)=>return AudioCommandResult::ThreadClosed
@@ -1067,7 +889,7 @@ impl Audio{
 /// Sends a command to close and waits for the thread to finish.
 impl Drop for Audio{
     fn drop(&mut self){
-        let _=self.command.send(AudioSystemCommand::Close);
+        let _=self.command.send(AudioEngineCommand::Close);
 
         if let Some(stream)=self.stream.lock().unwrap().as_ref(){
             let _=self.event_loop.play_stream(stream.clone());

@@ -1,3 +1,7 @@
+# 0.5.1
+
+Enabled new audio features: `extended_audio`,`raw_audio`.
+
 # 0.5.0
 
 <!-- ### Added

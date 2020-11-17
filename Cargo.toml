@@ -27,8 +27,10 @@ default = ["text_graphics","simple_graphics","texture_graphics"]
 
 ### AUDIO
 audio = ["cpal","minimp3"]
+extended_audio = ["audio"]
+raw_audio = ["extended_audio"]
 # audio_post_processing = []
-# unsafe_audio = []
+
 
 # I will add them later
 # choose_audio_output_device = []
@@ -61,7 +63,7 @@ file_drop = []
 [package.metadata.docs.rs]
 features = [
     "default",
-    "audio",
+    "extended_audio",
     "auto_hide",
     "fps_counter",
     "file_drop"

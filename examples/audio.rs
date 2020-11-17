@@ -1,10 +1,12 @@
 #![cfg(feature="audio")]
+#![cfg(not(feature="raw_audio"))]
 
 use cat_engine::audio::{
     AudioSettings,
     Audio,
     AudioWrapper,
 };
+
 
 fn main(){
     let settings=AudioSettings::new();

@@ -1,7 +1,7 @@
 use crate::support::SyncRawMutPtr;
 
 use super::{
-    AudioSystemCommand,
+    AudioEngineCommand,
     track::*,
     sample::SampleTransform,
     ChannelSystem,
@@ -43,7 +43,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
     mut settings:AudioSystemSettings,
     main_stream:Arc<Mutex<Option<StreamId>>>,
     event_loop:Arc<EventLoop>,
-    receiver:Receiver<AudioSystemCommand>,
+    receiver:Receiver<AudioEngineCommand>,
 )->!{
     // Локальное хранилище одноканальных треков,
     // не должно превышать заданного размера
@@ -84,7 +84,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
             // ХРАНИЛИЩЕ \\
                 // Добавление трека в ячейку хранилища
                 // Если нет такой ячейки, то ничего не происходит
-                AudioSystemCommand::AddMono(track,index)=>
+                AudioEngineCommand::AddMono(track,index)=>
                     if let Some(slot)=track_storage_ref.as_mut().get_mut(index){
                         // Установка трека
                         *slot=track;
@@ -94,7 +94,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Добавление треков в ячейки хранилища
                 // Если нет таких ячеек, то ничего не происходит
-                AudioSystemCommand::AddMonos(tracks)=>
+                AudioEngineCommand::AddMonos(tracks)=>
                     for (track,index) in tracks{
                         if let Some(slot)=track_storage_ref.as_mut().get_mut(index){
                             // Установка трека
@@ -106,7 +106,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Удаление трека из хранилища
                 // Если такого трека нет, то ничего не происходит
-                AudioSystemCommand::RemoveMono(index)=>
+                AudioEngineCommand::RemoveMono(index)=>
                     if let Some(iters)=iter_indices_ref.as_mut().get_mut(index){
                         // Остановка итераторов (установка флагов PlayType::None)
                         for &mut i in iters{
@@ -117,7 +117,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Удаление треков из хранилища
                 // Если таких треков нет, то ничего не происходит
-                AudioSystemCommand::RemoveMonos(indices)=>
+                AudioEngineCommand::RemoveMonos(indices)=>
                     for index in indices.into_iter(){
                         if let Some(iters)=iter_indices_ref.as_mut().get_mut(index){
                             // Остановка итераторов (установка флагов PlayType::None)
@@ -129,7 +129,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Снимает паузу с треков из плейлиста,
                 // привязанных к треку из хранилища
-                AudioSystemCommand::UnpauseMonoFromStorage(index)=>
+                AudioEngineCommand::UnpauseMonoFromStorage(index)=>
                     if let Some(iters)=iter_indices_ref.as_ref().get(index){
                         for &iter in iters{
                             channel_system.unpause_buffer_iter(iter)
@@ -138,7 +138,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Снимает паузу с треков из плейлиста,
                 // привязанных к трекам из хранилища
-                AudioSystemCommand::UnpauseMonosFromStorage(indices)=>
+                AudioEngineCommand::UnpauseMonosFromStorage(indices)=>
                     for index in indices{
                         if let Some(iters)=iter_indices_ref.as_ref().get(index){
                             for &iter in iters{
@@ -149,7 +149,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Ставит на паузу треки из плейлиста,
                 // привязанные к треку из хранилища
-                AudioSystemCommand::PauseMonoFromStorage(index)=>
+                AudioEngineCommand::PauseMonoFromStorage(index)=>
                     if let Some(iters)=iter_indices_ref.as_ref().get(index){
                         for &iter in iters{
                             channel_system.pause_buffer_iter(iter)
@@ -158,7 +158,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Ставит на паузу треки из плейлиста,
                 // привязанные к трекам из хранилища
-                AudioSystemCommand::PauseMonosFromStorage(indices)=>
+                AudioEngineCommand::PauseMonosFromStorage(indices)=>
                     for index in indices{
                         if let Some(iters)=iter_indices_ref.as_ref().get(index){
                             for &iter in iters{
@@ -169,7 +169,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Останавливает треки из плейлиста,
                 // привязанные к треку из хранилища
-                AudioSystemCommand::StopMonoFromStorage(index)=>
+                AudioEngineCommand::StopMonoFromStorage(index)=>
                     if let Some(iters)=iter_indices_ref.as_ref().get(index){
                         for &iter in iters{
                             channel_system.stop_buffer_iter(iter)
@@ -178,7 +178,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Останавливает треки из плейлиста,
                 // привязанные к трекам из хранилища
-                AudioSystemCommand::StopMonosFromStorage(indices)=>
+                AudioEngineCommand::StopMonosFromStorage(indices)=>
                     for index in indices{
                         if let Some(iters)=iter_indices_ref.as_ref().get(index){
                             for &iter in iters{
@@ -189,7 +189,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Устанавливает громкость треков из плейлиста,
                 // привязанных к треку из хранилища
-                AudioSystemCommand::SetMonoVolumeFromStorage(index,volume)=>
+                AudioEngineCommand::SetMonoVolumeFromStorage(index,volume)=>
                     if let Some(iters)=iter_indices_ref.as_ref().get(index){
                         for &iter in iters{
                             channel_system.set_volume_buffer_iter(iter,volume)
@@ -198,7 +198,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Устанавливает громкость треков из плейлиста,
                 // привязанных к трекам из хранилища
-                AudioSystemCommand::SetMonosVolumeFromStorage(indices,volume)=>
+                AudioEngineCommand::SetMonosVolumeFromStorage(indices,volume)=>
                     for index in indices{
                         if let Some(iters)=iter_indices_ref.as_ref().get(index){
                             for &iter in iters{
@@ -209,7 +209,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Устанавливает громкости треков из плейлиста,
                 // привязанных к трекам из хранилища
-                AudioSystemCommand::SetMonosVolumesFromStorage(sets)=>
+                AudioEngineCommand::SetMonosVolumesFromStorage(sets)=>
                     for (index,volume) in sets{
                         if let Some(iters)=iter_indices_ref.as_ref().get(index){
                             for &iter in iters{
@@ -221,7 +221,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
             // ПЛЕЙЛИСТ \\
                 // Добавление трека в плейлист
                 // Если плейлист переполнен, то ничего не происходит
-                AudioSystemCommand::PlayMonoOnChannels(TrackSet{index,channels,repeats,volume})=>
+                AudioEngineCommand::PlayMonoOnChannels(TrackSet{index,channels,repeats,volume})=>
                     // Получение номера трека в хранилище
                     if let Some(track)=track_storage_ref.as_ref().get(index){
                         // Здесь проверка не нужна, так как уже есть внутреняя -
@@ -231,13 +231,13 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Удаление трека из плейлиста
                 // Если нет такого трека, ничего не происходит
-                AudioSystemCommand::RemoveMonoFromPlaylist(index)=>
+                AudioEngineCommand::RemoveMonoFromPlaylist(index)=>
                     // Проверка не нужна, так как она проводится внутри
                     channel_system.remove_track(index),
 
                 // Добавление множества треков в плейлист
                 // Если плейлист переполнен, то ничего не происходит
-                AudioSystemCommand::PlayMonosOnChannels(sets)=>
+                AudioEngineCommand::PlayMonosOnChannels(sets)=>
                     for TrackSet{index,channels,repeats,volume} in sets{
                         if let Some(track)=track_storage_ref.as_ref().get(index){
                             // Здесь проверка не нужна, так как уже есть внутреняя -
@@ -248,7 +248,7 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                 // Удаление треков из плейлиста
                 // Если нет таких треков, ничего не происходит
-                AudioSystemCommand::RemoveMonosFromPlaylist(indices)=>
+                AudioEngineCommand::RemoveMonosFromPlaylist(indices)=>
                     for index in indices.into_iter().rev(){
                         // Проверка не нужна, так как она проводится внутри
                         channel_system.remove_track(index)
@@ -257,13 +257,13 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                 // Ставит трек из плейлиста проигрываться
                 // Если уже проигрывается или нет такого трека,
                 // ничего не происходит
-                AudioSystemCommand::UnpauseMonoFromPlaylist(index)=>
+                AudioEngineCommand::UnpauseMonoFromPlaylist(index)=>
                     channel_system.unpause(index),
 
                 // Ставит треки из плейлиста проигрываться
                 // Если уже проигрывается или нет таких треков,
                 // ничего не происходит
-                AudioSystemCommand::UnpauseMonosFromPlaylist(indices)=>
+                AudioEngineCommand::UnpauseMonosFromPlaylist(indices)=>
                 for index in indices{
                     channel_system.unpause(index)
                 }
@@ -271,45 +271,45 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                 // Ставит трек из плейлиста на паузу
                 // Если уже проигрывается или нет такого трека,
                 // ничего не происходит
-                AudioSystemCommand::PauseMonoFromPlaylist(index)=>
+                AudioEngineCommand::PauseMonoFromPlaylist(index)=>
                     channel_system.pause(index),
 
                 // Ставит треки из плейлиста на паузу
                 // Если уже на паузе или нет таких треков,
                 // ничего не происходит
-                AudioSystemCommand::PauseMonosFromPlaylist(indices)=>
+                AudioEngineCommand::PauseMonosFromPlaylist(indices)=>
                     for index in indices{
                         channel_system.pause(index)
                     }
 
                 // Очищает весь плейлист и
                 // очищает списки итераторов (`iter_indices`)
-                AudioSystemCommand::ClearPlaylist=>
+                AudioEngineCommand::ClearPlaylist=>
                     channel_system.clear_playlist(),
 
                 // Устанавливает громкость трека
                 // Если нет такого трека, ничего не происходит
-                AudioSystemCommand::SetMonoVolume(index,volume)=>
+                AudioEngineCommand::SetMonoVolume(index,volume)=>
                     channel_system.set_track_volume(index,volume),
 
-                AudioSystemCommand::SetMonosVolume(indices,volume)=>{
+                AudioEngineCommand::SetMonosVolume(indices,volume)=>{
                     for index in indices{
                         channel_system.set_track_volume(index,volume)
                     }
                 }
 
-                AudioSystemCommand::SetMonosVolumes(sets)=>{
+                AudioEngineCommand::SetMonosVolumes(sets)=>{
                     for set in sets{
                         channel_system.set_track_volume(set.0,set.1)
                     }
                 }
 
                 // Устанавливает общую громкость
-                AudioSystemCommand::SetGeneralVolume(v)=>
+                AudioEngineCommand::SetGeneralVolume(v)=>
                     settings.general_volume=v,
             // ОСТАЛЬНОЕ \\
                 // Закрывает поток
-                AudioSystemCommand::Close=> // Поток умер :)
+                AudioEngineCommand::Close=> // Поток умер :)
                     panic!("Closing CatEngine's audio thread"),
             }
             Err(_)=>{
