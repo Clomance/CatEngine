@@ -164,6 +164,7 @@ pub (crate) struct AudioSystemSettings{
 /// 
 /// Only output is available now.
 pub struct Audio{
+    playing_flag:Arc<Mutex<bool>>,
     stream:Arc<Mutex<Option<StreamId>>>,
 
     event_loop:Arc<EventLoop>,
@@ -199,23 +200,18 @@ impl Audio{
         let stream=Arc::new(Mutex::new(None));
         let s=stream.clone();
 
+        let playing_flag=Arc::new(Mutex::new(true));
+        let playing_flag1=playing_flag.clone();
+
         let event_loop=Arc::new(host.event_loop());
         let el=event_loop.clone();
         // Канал для передачи команд от управляющего потока выполняющему
         let (sender,receiver)=channel::<AudioEngineCommand>();
 
-        #[cfg(not(feature="raw_audio"))]
-        let mut storage_slots=Vec::with_capacity(settings.track_storage_capacity);
-        #[cfg(not(feature="raw_audio"))]
-        let mut free_storage_slots=Vec::with_capacity(settings.track_storage_capacity);
-        #[cfg(not(feature="raw_audio"))]
-        for c in 0..settings.track_storage_capacity{
-            free_storage_slots.push(c);
-            storage_slots.push(false);
-        }
-
         let owner_host=Arc::new(host);
         let host=owner_host.clone();
+
+        let track_storage_capacity=settings.track_storage_capacity;
 
         let thread_result=Builder::new()
                 .name("CatEngine's audio thread".to_string())
@@ -246,7 +242,7 @@ impl Audio{
             // Takes control of the current thread and begins the stream processing
             event_loop_handler(
                 host,
-                //choose_device,
+                playing_flag,
                 system_settings,
                 stream,
                 event_loop,
@@ -259,18 +255,7 @@ impl Audio{
             Err(e)=>return Err(e),
         };
 
-        Ok(Self{
-            stream:s,
-
-            event_loop:el,
-            command:sender,
-            thread:Some(thread),
-
-            #[cfg(not(feature="raw_audio"))]
-            storage_slots,
-            #[cfg(not(feature="raw_audio"))]
-            free_storage_slots,
-        })
+        Ok(Self::init(playing_flag1,s,el,sender,thread,track_storage_capacity))
     }
 
     /// Строит аудио движок с хостом, устройством и потоком по умолчанию.
@@ -282,27 +267,22 @@ impl Audio{
     /// Returns the result of starting an audio thread.
     pub fn default(settings:AudioSettings)->io::Result<Audio>{
         let host=cpal::default_host();
-        //
+        // 
         let stream=Arc::new(Mutex::new(None));
         let s=stream.clone();
+
+        let playing_flag=Arc::new(Mutex::new(true));
+        let playing_flag1=playing_flag.clone();
 
         let event_loop=Arc::new(host.event_loop());
         let el=event_loop.clone();
         // Канал для передачи команд от управляющего потока выполняющему
         let (sender,receiver)=channel::<AudioEngineCommand>();
 
-        #[cfg(not(feature="raw_audio"))]
-        let mut storage_slots=Vec::with_capacity(settings.track_storage_capacity);
-        #[cfg(not(feature="raw_audio"))]
-        let mut free_storage_slots=Vec::with_capacity(settings.track_storage_capacity);
-        #[cfg(not(feature="raw_audio"))]
-        for c in 0..settings.track_storage_capacity{
-            free_storage_slots.push(c);
-            storage_slots.push(false);
-        }
-
         let owner_host=Arc::new(host);
         let host=owner_host.clone();
+
+        let track_storage_capacity=settings.track_storage_capacity;
 
         let thread_result=Builder::new()
                 .name("CatEngine's audio thread".to_string())
@@ -332,6 +312,7 @@ impl Audio{
             // Takes control of the current thread and begins the stream processing
             event_loop_handler(
                 host,
+                playing_flag,
                 system_settings,
                 stream,
                 event_loop,
@@ -344,10 +325,33 @@ impl Audio{
             Err(e)=>return Err(e),
         };
 
-        Ok(Self{
-            stream:s,
+        Ok(Self::init(playing_flag1,s,el,sender,thread,track_storage_capacity))
+    }
 
-            event_loop:el,
+    #[inline]
+    fn init(
+        playing_flag:Arc<Mutex<bool>>,
+        stream:Arc<Mutex<Option<StreamId>>>,
+        event_loop:Arc<EventLoop>,
+        sender:Sender<AudioEngineCommand>,
+        thread:JoinHandle<()>,
+        track_storage_capacity:usize,
+    )->Audio{
+        #[cfg(not(feature="raw_audio"))]
+        let mut storage_slots=Vec::with_capacity(track_storage_capacity);
+        #[cfg(not(feature="raw_audio"))]
+        let mut free_storage_slots=Vec::with_capacity(track_storage_capacity);
+        #[cfg(not(feature="raw_audio"))]
+        for c in 0..track_storage_capacity{
+            free_storage_slots.push(c);
+            storage_slots.push(false);
+        }
+
+        Self{
+            playing_flag,
+            stream,
+
+            event_loop,
             command:sender,
             thread:Some(thread),
 
@@ -355,7 +359,7 @@ impl Audio{
             free_storage_slots,
             #[cfg(not(feature="raw_audio"))]
             storage_slots
-        })
+        }
     }
 
     /// Возвращает количество треков в хранилище.
@@ -548,6 +552,9 @@ impl Audio{
         if let Some(stream)=stream_lock.as_ref(){
             self.event_loop.play_stream(stream.clone()).unwrap();
         }
+
+        *self.playing_flag.lock().unwrap()=true;
+
         result
     }
 
@@ -571,6 +578,8 @@ impl Audio{
         if let Some(stream)=stream_lock.as_ref(){
             self.event_loop.play_stream(stream.clone()).unwrap();
         }
+
+        *self.playing_flag.lock().unwrap()=true;
 
         result
     }
@@ -622,6 +631,8 @@ impl Audio{
             self.event_loop.play_stream(stream.clone()).unwrap();
         }
 
+        *self.playing_flag.lock().unwrap()=true;
+
         AudioCommandResult::Sent
     }
 
@@ -637,6 +648,8 @@ impl Audio{
         if let Some(stream)=stream_lock.as_ref(){
             self.event_loop.pause_stream(stream.clone()).unwrap();
         }
+
+        *self.playing_flag.lock().unwrap()=false;
 
         AudioCommandResult::Sent
     }

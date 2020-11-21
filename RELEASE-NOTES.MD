@@ -1,3 +1,10 @@
+# 0.5.2
+
+Updated the `image` crate to `0.23.12`.
+
+Fixed the bug of starting playing an audio output stream after changing a panicked device on some platforms.
+Now it saves the last stream's state.
+
 # 0.5.1
 
 Enabled new audio features: `extended_audio`,`raw_audio`.

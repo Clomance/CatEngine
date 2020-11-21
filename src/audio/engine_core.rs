@@ -37,9 +37,9 @@ use std::sync::{
 // и матрица распределения итераторов (`iter_indices`).
 
 /// Создание и запуск потока обработки.
-pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
+pub (crate) fn event_loop_handler(
     host:Arc<Host>,
-    //choose_device:D,
+    playing_flag:Arc<Mutex<bool>>,
     mut settings:AudioSystemSettings,
     main_stream:Arc<Mutex<Option<StreamId>>>,
     event_loop:Arc<EventLoop>,
@@ -357,6 +357,8 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
                 match error{
                     // Выбор нового устройства, если прежнее не доступно
                     StreamError::DeviceNotAvailable=>{
+                        let mut stream_lock=main_stream.lock().unwrap();
+
                         let new_device=host.default_output_device().expect("No available device");
 
                         settings.format=new_device.default_output_format().expect("No available device");
@@ -368,9 +370,14 @@ pub (crate) fn event_loop_handler(//<D:Fn(&Host)->Device+Send+Sync+'static>(
 
                         let new_stream=event_loop.build_output_stream(&new_device,&settings.format).expect("Build a new stream");
 
-                        *main_stream.lock().unwrap()=Some(new_stream.clone());
+                        if playing_flag.lock().unwrap().clone(){
+                            event_loop.play_stream(new_stream.clone()).unwrap();
+                        }
+                        else{
+                            event_loop.pause_stream(new_stream.clone()).unwrap();
+                        }
 
-                        event_loop.play_stream(new_stream.clone()).unwrap();
+                        *stream_lock=Some(new_stream.clone());
                     }
                     // Паникует, если какая-то другая ошибка
                     // (пока не знаю, как нормально обработать)

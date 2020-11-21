@@ -5,15 +5,28 @@ in vec2 tex_coords;
 
 out vec2 v_tex_coords;
 
-uniform vec2 scale;
-uniform vec2 shift;
+// transform shift:
+// column 0 (for opengl) - transform shift
+// column 1 (for opengl) - posttransform shift
+uniform mat2 transform_shift;
+uniform mat2 transform_matrix;
+
 uniform vec2 window_center;
 
 void main() {
     v_tex_coords = tex_coords;
 
-    float x = ((position.x + shift.x)/ window_center.x - 1.0) * scale.x;
-    float y = (1.0 - (position.y + shift.y)/ window_center.y) * scale.y;
+    vec2 new_position = vec2(
+        position.x  - window_center.x + transform_shift[0].x,
+        window_center.y - position.y + transform_shift[0].y
+    );
 
-    gl_Position = vec4(x, y, 0.0, 1.0);
+    new_position = (transform_matrix * new_position + transform_shift[1]);
+
+    gl_Position = vec4(
+        new_position.x / window_center.x,
+        new_position.y / window_center.y,
+        0.0,
+        1.0
+    );
 }

@@ -59,42 +59,42 @@ pub enum DrawType{
 pub struct InnerGraphicsSettings{
     /// The capacity of the vertex buffer.
     /// 
-    /// The default is 8.
+    /// The default is 128.
     pub vertex_buffer_size:usize,
 
     /// The [0..offset] range is for common drawing,
     /// [offset..] is for saving objects.
     /// 
-    /// The default is 4.
+    /// The default is 64.
     pub vertex_buffer_offset:usize,
 
     /// The capacity of the index buffer.
     /// 
-    /// The default is 8.
+    /// The default is 128.
     pub index_buffer_size:usize,
 
     /// The [0..offset] range is for common drawing,
     /// [offset..] is for saving objects.
     /// 
-    /// The default is 4.
+    /// The default is 64.
     pub index_buffer_offset:usize,
 
     /// The capacity of the object buffer.
     /// 
-    /// The default is 2.
+    /// The default is 16.
     pub object_buffer_size:usize,
 }
 
 impl InnerGraphicsSettings{
     pub const fn new()->InnerGraphicsSettings{
         Self{
-            vertex_buffer_size:8,
-            vertex_buffer_offset:4,
+            vertex_buffer_size:128,
+            vertex_buffer_offset:64,
 
-            index_buffer_size:8,
-            index_buffer_offset:4,
+            index_buffer_size:128,
+            index_buffer_offset:64,
 
-            object_buffer_size:2,
+            object_buffer_size:16,
         }
     }
 }

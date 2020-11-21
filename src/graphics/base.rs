@@ -930,15 +930,15 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     pub fn draw_transform_textured_object(
         &mut self,
         index:usize,
-        shift:[f32;2],
-        scale:[f32;2],
+        shift:[[f32;2];2],
+        matrix:[[f32;2];2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>{
         self.graphics2d.texture.draw_trans_object(
             index,
             shift,
-            scale,
+            matrix,
             #[cfg(feature="colour_filter")]colour_filter,
             draw_parameters,
             self.frame

@@ -76,7 +76,7 @@ impl Texture{
             Ok(image)=>{
                 let image=match image{
                     DynamicImage::ImageRgba8(img)=>img,
-                    img=>img.to_rgba(),
+                    img=>img.to_rgba8(),
                 };
                 Texture::from_image(&image,factory)
             },

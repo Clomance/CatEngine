@@ -344,3 +344,10 @@ impl Graphics2D{
         self.text.clear_object_array()
     }
 }
+
+/// Функции отрисовки.
+/// 
+/// Rendering functions.
+impl Graphics2D{
+
+}

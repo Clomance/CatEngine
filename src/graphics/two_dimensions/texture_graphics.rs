@@ -59,7 +59,7 @@ pub struct TextureGraphics{
     draw:Program,
     draw_shift:Program,
     draw_rotate:Program,
-    draw_trans:Program,
+    draw_transform:Program,
 }
 
 impl TextureGraphics{
@@ -116,7 +116,7 @@ impl TextureGraphics{
             draw:Program::from_source(display,vertex_shader,fragment_shader,None).unwrap(),
             draw_shift:Program::from_source(display,shift,fragment_shader,None).unwrap(),
             draw_rotate:Program::from_source(display,rotation,fragment_shader,None).unwrap(),
-            draw_trans:Program::from_source(display,trans,fragment_shader,None).unwrap(),
+            draw_transform:Program::from_source(display,trans,fragment_shader,None).unwrap(),
         }
     }
 
@@ -523,8 +523,8 @@ impl TextureGraphics{
     pub fn draw_trans_object(
         &self,
         index:usize,
-        shift:[f32;2],
-        scale:[f32;2],
+        transform_shift:[[f32;2];2],
+        transform_matrix:[[f32;2];2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
         frame:&mut Frame
@@ -540,8 +540,8 @@ impl TextureGraphics{
 
         let uni=uniform!{
             texture2d:&self.textures[object.texture].0,
-            scale:scale,
-            shift:shift,
+            transform_shift:transform_shift,
+            transform_matrix:transform_matrix,
             window_center:unsafe{window_center},
             colour_filter:colour,
         };
@@ -551,7 +551,7 @@ impl TextureGraphics{
         frame.draw(
             vertex_slice,
             index_source,
-            &self.draw_trans,
+            &self.draw_transform,
             &uni,
             draw_parameters
         )

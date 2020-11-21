@@ -1,6 +1,6 @@
 [package]
 name = "cat_engine"
-version = "0.5.1"
+version = "0.5.2"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
 homepage = "https://github.com/Clomance/CatEngine"
@@ -50,6 +50,8 @@ texture_graphics = []
 # colour filter
 # colour_filter = []
 
+# 2D = []
+# 3D = []
 
 ### WINDOW
 auto_hide = []
@@ -57,8 +59,9 @@ fps_counter = []
 lazy = []
 file_drop = []
 
-2D = []
-3D = []
+# const_window_size = []
+
+
 
 [package.metadata.docs.rs]
 features = [
@@ -71,7 +74,7 @@ features = [
 
 [dependencies]
 # main
-image = "0.23.11"
+image = "0.23.12"
 glium = "0.28.0"
 # text
 ttf-parser = { version = "0.8.3", optional = true }
