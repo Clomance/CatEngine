@@ -14,6 +14,8 @@ use super::{
 #[cfg(feature="colour_filter")]
 use super::graphics::ColourFilter;
 
+mod image_object;
+pub use image_object::ImageObject;
 
 mod texture;
 pub use texture::{Texture,TextureCreationResult};
@@ -24,7 +26,7 @@ use glium::{
     index::PrimitiveType,
 };
 
-/// Основа для изображений. Image base.
+/// Основа для изображений. An image base.
 /// 
 /// Прямоугольник с вершинами: (x1, y1), (x1, y2), (x2, y1), (x2, y2).
 /// 
@@ -47,23 +49,21 @@ pub struct ImageBase{
 }
 
 impl ImageBase{
-    /// rect - [x, y, width, height]
-    pub fn new(colour_filter:Colour,rect:[f32;4])->ImageBase{
+    pub fn new([x,y,width,height]:[f32;4],colour_filter:Colour)->ImageBase{
         Self{
-            x1:rect[0],
-            y1:rect[1],
-            x2:rect[0]+rect[2],
-            y2:rect[1]+rect[3],
+            x1:x,
+            y1:y,
+            x2:x+width,
+            y2:y+height,
             colour_filter,
         }
     }
 
-    /// rect - [x, y, width, height]
-    pub fn set_rect(&mut self,rect:[f32;4]){
-        self.x1=rect[0];
-        self.y1=rect[1];
-        self.x2=rect[0]+rect[2];
-        self.y2=rect[1]+rect[3];
+    pub fn set_rect(&mut self,[x,y,width,height]:[f32;4]){
+        self.x1=x;
+        self.y1=y;
+        self.x2=x+width;
+        self.y2=y+height;
     }
 
     /// Сдвигает координаты.
@@ -78,7 +78,7 @@ impl ImageBase{
 
     /// Рисует изображение.
     /// 
-    /// Draws the image.
+    /// Draws an image.
     #[cfg(feature="texture_graphics")]
     #[inline(always)]
     pub fn draw(
@@ -152,16 +152,10 @@ impl<'o> DependentObject<'o,TexturedVertex2D,u8> for ImageBase{
     type Vertices=[TexturedVertex2D;4];
     type Indices=[u8;1];
 
-    /// Цвет объекта.
-    /// 
-    /// Object's colour.
     fn colour(&self)->Colour{
         self.colour_filter
     }
 
-    /// Вершины объекта.
-    /// 
-    /// Object's vertices.
     fn vertices(&self)->Self::Vertices{
         [
             TexturedVertex2D::new([self.x1,self.y1],[0.0,1.0]),
@@ -171,9 +165,6 @@ impl<'o> DependentObject<'o,TexturedVertex2D,u8> for ImageBase{
         ]
     }
 
-    /// Индексы для построения объекта.
-    /// 
-    /// Indices to build the object.
     fn indices(&self)->Option<Self::Indices>{
         None
     }

@@ -1,5 +1,9 @@
 # 0.5.2
 
+Added `ImageObject`.
+
+# 0.5.2
+
 Updated the `image` crate to `0.23.12`.
 
 Fixed the bug of starting playing an audio output stream after changing a panicked device on some platforms.
