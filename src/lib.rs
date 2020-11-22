@@ -9,26 +9,25 @@
 //! 
 //! ```
 //! use cat_engine::{
-//!     DefaultWindow,
+//!     PagedWindow,
 //!     Window,
 //!     WindowEvent
 //! };
 //! 
 //! fn main(){
 //!     // Default settings
-//!     let mut window=Window::new(|_,_|{}).unwrap();
+//!     let mut window=PagedWindow::new(|_,_|{}).unwrap();
 //! 
-//!     while let Some(event)=window.next_event(){
+//!     window.run(|window,event|{
 //!         match event{
-//!             WindowEvent::Exit=>break,
-//!             WindowEvent::Draw=>{
+//!             WindowEvent::RedrawRequested=>{
 //!                 window.draw(|_,g|{
 //!                     g.clear_colour([1.0,0.0,0.0,0.0]);
 //!                 }).unwrap();
 //!             }
 //!             _=>{}
 //!         }
-//!     }
+//!     });
 //! }
 //! ```
 //! 

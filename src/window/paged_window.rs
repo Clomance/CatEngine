@@ -16,7 +16,6 @@ use super::{
     WindowPage,
     // structs
     WindowBase,
-    DefaultWindow,
     DynamicWindow,
     GeneralSettings,
     WindowSettings,
@@ -161,32 +160,6 @@ impl PagedWindow{
     /// Returns `Err` if the loop is already stopped.
     pub fn stop_events(&self)->Result<(),EventLoopClosed<InnerWindowEvent>>{
         self.base.request_event_loop_close()
-    }
-
-    /// Переводит в `DefaultWindow`.
-    /// 
-    /// Сохраняет состояние окна при `feature = "auto_hide"` (свёрнутое или нет).
-    /// 
-    /// Converts into the `DefaultWindow`.
-    /// 
-    /// Saves the 'auto_hide' feature state (the window is hidden or not).
-    pub fn into_default_window(self)->DefaultWindow{
-        #[cfg(feature="auto_hide")]
-        let _fn=if self.minimized{
-            DefaultWindow::wait_until_focused
-        }
-        else{
-            DefaultWindow::event_listener
-        };
-
-        DefaultWindow{
-            base:self.base,
-
-            events:VecDeque::with_capacity(32),
-
-            #[cfg(feature="auto_hide")]
-            events_handler:_fn,
-        }
     }
 
     /// Переводит в `DynamicWindow`.

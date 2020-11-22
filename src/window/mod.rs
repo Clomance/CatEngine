@@ -7,9 +7,6 @@ pub use window_base::WindowBase;
 mod window;
 pub use window::{Window,WindowPage};
 
-mod default_window;
-pub use default_window::DefaultWindow;
-
 mod paged_window;
 pub use paged_window::PagedWindow;
 
@@ -80,9 +77,6 @@ pub enum WindowEvent{
 
     /// Event loop has been stopped,
     /// means that a page (closure) will be closed.
-    /// 
-    /// For the `DefaultWindow` means nothing,
-    /// for the `PagedWindow` means that a closure will be closed.
     EventLoopClosed,
 
     /// Приложение приостановлено.

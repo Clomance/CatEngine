@@ -4,10 +4,8 @@
 
 'Page' - types that are implemented for `WindowPage`.
 
-There are three types of windows. They differ in speed and capabilities (they will be discussed separately below):
-
-- `DefaultWindow` - has widest range of capabalities, but is the most slowly one and has a lot of problems
-- `PagedWindow` - handles events faster than the others, but slowly switches 'pages', got two way of working, that can be alternated
+There are two types of windows. They differ in speed and capabilities (they will be discussed separately below):
+- `PagedWindow` - handles events faster than `DynamicWindow`, but slowly switches 'pages', got two way of working, that can be alternated
 - `DynamicWindow` - a bit slower than `PagedWindow`, but switches 'pages' much more quickly
 
 ### Building
@@ -15,7 +13,7 @@ There are three types of windows. They differ in speed and capabilities (they wi
 Threre are two functions to create a window:
  - with a closure - gives the default settings and a list of monitors (to set to fullscreen)
 ```
-let mut window=DefaultWindow::new(|monitors,settings|{
+let mut window=PagedWindow::new(|monitors,settings|{
     let monitor=monitors.remove(0);
     let fullscreen=cat_engine::glium::glutin::window::Fullscreen::Borderless(monitor);
     window_settings.window_attributes.fullscreen=Some(fullscreen);
@@ -64,39 +62,6 @@ You can create you own window with it.
 All it's field are public.
 
 Also almost all the features are included.
-
-
-
-# DefaultWindow
-
-All events are handled and added to the outer handling queue (Window.events)
-to work with them outside of the window structure.
-
-Doesn't support 'pages'.
-
-Breaking the cycle with `break`.
-
-```
-let mut window=DefaultWindow::new(|_,_|{}).unwrap();
-
-while let Some(event)=window.next_event(){
-    match event{
-        WindowEvent::CloseRequested=>{
-            // Break the cycle manually
-            break
-        }
-
-        WindowEvent::Update=>{
-            // Some actions
-        }
-
-        WindowEvent::RedrawRequested=>{
-            // Rendering
-        }
-        _=>{}
-    }
-}
-```
 
 
 

@@ -5,10 +5,8 @@
 "Страница" - типы, которые реализуют типаж `WindowPage`.
 
 
-Всего три вида окон. Отличаются они по скорости работы и возможностям (ниже будут рассмотрены по отдельности):
-
-- `DefaultWindow` - имеет самый широкий спектр возможностей, но является самым медленным и имеет много проблем
-- `PagedWindow` - быстрее всех обрабатывает события, но долго переключает "страницы", имеет два способа работы, которые можно чередовать
+Всего два вида окон. Отличаются они по скорости работы и возможностям (ниже будут рассмотрены по отдельности):
+- `PagedWindow` - обрабатывает события быстрее `DynamicWindow`, но долго переключает "страницы", имеет два способа работы, которые можно чередовать
 - `DynamicWindow` - немного медленней, чем `PagedWindow`, но гораздо быстрее переключает страницы
 
 ### Создание
@@ -16,7 +14,7 @@
 Для создания окон используются две функции:
  - с замыканием - выдаёт настройки по умолчанию, а также даёт список мониторов (для установки полноэкранного режима)
 ```
-let mut window=DefaultWindow::new(|monitors,settings|{
+let mut window=PagedWindow::new(|monitors,settings|{
     let monitor=monitors.remove(0);
     let fullscreen=cat_engine::glium::glutin::window::Fullscreen::Borderless(monitor);
     window_settings.window_attributes.fullscreen=Some(fullscreen);
@@ -48,7 +46,7 @@ let mut window=PagedWindow::raw(
  - обновление (только при `feature != "lazy"`)
  - перерисовка окна
  - приостановка и возобновление приложения
- - остановка цикла событий (когда нужно закрыть "страницу" для `PagedWindow` и `DynamicWindow`)
+ - остановка цикла событий (когда нужно закрыть "страницу")
  - окно получило/потеряло фокус
  - события мышки и клавиатуры
  - изменение модификаторов (Shift, Ctrl, Alt, Logo)
@@ -65,39 +63,6 @@ let mut window=PagedWindow::raw(
 Все поля основы доступны.
 
 Также в её включены многие "фичи".
-
-
-
-# DefaultWindow
-
-Все события обрабатываются и добавляются в очередь внешней обработки
-для работы с ними вне структуры окна.
-
-Не поддерживает "страницы".
-
-Выход из цикла с помощью `break`.
-
-```
-let mut window=DefaultWindow::new(|_,_|{}).unwrap();
-
-while let Some(event)=window.next_event(){
-    match event{
-        WindowEvent::CloseRequested=>{
-            // Нужно выйти из цикла
-            break
-        }
-
-        WindowEvent::Update=>{
-            // Какие-то действия
-        }
-
-        WindowEvent::RedrawRequested=>{
-            // Рендеринг
-        }
-        _=>{}
-    }
-}
-```
 
 
 
@@ -176,9 +141,7 @@ fn main(){
 
 Все события обратываются в замыкании.
 
-Этот метод совмещает удобство `DefaultWindow` и скорость "страничного" метода,
-но медленнее первого и так же, как и последний ограничивает некоторые возможности.
-
+Этот метод медленнее первого но имеет больше возможностей.
 
 ```
 let mut window=PagedWindow::new(|_,_|{}).unwrap();
@@ -208,7 +171,7 @@ window.run(|window,event|{
 Все события прописываются с помощь типажа `WindowPage`
 и обработываются сразу же после их появления.
 
-Это окно использует страницы как типажи-объекты, поэтому их сможно менять на ходу.
+Это окно использует страницы как типажи-объекты, поэтому их можно менять на ходу.
 
 ```
 pub struct Page;
@@ -218,16 +181,16 @@ impl<'a> WindowPage<'a> for Page{
     type Output=();
 
     fn on_window_close_requested(&mut self,_window:&mut DynamicWindow<'a>){
-        // automatically breaks the cycle
+        // Автоматически выходит из цикла
     }
 
     #[cfg(not(feature="lazy"))]
     fn on_update_requested(&mut self,_window:&mut DynamicWindow<'a>){
-        // Some actions
+        // Какие-то действия
     }
 
     fn on_redraw_requested(&mut self,_window:&mut DynamicWindow<'a>){
-        // Rendering
+        // Рендеринг
     }
 
     fn on_mouse_pressed(&mut self,_window:&mut DynamicWindow<'a>,_button:MouseButton){}

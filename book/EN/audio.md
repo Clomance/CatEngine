@@ -2,6 +2,26 @@
 
 The audio engine is enabled with `audio`, `extended_audio` and `raw_audio` features.
 
+It consists of two parts:
+ - a storage (container of track that are able to be played)
+ - a playlist (list of currently playing tracks)
+
+To simplify the system and add some features only mono-channel tracks are used.
+That means, you have to divide multi-channel tracks into mono channels and load, play and edit each channel seperatly.
+
+The engine has it's own thread,
+that is closed with panic after finishing (I can't close it other way),
+so don't panic!
+
+Supports only output.
+Only the `mp3` format is supported to decode.
+All the tracks are converted to 24-bit format to simply work with them.
+
+There is three variants of operating the engine:
+ - with `AudioWrapper` that simplify working, but lessen possibilities
+ - with engine's own functions
+ - with direct commands, without unnecessary checks indices and overflows
+
 
 
 # Working with `AudioWrapper`
@@ -21,7 +41,47 @@ wrapper.play_track("audio",1u32).unwrap(); // Проигрывает трек о
 wrapper.set_track_volume("audio",0.5f32).unwrap();
 ```
 
-# Working with engine functions
+Additional features:
+ - access to the lower level (see `Working with engine's functions`)
+```
+// Pauses a track in the playlist
+wrapper.audio.pause_track(0).unwrap();
+```
+ - adding, receiving, editing sets
+```
+let sets=vec![
+    Set{
+        index:0, // track's index in the storage
+        channels:vec![0usize,1] // channels that track will be played on
+    }
+];
+wrapper.push_sets("new".to_string(),sets);
+let new_sets=wrapper.get_track_sets("new").unwrap();
+```
+
+
+
+# Working with engine's functions
+
+Makes possible to selectively operate tracks with both playlist and storage.
+
+For example, it's possible to load a two-channel track and play only one channel.
+```
+let settings=AudioSettings::new();
+let audio=Audio::default(settings).unwrap();
+
+// Loaded with the wrapper because it's easier
+let mut wrapper=AudioWrapper::new(audio);
+wrapper.load_track("resources/audio.mp3","audio3".to_string());
+
+// Parameters of playing: play once on channels 0 and 1
+let set=TrackSet::once(0,vec![0,1]);
+wrapper.audio.play_track(set).unwrap();
+
+// Setting the tracks volume
+wrapper.audio.set_track_volume(0,0.5f32).unwrap();
+```
+
 
 ##### Acces through playlist and storage
 

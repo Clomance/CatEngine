@@ -16,6 +16,7 @@ Enables the audio output engine only with direct command acces to the core.
 Standard functions are removed.
 
 
+
 # Graphics
 
 ### texture_graphics
@@ -60,10 +61,6 @@ Enables the next events:
  - `WindowEvent::DroppedFile(PathBuf)`
 
 and the related functions.
-
-
-
-## PagedWindow and DynamicWindow
 
 ### lazy
 
