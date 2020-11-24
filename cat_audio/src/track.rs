@@ -288,23 +288,23 @@ impl ChanneledTrack{
     }
 }
 
-fn load_mp3_separate(mut decoder:Decoder<File>,channels:&mut Vec<Vec<f32>>){
-    while let Ok(frame)=decoder.next_frame(){
-        let len=frame.data.len()/frame.channels;
+// fn load_mp3_separate(mut decoder:Decoder<File>,channels:&mut Vec<Vec<f32>>){
+//     while let Ok(frame)=decoder.next_frame(){
+//         let len=frame.data.len()/frame.channels;
 
-        // Распределение данных по отдельным каналам
-        for c in 0..frame.channels{
-            let track_channel=&mut channels[c];
-            // Выделение памяти под канал трека
-            track_channel.reserve_exact(len);
+//         // Распределение данных по отдельным каналам
+//         for c in 0..frame.channels{
+//             let track_channel=&mut channels[c];
+//             // Выделение памяти под канал трека
+//             track_channel.reserve_exact(len);
 
-            // Вписывание данных в канал
-            for &s in frame.data[c..].iter().step_by(frame.channels){
-                track_channel.push(s.into_f32());
-            }
-        }
-    }
-}
+//             // Вписывание данных в канал
+//             for &s in frame.data[c..].iter().step_by(frame.channels){
+//                 track_channel.push(s.into_f32());
+//             }
+//         }
+//     }
+// }
 
 /// Одноканальный трек.
 /// A mono channel track.

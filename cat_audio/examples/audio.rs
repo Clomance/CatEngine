@@ -1,12 +1,8 @@
-#![cfg(feature="audio")]
-#![cfg(not(feature="raw_audio"))]
-
-use cat_engine::audio::{
+use cat_audio::{
     AudioSettings,
     Audio,
     AudioWrapper,
 };
-
 
 fn main(){
     let settings=AudioSettings::new();
@@ -15,7 +11,7 @@ fn main(){
     let mut wrapper=AudioWrapper::new(audio);
 
     // Add a track to the storage before running
-    wrapper.load_track("resources/audio3.mp3","audio3".to_string());
+    wrapper.load_track("../resources/audio3.mp3","audio3".to_string());
 
     wrapper.play_track("audio3",1u32); // plays the track once
 

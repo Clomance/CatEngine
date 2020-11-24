@@ -25,15 +25,15 @@ enum PlayType{
     Forever,
 }
 
-/// Для будущих обновлений
-struct Repeats{
-    /// Индекс текущего значения
-    current_frame:usize,
-    /// Режим повторений
-    play_type:PlayType,
-    /// Повторений осталось
-    repeats:u32,
-}
+// /// Для будущих обновлений
+// struct Repeats{
+//     /// Индекс текущего значения
+//     current_frame:usize,
+//     /// Режим повторений
+//     play_type:PlayType,
+//     /// Повторений осталось
+//     repeats:u32,
+// }
 
 /// Итератор по треку.
 /// 

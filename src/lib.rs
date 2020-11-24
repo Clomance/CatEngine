@@ -48,14 +48,15 @@ pub use glium::{
 };
 
 // re-exports
+#[cfg(any(feature="audio",feature="extended_audio",feature="raw_audio"))]
+pub use cat_audio as audio;
+
+// re-exports
 pub use image;
 
 /// Общий модуль для функций или типов,
 /// неотносящихся ни к одному из других модулей.
-pub mod support;
-
-#[cfg(feature="audio")]
-pub mod audio;
+// pub mod support;
 
 #[cfg(feature="text_graphics")]
 pub mod text;

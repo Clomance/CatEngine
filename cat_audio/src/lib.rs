@@ -1,3 +1,5 @@
+#![allow(non_upper_case_globals,dead_code)]
+
 //! # Многоканальный аудио движок. A multichannel audio engine. `feature = "audio"`
 //! 
 //! Аудио движок имеет свой поток для работы со звуком.
@@ -55,6 +57,8 @@ pub use track::*;
 mod sample;
 use sample::SampleTransform;
 
+mod support;
+
 #[cfg(not(feature="raw_audio"))]
 mod wrapper;
 #[cfg(not(feature="raw_audio"))]
@@ -89,7 +93,7 @@ use std::{
         Arc,
         Mutex,
         LockResult,
-        mpsc::{Sender,channel,SendError},
+        mpsc::{Sender,channel},
     },
 };
 

@@ -1,3 +1,7 @@
+# 0.5.4
+
+Audio is now a separate crate and added as a default feature.
+
 # 0.5.3
 
 Added `ImageObject`.

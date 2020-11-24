@@ -1,24 +1,23 @@
 # Intoduction
 
-The audio engine is enabled with `audio`, `extended_audio` and `raw_audio` features.
+The audio engine is enabled with either `audio`, `extended_audio` or `raw_audio` feature.
 
 It consists of two parts:
- - a storage (container of track that are able to be played)
+ - a storage (container of tracks that can be played)
  - a playlist (list of currently playing tracks)
 
 To simplify the system and add some features only mono-channel tracks are used.
-That means, you have to divide multi-channel tracks into mono channels and load, play and edit each channel seperatly.
+You have to divide multi-channel tracks into mono channels and load, play and edit each channel seperatly.
 
-The engine has it's own thread,
-that is closed with panic after finishing (I can't close it other way),
+The engine has it's own thread that is closed with panic after finishing (I can't close it other way),
 so don't panic!
 
-Supports only output.
+Only supports output.
 Only the `mp3` format is supported to decode.
 All the tracks are converted to 24-bit format to simply work with them.
 
 There is three variants of operating the engine:
- - with `AudioWrapper` that simplify working, but lessen possibilities
+ - with `AudioWrapper` which simplify working, but has less possibilities
  - with engine's own functions
  - with direct commands, without unnecessary checks indices and overflows
 
@@ -63,7 +62,7 @@ let new_sets=wrapper.get_track_sets("new").unwrap();
 
 # Working with engine's functions
 
-Makes possible to selectively operate tracks with both playlist and storage.
+Makes it possible to selectively operate tracks with both playlist and storage.
 
 For example, it's possible to load a two-channel track and play only one channel.
 ```
@@ -83,13 +82,13 @@ wrapper.audio.set_track_volume(0,0.5f32).unwrap();
 ```
 
 
-##### Acces through playlist and storage
+<!-- ##### Access through playlist and storage -->
 
 
 
 # Working with direct commands
 
-The idea of this method is you completly get rid of outer checks. Although the engine's core handles all the errors and doesn't let the system fail, but there is no result of the command accomplishing is returned.
+The idea of this method is to completly get rid of outer checks. Although the engine's core handles all the errors and doesn't let the system fail, but no result is returned.
 I advise you to learn the engine within to effectively and correctly operate it.
 
 
