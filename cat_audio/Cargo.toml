@@ -1,43 +1,27 @@
 [package]
 name = "cat_audio"
-version = "0.0.0"
+version = "0.0.1"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
-homepage = "https://github.com/Clomance/CatEngine/cat_audio"
-repository = "https://github.com/Clomance/CatEngine/cat_audio"
+homepage = "https://github.com/Clomance/CatEngine/tree/master/cat_audio"
+repository = "https://github.com/Clomance/CatEngine/tree/master/cat_audio"
 description = "A multichannel audio engine for CatEngine"
 documentation = "https://docs.rs/cat_audio/"
 license = "MIT"
 readme = "README.md"
 keywords = ["audio","playback"]
 exclude = [
-    ".gitignore",
     "logo_400x400.png",
-    "logo.png",
     "examples",
 ]
-
 
 [features]
 extended = []
 raw = ["extended"]
 # audio_post_processing = []
 
-# I will add them later
-# choose_audio_output_device = []
-# choose_audio_output_device_format = []
-# choose_audio_output_device_on_error = []
-# choose_audio_output_device_format_on_error = []
-
-
 [package.metadata.docs.rs]
-features = [
-    "default",
-    "extended_audio",
-    "auto_hide",
-    "fps_counter",
-    "file_drop"
-]
+features = ["extended_audio"]
 
 [dependencies]
 cpal = "0.11.0"

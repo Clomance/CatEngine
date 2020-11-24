@@ -1,4 +1,4 @@
-# ![logo](https://github.com/Clomance/CatEngine/blob/master/cat_audio/logo_400_400.png)
+# ![logo](https://github.com/Clomance/CatEngine/raw/master/cat_audio/logo_400_400.png)
 
 # CatAudio [![Crate badge]][crates.io] [![Doc badge]][doc.rs]
 
