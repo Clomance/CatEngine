@@ -1,4 +1,4 @@
-# ![logo](https://github.com/Clomance/CatEngine/cat_audio/raw/master/cat_audio_logo_400_400.png)
+# ![logo](https://github.com/Clomance/CatEngine/blob/master/cat_audio/logo_400_400.png)
 
 # CatAudio [![Crate badge]][crates.io] [![Doc badge]][doc.rs]
 
@@ -10,16 +10,19 @@
 
 An audio engine for CatEngine.
 
-Supported platforms:
+#### Supported platforms
  - Windows, Linux
  - MacOS, iOS, Android might work anyway
 
-#### Features
+#### Rust features
+ - `audio` - enables the audio output engine, standard functions
 
-You can disable some unnecessary modules with Rust features (see [list of features](book/EN/features.md)).
+ - `extended_audio` - enables the audio output engine with direct command acces to the core as an addition, standard functions remain
+
+ - `raw_audio` - enables the audio output engine only with direct command acces to the core, standard functions are removed
 
 
 #### Dependencies
-[cpal](https://github.com/RustAudio/cpal) and [minimp3](https://github.com/germangb/minimp3-rs)
+ - [cpal](https://github.com/RustAudio/cpal) and [minimp3](https://github.com/germangb/minimp3-rs)
 
 Alsa delevopment libraries are required for Linux: `libasound2-dev` for Debian and Ubuntu, `alsa-lib-devel` for Fedora (see [cpal](https://github.com/RustAudio/cpal)).
