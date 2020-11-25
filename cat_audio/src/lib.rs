@@ -59,16 +59,16 @@ use sample::SampleTransform;
 
 mod support;
 
-#[cfg(not(feature="raw_audio"))]
+#[cfg(not(feature="raw"))]
 mod wrapper;
-#[cfg(not(feature="raw_audio"))]
+#[cfg(not(feature="raw"))]
 pub use wrapper::AudioWrapper;
 
 mod engine_commands;
 
-#[cfg(not(feature="extended_audio"))]
+#[cfg(not(feature="extended"))]
 use engine_commands::AudioEngineCommand;
-#[cfg(feature="extended_audio")]
+#[cfg(feature="extended")]
 pub use engine_commands::AudioEngineCommand;
 
 pub use engine_commands::AudioCommandResult;
@@ -92,10 +92,12 @@ use std::{
     sync::{
         Arc,
         Mutex,
-        LockResult,
         mpsc::{Sender,channel},
     },
 };
+
+#[cfg(feature="extended")]
+use std::sync::mpsc::SendError;
 
 const audio_thread_stack_size:usize=1024;
 
@@ -177,9 +179,9 @@ pub struct Audio{
     thread:Option<JoinHandle<()>>,
 
     // Флаги занятости слотов
-    #[cfg(not(feature="raw_audio"))]
+    #[cfg(not(feature="raw"))]
     storage_slots:Vec<bool>,
-    #[cfg(not(feature="raw_audio"))]
+    #[cfg(not(feature="raw"))]
     free_storage_slots:Vec<usize>,
 }
 
@@ -215,6 +217,7 @@ impl Audio{
         let owner_host=Arc::new(host);
         let host=owner_host.clone();
 
+        #[cfg(not(feature="raw"))]
         let track_storage_capacity=settings.track_storage_capacity;
 
         let thread_result=Builder::new()
@@ -259,7 +262,8 @@ impl Audio{
             Err(e)=>return Err(e),
         };
 
-        Ok(Self::init(playing_flag1,s,el,sender,thread,track_storage_capacity))
+        Ok(Self::init(playing_flag1,s,el,sender,thread,
+            #[cfg(not(feature="raw"))]track_storage_capacity))
     }
 
     /// Строит аудио движок с хостом, устройством и потоком по умолчанию.
@@ -286,6 +290,7 @@ impl Audio{
         let owner_host=Arc::new(host);
         let host=owner_host.clone();
 
+        #[cfg(not(feature="raw"))]
         let track_storage_capacity=settings.track_storage_capacity;
 
         let thread_result=Builder::new()
@@ -329,7 +334,8 @@ impl Audio{
             Err(e)=>return Err(e),
         };
 
-        Ok(Self::init(playing_flag1,s,el,sender,thread,track_storage_capacity))
+        Ok(Self::init(playing_flag1,s,el,sender,thread,
+            #[cfg(not(feature="raw"))]track_storage_capacity))
     }
 
     #[inline]
@@ -339,13 +345,13 @@ impl Audio{
         event_loop:Arc<EventLoop>,
         sender:Sender<AudioEngineCommand>,
         thread:JoinHandle<()>,
-        track_storage_capacity:usize,
+        #[cfg(not(feature="raw"))]track_storage_capacity:usize,
     )->Audio{
-        #[cfg(not(feature="raw_audio"))]
+        #[cfg(not(feature="raw"))]
         let mut storage_slots=Vec::with_capacity(track_storage_capacity);
-        #[cfg(not(feature="raw_audio"))]
+        #[cfg(not(feature="raw"))]
         let mut free_storage_slots=Vec::with_capacity(track_storage_capacity);
-        #[cfg(not(feature="raw_audio"))]
+        #[cfg(not(feature="raw"))]
         for c in 0..track_storage_capacity{
             free_storage_slots.push(c);
             storage_slots.push(false);
@@ -359,9 +365,9 @@ impl Audio{
             command:sender,
             thread:Some(thread),
 
-            #[cfg(not(feature="raw_audio"))]
+            #[cfg(not(feature="raw"))]
             free_storage_slots,
-            #[cfg(not(feature="raw_audio"))]
+            #[cfg(not(feature="raw"))]
             storage_slots
         }
     }
@@ -369,14 +375,14 @@ impl Audio{
     /// Возвращает количество треков в хранилище.
     /// 
     /// Returns the amount of track in the storage.
-    #[cfg(not(feature="raw_audio"))]
+    #[cfg(not(feature="raw"))]
     pub fn tracks_amount(&self)->usize{
         self.storage_slots.len()-self.free_storage_slots.len()
     }
 }
 
-/// feature="extended_audio"
-#[cfg(feature="extended_audio")]
+/// feature="extended"
+#[cfg(feature="extended")]
 impl Audio{
     /// Отправляет команду аудио системе.
     /// 
@@ -393,7 +399,7 @@ impl Audio{
     /// 
     /// Returns storage slot flags.
     /// true - busy, false - free
-    #[cfg(not(feature="raw_audio"))]
+    #[cfg(not(feature="raw"))]
     pub fn storage_slots(&mut self)->&mut Vec<bool>{
         &mut self.storage_slots
     }
@@ -401,7 +407,7 @@ impl Audio{
     /// Возращает индексы свободных ячеек хранилища.
     /// 
     /// Returns indices of free storage slots.
-    #[cfg(not(feature="raw_audio"))]
+    #[cfg(not(feature="raw"))]
     pub fn free_storage_slots(&mut self)->&mut Vec<usize>{
         &mut self.free_storage_slots
     }
@@ -410,7 +416,7 @@ impl Audio{
 /// Добавление/удаление треков.
 /// 
 /// Adding/removing tracks.
-#[cfg(not(feature="raw_audio"))]
+#[cfg(not(feature="raw"))]
 impl Audio{
     /// Добавляет трек в хранилище.
     /// 
@@ -534,7 +540,7 @@ impl Audio{
 /// Проигрывание треков.
 /// 
 /// Play tracks.
-#[cfg(not(feature="raw_audio"))]
+#[cfg(not(feature="raw"))]
 impl Audio{
     /// Проигрывает трек.
     /// 
@@ -726,7 +732,7 @@ impl Audio{
 /// Установка параметров.
 /// 
 /// Setting parameters.
-#[cfg(not(feature="raw_audio"))]
+#[cfg(not(feature="raw"))]
 impl Audio{
     /// Устанавливает громкость играющего трека.
     /// 
@@ -772,7 +778,7 @@ impl Audio{
 /// Упраление через хранилище треков.
 /// 
 /// Operating through the track storage.
-#[cfg(not(feature="raw_audio"))]
+#[cfg(not(feature="raw"))]
 impl Audio{
     /// Снимает паузу с треков из плейлиста,
     /// привязанных к треку из хранилища.

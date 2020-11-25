@@ -16,8 +16,8 @@ A multichannel audio engine for CatEngine.
 
 #### Rust features
  - `audio` - enables the audio output engine, standard functions
- - `extended_audio` - enables the audio output engine with direct command acces to the core as an addition, standard functions remain
- - `raw_audio` - enables the audio output engine only with direct command acces to the core, standard functions are removed
+ - `extended` - enables the audio output engine with direct command acces to the core as an addition, standard functions remain
+ - `raw` - enables the audio output engine only with direct command acces to the core, standard functions are removed
 
 
 #### Dependencies
