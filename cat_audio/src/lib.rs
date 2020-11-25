@@ -1,4 +1,4 @@
-#![allow(non_upper_case_globals,dead_code)]
+#![allow(non_upper_case_globals,dead_code,unused_imports)]
 
 //! # Многоканальный аудио движок. A multichannel audio engine.
 //! 
@@ -92,6 +92,7 @@ use std::{
     sync::{
         Arc,
         Mutex,
+        LockResult,
         mpsc::{Sender,channel},
     },
 };
