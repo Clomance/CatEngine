@@ -1,10 +1,12 @@
+# 0.5.5
+
+Fixed `cat_audio`'s features.
+
 # 0.5.4
 
 Audio is now a separate crate and added as a default feature.
 
 Fixed the bug of multichannel playing.
-
-Fixed `cat_audio`'s features.
 
 # 0.5.3
 
