@@ -1,6 +1,6 @@
 #![allow(non_upper_case_globals,dead_code)]
 
-//! # Многоканальный аудио движок. A multichannel audio engine. `feature = "audio"`
+//! # Многоканальный аудио движок. A multichannel audio engine.
 //! 
 //! Аудио движок имеет свой поток для работы со звуком.
 //! Также в нём есть хранилище аудио треков, которые можно запустить.

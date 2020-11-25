@@ -11,7 +11,7 @@ use std::{
 };
 
 
-
+/// Система распределения треков по каналам.
 pub struct ChannelSystem{
     /// Выходящая (системная) частота дискретизации.
     sample_rate:u32,
@@ -221,7 +221,9 @@ impl ChannelSystem{
 
     /// Устанавливает нового количество каналов.
     pub fn set_system_channels(&mut self,channels:u16){
+        // Текущее количество каналов
         let current_channels=self.channel_frame.len();
+
         match current_channels.cmp(&(channels as usize)){
             Ordering::Equal=>{} // Количество каналов не изменилось
 
@@ -261,27 +263,27 @@ impl ChannelSystem{
 
         // Перебор треков
         let mut c=0usize;
-        'tracks:while c<self.playlist.len(){
+        'playlist:while c<self.playlist.len(){
+            // Трек из плейлиста (итератор)
             let track=&mut self.play_buffer[self.playlist[c]];
 
-            // Каналы для вывода трека
-            let channels=&self.channels[c];
-
-            // Перебор индексов каналов
-            for &channel in channels{
-                if let Some(sample)=track.next(){
-                    // Добавляем значение трека в канал, если такой есть
+            // Следующее значение трека (итератора)
+            if let Some(sample)=track.next(){
+                // Перебор индексов каналов для вывода трека
+                for &channel in &self.channels[c]{
+                    // Добавление значения трека в канал, если такой есть
                     if let Some(channel)=self.channel_frame.get_mut(channel){
                         channel.add_assign(sample);
                     }
                 }
-                else{
-                    // Удаление завершённых треков
-                    // (полностью проигранных)
-                    self.remove_track(c);
-                    continue 'tracks
-                }
             }
+            else{
+                // Удаление завершённых треков
+                // (полностью проигранных)
+                self.remove_track(c);
+                continue 'playlist
+            }
+
             c+=1;
         }
 

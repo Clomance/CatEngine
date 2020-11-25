@@ -2,6 +2,8 @@
 
 Audio is now a separate crate and added as a default feature.
 
+Fixed the bug of multichannel playing.
+
 # 0.5.3
 
 Added `ImageObject`.
