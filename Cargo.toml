@@ -21,6 +21,14 @@ exclude = [
     "RELEASE-NOTES.MD"
 ]
 
+[package.metadata.docs.rs]
+features = [
+    "default",
+    "extended_audio",
+    "auto_hide",
+    "fps_counter",
+    "file_drop"
+]
 
 [features]
 default = ["audio","text_graphics","simple_graphics","texture_graphics"]
@@ -47,15 +55,6 @@ fps_counter = []
 lazy = []
 file_drop = []
 
-
-[package.metadata.docs.rs]
-features = [
-    "default",
-    "extended_audio",
-    "auto_hide",
-    "fps_counter",
-    "file_drop"
-]
 
 # audio
 [dependencies.cat_audio]
