@@ -1,6 +1,6 @@
 [package]
 name = "cat_audio"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
 homepage = "https://github.com/Clomance/CatEngine/tree/master/cat_audio"

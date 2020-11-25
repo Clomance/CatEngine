@@ -59,7 +59,7 @@ file_drop = []
 # audio
 [dependencies.cat_audio]
 path = "cat_audio"
-version = "0.0.2"
+version = "0.0.3"
 optional = true
 
 [dependencies]

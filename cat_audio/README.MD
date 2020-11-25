@@ -15,7 +15,6 @@ A multichannel audio engine for CatEngine.
  - MacOS, iOS, Android might work anyway
 
 #### Rust features
- - `audio` - enables the audio output engine, standard functions
  - `extended` - enables the audio output engine with direct command acces to the core as an addition, standard functions remain
  - `raw` - enables the audio output engine only with direct command acces to the core, standard functions are removed
 
