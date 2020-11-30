@@ -50,7 +50,7 @@ impl ImageObject{
     }
 }
 
-impl<'o> DependentObject<'o,TexturedVertex2D,u8> for ImageObject{
+impl DependentObject<TexturedVertex2D,u8> for ImageObject{
     type Vertices=[TexturedVertex2D;4];
     type Indices=[u8;1];
 

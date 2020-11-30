@@ -76,16 +76,16 @@ impl Quadrilateral{
     }
 }
 
-impl<'o> DependentObject<'o,Vertex2D,u8> for Quadrilateral{
-    type Vertices=&'o [Vertex2D;4];
+impl DependentObject<Vertex2D,u8> for Quadrilateral{
+    type Vertices=[Vertex2D;4];
     type Indices=[u8;0];
 
     fn colour(&self)->Colour{
         self.colour
     }
 
-    fn vertices(&'o self)->&'o [Vertex2D;4]{
-        &self.vertices
+    fn vertices(&self)->[Vertex2D;4]{
+        self.vertices
     }
 
     fn indices(&self)->Option<[u8;0]>{
@@ -175,7 +175,7 @@ impl Rectangle{
     }
 }
 
-impl<'o> DependentObject<'o,Vertex2D,u8> for Rectangle{
+impl DependentObject<Vertex2D,u8> for Rectangle{
     type Vertices=[Vertex2D;4];
     type Indices=[u8;0];
 
@@ -296,7 +296,7 @@ impl RectangleBorder{
     }
 }
 
-impl<'o> DependentObject<'o,Vertex2D,u8> for RectangleBorder{
+impl DependentObject<Vertex2D,u8> for RectangleBorder{
     type Vertices=[Vertex2D;4];
     type Indices=[u8;0];
 
@@ -514,7 +514,7 @@ impl Line{
 }
 
 
-impl <'o> DependentObject<'o,Vertex2D,u8> for Line{
+impl <'o> DependentObject<Vertex2D,u8> for Line{
     type Vertices=[Vertex2D;2];
     type Indices=[u8;0];
 
@@ -604,7 +604,7 @@ impl Circle{
     }
 }
 
-impl <'o> DependentObject<'o,Vertex2D,u8> for Circle{
+impl <'o> DependentObject<Vertex2D,u8> for Circle{
     type Vertices=Vec<Vertex2D>;
     type Indices=[u8;0];
 

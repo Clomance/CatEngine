@@ -94,7 +94,7 @@ fn main(){
         400f32
     ]);
 
-    let mut window=PagedWindow::new(|_,s|{
+    let (mut window,mut graphics)=PagedWindow::new(|_,s|{
         s.vsync=true;
     }).unwrap();
 

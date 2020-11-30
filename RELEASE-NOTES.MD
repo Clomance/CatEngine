@@ -1,5 +1,7 @@
 # 0.5.6
 
+Removed a live time from the `DependentObject` trait.
+
 Separated graphics of windows, but it's still created within them.
 
 # 0.5.5

@@ -148,7 +148,7 @@ impl ImageBase{
     }
 }
 
-impl<'o> DependentObject<'o,TexturedVertex2D,u8> for ImageBase{
+impl<'o> DependentObject<TexturedVertex2D,u8> for ImageBase{
     type Vertices=[TexturedVertex2D;4];
     type Indices=[u8;1];
 

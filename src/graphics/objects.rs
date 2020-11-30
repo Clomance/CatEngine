@@ -22,13 +22,13 @@ use glium::{
 /// The crate's graphics engine uses `TexturedVertex2D` and `Vertex2D` for vertices
 /// and `u8` for indices, but you can add your own
 /// and draw objects with `window.draw()`.
-pub trait DependentObject<'o,V:Copy,I:Copy>
+pub trait DependentObject<V:Copy,I:Copy>
     where
         [V]:Content,
         [I]:Content,
 {
-    type Vertices:AsRef<[V]>+'o;
-    type Indices:AsRef<[I]>+'o;
+    type Vertices:AsRef<[V]>;
+    type Indices:AsRef<[I]>;
 
     /// Цвет объекта.
     /// 
@@ -40,12 +40,12 @@ pub trait DependentObject<'o,V:Copy,I:Copy>
     /// Object's vertices.
     /// 
     /// The crate's graphics uses the window coordinate system.
-    fn vertices(&'o self)->Self::Vertices;
+    fn vertices(&self)->Self::Vertices;
 
     /// Индексы для построения объекта.
     /// 
     /// Indices to build the object.
-    fn indices(&'o self)->Option<Self::Indices>;
+    fn indices(&self)->Option<Self::Indices>;
 
     fn primitive_type(&self)->PrimitiveType;
 
@@ -55,7 +55,7 @@ pub trait DependentObject<'o,V:Copy,I:Copy>
     /// Writes indices to the index buffer and return `Some(IndicesSource)` to draw
     /// or `None` if there is not enough space.
     fn write_indices<'a>(
-        &'o self,
+        &self,
         index_buffer:&'a Buffer<[I]>
     )->Option<IndicesSource<'a>>{
         Some(
@@ -88,7 +88,7 @@ pub trait DependentObject<'o,V:Copy,I:Copy>
     /// Writes indices to the index buffer and return `Some(IndicesSource)` to draw
     /// or `None` if there is not enough space.
     fn write_vertices<'a>(
-        &'o self,
+        &self,
         vertex_buffer:&'a Buffer<[V]>,
         vertex_format:&'a VertexFormat,
     )->Option<VerticesSource<'a>>{

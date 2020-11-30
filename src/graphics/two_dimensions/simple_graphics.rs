@@ -116,7 +116,6 @@ impl SimpleGraphics{
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 Vertex2D,
                 u8,
                 Vertices=V,
@@ -158,7 +157,6 @@ impl SimpleGraphics{
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 Vertex2D,
                 u8,
                 Vertices=V,
@@ -202,7 +200,6 @@ impl SimpleGraphics{
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 Vertex2D,
                 u8,
                 Vertices=V,
@@ -252,7 +249,6 @@ impl SimpleGraphics{
     pub fn push_object<'o,O,V,I>(&mut self,object:&'o O)->Option<usize>
         where
             O:DependentObject<
-                'o,
                 Vertex2D,
                 u8,
                 Vertices=V,

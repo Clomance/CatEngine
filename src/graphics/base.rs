@@ -181,22 +181,21 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws a simple object.
     #[inline(always)]
-    pub fn draw_simple<'o,O,V,I>(
+    pub fn draw_simple<O,V,I>(
         &mut self,
-        object:&'o O,
+        object:&O,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 Vertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[Vertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[Vertex2D]>,
+            I:AsRef<[u8]>
     {
         self.graphics2d.simple.draw(
             object,
@@ -210,23 +209,22 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws a shifted simple object.
     #[inline(always)]
-    pub fn draw_shift_simple<'o,O,V,I>(
+    pub fn draw_shift_simple<O,V,I>(
         &mut self,
-        object:&'o O,
+        object:&O,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 Vertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[Vertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[Vertex2D]>,
+            I:AsRef<[u8]>
     {
         self.graphics2d.simple.draw_shift(
             object,
@@ -241,9 +239,9 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws a rotated simple object.
     #[inline(always)]
-    pub fn draw_rotate_simple<'o,O,V,I>(
+    pub fn draw_rotate_simple<O,V,I>(
         &mut self,
-        object:&'o O,
+        object:&O,
         rotation_center:[f32;2],
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
@@ -251,14 +249,13 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 Vertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[Vertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[Vertex2D]>,
+            I:AsRef<[u8]>
     {
         self.graphics2d.simple.draw_rotate(
             object,
@@ -274,23 +271,22 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws a simple object.
     #[inline(always)]
-    pub fn draw_simple_general<'o,O,V,I>(
+    pub fn draw_simple_general<O,V,I>(
         &mut self,
-        object:&'o O,
+        object:&O,
         draw_type:DrawType,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 Vertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[Vertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[Vertex2D]>,
+            I:AsRef<[u8]>
     {
         match draw_type{
             DrawType::Common=>self.graphics2d.simple.draw(
@@ -329,23 +325,22 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws a texture.
     #[inline(always)]
-    pub fn draw_texture<'o,O,V,I>(
+    pub fn draw_texture<O,V,I>(
         &mut self,
-        base:&'o O,
+        base:&O,
         texture:&Texture,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 TexturedVertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[TexturedVertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[TexturedVertex2D]>,
+            I:AsRef<[u8]>
     {
         self.graphics2d.texture.draw(
             base,
@@ -360,9 +355,9 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws a shifted texture.
     #[inline(always)]
-    pub fn draw_shift_texture<'o,O,V,I>(
+    pub fn draw_shift_texture<O,V,I>(
         &mut self,
-        base:&'o O,
+        base:&O,
         texture:&Texture,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
@@ -370,14 +365,13 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 TexturedVertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[TexturedVertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[TexturedVertex2D]>,
+            I:AsRef<[u8]>
     {
         self.graphics2d.texture.draw_shift(
             base,
@@ -395,9 +389,9 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// angle - radians
     #[inline(always)]
-    pub fn draw_rotate_texture<'o,O,V,I>(
+    pub fn draw_rotate_texture<O,V,I>(
         &mut self,
-        base:&'o O,
+        base:&O,
         texture:&Texture,
         rotation_center:[f32;2],
         angle:f32,
@@ -406,14 +400,13 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 TexturedVertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[TexturedVertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[TexturedVertex2D]>,
+            I:AsRef<[u8]>
     {
         self.graphics2d.texture.draw_rotate(
             base,
@@ -430,9 +423,9 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     /// 
     /// Draws a texture.
     #[inline(always)]
-    pub fn draw_texture_general<'o,O,V,I>(
+    pub fn draw_texture_general<O,V,I>(
         &mut self,
-        base:&'o O,
+        base:&O,
         texture:&Texture,
         draw_type:DrawType,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
@@ -440,14 +433,13 @@ impl<'graphics,'frame> Graphics<'graphics,'frame>{
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 TexturedVertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[TexturedVertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[TexturedVertex2D]>,
+            I:AsRef<[u8]>
     {
         match draw_type{
             DrawType::Common=>self.graphics2d.texture.draw(

@@ -122,9 +122,9 @@ impl TextureGraphics{
 
     /// Строит объект с нуля и выводит, игнорируя все области.
     /// Переписывает координаты с начала буфера [0..].
-    pub fn draw<'o,O,V,I>(
+    pub fn draw<O,V,I>(
         &self,
-        object:&'o O,
+        object:&O,
         texture:&Texture,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
@@ -132,14 +132,13 @@ impl TextureGraphics{
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 TexturedVertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[TexturedVertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[TexturedVertex2D]>,
+            I:AsRef<[u8]>
     {
         // Вписывание вершин и подготовка к выводу
         let vertex_source=object.write_vertices(
@@ -167,9 +166,9 @@ impl TextureGraphics{
 
     /// Строит объект с нуля и выводит, игнорируя все области.
     /// Переписывает координаты с начала буфера [0..].
-    pub fn draw_shift<'o,O,V,I>(
+    pub fn draw_shift<O,V,I>(
         &self,
-        object:&'o O,
+        object:&O,
         texture:&Texture,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
@@ -178,14 +177,13 @@ impl TextureGraphics{
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 TexturedVertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[TexturedVertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[TexturedVertex2D]>,
+            I:AsRef<[u8]>+
     {
         // Вписывание вершин и подготовка к выводу
         let vertex_source=object.write_vertices(
@@ -220,9 +218,9 @@ impl TextureGraphics{
 
     /// Строит объект с нуля и выводит под данным углом, игнорируя все области.
     /// Переписывает координаты с начала буфера [0..].
-    pub fn draw_rotate<'o,O,V,I>(
+    pub fn draw_rotate<O,V,I>(
         &self,
-        object:&'o O,
+        object:&O,
         texture:&Texture,
         rotation_center:[f32;2],
         angle:f32,
@@ -232,14 +230,13 @@ impl TextureGraphics{
     )->Result<(),DrawError>
         where
             O:DependentObject<
-                'o,
                 TexturedVertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[TexturedVertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[TexturedVertex2D]>,
+            I:AsRef<[u8]>+
     {
         // Вписывание вершин и подготовка к выводу
         let vertex_source=object.write_vertices(
@@ -292,21 +289,20 @@ impl TextureGraphics{
         self.textures.remove(index);
     }
 
-    pub fn push_object<'o,O,V,I>(
+    pub fn push_object<O,V,I>(
         &mut self,
-        object:&'o O,
+        object:&O,
         texture:usize
     )->Option<usize>
         where
             O:DependentObject<
-                'o,
                 TexturedVertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[TexturedVertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[TexturedVertex2D]>,
+            I:AsRef<[u8]>+
     {
         // Вершины
         let vertexesb=object.vertices();

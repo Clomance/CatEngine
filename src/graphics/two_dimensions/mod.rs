@@ -74,17 +74,16 @@ impl Graphics2D{
     /// 
     /// Adds the simple object to the array.
     #[inline(always)]
-    pub fn add_simple_object<'o,O,V,I>(&mut self,object:&'o O)->Option<usize>
+    pub fn add_simple_object<O,V,I>(&mut self,object:&O)->Option<usize>
         where
             O:DependentObject<
-                'o,
                 Vertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[Vertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[Vertex2D]>,
+            I:AsRef<[u8]>
     {
         self.simple.push_object(object)
     }
@@ -183,21 +182,20 @@ impl Graphics2D{
     /// 
     /// Adds the simple object to the array.
     #[inline(always)]
-    pub fn add_textured_object<'o,O,V,I>(
+    pub fn add_textured_object<O,V,I>(
         &mut self,
-        object:&'o O,
+        object:&O,
         texture:usize
     )->Option<usize>
         where
             O:DependentObject<
-                'o,
                 TexturedVertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[TexturedVertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[TexturedVertex2D]>,
+            I:AsRef<[u8]>
     {
         self.texture.push_object(object,texture)
     }
