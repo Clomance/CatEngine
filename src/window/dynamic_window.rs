@@ -1,4 +1,4 @@
-use crate::graphics::GraphicsSettings;
+use crate::graphics::{GraphicsSettings,Graphics2D};
 
 use super::{
     // statics
@@ -71,7 +71,7 @@ impl<'a,O:PartialEq> DynamicWindow<'a,O>{
     /// Создаёт окно.
     ///
     /// Creates the window.
-    pub fn new<F>(setting:F)->Result<DynamicWindow<'a,O>,DisplayCreationError>
+    pub fn new<F>(setting:F)->Result<(DynamicWindow<'a,O>,Graphics2D),DisplayCreationError>
             where F:FnOnce(Vec<MonitorHandle>,&mut WindowSettings){
 
         Window::new(setting)
@@ -243,7 +243,7 @@ impl<'a,O:PartialEq> Window for DynamicWindow<'a,O>{
         graphics_settings:GraphicsSettings,
         event_loop:EventLoop<InnerWindowEvent>,
         general_settings:GeneralSettings,
-    )->Result<DynamicWindow<'a,O>,DisplayCreationError>{
+    )->Result<(DynamicWindow<'a,O>,Graphics2D),DisplayCreationError>{
 
         let base=WindowBase::raw(window_builder,
             context_builder,
@@ -253,14 +253,17 @@ impl<'a,O:PartialEq> Window for DynamicWindow<'a,O>{
         );
 
         match base{
-            Ok(w)=>{
-                Ok(Self{
-                    base:w,
+            Ok((w,g))=>{
+                Ok((
+                    Self{
+                        base:w,
 
-                    page_ref:std::ptr::null_mut(),
+                        page_ref:std::ptr::null_mut(),
 
-                    last_page:None,
-                })
+                        last_page:None,
+                    },
+                    g
+                ))
             }
             Err(e)=>Err(e)
         }

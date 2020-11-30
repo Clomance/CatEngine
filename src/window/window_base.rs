@@ -61,12 +61,6 @@ pub struct WindowBase{
     /// A window with a GL context.
     pub display:Display,
 
-    /// A graphics base for 2D rendering.
-    pub graphics2d:Graphics2D,
-
-    #[cfg(feature="3D")]
-    pub graphics3d:Graphics3D,
-
     /// An event loop.
     pub event_loop:EventLoop<InnerWindowEvent>,
 
@@ -95,7 +89,7 @@ impl WindowBase{
         graphics_settings:GraphicsSettings,
         event_loop:EventLoop<InnerWindowEvent>,
         general_settings:GeneralSettings,
-    )->Result<WindowBase,DisplayCreationError>{
+    )->Result<(WindowBase,Graphics2D),DisplayCreationError>{
         // Создание окна и привязывание графической библиотеки
         let display=Display::new(window_builder,context_builder,&event_loop)?;
 
@@ -125,32 +119,30 @@ impl WindowBase{
 
         let graphics2d=Graphics2D::new(&display,graphics_settings,glsl);
 
-        #[cfg(feature="3D")]
-        let graphics3d=Graphics3D::new();
+        // #[cfg(feature="3D")]
+        // let graphics3d=Graphics3D::new();
 
         let proxy=event_loop.create_proxy();
 
-        Ok(Self{
+        Ok((
+            Self{
+                display,
+
+                event_loop,
+                event_loop_proxy:proxy,
+
+                #[cfg(not(feature="lazy"))]
+                update_interval:Duration::from_secs(1).checked_div(general_settings.updates_per_second).expect("UPD = 0"),
+                #[cfg(not(feature="lazy"))]
+                next_update:Instant::now(),
+
+                #[cfg(feature="fps_counter")]
+                frames_passed:0u32,
+                #[cfg(feature="fps_counter")]
+                time:Instant::now(),
+            },
             graphics2d,
-
-            #[cfg(feature="3D")]
-            graphics3d,
-
-            display,
-
-            event_loop,
-            event_loop_proxy:proxy,
-
-            #[cfg(not(feature="lazy"))]
-            update_interval:Duration::from_secs(1).checked_div(general_settings.updates_per_second).expect("UPD = 0"),
-            #[cfg(not(feature="lazy"))]
-            next_update:Instant::now(),
-
-            #[cfg(feature="fps_counter")]
-            frames_passed:0u32,
-            #[cfg(feature="fps_counter")]
-            time:Instant::now(),
-        })
+        ))
     }
 
     /// Останавливает цикл событий,
@@ -173,14 +165,14 @@ impl WindowBase{
     /// Выполняет замыкание.
     /// 
     /// Executes the closure.
-    pub fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&mut self,f:F)->Result<(),SwapBuffersError>{
+    pub fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&mut self,graphics_base:&mut Graphics2D,f:F)->Result<(),SwapBuffersError>{
         let mut draw_parameters=default_draw_parameters();
 
         let mut frame=self.display.draw();
 
         let mut g=Graphics::new(
-            &mut self.graphics2d,
-            #[cfg(feature="3D")]&mut self.graphics3d,
+            graphics_base,
+            //#[cfg(feature="3D")]&mut self.graphics3d,
             &mut frame
         );
 

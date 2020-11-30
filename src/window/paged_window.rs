@@ -1,4 +1,4 @@
-use crate::graphics::GraphicsSettings;
+use crate::graphics::{GraphicsSettings,Graphics2D};
 
 use super::{
     // statics
@@ -19,6 +19,7 @@ use super::{
     DynamicWindow,
     GeneralSettings,
     WindowSettings,
+
 };
 
 use glium::backend::glutin::DisplayCreationError;
@@ -63,7 +64,7 @@ impl PagedWindow{
     /// Создаёт окно.
     /// 
     /// Creates the window.
-    pub fn new<F>(setting:F)->Result<PagedWindow,DisplayCreationError>
+    pub fn new<F>(setting:F)->Result<(PagedWindow,Graphics2D),DisplayCreationError>
             where F:FnOnce(Vec<MonitorHandle>,&mut WindowSettings){
 
         Window::new::<F>(setting)
@@ -425,7 +426,7 @@ impl Window for PagedWindow{
         graphics_settings:GraphicsSettings,
         event_loop:EventLoop<InnerWindowEvent>,
         general_settings:GeneralSettings,
-    )->Result<PagedWindow,DisplayCreationError>{
+    )->Result<(PagedWindow,Graphics2D),DisplayCreationError>{
 
         let base=WindowBase::raw(window_builder,
             context_builder,
@@ -435,15 +436,18 @@ impl Window for PagedWindow{
         );
 
         match base{
-            Ok(w)=>{
-                Ok(Self{
-                    base:w,
+            Ok((w,g))=>{
+                Ok(
+                    (Self{
+                        base:w,
 
 
-                    #[cfg(feature="auto_hide")]
-                    minimized:false,
+                        #[cfg(feature="auto_hide")]
+                        minimized:false,
 
-                })
+                    },
+                    g
+                ))
             }
             Err(e)=>Err(e)
         }

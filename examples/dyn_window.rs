@@ -170,7 +170,7 @@ fn main(){
         400f32
     ]);
 
-    let window=DynamicWindow::new(|_,s|{
+    let (window,graphics)=DynamicWindow::new(|_,s|{
         s.vsync=true;
     }).unwrap();
 

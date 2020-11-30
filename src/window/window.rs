@@ -104,9 +104,9 @@ pub trait Window:Sized{
         graphics_settings:GraphicsSettings,
         event_loop:EventLoop<InnerWindowEvent>,
         general_settings:GeneralSettings,
-    )->Result<Self,DisplayCreationError>;
+    )->Result<(Self,Graphics2D),DisplayCreationError>;
 
-    fn new<F>(setting:F)->Result<Self,DisplayCreationError>
+    fn new<F>(setting:F)->Result<(Self,Graphics2D),DisplayCreationError>
             where F:FnOnce(Vec<MonitorHandle>,&mut WindowSettings){
         let event_loop=EventLoop::<InnerWindowEvent>::with_user_event();
         let monitors=event_loop.available_monitors().collect();
@@ -141,14 +141,6 @@ pub trait Window:Sized{
         &self.window_base().display
     }
 
-    /// Возвращает графическую основу.
-    /// 
-    /// Returns the graphics base.
-    #[inline(always)]
-    fn graphics2d(&mut self)->&mut Graphics2D{
-        &mut self.window_base_mut().graphics2d
-    }
-
     /// Выполняет замыкание
     /// и рисует пользовательский курсор мыши,
     /// если установлен.
@@ -156,8 +148,8 @@ pub trait Window:Sized{
     /// Executes the closure
     /// and draws user's mouse cursor if set.
     #[inline(always)]
-    fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&mut self,f:F)->Result<(),SwapBuffersError>{
-        self.window_base_mut().draw(f)
+    fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&mut self,graphics_base:&mut Graphics2D,f:F)->Result<(),SwapBuffersError>{
+        self.window_base_mut().draw(graphics_base,f)
     }
 
 

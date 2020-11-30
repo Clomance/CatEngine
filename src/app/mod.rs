@@ -43,7 +43,7 @@ pub trait App:Sized+Window{
 
         let mut event_loop=EventLoop::<InnerWindowEvent>::with_user_event();
 
-        let mut window=WindowBase::raw(
+        let (mut window,mut graphics)=WindowBase::raw(
             window_builder,
             context_builder,
             window_settings.graphics_base_settings,

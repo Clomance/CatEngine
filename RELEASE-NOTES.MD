@@ -1,3 +1,7 @@
+# 0.5.6
+
+Separated graphics of windows, but it's still created within them.
+
 # 0.5.5
 
 Fixed `cat_audio`'s features.
