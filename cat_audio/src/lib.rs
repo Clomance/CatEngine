@@ -96,6 +96,11 @@ use std::{
     },
 };
 
+#[cfg(not(feature="raw"))]
+use std::{
+    sync::LockResult,
+};
+
 #[cfg(feature="extended")]
 use std::sync::mpsc::SendError;
 

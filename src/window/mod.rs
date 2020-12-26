@@ -22,6 +22,7 @@ use glium::glutin::event::{
     MouseButton,
 };
 
+#[cfg(feature="file_drop")]
 use std::path::PathBuf;
 
 /// Положение курсора мыши. The mouse cursor position.

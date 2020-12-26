@@ -8,6 +8,7 @@ use super::{
 
 use glium::glutin::event::{MouseScrollDelta,ModifiersState};
 
+#[cfg(feature="file_drop")]
 use std::path::PathBuf;
 
 /// Типаж для создания страниц окна.

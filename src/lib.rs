@@ -1,4 +1,4 @@
-#![allow(non_upper_case_globals,unused_must_use,unused_mut)]
+#![allow(non_upper_case_globals,unused_must_use,unused_mut,unused_macros,unused_imports)]
 
 //! # 2D графический движок с поддержкой аудио. A 2D graphics engine with audio support.
 //! 
@@ -51,10 +51,6 @@ pub use cat_audio as audio;
 
 // re-exports
 pub use image;
-
-/// Общий модуль для функций или типов,
-/// неотносящихся ни к одному из других модулей.
-// pub mod support;
 
 #[cfg(feature="text_graphics")]
 pub mod text;
