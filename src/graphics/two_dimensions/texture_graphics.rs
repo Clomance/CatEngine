@@ -41,7 +41,7 @@ use glium::{
 
 use std::mem::size_of;
 
-/// Графическая основа для отрисовки текстур (изображений).
+/// Графическая основа для отрисовки текстур.
 /// 
 /// Размер буферов регулируется вручную при создании.
 pub struct TextureGraphics{
@@ -161,7 +161,13 @@ impl TextureGraphics{
             window_center:unsafe{window_center}
         };
 
-        frame.draw(vertex_source,indices_source,&self.draw,&uni,draw_parameters)
+        frame.draw(
+            vertex_source,
+            indices_source,
+            &self.draw,
+            &uni,
+            draw_parameters
+        )
     }
 
     /// Строит объект с нуля и выводит, игнорируя все области.
@@ -281,12 +287,12 @@ impl TextureGraphics{
         self.textures.push(texture)
     }
 
-    pub fn delete_last_texture(&mut self){
+    pub fn remove_last_texture(&mut self){
         self.textures.pop();
     }
-    
-    pub fn remove_texture(&mut self,index:usize){
-        self.textures.remove(index);
+
+    pub fn remove_all_textures(&mut self){
+        self.textures.clear();
     }
 
     pub fn push_object<O,V,I>(
@@ -352,7 +358,7 @@ impl TextureGraphics{
         Some(len)
     }
 
-    pub fn delete_last_object(&mut self){
+    pub fn remove_last_object(&mut self){
         if let Some(object)=self.objects.pop(){
             // Сдвиг границы вершин
             let mut len=object.base.vertex_buffer_range.len();

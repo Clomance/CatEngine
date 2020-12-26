@@ -46,13 +46,16 @@ use glium::{
     Rect,
 };
 
-use std::borrow::Cow;
+use std::{
+    cell::UnsafeCell,
+    borrow::Cow
+};
 
 pub struct TextGraphics{
     vertex_buffer:VertexBuffer<TexturedVertex2D>,
     vertex_format:VertexFormat,
 
-    image:Vec<u8>,
+    image:UnsafeCell<Vec<u8>>,
     glyph_texture:Texture2d,
     texture_size:[f32;2],
 
@@ -88,7 +91,7 @@ impl TextGraphics{
             vertex_buffer:VertexBuffer::empty_dynamic(display,4).unwrap(),
             vertex_format:TexturedVertex2D::build_bindings(),
 
-            image:Vec::with_capacity((settings.glyph_texture_size[0]*settings.glyph_texture_size[1]) as usize),
+            image:UnsafeCell::new(Vec::with_capacity((settings.glyph_texture_size[0]*settings.glyph_texture_size[1]) as usize)),
             glyph_texture:Texture2d::empty_with_format(
                 display,
                 UncompressedFloatFormat::U8,
@@ -136,14 +139,15 @@ impl TextGraphics{
     }
 
     /// Записывает глиф в локальную тектстуру.
-    pub fn write_glyph(&mut self,glyph:&OutlinedGlyph){
-        self.image.clear();
+    pub fn write_glyph(&self,glyph:&OutlinedGlyph){
+        let image:&mut Vec<u8>=unsafe{&mut *self.image.get()};
+        image.clear();
 
         // Запись изображения
         glyph.draw(|_,a|{
             let gray=255f32*a;
             let byte=gray.round() as u8;
-            self.image.push(byte);
+            image.push(byte);
         });
 
         let size=glyph.size();
@@ -156,7 +160,7 @@ impl TextGraphics{
         };
 
         let raw_image=RawImage2d{
-            data:Cow::Borrowed(&self.image),
+            data:Cow::Borrowed(unsafe{&*self.image.get()}),
             width:size[0],
             height:size[1],
             format:ClientFormat::U8,
@@ -291,6 +295,14 @@ impl TextGraphics{
         Some(index)
     }
 
+    pub fn remove_last_font(&mut self){
+        self.cached_font.pop();
+    }
+
+    pub fn remove_all_fonts(&mut self){
+        self.cached_font.clear();
+    }
+
     /// Возвращает шрифт.
     pub fn get_font(&self,index:usize)->&CachedFont{
         &self.cached_font[index]
@@ -330,7 +342,7 @@ impl TextGraphics{
     }
 
     /// Удаляет последний объект.
-    pub fn delete_last_object(&mut self){
+    pub fn remove_last_object(&mut self){
         self.objects.pop();
     }
 

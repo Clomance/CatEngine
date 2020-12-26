@@ -1,8 +1,43 @@
-# 0.5.6
+# 0.6.0
 
-Removed a live time from the `DependentObject` trait.
+### Removed
+
+A lifetime from the `DependentObject` trait.
+
+`DynamicWindow` and the `Window` trait.
+
+`WindowBase` from public view.
+
+The `Window` field from the `WindowPage` trait.
+
+### Function changes
+
+The window `draw` function now takes `&self`, `Graphics2D` and a closure with `&mut Graphics` as an argument.
+```
+pub fn draw<F:FnOnce(&mut Graphics)>(&self,graphics_base:&Graphics2D,f:F)->Result<(),SwapBuffersError>;
+```
+
+The `on_redraw_requested` function of the `WindowPage` trait now takes `&Window`.
+```
+fn on_redraw_requested(&mut self,window:&Window);
+```
+
+Arguments of `ImageBase::new` was swapped:
+```
+pub fn new([x,y,width,height]:[f32;4],colour_filter:Colour)->ImageBase;
+```
+
+Renamed `delete` functions to `remove` ones.
+
+### Other
+
+Renamed `PagedWindow` to `Window`.
 
 Separated graphics of windows, but it's still created within them.
+
+Updated the `glium` crate to `0.29.0`.
+
+Added `DrawDarameters` to `Graphics`.
 
 # 0.5.5
 
@@ -33,10 +68,6 @@ Enabled new audio features: `extended_audio`,`raw_audio`.
 
 # 0.5.0
 
-<!-- ### Added
-
-A colour filter and a feature for it. You may use it to make different UI layers with their own filters. -->
-
 ### Updated
 
 The `image` crate to `0.23.11`.
@@ -62,17 +93,6 @@ wrapper.play_track("test").unwrap();
 // Pausing one channel of the track
 wrapper.audio.pause_track(0).unwrap();
 ```
-
-<!-- ##### Post-processing
-
-Audio post-processing is enabled with the `audio_post_processing` feature.
-It gives you an ability to add a closure to render a channel output frame (one iteration of all audio channels).
-
-Example:
-```
-
-``` -->
-
 
 # 0.5.0-alpha
 

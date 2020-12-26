@@ -23,9 +23,6 @@ pub use two_dimensions::{
     Vertex2D
 };
 
-#[cfg(feature="3D")]
-pub (crate) mod three_dimensions;
-
 
 mod base;
 pub use base::Graphics;

@@ -85,14 +85,12 @@ impl ImageBase{
         &self,
         texture:&Texture,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&mut DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         graphics.draw_texture(
             self,
             texture,
-            #[cfg(feature="colour_filter")]colour_filter,
-            draw_parameters
+            #[cfg(feature="colour_filter")]colour_filter
         )
     }
 
@@ -108,15 +106,13 @@ impl ImageBase{
         texture:&Texture,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&mut DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         graphics.draw_shift_texture(
             self,
             texture,
             shift,
-            #[cfg(feature="colour_filter")]colour_filter,
-            draw_parameters
+            #[cfg(feature="colour_filter")]colour_filter
         )
     }
 
@@ -134,7 +130,6 @@ impl ImageBase{
         rotation_center:[f32;2],
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&mut DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         graphics.draw_rotate_texture(
@@ -142,8 +137,7 @@ impl ImageBase{
             texture,
             rotation_center,
             angle,
-            #[cfg(feature="colour_filter")]colour_filter,
-            draw_parameters
+            #[cfg(feature="colour_filter")]colour_filter
         )
     }
 }

@@ -26,7 +26,7 @@ You can disable some unnecessary modules with Rust features (see [list of featur
  - Graphics - [glium](https://github.com/glium/glium)
  - Images - [image](https://github.com/image-rs/image)
  - Fonts - [ttf-parser](https://github.com/RazrFalcon/ttf-parser) and [ab_glyph_rasterizer](https://github.com/alexheretic/ab-glyph)
- - Audio - [cpal](https://github.com/RustAudio/cpal) and [minimp3](https://github.com/germangb/minimp3-rs)
+ - Audio - [cat_audio](https://github.com/Clomance/CatEngine/tree/master/cat_audio)
 
 If you use audio feature, alsa delevopment libraries are required for Linux: `libasound2-dev` for Debian and Ubuntu, `alsa-lib-devel` for Fedora (see [cpal](https://github.com/RustAudio/cpal)).
 

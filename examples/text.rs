@@ -1,5 +1,4 @@
 use cat_engine::{
-    PagedWindow,
     Window,
     WindowEvent,
     text::{
@@ -14,7 +13,7 @@ use cat_engine::{
 
 fn main(){
     // Creating a window
-    let mut window=PagedWindow::new(|_,s|{
+    let (mut window,graphics)=Window::new(|_,s|{
         s.vsync=true;
         // Max size for glyph images
         s.graphics_base_settings.text.glyph_texture_size=[500,500];
@@ -47,15 +46,15 @@ fn main(){
             }
 
             WindowEvent::RedrawRequested=>{
-                window.draw(|p,g|{
+                window.draw(&graphics,|g|{
                     g.clear_colour([0f32,0f32,0f32,1f32]);
 
                     let base=TextBase::new([300f32,400f32],Scale::new(0.1,0.1),[1f32;4]);
 
-                    base.draw_str("HelloWorld$ ?",&font2,p,g).unwrap();
+                    base.draw_str("HelloWorld$ ?",&font2,g).unwrap();
 
                     let base=TextBase::new([350f32,250f32],Scale::new(0.3,0.3),[1f32;4]);
-                    base.draw_rotate_str_glyph_cache("Hello Mario",[420f32,380f32],angle,&cached_font,p,g).unwrap();
+                    base.draw_rotate_str_glyph_cache("Hello Mario",[420f32,380f32],angle,&cached_font,g).unwrap();
                 }).unwrap();
             }
 

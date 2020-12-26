@@ -165,18 +165,18 @@ impl WindowBase{
     /// Выполняет замыкание.
     /// 
     /// Executes the closure.
-    pub fn draw<F:FnOnce(&mut DrawParameters,&mut Graphics)>(&mut self,graphics_base:&mut Graphics2D,f:F)->Result<(),SwapBuffersError>{
+    pub fn draw<F:FnOnce(&mut Graphics)>(&self,graphics_base:&Graphics2D,f:F)->Result<(),SwapBuffersError>{
         let mut draw_parameters=default_draw_parameters();
 
         let mut frame=self.display.draw();
 
         let mut g=Graphics::new(
             graphics_base,
-            //#[cfg(feature="3D")]&mut self.graphics3d,
+            draw_parameters,
             &mut frame
         );
 
-        f(&mut draw_parameters,&mut g);
+        f(&mut g);
 
         frame.finish()
     }

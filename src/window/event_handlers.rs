@@ -216,7 +216,7 @@ macro_rules! paged_event_listener{
             // Рендеринг
             Event::RedrawRequested(_)=>{
                 #[cfg(feature="fps_counter")]
-                $window.window_base_mut().count_fps();
+                $window.base.count_fps();
 
                 $page.on_redraw_requested($window);
             }

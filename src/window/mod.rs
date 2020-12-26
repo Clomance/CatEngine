@@ -2,16 +2,13 @@
 mod event_handlers; // макросы для обратки событий
 
 mod window_base;
-pub use window_base::WindowBase;
+pub (crate) use window_base::WindowBase;
+
+mod window_page;
+pub use window_page::WindowPage;
 
 mod window;
-pub use window::{Window,WindowPage};
-
-mod paged_window;
-pub use paged_window::PagedWindow;
-
-mod dynamic_window;
-pub use dynamic_window::{DynamicWindow,PageRef};
+pub use window::Window;
 
 mod settings;
 pub use settings::*;
@@ -114,6 +111,7 @@ pub enum WindowEvent{
     /// 
     /// Mouse movement (moving beyond the window border is ignored).
     MouseMovementDelta([f32;2]),
+
     /// Describes a difference in the mouse scroll wheel state.
     MouseWheelScroll(MouseScrollDelta),
     MousePressed(MouseButton),

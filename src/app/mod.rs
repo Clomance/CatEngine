@@ -1,29 +1,39 @@
 use super::{
-    WindowBase,
-    Window,
     InnerWindowEvent,
     WindowSettings,
+    WindowBase,
 };
 
 use glium::glutin::{
     ContextBuilder,
     NotCurrent,
     monitor::MonitorHandle,
-    event_loop::EventLoop,
-    event::{WindowEvent,MouseScrollDelta,ModifiersState},
+    event_loop::{ControlFlow,EventLoop},
+    event::{
+        
+        Event,
+        WindowEvent,
+        MouseScrollDelta,
+        ModifiersState
+    },
     window::WindowBuilder,
-    platform::desktop::EventLoopExtDesktop,
 };
 
-pub trait App:Sized+Window{
+pub trait App:Sized+'static{
     type StartArgs;
 
     fn on_create(&mut self)->Self::StartArgs;
     fn on_start(&mut self,args:Self::StartArgs);
 
+    fn on_update(&mut self);
+
     fn on_suspend(&mut self);
     fn on_resume(&mut self);
 
+    /// Возвращаемое значение: true - закрыть, false - игнорировать.
+    /// 
+    /// Returned value: true - close, false - ignore.
+    fn on_close_requested(&mut self)->bool;
     fn on_destroy(&mut self);
 
     fn run(mut self){
@@ -36,7 +46,7 @@ pub trait App:Sized+Window{
         window_builder.window=window_settings.window_attributes;
 
         let mut context_builder=ContextBuilder::new();
-        context_builder.gl_attr.vsync=window_settings.vsync;
+        context_builder.gl_attr.vsync=true;
         context_builder.gl_attr.debug=window_settings.debug;
 
         context_builder.pf_reqs=window_settings.pixel_fmt_req;
@@ -51,10 +61,34 @@ pub trait App:Sized+Window{
             window_settings.general,
         ).expect("WindowCreationError");
 
-        window.event_loop.run_return(|event,_,control_flow|{
+        window.event_loop.run(move|event,_,control_flow|{
+            #[cfg(not(feature="lazy"))]{
+                // Endless cycling checking events
+                *control_flow=ControlFlow::Poll;
+            }
+            
+            #[cfg(feature="lazy")]{
+                // Waiting for any event except redraw event
+                *control_flow=ControlFlow::Wait;
+            }
+            match event{
+                Event::WindowEvent{event,..}=>
+                    match event{
+                        WindowEvent::CloseRequested=>{
+                            if self.on_close_requested(){
+                                *control_flow=ControlFlow::Exit
+                            }
+                        }
+                        _=>{}
+                    }
 
+                Event::Suspended=>self.on_suspend(),
+                Event::Resumed=>self.on_resume(),
+
+                _=>{}
+            }
         });
 
-        self.on_destroy();
+        //self.on_destroy();
     }
 }

@@ -301,7 +301,7 @@ impl SimpleGraphics{
         Some(len)
     }
 
-    pub fn delete_last_object(&mut self){
+    pub fn remove_last_object(&mut self){
         if let Some(object)=self.objects.pop(){
             let mut len=object.vertex_buffer_range.len();
             self.vertex_buffer_edge-=len;

@@ -213,7 +213,6 @@ impl TextBase{
         character:char,
         font:&F,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         let glyph=if let Some(glyph)=font.build_raw_glyph(character){
@@ -246,7 +245,6 @@ impl TextBase{
             self.colour,
             position,
             #[cfg(feature="colour_filter")]colour_filter,
-            draw_parameters
         )
     }
 
@@ -260,7 +258,6 @@ impl TextBase{
         shift:[f32;2],
         font:&F,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         let glyph=if let Some(glyph)=font.build_raw_glyph(character){
@@ -294,7 +291,6 @@ impl TextBase{
             position,
             shift,
             #[cfg(feature="colour_filter")]colour_filter,
-            draw_parameters
         )
     }
 
@@ -309,7 +305,6 @@ impl TextBase{
         angle:f32,
         font:&F,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         let glyph=if let Some(glyph)=font.build_raw_glyph(character){
@@ -343,8 +338,7 @@ impl TextBase{
             position,
             rotation_center,
             angle,
-            #[cfg(feature="colour_filter")]colour_filter,
-            draw_parameters
+            #[cfg(feature="colour_filter")]colour_filter
         )
     }
 
@@ -356,7 +350,6 @@ impl TextBase{
         s:&str,
         font:&F,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         let mut position=self.position;
@@ -395,7 +388,6 @@ impl TextBase{
                 self.colour,
                 [rect[0],rect[1]],
                 #[cfg(feature="colour_filter")]colour_filter,
-                draw_parameters
             )?;
 
             position[0]+=advance_width;
@@ -413,7 +405,6 @@ impl TextBase{
         shift:[f32;2],
         font:&F,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         let mut position=self.position;
@@ -453,7 +444,6 @@ impl TextBase{
                 [rect[0],rect[1]],
                 shift,
                 #[cfg(feature="colour_filter")]colour_filter,
-                draw_parameters,
             )?;
 
             position[0]+=advance_width;
@@ -472,7 +462,6 @@ impl TextBase{
         angle:f32,
         font:&F,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         let mut position=self.position;
@@ -512,8 +501,7 @@ impl TextBase{
                 [rect[0],rect[1]],
                 rotation_center,
                 angle,
-                #[cfg(feature="colour_filter")]colour_filter,
-                draw_parameters,
+                #[cfg(feature="colour_filter")]colour_filter
             )?;
 
             position[0]+=advance_width;
@@ -541,7 +529,6 @@ impl TextBase{
         character:char,
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         let glyph=if let Some(glyph)=glyph_cache.scaled_glyph(character,self.scale){
@@ -565,8 +552,7 @@ impl TextBase{
             &textured,
             self.colour,
             [rect[0],rect[1]],
-            #[cfg(feature="colour_filter")]colour_filter,
-            draw_parameters
+            #[cfg(feature="colour_filter")]colour_filter
         )
     }
 
@@ -584,7 +570,6 @@ impl TextBase{
         shift:[f32;2],
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         let glyph=if let Some(glyph)=glyph_cache.scaled_glyph(character,self.scale){
@@ -609,8 +594,7 @@ impl TextBase{
             self.colour,
             [rect[0],rect[1]],
             shift,
-            #[cfg(feature="colour_filter")]colour_filter,
-            draw_parameters
+            #[cfg(feature="colour_filter")]colour_filter
         )
     }
 
@@ -629,7 +613,6 @@ impl TextBase{
         angle:f32,
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         let glyph=if let Some(glyph)=glyph_cache.scaled_glyph(character,self.scale){
@@ -655,8 +638,7 @@ impl TextBase{
             [rect[0],rect[1]],
             rotation_center,
             angle,
-            #[cfg(feature="colour_filter")]colour_filter,
-            draw_parameters
+            #[cfg(feature="colour_filter")]colour_filter
         )
     }
 
@@ -672,7 +654,6 @@ impl TextBase{
         s:&str,
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         let mut position=self.position;
@@ -701,8 +682,7 @@ impl TextBase{
                 &textured,
                 self.colour,
                 [rect[0],rect[1]],
-                #[cfg(feature="colour_filter")]colour_filter,
-                draw_parameters
+                #[cfg(feature="colour_filter")]colour_filter
             )?;
 
             position[0]+=glyph.advance_width();
@@ -724,7 +704,6 @@ impl TextBase{
         shift:[f32;2],
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         let mut position=self.position;
@@ -754,8 +733,7 @@ impl TextBase{
                 self.colour,
                 [rect[0],rect[1]],
                 shift,
-                #[cfg(feature="colour_filter")]colour_filter,
-                draw_parameters
+                #[cfg(feature="colour_filter")]colour_filter
             )?;
 
             position[0]+=glyph.advance_width();
@@ -780,7 +758,6 @@ impl TextBase{
         angle:f32,
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<(),DrawError>{
         let mut position=self.position;
@@ -811,8 +788,7 @@ impl TextBase{
                 [rect[0],rect[1]],
                 rotation_center,
                 angle,
-                #[cfg(feature="colour_filter")]colour_filter,
-                draw_parameters
+                #[cfg(feature="colour_filter")]colour_filter
             )?;
 
             position[0]+=glyph.advance_width();
@@ -836,7 +812,6 @@ impl TextBase{
         chars:usize,
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<bool,DrawError>{
         let mut whole=true; // Флаг вывода всего текста
@@ -873,8 +848,7 @@ impl TextBase{
                 &textured,
                 self.colour,
                 [rect[0],rect[1]],
-                #[cfg(feature="colour_filter")]colour_filter,
-                draw_parameters
+                #[cfg(feature="colour_filter")]colour_filter
             )?;
 
             position[0]+=glyph.advance_width();
@@ -899,7 +873,6 @@ impl TextBase{
         shift:[f32;2],
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<bool,DrawError>{
         let mut whole=true; // Флаг вывода всего текста
@@ -937,8 +910,7 @@ impl TextBase{
                 self.colour,
                 [rect[0],rect[1]],
                 shift,
-                #[cfg(feature="colour_filter")]colour_filter,
-                draw_parameters
+                #[cfg(feature="colour_filter")]colour_filter
             )?;
 
             position[0]+=glyph.advance_width();
@@ -964,7 +936,6 @@ impl TextBase{
         angle:f32,
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
         graphics:&mut Graphics
     )->Result<bool,DrawError>{
         let mut whole=true; // Флаг вывода всего текста
@@ -1003,8 +974,7 @@ impl TextBase{
                 [rect[0],rect[1]],
                 rotation_center,
                 angle,
-                #[cfg(feature="colour_filter")]colour_filter,
-                draw_parameters
+                #[cfg(feature="colour_filter")]colour_filter
             )?;
 
             position[0]+=glyph.advance_width();

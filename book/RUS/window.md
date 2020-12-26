@@ -4,11 +4,6 @@
 
 "Страница" - типы, которые реализуют типаж `WindowPage`.
 
-
-Всего два вида окон. Отличаются они по скорости работы и возможностям (ниже будут рассмотрены по отдельности):
-- `PagedWindow` - обрабатывает события быстрее `DynamicWindow`, но долго переключает "страницы", имеет два способа работы, которые можно чередовать
-- `DynamicWindow` - немного медленней, чем `PagedWindow`, но гораздо быстрее переключает страницы
-
 ### Создание
 
 Для создания окон используются две функции:
@@ -46,7 +41,7 @@ let mut window=PagedWindow::raw(
  - обновление (только при `feature != "lazy"`)
  - перерисовка окна
  - приостановка и возобновление приложения
- - остановка цикла событий (когда нужно закрыть "страницу")
+ - остановка цикла событий
  - окно получило/потеряло фокус
  - события мышки и клавиатуры
  - изменение модификаторов (Shift, Ctrl, Alt, Logo)
@@ -54,26 +49,11 @@ let mut window=PagedWindow::raw(
 
 
 
-# WindowBase
-
-Основа для окон, включает в себя само окно, графические функции,
-цикл событий и генератор пользовательских событий.
-
-С помощью её можно создать своё окно.
-Все поля основы доступны.
-
-Также в её включены многие "фичи".
-
-
-
 # PagedWindow
 
 ### Работа с помощью "страниц"
 
-Все события прописываются с помощь типажа `WindowPage`
-и обработываются сразу же после их появления.
-
-Является самым производительным методом, но имеет серьёзные ограничения в возможностях.
+Все события прописываются с помощь типажа `WindowPage`.
 
 ```
 pub struct Page;
@@ -162,74 +142,4 @@ window.run(|window,event|{
         _=>{}
     }
 });
-```
-
-
-
-# DynamicWindow
-
-Все события прописываются с помощь типажа `WindowPage`
-и обработываются сразу же после их появления.
-
-Это окно использует страницы как типажи-объекты, поэтому их можно менять на ходу.
-
-```
-pub struct Page;
-
-impl<'a> WindowPage<'a> for Page{
-    type Window=DynamicWindow<'a>;
-    type Output=();
-
-    fn on_window_close_requested(&mut self,_window:&mut DynamicWindow<'a>){
-        // Автоматически выходит из цикла
-    }
-
-    #[cfg(not(feature="lazy"))]
-    fn on_update_requested(&mut self,_window:&mut DynamicWindow<'a>){
-        // Какие-то действия
-    }
-
-    fn on_redraw_requested(&mut self,_window:&mut DynamicWindow<'a>){
-        // Рендеринг
-    }
-
-    fn on_mouse_pressed(&mut self,_window:&mut DynamicWindow<'a>,_button:MouseButton){}
-    fn on_mouse_released(&mut self,_window:&mut DynamicWindow<'a>,_button:MouseButton){}
-    fn on_mouse_moved(&mut self,_window:&mut DynamicWindow<'a>,_:[f32;2]){}
-    fn on_mouse_scrolled(&mut self,_window:&mut DynamicWindow<'a>,_:MouseScrollDelta){}
-
-    fn on_keyboard_pressed(&mut self,_window:&mut DynamicWindow<'a>,button:KeyboardButton){}
-
-    fn on_keyboard_released(&mut self,_window:&mut DynamicWindow<'a>,_button:KeyboardButton){}
-
-    fn on_character_recieved(&mut self,_window:&mut DynamicWindow<'a>,_character:char){}
-
-    fn on_window_resized(&mut self,_window:&mut DynamicWindow<'a>,_new_size:[u32;2]){}
-
-    fn on_suspended(&mut self,_window:&mut DynamicWindow<'a>){}
-    fn on_resumed(&mut self,_window:&mut DynamicWindow<'a>){}
-
-    fn on_window_moved(&mut self,_window:&mut DynamicWindow<'a>,_:[i32;2]){}
-
-    fn on_window_focused(&mut self,_window:&mut DynamicWindow<'a>,_:bool){}
-
-    fn on_modifiers_changed(&mut self,_window:&mut DynamicWindow<'a>,_modifiers:ModifiersState){}
-
-    #[cfg(feature="file_drop")]
-    fn on_file_dropped(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}
-    #[cfg(feature="file_drop")]
-    fn on_file_hovered(&mut self,_:&mut DynamicWindow<'a>,_:PathBuf){}
-    #[cfg(feature="file_drop")]
-    fn on_file_hovered_canceled(&mut self,_:&mut DynamicWindow<'a>){}
-
-    fn on_event_loop_closed(&mut self,_:&mut DynamicWindow<'a>){}
-}
-
-fn main(){
-    let mut window=DynamicWindow::new(|_,_|{}).unwrap();
-
-    let mut page=Page;
-
-    window.run(&mut page);
-}
 ```

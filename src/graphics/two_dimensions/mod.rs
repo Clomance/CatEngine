@@ -91,11 +91,11 @@ impl Graphics2D{
     /// Удаляет последний простой объект в массиве,
     /// если такой есть.
     /// 
-    /// Deletes the last simple object of the array
+    /// Removes the last simple object of the array
     /// if there is any.
     #[inline(always)]
-    pub fn delete_last_simple_object(&mut self){
-        self.simple.delete_last_object();
+    pub fn remove_last_simple_object(&mut self){
+        self.simple.remove_last_object();
     }
 
     /// Отчищает массив объектов.
@@ -166,16 +166,28 @@ impl Graphics2D{
 /// # Функции для работы с текстурными объектами. Functions to work with textured objects.
 #[cfg(feature="texture_graphics")]
 impl Graphics2D{
+    /// Добавляет тектуру.
+    /// 
+    /// Adds a texture.
+    #[inline(always)]
     pub fn add_texture(&mut self,texture:Texture){
         self.texture.add_texture(texture)
     }
 
-    pub fn delete_last_texture(&mut self){
-        self.texture.delete_last_texture()
+    /// Удаляет последнюю тектуру.
+    /// 
+    /// Removes the last texture.
+    #[inline(always)]
+    pub fn remove_last_texture(&mut self){
+        self.texture.remove_last_texture()
     }
 
-    pub fn remove_texture(&mut self,index:usize){
-        self.texture.remove_texture(index)
+    /// Удаляет все тектуры.
+    /// 
+    /// Removes all textures.
+    #[inline(always)]
+    pub fn remove_all_textures(&mut self){
+        self.texture.remove_all_textures()
     }
 
     /// Добавляет простой объект в массив.
@@ -203,11 +215,11 @@ impl Graphics2D{
     /// Удаляет последний простой объект в массиве,
     /// если такой есть.
     /// 
-    /// Deletes the last textured object of the array
+    /// removes the last textured object of the array
     /// if there is any.
     #[inline(always)]
-    pub fn delete_last_textured_object(&mut self){
-        self.texture.delete_last_object();
+    pub fn remove_last_textured_object(&mut self){
+        self.texture.remove_last_object();
     }
 
     /// Отчищает массив объектов.
@@ -297,6 +309,22 @@ impl Graphics2D{
         self.text.push_font(cached_font)
     }
 
+    /// Удаляет последний шрифт.
+    /// 
+    /// Removes the font.
+    #[inline(always)]
+    pub fn remove_last_font(&mut self){
+        self.text.remove_last_font()
+    }
+
+    /// Удаляет все шрифты.
+    /// 
+    /// Removes all fonts.
+    #[inline(always)]
+    pub fn remove_all_fonts(&mut self){
+        self.text.remove_all_fonts()
+    }
+
     /// Возращает шрифт.
     /// 
     /// Returns a cached font.
@@ -327,11 +355,11 @@ impl Graphics2D{
     /// Удаляет последний текстовой объект в массиве,
     /// если такой есть.
     /// 
-    /// Deletes the last text object of the array
+    /// removes the last text object of the array
     /// if there is any.
     #[inline(always)]
-    pub fn delete_last_text_object(&mut self){
-        self.text.delete_last_object();
+    pub fn remove_last_text_object(&mut self){
+        self.text.remove_last_object();
     }
 
     /// Отчищает массив объектов.
@@ -341,11 +369,4 @@ impl Graphics2D{
     pub fn clear_text_object_array(&mut self){
         self.text.clear_object_array()
     }
-}
-
-/// Функции отрисовки.
-/// 
-/// Rendering functions.
-impl Graphics2D{
-
 }
