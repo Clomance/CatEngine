@@ -883,24 +883,6 @@ impl<'g,'p,'f> Graphics<'g,'p,'f>{
         )
     }
 
-    #[inline(always)]
-    fn draw_transform_textured_object(
-        &mut self,
-        index:usize,
-        shift:[[f32;2];2],
-        matrix:[[f32;2];2],
-        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-    )->Result<(),DrawError>{
-        self.graphics2d.texture.draw_trans_object(
-            index,
-            shift,
-            matrix,
-            #[cfg(feature="colour_filter")]colour_filter,
-            &self.draw_parameters,
-            self.frame
-        )
-    }
-
     /// Рисует текстурный объект.
     /// 
     /// Draws a textured object.

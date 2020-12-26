@@ -59,7 +59,6 @@ pub struct TextureGraphics{
     draw:Program,
     draw_shift:Program,
     draw_rotate:Program,
-    draw_transform:Program,
 }
 
 impl TextureGraphics{
@@ -69,20 +68,18 @@ impl TextureGraphics{
             shift,
             vertex_shader,
             fragment_shader,
-            trans,
         )=if glsl==120{(
             include_str!("shaders/120/texture/rotation_vertex_shader.glsl"),
             include_str!("shaders/120/texture/shift_vertex_shader.glsl"),
             include_str!("shaders/120/texture/vertex_shader.glsl"),
             include_str!("shaders/120/texture/fragment_shader.glsl"),
-            include_str!("shaders/120/texture/transform_vertex_shader.glsl"),
+
         )}
         else{(
             include_str!("shaders/texture/rotation_vertex_shader.glsl"),
             include_str!("shaders/texture/shift_vertex_shader.glsl"),
             include_str!("shaders/texture/vertex_shader.glsl"),
             include_str!("shaders/texture/fragment_shader.glsl"),
-            include_str!("shaders/texture/transform_vertex_shader.glsl"),
         )};
 
         let vertex_buffer_size=settings.vertex_buffer_size*size_of::<TexturedVertex2D>();
@@ -116,7 +113,6 @@ impl TextureGraphics{
             draw:Program::from_source(display,vertex_shader,fragment_shader,None).unwrap(),
             draw_shift:Program::from_source(display,shift,fragment_shader,None).unwrap(),
             draw_rotate:Program::from_source(display,rotation,fragment_shader,None).unwrap(),
-            draw_transform:Program::from_source(display,trans,fragment_shader,None).unwrap(),
         }
     }
 
@@ -517,43 +513,6 @@ impl TextureGraphics{
             vertex_slice,
             index_source,
             &self.draw_rotate,
-            &uni,
-            draw_parameters
-        )
-    }
-
-    pub fn draw_trans_object(
-        &self,
-        index:usize,
-        transform_shift:[[f32;2];2],
-        transform_matrix:[[f32;2];2],
-        #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        draw_parameters:&DrawParameters,
-        frame:&mut Frame
-    )->Result<(),DrawError>{
-        let object=&self.objects[index];
-
-        let index_source=object.indices_source(&self.index_buffer);
-
-        // Фильтрация цвета объекта
-        let mut colour=object.base.colour;
-        #[cfg(feature="colour_filter")]
-        colour_filter.filter_colour(&mut colour);
-
-        let uni=uniform!{
-            texture2d:&self.textures[object.texture].0,
-            transform_shift:transform_shift,
-            transform_matrix:transform_matrix,
-            window_center:unsafe{window_center},
-            colour_filter:colour,
-        };
-
-        let vertex_slice=object.vertices_source(&self.vertex_buffer,&self.bindings);
-
-        frame.draw(
-            vertex_slice,
-            index_source,
-            &self.draw_transform,
             &uni,
             draw_parameters
         )
