@@ -122,10 +122,7 @@ pub use font::{
 };
 
 
-use glium::{
-    DrawParameters,
-    DrawError,
-};
+use glium::DrawError;
 
 // re-export
 pub use ttf_parser;

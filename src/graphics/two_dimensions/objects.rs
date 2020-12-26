@@ -1,7 +1,6 @@
 use crate::{
     Colour,
     text::Scale,
-    texture::Texture
 };
 
 use glium::{

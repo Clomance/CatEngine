@@ -1,11 +1,10 @@
-use crate::support::SyncRawMutPtr;
-
 use super::{
-    AudioEngineCommand,
-    track::*,
-    sample::SampleTransform,
     ChannelSystem,
+    AudioEngineCommand,
     AudioSystemSettings,
+    support::SyncRawMutPtr,
+    tracks::*,
+    sample::SampleTransform,
 };
 
 use cpal::{

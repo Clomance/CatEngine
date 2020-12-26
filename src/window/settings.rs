@@ -80,6 +80,9 @@ pub struct GeneralSettings{
     /// The amount of the update events per second.
     /// 
     /// The default is 50.
+    /// 
+    /// `feature != "lazy"`
+    #[cfg(not(feature="lazy"))]
     pub updates_per_second:u32,
 }
 
@@ -87,6 +90,7 @@ impl GeneralSettings{
     pub fn new()->GeneralSettings{
         Self{
             initial_colour:None,
+            #[cfg(not(feature="lazy"))]
             updates_per_second:50u32,
         }
     }

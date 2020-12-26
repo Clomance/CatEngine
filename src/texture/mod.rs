@@ -22,7 +22,6 @@ pub use texture::{Texture,TextureCreationResult};
 
 use glium::{
     DrawError,
-    draw_parameters::DrawParameters,
     index::PrimitiveType,
 };
 

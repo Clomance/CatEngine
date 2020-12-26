@@ -1,5 +1,4 @@
-#![allow(non_upper_case_globals,unused_must_use,unused_imports,
-    dead_code,unused_mut,unused_variables,unused_macros)]
+#![allow(non_upper_case_globals,unused_must_use,unused_mut)]
 
 //! # 2D графический движок с поддержкой аудио. A 2D graphics engine with audio support.
 //! 
@@ -9,20 +8,19 @@
 //! 
 //! ```
 //! use cat_engine::{
-//!     PagedWindow,
 //!     Window,
 //!     WindowEvent
 //! };
 //! 
 //! fn main(){
 //!     // Default settings
-//!     let mut window=PagedWindow::new(|_,_|{}).unwrap();
+//!     let (mut window,graphics)=Window::new(|_,_|{}).unwrap();
 //! 
 //!     window.run(|window,event|{
 //!         match event{
 //!             WindowEvent::RedrawRequested=>{
-//!                 window.draw(|_,g|{
-//!                     g.clear_colour([1.0,0.0,0.0,0.0]);
+//!                 window.draw(&graphics,|graphics|{
+//!                     graphics.clear_colour([1.0,0.0,0.0,0.0]);
 //!                 }).unwrap();
 //!             }
 //!             _=>{}
@@ -33,7 +31,7 @@
 //! 
 //! 
 //! 
-//! Modifying the window.
+//! Modifying a window.
 //! ```
 //! let wi=window.display().gl_window();
 //! let w=wi.window();
@@ -66,7 +64,24 @@ pub mod texture;
 pub mod graphics;
 
 mod window;
-pub use window::*;
+pub (crate) use window::{
+    WindowBase,
+    InnerWindowEvent,
+};
+pub use window::{
+    // statics
+    window_width,
+    window_height,
+    mouse_cursor,
+    window_center,
+    // else
+    Window,
+    WindowEvent,
+    WindowPage,
+    WindowSettings,
+    KeyboardButton,
+    GeneralSettings,
+};
 
 //      Caution      \\
 // Under construction \\

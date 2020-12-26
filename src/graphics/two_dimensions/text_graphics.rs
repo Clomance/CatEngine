@@ -7,8 +7,6 @@ use crate::{
     Colour,
     // structs
     text::{
-        TextBase,
-        GlyphCache,
         OutlinedGlyph,
         Scale,
         CachedFont,

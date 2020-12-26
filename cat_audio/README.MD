@@ -10,6 +10,8 @@
 
 A multichannel audio engine for CatEngine.
 
+## [Release notes](../RELEASE-NOTES.MD)
+
 #### Supported platforms
  - Windows, Linux
  - MacOS, iOS, Android might work anyway

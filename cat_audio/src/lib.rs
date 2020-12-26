@@ -1,4 +1,4 @@
-#![allow(non_upper_case_globals,dead_code,unused_imports)]
+#![allow(non_upper_case_globals,dead_code)]
 
 //! # Многоканальный аудио движок. A multichannel audio engine.
 //! 
@@ -51,8 +51,8 @@ use channel_system::*;
 mod track_iterator;
 use track_iterator::*;
 
-mod track;
-pub use track::*;
+mod tracks;
+pub use tracks::*;
 
 mod sample;
 use sample::SampleTransform;
@@ -92,7 +92,6 @@ use std::{
     sync::{
         Arc,
         Mutex,
-        LockResult,
         mpsc::{Sender,channel},
     },
 };

@@ -12,7 +12,6 @@ use super::graphics::ColourFilter;
 
 use glium::{
     DrawError,
-    DrawParameters,
     index::PrimitiveType,
 };
 

@@ -1,40 +1,14 @@
-use crate::graphics::{
-    Graphics,
-    GraphicsSettings,
-    two_dimensions::Graphics2D
-};
-
 use super::{
     // enums
     MouseButton,
     KeyboardButton,
-    InnerWindowEvent,
     // structs
-    WindowBase,
-    GeneralSettings,
-    WindowSettings,
     Window,
 };
 
-use glium::{
-    Display,
-    draw_parameters::DrawParameters,
-    backend::glutin::DisplayCreationError,
-    SwapBuffersError
-};
+use glium::glutin::event::{MouseScrollDelta,ModifiersState};
 
-use glium::glutin::{
-    ContextBuilder,
-    NotCurrent,
-    monitor::MonitorHandle,
-    event_loop::EventLoop,
-    event::{MouseScrollDelta,ModifiersState},
-    window::WindowBuilder,
-};
-
-use image::DynamicImage;
-
-use std::path::{Path,PathBuf};
+use std::path::PathBuf;
 
 /// Типаж для создания страниц окна.
 /// A trait for implementing window pages.

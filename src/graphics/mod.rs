@@ -12,6 +12,7 @@
 //! 2. Textures (images)
 //! 3. Text
 
+#[cfg(feature="colour_filter")]
 use crate::Colour;
 
 // #[cfg(feature="2D")]

@@ -6,15 +6,10 @@ use super::{
 
 use glium::glutin::{
     ContextBuilder,
-    NotCurrent,
-    monitor::MonitorHandle,
     event_loop::{ControlFlow,EventLoop},
     event::{
-        
         Event,
         WindowEvent,
-        MouseScrollDelta,
-        ModifiersState
     },
     window::WindowBuilder,
 };
@@ -53,7 +48,7 @@ pub trait App:Sized+'static{
 
         let mut event_loop=EventLoop::<InnerWindowEvent>::with_user_event();
 
-        let (mut window,mut graphics)=WindowBase::raw(
+        let (mut window,_graphics)=WindowBase::raw(
             window_builder,
             context_builder,
             window_settings.graphics_base_settings,

@@ -3,7 +3,7 @@ use crate::{
     graphics::{DependentObject,TexturedVertex2D},
 };
 
-use glium::index::{NoIndices, PrimitiveType};
+use glium::index::PrimitiveType;
 
 /// Основа для изображений. An image base.
 /// 

@@ -1,7 +1,6 @@
 use ab_glyph_rasterizer::{
     Point,
     point,
-    Rasterizer,
 };
 
 use ttf_parser::OutlineBuilder;
