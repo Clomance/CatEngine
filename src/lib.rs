@@ -1,4 +1,4 @@
-#![allow(non_upper_case_globals,unused_must_use,unused_mut,unused_macros,unused_imports)]
+#![allow(non_upper_case_globals,unused_must_use,unused_mut,unused_macros,unused_imports,dead_code)]
 
 //! # 2D графический движок с поддержкой аудио. A 2D graphics engine with audio support.
 //! 
@@ -78,6 +78,11 @@ pub use window::{
     KeyboardButton,
     GeneralSettings,
 };
+
+#[cfg(feature="fps_counter")]
+pub use window::fps;
+#[cfg(feature="ups_counter")]
+pub use window::ups;
 
 //      Caution      \\
 // Under construction \\

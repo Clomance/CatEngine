@@ -268,6 +268,9 @@ impl Window{
         let mut close_flag=false;
 
         event_loop.run_return(|event,_,control_flow|{
+            #[cfg(any(feature="fps_counter",feature="ups_counter"))]
+            self.base.check_counters();
+
             #[cfg(not(feature="lazy"))]{
                 self.base.update_check();
                 // Endless cycling checking events
@@ -289,7 +292,8 @@ impl Window{
 
                     #[cfg(not(feature="lazy"))]
                     InnerWindowEvent::Update=>{
-                        self.base.next_update+=self.base.update_interval;
+                        #[cfg(feature="ups_counter")]
+                        self.base.count_ups();
                         WindowEvent::Update
                     }
 
@@ -445,6 +449,9 @@ impl Window{
         let mut state=EventLoopState::<O>::Running;
 
         event_loop.run_return(|event,_,control_flow|{
+            #[cfg(any(feature="fps_counter",feature="ups_counter"))]
+            self.base.check_counters();
+
             paged_event_listener!(self,event,control_flow,page,state);
         });
 

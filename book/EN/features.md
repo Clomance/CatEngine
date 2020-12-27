@@ -53,6 +53,11 @@ It's usefull for fullscreen application.
 
 Adds a simple fps counter. The value updates every second.
 
+### ups_counter
+
+Adds a simple ups counter. The value updates every second.
+
+
 ### file_drop
 
 Enables the next events:

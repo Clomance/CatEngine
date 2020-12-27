@@ -142,7 +142,11 @@ macro_rules! paged_event_listener{
                 }
 
                 #[cfg(not(feature="lazy"))]
-                InnerWindowEvent::Update=>$page.on_update_requested($window),
+                InnerWindowEvent::Update=>{
+                    #[cfg(feature="ups_counter")]
+                    $window.base.count_ups();
+                    $page.on_update_requested($window)
+                },
 
                 #[cfg(feature="lazy")]
                 _=>return

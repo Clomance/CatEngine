@@ -35,11 +35,17 @@ pub static mut window_height:f32=0f32;
 /// Центр окна. The window center. [x, y]
 pub static mut window_center:[f32;2]=[0f32;2];
 
-/// Счётчик кадров в секунду. A frame per seconds counter. feature = "fps_counter"
+/// Счётчик кадров в секунду. A frame per seconds counter. `feature = "fps_counter"`
 /// 
 /// Обновляется раз в секунду. Updates once a second.
 #[cfg(feature="fps_counter")]
 pub static mut fps:u32=0;
+
+/// Счётчик обновлений в секунду. An update per seconds counter. `feature = "ups_counter"`
+/// 
+/// Обновляется раз в секунду. Updates once a second.
+#[cfg(feature="ups_counter")]
+pub static mut ups:u32=0;
 
 #[derive(PartialEq)]
 pub (crate) enum EventLoopState<O:PartialEq>{

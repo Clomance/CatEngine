@@ -1,3 +1,11 @@
+# 0.6.1
+
+Added an update per second counter.
+
+Fixed an update rate for closures.
+
+Updated the `ttf-parser` crate to `0.9.0` and the `ab_glyph_rasterizer` to `0.1.4`.
+
 # 0.6.0
 
 ### Removed

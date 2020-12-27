@@ -10,6 +10,9 @@ use crate::graphics::three_dimensions::Graphics3D;
 #[cfg(feature="fps_counter")]
 use super::fps;
 
+#[cfg(feature="ups_counter")]
+use super::ups;
+
 use super::{
     // statics
     window_width,
@@ -77,8 +80,11 @@ pub struct WindowBase{
     /// feature = "fps_counter"
     #[cfg(feature="fps_counter")]
     pub frames_passed:u32,
+    /// feature = "ups_counter"
+    #[cfg(feature="ups_counter")]
+    pub updates_passed:u32,
     /// feature = "fps_counter"
-    #[cfg(feature="fps_counter")]
+    #[cfg(any(feature="fps_counter",feature="ups_counter"))]
     pub time:Instant,
 }
 
@@ -119,10 +125,12 @@ impl WindowBase{
 
         let graphics2d=Graphics2D::new(&display,graphics_settings,glsl);
 
-        // #[cfg(feature="3D")]
-        // let graphics3d=Graphics3D::new();
-
         let proxy=event_loop.create_proxy();
+
+        #[cfg(not(feature="lazy"))]
+        let update_interval=Duration::from_secs(1).checked_div(general_settings.updates_per_second).expect("UPD = 0");
+        // #[cfg(not(feature="lazy"))]
+        // println!("{:?}",update_interval);
 
         Ok((
             Self{
@@ -132,13 +140,15 @@ impl WindowBase{
                 event_loop_proxy:proxy,
 
                 #[cfg(not(feature="lazy"))]
-                update_interval:Duration::from_secs(1).checked_div(general_settings.updates_per_second).expect("UPD = 0"),
+                update_interval,
                 #[cfg(not(feature="lazy"))]
                 next_update:Instant::now(),
 
                 #[cfg(feature="fps_counter")]
                 frames_passed:0u32,
-                #[cfg(feature="fps_counter")]
+                #[cfg(feature="ups_counter")]
+                updates_passed:0u32,
+                #[cfg(any(feature="fps_counter",feature="ups_counter"))]
                 time:Instant::now(),
             },
             graphics2d,
@@ -233,27 +243,43 @@ impl WindowBase{
     #[cfg(feature="fps_counter")]
     pub (crate) fn count_fps(&mut self){
         self.frames_passed+=1;
-        let current_time=Instant::now();
-        let time_passed=current_time.duration_since(self.time);
+    }
 
-        if Duration::from_secs(1)<time_passed{
-            unsafe{
-                fps=self.frames_passed;
-            }
-            self.frames_passed=0;
-            self.time=current_time;
-        }
+    #[cfg(feature="ups_counter")]
+    pub (crate) fn count_ups(&mut self){
+        self.updates_passed+=1;
     }
 
     #[cfg(not(feature="lazy"))]
     pub (crate) fn update_check(&mut self){
         let now=Instant::now();
-        if self.next_update<now{
+        if self.next_update<=now{
             self.event_loop_proxy
                     .send_event(InnerWindowEvent::Update)
                             .expect("Dead event loop");
 
             self.next_update+=self.update_interval;
+        }
+    }
+
+    #[cfg(any(feature="fps_counter",feature="ups_counter"))]
+    pub fn check_counters(&mut self){
+        let current_time=Instant::now();
+        let time_passed=current_time.duration_since(self.time);
+
+        if Duration::from_secs(1)<time_passed{
+            #[cfg(feature="fps_counter")]
+            unsafe{
+                fps=self.frames_passed;
+                self.frames_passed=0;
+            }
+            #[cfg(feature="ups_counter")]
+            unsafe{
+                ups=self.updates_passed;
+                self.updates_passed=0;
+            }
+
+            self.time=current_time;
         }
     }
 }
