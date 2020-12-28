@@ -30,15 +30,8 @@ pub struct Set{
     pub channels:Vec<usize>
 }
 
+/// Локальные функции.
 impl AudioWrapper{
-    pub fn new(audio:Audio)->AudioWrapper{
-        Self{
-            audio,
-            names:Vec::new(),
-            track_sets:Vec::new(),
-        }
-    }
-
     fn search_track(&self,name:&str)->Option<usize>{
         for (c,track_name) in self.names.iter().enumerate(){
             if name.cmp(track_name)==Ordering::Equal{
@@ -56,6 +49,49 @@ impl AudioWrapper{
         }
         else{
             None
+        }
+    }
+}
+
+impl AudioWrapper{
+    pub fn new(audio:Audio)->AudioWrapper{
+        Self{
+            audio,
+            names:Vec::new(),
+            track_sets:Vec::new(),
+        }
+    }
+
+    /// Загружает трек в хранилище.
+    /// 
+    /// Возвращает `true`, если загрузка прошла без ошибок.
+    /// 
+    /// Loads a track to the storage.
+    /// 
+    /// Returns `true` if loaded with no errors.
+    pub fn push_track(&mut self,track:ChanneledTrack,name:String)->bool{
+        let sample_rate=track.sample_rate();
+
+        let mut tracks=Vec::with_capacity(track.channels());
+
+        let mut track_sets=Vec::with_capacity(track.channels());
+
+        for (data,channels) in track.into_iter(){
+            tracks.push(MonoTrack{data,sample_rate});
+            track_sets.push(Set{index:0,channels});
+        }
+
+        if let AudioCommandResult::Indices(indices)=self.audio.add_tracks(tracks){
+            for (c,index) in indices.into_iter().enumerate(){
+                track_sets[c].index=index
+            }
+            // Добавление трека
+            self.names.push(name);
+            self.track_sets.push(track_sets);
+            true
+        }
+        else{
+            false
         }
     }
 

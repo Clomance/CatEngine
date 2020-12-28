@@ -1,3 +1,10 @@
+# 0.6.2
+
+### CatAudio
+
+Now you can directly push `ChanneledTrack` to a wrapper.
+
+
 # 0.6.1
 
 Added an update per second counter.

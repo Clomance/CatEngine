@@ -13,17 +13,41 @@ use cpal::Sample;
 ///
 /// You can implement this trait on your own type as well if you wish so.
 
-pub trait SampleTransform:Sample{
+pub trait SampleTransform:Sample+Copy{
+// Обычные преобразования
+    /// Переводит `Self` в `i16`.
+    /// 
+    /// Converts `Self` to `i16`.
     fn into_i16(self)->i16;
+    /// Переводит `Self` в `u16`.
+    /// 
+    /// Converts `Self` to `u16`.
     fn into_u16(self)->u16;
+    /// Переводит `Self` в `f32`.
+    /// 
+    /// Converts `Self` to `f32`.
     fn into_f32(self)->f32;
 
+// Расширенные преобразования
+    /// Переводит `Self` в `u16` с усилением.
+    /// 
+    /// Converts `Self` to `u16` with amplification.
     fn to_u16(self,volume:f32)->u16;
+    /// Переводит `Self` в `i16` с усилением.
+    /// 
+    /// Converts `Self` to `i16` with amplification.
     fn to_i16(self,volume:f32)->i16;
+    /// Переводит `Self` в `f32` с усилением.
+    /// 
+    /// Converts `Self` to `f32` with amplification.
     fn to_f32(self,volume:f32)->f32;
 
+    /// Переводит `Self` в `f32` с усилением.
+    /// 
+    /// Converts `Self` to `f32` with amplification.
     fn from<S:SampleTransform>(sample:S,volume:f32)->Self;
 
+// Сложные преобразования
     /// Linear interpolation between two samples.
     /// 
     /// The result should be equal to

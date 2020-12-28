@@ -24,9 +24,12 @@ exclude = [
 [package.metadata.docs.rs]
 features = [
     "default",
+    # AUDIO
     "extended_audio",
+    # WINDOW
     "auto_hide",
     "fps_counter",
+    "ups_counter",
     "file_drop"
 ]
 
@@ -59,7 +62,7 @@ file_drop = []
 # audio
 [dependencies.cat_audio]
 path = "cat_audio"
-version = "0.0.3"
+version = "0.0.4"
 optional = true
 
 [dependencies]

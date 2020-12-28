@@ -3,9 +3,10 @@
 use cat_audio::{
     AudioSettings,
     Audio,
-    cpal,
-    cpal::traits::HostTrait,
-    cpal::traits::DeviceTrait,
+    cpal::{
+        self,
+        traits::{HostTrait,DeviceTrait},
+    },
     AudioWrapper,
 };
 
