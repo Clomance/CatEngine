@@ -92,7 +92,7 @@ impl SimpleGraphics{
             index_buffer:Buffer::empty_unsized(
                 display,
                 BufferType::ArrayBuffer,
-                settings.vertex_buffer_size,
+                settings.index_buffer_size,
                 BufferMode::Default
             ).unwrap(),
 
@@ -320,16 +320,12 @@ impl SimpleGraphics{
 
 /// Редактирование объектов.
 impl SimpleGraphics{
-    pub fn get_object_colour(&mut self,index:usize)->&mut Colour{
+    pub fn object_colour(&mut self,index:usize)->&mut Colour{
         &mut self.objects[index].colour
     }
 
-    pub fn set_object_colour(&mut self,index:usize,colour:Colour){
-        self.objects[index].colour=colour
-    }
-
-    pub fn set_object_primitive_type(&mut self,index:usize,primitive_type:PrimitiveType){
-        self.objects[index].primitive_type=primitive_type
+    pub fn object_primitive_type(&mut self,index:usize)->&mut PrimitiveType{
+        &mut self.objects[index].primitive_type
     }
 
     /// Если размер новых данных не соответсвует выделенному ранее размеру, то ПАНИКА!

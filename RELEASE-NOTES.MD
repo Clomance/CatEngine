@@ -1,3 +1,9 @@
+# 0.6.3
+
+Fixed setting the index buffer size of the simple graphics.
+
+Added some functions to work with graphic objects and some was renamed.
+
 # 0.6.2
 
 ### CatAudio

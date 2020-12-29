@@ -1,5 +1,3 @@
-use super::{TexturedVertex2D,TextObject2D};
-
 use crate::{
     // statics
     window_center,
@@ -17,6 +15,8 @@ use crate::{
 
 #[cfg(feature="colour_filter")]
 use crate::graphics::ColourFilter;
+
+use super::{TexturedVertex2D,TextObject2D};
 
 use glium::{
     uniform,
@@ -279,37 +279,34 @@ impl TextGraphics{
     }
 }
 
-/// Функции для работы с объектами
+/// Функции для работы с объектами.
 impl TextGraphics{
     /// Добавляет шрифт.
-    pub fn push_font(
-        &mut self,
-        cached_font:CachedFont,
-    )->Option<usize>{
+    pub fn push_font(&mut self,cached_font:CachedFont)->usize{
         let index=self.objects.len();
-
         self.cached_font.push(cached_font);
-
-        Some(index)
+        index
     }
 
+    #[inline(always)]
     pub fn remove_last_font(&mut self){
         self.cached_font.pop();
     }
 
+    #[inline(always)]
     pub fn remove_all_fonts(&mut self){
         self.cached_font.clear();
     }
 
     /// Возвращает шрифт.
+    #[inline(always)]
     pub fn get_font(&self,index:usize)->&CachedFont{
         &self.cached_font[index]
     }
 
     /// Добавляет объект в конец массива.
     /// 
-    /// Возвращает индекс объекта,
-    /// если он добавлен.
+    /// Возвращает индекс объекта, если он добавлен.
     pub fn push_object(
         &mut self,
         text:String,
@@ -340,14 +337,47 @@ impl TextGraphics{
     }
 
     /// Удаляет последний объект.
+    #[inline(always)]
     pub fn remove_last_object(&mut self){
         self.objects.pop();
     }
 
+    #[inline(always)]
     pub fn clear_object_array(&mut self){
         self.objects.clear();
     }
+}
 
+/// Функции редактирования объектов.
+impl TextGraphics{
+    #[inline(always)]
+    pub fn object_text(&mut self,index:usize)->&mut String{
+        &mut self.objects[index].text
+    }
+
+    #[inline(always)]
+    pub fn object_colour(&mut self,index:usize)->&mut Colour{
+        &mut self.objects[index].colour
+    }
+
+    #[inline(always)]
+    pub fn object_font(&mut self,index:usize)->&mut usize{
+        &mut self.objects[index].font
+    }
+
+    #[inline(always)]
+    pub fn object_scale(&mut self,index:usize)->&mut Scale{
+        &mut self.objects[index].scale
+    }
+
+    #[inline(always)]
+    pub fn object_position(&mut self,index:usize)->&mut [f32;2]{
+        &mut self.objects[index].position
+    }
+}
+
+/// Функции для отрисовки объектов.
+impl TextGraphics{
     /// Выводит сохранённый объект.
     pub fn draw_object(
         &self,

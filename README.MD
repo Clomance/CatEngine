@@ -13,9 +13,7 @@ A 2D graphics engine with audio support for Windows and Linux.
 
 Uses OpenGL 2.0 and above.
 
-Supported platforms:
- - Windows, Linux
- - Mac, iOS might work anyway
+Mac, iOS might work anyway.
 
 #### Features
 
@@ -31,10 +29,10 @@ You can disable some unnecessary modules with Rust features (see [list of featur
 If you use audio feature, alsa delevopment libraries are required for Linux: `libasound2-dev` for Debian and Ubuntu, `alsa-lib-devel` for Fedora (see [cpal](https://github.com/RustAudio/cpal)).
 
 
-<!-- ## [My own game](https://github.com/Clomance/Visual-Novel) -->
+## [The book](book/README.MD)
+
+## [My own game](https://github.com/Clomance/Visual-Novel)
 
 ## [Release notes](RELEASE-NOTES.MD)
 
 ## [Pre-release](https://github.com/Clomance/CatEngine/tree/pre-release)
-
-## [The book](book/README.MD)

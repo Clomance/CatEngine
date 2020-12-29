@@ -279,8 +279,10 @@ impl TextureGraphics{
 
 // Функции для добавления/удаления объектов
 impl TextureGraphics{
-    pub fn add_texture(&mut self,texture:Texture){
-        self.textures.push(texture)
+    pub fn add_texture(&mut self,texture:Texture)->usize{
+        let index=self.textures.len();
+        self.textures.push(texture);
+        index
     }
 
     pub fn remove_last_texture(&mut self){
@@ -375,20 +377,17 @@ impl TextureGraphics{
 
 // Редактирование объектов
 impl TextureGraphics{
-    pub fn get_object_colour(&mut self,index:usize)->&mut Colour{
+    #[inline(always)]
+    pub fn object_colour(&mut self,index:usize)->&mut Colour{
         &mut self.objects[index].base.colour
     }
-
-    pub fn get_object_texture(&mut self,index:usize)->&mut Texture{
+    #[inline(always)]
+    pub fn object_texture(&mut self,index:usize)->&mut Texture{
         &mut self.textures[self.objects[index].texture]
     }
-
-    pub fn set_object_colour(&mut self,index:usize,colour:Colour){
-        self.objects[index].base.colour=colour
-    }
-
-    pub fn set_object_primitive_type(&mut self,index:usize,primitive_type:PrimitiveType){
-        self.objects[index].base.primitive_type=primitive_type
+    #[inline(always)]
+    pub fn object_primitive_type(&mut self,index:usize)->&mut PrimitiveType{
+        &mut self.objects[index].base.primitive_type
     }
 
     // Если размер новых данных не соответсвует выделенному ранее размеру, то ПАНИКА!

@@ -1,7 +1,7 @@
 use crate::{
     Colour,
     texture::Texture,
-    text::CachedFont,
+    text::{Scale,CachedFont},
 };
 
 #[cfg(feature="text_graphics")]
@@ -70,9 +70,13 @@ impl Graphics2D{
 /// # Функции для работы с простыми объектами. Functions to work with simple objects.
 #[cfg(feature="simple_graphics")]
 impl Graphics2D{
-    /// Добавляет простой объект в массив.
+    /// Добавляет простой объект.
     /// 
-    /// Adds the simple object to the array.
+    /// Возвращает индекс объекта или `None`, если нет места.
+    /// 
+    /// Adds the simple object.
+    /// 
+    /// Returns object's index or `None` if there is no space.
     #[inline(always)]
     pub fn add_simple_object<O,V,I>(&mut self,object:&O)->Option<usize>
         where
@@ -88,61 +92,43 @@ impl Graphics2D{
         self.simple.push_object(object)
     }
 
-    /// Удаляет последний простой объект в массиве,
-    /// если такой есть.
+    /// Удаляет последний простой объект, если такой есть.
     /// 
-    /// Removes the last simple object of the array
-    /// if there is any.
+    /// Removes the last simple object if there is any.
     #[inline(always)]
     pub fn remove_last_simple_object(&mut self){
         self.simple.remove_last_object();
     }
 
-    /// Отчищает массив объектов.
+    /// Удаляет все объекты.
     /// 
-    /// Clears the object array.
+    /// Removes all objects.
     #[inline(always)]
-    pub fn clear_simple_object_array(&mut self){
+    pub fn remove_all_simple_objects(&mut self){
         self.simple.clear_object_array()
     }
 
     /// Возвращает ссылку на цвет объекта.
     /// 
-    /// Returns a reference to the object's colour.
+    /// Returns a reference to object's colour.
     #[inline(always)]
     pub fn get_simple_object_colour(&mut self,index:usize)->&mut Colour{
-        self.simple.get_object_colour(index)
+        self.simple.object_colour(index)
     }
 
-    /// Устанавливает цвет объекта.
+    /// Возвращает ссылку на тип отрисовки объекта.
     /// 
-    /// Паникует, если нет такого объекта.
-    /// 
-    /// Sets the colour of the object.
-    /// 
-    /// Panics if there is no such object.
+    /// Returns a reference to object's primitive type.
     #[inline(always)]
-    pub fn set_simple_object_colour(&mut self,index:usize,colour:Colour){
-        self.simple.set_object_colour(index,colour)
-    }
-
-    /// Устанавливает тип отрисовки объекта.
-    /// 
-    /// Паникует, если нет такого объекта.
-    /// 
-    /// Sets the primitive type of the object.
-    /// 
-    /// Panics if there is no such object.
-    #[inline(always)]
-    pub fn set_simple_object_primitive_type(&mut self,index:usize,primitive_type:PrimitiveType){
-        self.simple.set_object_primitive_type(index,primitive_type)
+    pub fn get_simple_object_primitive_type(&mut self,index:usize)->&mut PrimitiveType{
+        self.simple.object_primitive_type(index)
     }
 
     /// Переписывает вершины объекта.
     /// 
     /// Паникует, если нет такого объекта или размер `vertices` отличается от установленного.
     /// 
-    /// Rewrites vertices of the object.
+    /// Rewrites object's vertices.
     /// 
     /// Panics if there is no such object or the `vertices` size differs from the set.
     #[inline(always)]
@@ -154,7 +140,7 @@ impl Graphics2D{
     /// 
     /// Паникует, если нет такого объекта или размер `indices` отличается от установленного.
     /// 
-    /// Rewrites indices of the object.
+    /// Rewrites object's indices.
     /// 
     /// Panics if there is no such object or the `indices` size differs from the set.
     #[inline(always)]
@@ -168,9 +154,13 @@ impl Graphics2D{
 impl Graphics2D{
     /// Добавляет тектуру.
     /// 
+    /// Возвращает индекс текстуры.
+    /// 
     /// Adds a texture.
+    /// 
+    /// Returns texture's index.
     #[inline(always)]
-    pub fn add_texture(&mut self,texture:Texture){
+    pub fn add_texture(&mut self,texture:Texture)->usize{
         self.texture.add_texture(texture)
     }
 
@@ -190,9 +180,13 @@ impl Graphics2D{
         self.texture.remove_all_textures()
     }
 
-    /// Добавляет простой объект в массив.
+    /// Добавляет текстурный объект.
     /// 
-    /// Adds the simple object to the array.
+    /// Возвращает индекс объекта или `None`, если нет места.
+    /// 
+    /// Adds a textured object.
+    /// 
+    /// Returns object's index or `None` if there is no space.
     #[inline(always)]
     pub fn add_textured_object<O,V,I>(
         &mut self,
@@ -212,69 +206,51 @@ impl Graphics2D{
         self.texture.push_object(object,texture)
     }
 
-    /// Удаляет последний простой объект в массиве,
-    /// если такой есть.
+    /// Удаляет последний простой объект, если такой есть.
     /// 
-    /// removes the last textured object of the array
-    /// if there is any.
+    /// Removes the last textured object if there is any.
     #[inline(always)]
     pub fn remove_last_textured_object(&mut self){
         self.texture.remove_last_object();
     }
 
-    /// Отчищает массив объектов.
+    /// Удаляет все текстурные объекты.
     /// 
-    /// Clears the object array.
+    /// Removes all textured objects.
     #[inline(always)]
-    pub fn clear_textured_object_array(&mut self){
+    pub fn removes_all_textured_objects(&mut self){
         self.texture.clear_object_array()
     }
 
     /// Возвращает ссылку на цвет объекта.
     /// 
-    /// Returns a reference to the object's colour.
+    /// Returns a reference to object's colour.
     #[inline(always)]
     pub fn get_textured_object_colour(&mut self,index:usize)->&mut Colour{
-        self.texture.get_object_colour(index)
+        self.texture.object_colour(index)
     }
 
     /// Возвращает ссылку на текстуру объекта.
     /// 
-    /// Returns a reference to the object's texture.
+    /// Returns a reference to object's texture.
     #[inline(always)]
     pub fn get_textured_object_texture(&mut self,index:usize)->&mut Texture{
-        self.texture.get_object_texture(index)
+        self.texture.object_texture(index)
     }
 
-    /// Устанавливает цвет объекта.
+    /// Возвращает ссылку на тип отрисовки объекта.
     /// 
-    /// Паникует, если нет такого объекта.
-    /// 
-    /// Sets the colour of the object.
-    /// 
-    /// Panics if there is no such object.
+    /// Returns a reference to object's primitive type.
     #[inline(always)]
-    pub fn set_textured_object_colour(&mut self,index:usize,colour:Colour){
-        self.texture.set_object_colour(index,colour)
-    }
-
-    /// Устанавливает тип отрисовки объекта.
-    /// 
-    /// Паникует, если нет такого объекта.
-    /// 
-    /// Sets the primitive type of the object.
-    /// 
-    /// Panics if there is no such object.
-    #[inline(always)]
-    pub fn set_textured_object_primitive_type(&mut self,index:usize,primitive_type:PrimitiveType){
-        self.texture.set_object_primitive_type(index,primitive_type)
+    pub fn get_textured_object_primitive_type(&mut self,index:usize)->&mut PrimitiveType{
+        self.texture.object_primitive_type(index)
     }
 
     /// Переписывает вершины объекта.
     /// 
     /// Паникует, если нет такого объекта или размер `vertices` отличается от установленного.
     /// 
-    /// Rewrites vertices of the object.
+    /// Rewrites object's vertices.
     /// 
     /// Panics if there is no such object or the `vertices` size differs from the set.
     #[inline(always)]
@@ -298,20 +274,21 @@ impl Graphics2D{
 /// # Функции для работы с текстовыми объектами. Functions to work with text objects.
 #[cfg(feature="text_graphics")]
 impl Graphics2D{
-    /// Добавляет шрифт в массив.
+    /// Добавляет шрифт.
     /// 
-    /// Adds a cached font to the array.
+    /// Возвращает индекс шрифта.
+    /// 
+    /// Adds a font.
+    /// 
+    /// Returns font's index.
     #[inline(always)]
-    pub fn add_font(
-        &mut self,
-        cached_font:CachedFont,
-    )->Option<usize>{
+    pub fn add_font(&mut self,cached_font:CachedFont)->usize{
         self.text.push_font(cached_font)
     }
 
     /// Удаляет последний шрифт.
     /// 
-    /// Removes the font.
+    /// Removes the last font.
     #[inline(always)]
     pub fn remove_last_font(&mut self){
         self.text.remove_last_font()
@@ -327,15 +304,15 @@ impl Graphics2D{
 
     /// Возращает шрифт.
     /// 
-    /// Returns a cached font.
+    /// Returns a font.
     #[inline(always)]
-    pub fn get_glyph_cache(&self,index:usize)->&CachedFont{
+    pub fn get_font(&self,index:usize)->&CachedFont{
         self.text.get_font(index)
     }
 
-    /// Добавляет текстовой объект в массив.
+    /// Добавляет текстовой объект.
     /// 
-    /// Adds a text object to the array.
+    /// Adds a text object.
     #[inline(always)]
     pub fn add_text_object(
         &mut self,
@@ -352,21 +329,59 @@ impl Graphics2D{
         )
     }
 
-    /// Удаляет последний текстовой объект в массиве,
-    /// если такой есть.
+    /// Удаляет последний текстовой объект, если такой есть.
     /// 
-    /// removes the last text object of the array
-    /// if there is any.
+    /// Removes the last text object if there is any.
     #[inline(always)]
     pub fn remove_last_text_object(&mut self){
         self.text.remove_last_object();
     }
 
-    /// Отчищает массив объектов.
+    /// Удаляет все текстовые объекты.
     /// 
-    /// Clears the object array.
+    /// Removes all text objects.
     #[inline(always)]
-    pub fn clear_text_object_array(&mut self){
+    pub fn remove_all_text_objects(&mut self){
         self.text.clear_object_array()
+    }
+
+    /// Возвращает ссылку на текст объекта.
+    /// 
+    /// Returns a reference to object's text.
+    #[inline(always)]
+    pub fn get_text_object_text(&mut self,index:usize)->&mut String{
+        self.text.object_text(index)
+    }
+
+    /// Возвращает ссылку на цвет объекта.
+    /// 
+    /// Returns a reference to object's colour.
+    #[inline(always)]
+    pub fn get_text_object_colour(&mut self,index:usize)->&mut Colour{
+        self.text.object_colour(index)
+    }
+
+    /// Возвращает ссылку на шрифт объекта.
+    /// 
+    /// Returns a reference to object's font.
+    #[inline(always)]
+    pub fn get_text_object_font(&mut self,index:usize)->&mut usize{
+        self.text.object_font(index)
+    }
+
+    /// Возвращает ссылку на масштаб объекта.
+    /// 
+    /// Returns a reference to object's scale.
+    #[inline(always)]
+    pub fn get_text_object_scale(&mut self,index:usize)->&mut Scale{
+        self.text.object_scale(index)
+    }
+
+    /// Возвращает ссылку на положение объекта.
+    /// 
+    /// Returns a reference to object's position.
+    #[inline(always)]
+    pub fn get_text_object_position(&mut self,index:usize)->&mut [f32;2]{
+        self.text.object_position(index)
     }
 }

@@ -2,9 +2,9 @@
 
 //! # 2D графический движок с поддержкой аудио. A 2D graphics engine with audio support.
 //! 
-//! "Фичи" по умолчанию - `simple_graphics`, `texture_graphics`, `text_graphics`.
+//! "Фичи" по умолчанию - `audio`, `simple_graphics`, `texture_graphics`, `text_graphics`.
 //! 
-//! The defealt features are `simple_graphics`, `texture_graphics`, `text_graphics`.
+//! The default features are `audio`,`simple_graphics`, `texture_graphics`, `text_graphics`.
 //! 
 //! ```
 //! use cat_engine::{
