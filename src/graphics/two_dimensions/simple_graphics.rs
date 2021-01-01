@@ -20,7 +20,6 @@ use glium::{
     uniform,
     Program,
     Display,
-    Frame,
     DrawParameters,
     DrawError,
     index::PrimitiveType,
@@ -107,22 +106,23 @@ impl SimpleGraphics{
         }
     }
 
-    pub fn draw<'o,O,V,I>(
+    pub fn draw<S,O,V,I>(
         &self,
-        object:&'o O,
+        object:&O,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>
         where
+            S:Surface,
             O:DependentObject<
                 Vertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[Vertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[Vertex2D]>,
+            I:AsRef<[u8]>
     {
         // Вписывание вершин и подготовка к выводу
         let vertex_source=object.write_vertices(
@@ -147,23 +147,24 @@ impl SimpleGraphics{
         frame.draw(vertex_source,indices_source,&self.draw,&uni,draw_parameters)
     }
 
-    pub fn draw_shift<'o,O,V,I>(
+    pub fn draw_shift<S,O,V,I>(
         &self,
-        object:&'o O,
+        object:&O,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>
         where
+            S:Surface,
             O:DependentObject<
                 Vertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[Vertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[Vertex2D]>,
+            I:AsRef<[u8]>
     {
         // Вписывание вершин и подготовка к выводу
         let vertex_source=object.write_vertices(
@@ -189,24 +190,25 @@ impl SimpleGraphics{
         frame.draw(vertex_source,indices_source,&self.draw_shift,&uni,draw_parameters)
     }
 
-    pub fn draw_rotate<'o,O,V,I>(
+    pub fn draw_rotate<S,O,V,I>(
         &self,
-        object:&'o O,
+        object:&O,
         rotation_center:[f32;2],
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>
         where
+            S:Surface,
             O:DependentObject<
                 Vertex2D,
                 u8,
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[Vertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[Vertex2D]>,
+            I:AsRef<[u8]>
     {
         // Вписывание вершин и подготовка к выводу
         let vertex_source=object.write_vertices(
@@ -246,7 +248,7 @@ impl SimpleGraphics{
 /// Функции для добаления/удаления объектов.
 impl SimpleGraphics{
     /// Добавляет объект в конец списка.
-    pub fn push_object<'o,O,V,I>(&mut self,object:&'o O)->Option<usize>
+    pub fn push_object<O,V,I>(&mut self,object:&O)->Option<usize>
         where
             O:DependentObject<
                 Vertex2D,
@@ -254,8 +256,8 @@ impl SimpleGraphics{
                 Vertices=V,
                 Indices=I
             >,
-            V:AsRef<[Vertex2D]>+'o,
-            I:AsRef<[u8]>+'o
+            V:AsRef<[Vertex2D]>,
+            I:AsRef<[u8]>
     {
         // Вершины
         let verticesb=object.vertices();
@@ -347,12 +349,12 @@ impl SimpleGraphics{
 
 /// Функции для рисования объектов.
 impl SimpleGraphics{
-    pub fn draw_object(
+    pub fn draw_object<S:Surface>(
         &self,
         index:usize,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>{
         let object=&self.objects[index];
 
@@ -379,13 +381,13 @@ impl SimpleGraphics{
         )
     }
 
-    pub fn draw_shift_object(
+    pub fn draw_shift_object<S:Surface>(
         &self,
         index:usize,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>{
         let object=&self.objects[index];
 
@@ -413,14 +415,14 @@ impl SimpleGraphics{
         )
     }
 
-    pub fn draw_rotate_object(
+    pub fn draw_rotate_object<S:Surface>(
         &self,
         index:usize,
         rotation_center:[f32;2],
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>{
         let object=&self.objects[index];
 

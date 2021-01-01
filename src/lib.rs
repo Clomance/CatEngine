@@ -6,7 +6,7 @@
 //! 
 //! The default features are `audio`,`simple_graphics`, `texture_graphics`, `text_graphics`.
 //! 
-//! ```
+//! ```rust
 //! use cat_engine::{
 //!     Window,
 //!     WindowEvent
@@ -32,7 +32,7 @@
 //! 
 //! 
 //! Modifying a window.
-//! ```
+//! ```rust
 //! let wi=window.display().gl_window();
 //! let w=wi.window();
 //! w.set_minimized(false);
@@ -42,7 +42,11 @@
 // re-exports
 pub use glium::{
     self,
-    glutin::event::{MouseButton,ModifiersState,MouseScrollDelta},
+    glutin::event::{
+        MouseButton,
+        ModifiersState,
+        MouseScrollDelta,
+    },
 };
 
 // re-exports
@@ -70,6 +74,8 @@ pub use window::{
     window_height,
     mouse_cursor,
     window_center,
+    // functions
+    default_draw_parameters,
     // else
     Window,
     WindowEvent,
@@ -111,7 +117,6 @@ pub mod shapes;
 // Cats are cute.
 // I'd better write a good documentation rather than paste cats.
 // But......................... Cats are more important!
-
 
 /// RGBA - [f32; 4]
 pub type Colour=[f32;4];

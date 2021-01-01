@@ -21,6 +21,7 @@ use super::{
 
 use glium::{
     Display,
+    Frame,
     SwapBuffersError,
     backend::glutin::DisplayCreationError,
     glutin::{
@@ -127,7 +128,7 @@ impl Window{
     }
 
     #[inline(always)]
-    pub fn draw<F:FnOnce(&mut Graphics)>(&self,graphics_base:&Graphics2D,f:F)->Result<(),SwapBuffersError>{
+    pub fn draw<F:FnOnce(&mut Graphics<Frame>)>(&self,graphics_base:&Graphics2D,f:F)->Result<(),SwapBuffersError>{
         self.base.draw(graphics_base,f)
     }
 

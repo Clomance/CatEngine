@@ -88,7 +88,7 @@ use crate::{
     // types
     Colour,
     // structs
-    graphics::Graphics
+    graphics::Graphics,
 };
 
 #[cfg(feature="colour_filter")]
@@ -122,7 +122,7 @@ pub use font::{
 };
 
 
-use glium::DrawError;
+use glium::{Surface,DrawError};
 
 // re-export
 pub use ttf_parser;
@@ -205,12 +205,12 @@ impl TextBase{
     /// 
     /// Draws a character.
     #[inline(always)]
-    pub fn draw_char<F:Font>(
+    pub fn draw_char<F:Font,S:Surface>(
         &self,
         character:char,
         font:&F,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         let glyph=if let Some(glyph)=font.build_raw_glyph(character){
             glyph
@@ -249,13 +249,13 @@ impl TextBase{
     /// 
     /// Draws a shifted character.
     #[inline(always)]
-    pub fn draw_shift_char<F:Font>(
+    pub fn draw_shift_char<F:Font,S:Surface>(
         &self,
         character:char,
         shift:[f32;2],
         font:&F,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         let glyph=if let Some(glyph)=font.build_raw_glyph(character){
             glyph
@@ -295,14 +295,14 @@ impl TextBase{
     /// 
     /// Draws a rotated character.
     #[inline(always)]
-    pub fn draw_rotate_char<F:Font>(
+    pub fn draw_rotate_char<F:Font,S:Surface>(
         &self,
         character:char,
         rotation_center:[f32;2],
         angle:f32,
         font:&F,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         let glyph=if let Some(glyph)=font.build_raw_glyph(character){
             glyph
@@ -342,12 +342,12 @@ impl TextBase{
     /// Выводит строку.
     /// 
     /// Draws a string.
-    pub fn draw_str<F:Font>(
+    pub fn draw_str<F:Font,S:Surface>(
         &self,
         s:&str,
         font:&F,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         let mut position=self.position;
 
@@ -396,13 +396,13 @@ impl TextBase{
     /// Выводит сдвинутую строку.
     /// 
     /// Draws a shifted string.
-    pub fn draw_shift_str<F:Font>(
+    pub fn draw_shift_str<F:Font,S:Surface>(
         &self,
         s:&str,
         shift:[f32;2],
         font:&F,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         let mut position=self.position;
 
@@ -452,14 +452,14 @@ impl TextBase{
     /// Выводит повёрнутую строку.
     /// 
     /// Draws a rotated string.
-    pub fn draw_rotate_str<F:Font>(
+    pub fn draw_rotate_str<F:Font,S:Surface>(
         &self,
         s:&str,
         rotation_center:[f32;2],
         angle:f32,
         font:&F,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         let mut position=self.position;
 
@@ -521,12 +521,12 @@ impl TextBase{
     /// 
     /// Takes a corresponding glyph from the given cache.
     #[inline(always)]
-    pub fn draw_char_glyph_cache<C:RawGlyphCache>(
+    pub fn draw_char_glyph_cache<C:RawGlyphCache,S:Surface>(
         &self,
         character:char,
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         let glyph=if let Some(glyph)=glyph_cache.scaled_glyph(character,self.scale){
             glyph
@@ -561,13 +561,13 @@ impl TextBase{
     /// 
     /// Takes a corresponding glyph from the given cache.
     #[inline(always)]
-    pub fn draw_shift_char_glyph_cache<C:RawGlyphCache>(
+    pub fn draw_shift_char_glyph_cache<C:RawGlyphCache,S:Surface>(
         &self,
         character:char,
         shift:[f32;2],
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         let glyph=if let Some(glyph)=glyph_cache.scaled_glyph(character,self.scale){
             glyph
@@ -603,14 +603,14 @@ impl TextBase{
     /// 
     /// Takes a corresponding glyph from the given cache.
     #[inline(always)]
-    pub fn draw_rotate_char_glyph_cache<C:RawGlyphCache>(
+    pub fn draw_rotate_char_glyph_cache<C:RawGlyphCache,S:Surface>(
         &self,
         character:char,
         rotation_center:[f32;2],
         angle:f32,
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         let glyph=if let Some(glyph)=glyph_cache.scaled_glyph(character,self.scale){
             glyph
@@ -646,12 +646,12 @@ impl TextBase{
     /// Draws a string.
     /// 
     /// Takes corresponding glyphs from the given cache.
-    pub fn draw_str_glyph_cache<C:RawGlyphCache>(
+    pub fn draw_str_glyph_cache<C:RawGlyphCache,S:Surface>(
         &self,
         s:&str,
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         let mut position=self.position;
 
@@ -695,13 +695,13 @@ impl TextBase{
     /// Draws a shifted string.
     /// 
     /// Takes corresponding glyphs from the given cache.
-    pub fn draw_shift_str_glyph_cache<C:RawGlyphCache>(
+    pub fn draw_shift_str_glyph_cache<C:RawGlyphCache,S:Surface>(
         &self,
         s:&str,
         shift:[f32;2],
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         let mut position=self.position;
 
@@ -748,14 +748,14 @@ impl TextBase{
     /// Draws a rotated string.
     /// 
     /// Takes corresponding glyphs from the given cache.
-    pub fn draw_rotate_str_glyph_cache<C:RawGlyphCache>(
+    pub fn draw_rotate_str_glyph_cache<C:RawGlyphCache,S:Surface>(
         &self,
         s:&str,
         rotation_center:[f32;2],
         angle:f32,
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         let mut position=self.position;
 
@@ -803,13 +803,13 @@ impl TextBase{
     /// Returns `true`, if the whole string is drawn.
     /// 
     /// Takes corresponding glyphs from the given cache.
-    pub fn draw_str_part_glyph_cache<C:RawGlyphCache>(
+    pub fn draw_str_part_glyph_cache<C:RawGlyphCache,S:Surface>(
         &self,
         s:&str,
         chars:usize,
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<bool,DrawError>{
         let mut whole=true; // Флаг вывода всего текста
 
@@ -863,14 +863,14 @@ impl TextBase{
     /// Returns `true`, if the whole string is drawn.
     /// 
     /// Takes corresponding glyphs from the given cache.
-    pub fn draw_shift_str_part_glyph_cache<C:RawGlyphCache>(
+    pub fn draw_shift_str_part_glyph_cache<C:RawGlyphCache,S:Surface>(
         &self,
         s:&str,
         chars:usize,
         shift:[f32;2],
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<bool,DrawError>{
         let mut whole=true; // Флаг вывода всего текста
 
@@ -925,7 +925,7 @@ impl TextBase{
     /// Returns true, if the whole string is drawn.
     /// 
     /// Takes corresponding glyphs from the given cache.
-    pub fn draw_rotate_str_part_glyph_cache<C:RawGlyphCache>(
+    pub fn draw_rotate_str_part_glyph_cache<C:RawGlyphCache,S:Surface>(
         &self,
         s:&str,
         chars:usize,
@@ -933,7 +933,7 @@ impl TextBase{
         angle:f32,
         glyph_cache:&C,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<bool,DrawError>{
         let mut whole=true; // Флаг вывода всего текста
 

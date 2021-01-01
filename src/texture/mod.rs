@@ -21,6 +21,7 @@ mod texture;
 pub use texture::{Texture,TextureCreationResult};
 
 use glium::{
+    Surface,
     DrawError,
     index::PrimitiveType,
 };
@@ -80,11 +81,11 @@ impl ImageBase{
     /// Draws an image.
     #[cfg(feature="texture_graphics")]
     #[inline(always)]
-    pub fn draw(
+    pub fn draw<S:Surface>(
         &self,
         texture:&Texture,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_texture(
             self,
@@ -99,13 +100,13 @@ impl ImageBase{
     /// 
     /// shift - [dx, dy]
     #[cfg(feature="texture_graphics")]
-    #[inline(always)] 
-    pub fn draw_shift(
+    #[inline(always)]
+    pub fn draw_shift<S:Surface>(
         &self,
         texture:&Texture,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_shift_texture(
             self,
@@ -123,13 +124,13 @@ impl ImageBase{
     /// angle - radians
     #[cfg(feature="texture_graphics")]
     #[inline(always)]
-    pub fn draw_rotate(
+    pub fn draw_rotate<S:Surface>(
         &self,
         texture:&Texture,
         rotation_center:[f32;2],
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_rotate_texture(
             self,

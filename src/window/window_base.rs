@@ -27,6 +27,7 @@ use super::{
 use glium::{
     Display,
     Surface,
+    Frame,
     Version,
     draw_parameters::{
         DrawParameters,
@@ -175,7 +176,7 @@ impl WindowBase{
     /// Выполняет замыкание.
     /// 
     /// Executes the closure.
-    pub fn draw<F:FnOnce(&mut Graphics)>(&self,graphics_base:&Graphics2D,f:F)->Result<(),SwapBuffersError>{
+    pub fn draw<F:FnOnce(&mut Graphics<Frame>)>(&self,graphics_base:&Graphics2D,f:F)->Result<(),SwapBuffersError>{
         let mut draw_parameters=default_draw_parameters();
 
         let mut frame=self.display.draw();
@@ -285,7 +286,7 @@ impl WindowBase{
 }
 
 
-fn default_draw_parameters<'a>()->DrawParameters<'a>{
+pub fn default_draw_parameters<'a>()->DrawParameters<'a>{
     DrawParameters{
         blend:Blend{
             color:BlendingFunction::Addition{

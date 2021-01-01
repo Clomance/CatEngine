@@ -62,11 +62,11 @@ impl GlyphCache{
 
         // Неопределённый символ
         let not_defined_id=GlyphId(0);
-        let undefined_glyph=build_glyph(not_defined_id,scale,&font,display).unwrap();
+        let undefined_glyph=build_glyph(not_defined_id,scale,&font,display).expect("No 'Not Defined' glyph");
 
         // Ширина пробела
         let whitespace_advance_id=GlyphId(3);
-        let whitespace_advance=font.glyph_hor_advance(whitespace_advance_id).unwrap() as f32*scale.horizontal;
+        let whitespace_advance=font.glyph_hor_advance(whitespace_advance_id).expect("No 'Whitespace' glyph") as f32*scale.horizontal;
 
         let range=if let Some(range)=range{
             range
@@ -113,17 +113,17 @@ impl GlyphCache{
 
         // Неопределённый символ
         let not_defined_id=GlyphId(0);
-        let undefined_glyph=build_glyph(not_defined_id,scale,&font,display).unwrap();
+        let undefined_glyph=build_glyph(not_defined_id,scale,&font,display).expect("No 'Not Defined' glyph");
 
         // Ширина пробела
         let whitespace_advance_id=GlyphId(3);
-        let whitespace_advance=font.glyph_hor_advance(whitespace_advance_id).unwrap() as f32*scale.horizontal;
+        let whitespace_advance=font.glyph_hor_advance(whitespace_advance_id).expect("No 'Whitespace' glyph") as f32*scale.horizontal;
 
         for character in alphabet.chars(){
-            let id=font.glyph_index(character).unwrap();
-
-            if let Some(glyph)=build_glyph(id,scale,&font,display){
-                glyphs.insert(character,glyph);
+            if let Some(id)=font.glyph_index(character){
+                if let Some(glyph)=build_glyph(id,scale,&font,display){
+                    glyphs.insert(character,glyph);
+                }
             }
         }
 

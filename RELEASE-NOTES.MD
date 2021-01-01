@@ -1,3 +1,26 @@
+# 0.6.4
+
+Now you can draw on everything that implements the `Surface` trait.
+```rust
+let texture=Texture::empty([1920u32,1080u32],window.display()).unwrap();
+let mut frame_buffer=SimpleFrameBuffer::new(window.display(),&texture.0).unwrap();
+
+let mut frame_buffer_graphics=Graphics{
+    graphics2d:graphics,
+    draw_parameters:default_draw_parameters(),
+    frame:&mut frame_buffer,
+};
+
+frame_buffer_graphics.clear_colour(White);
+
+frame_buffer_graphics.draw_textured_object(cat).unwrap();
+
+frame_buffer_graphics.draw_rotate_textured_object(gear,unsafe{window_center},angle).unwrap();
+```
+
+Made the `default_draw_parameters` function public.
+
+
 # 0.6.3
 
 Fixed setting the index buffer size of the simple graphics.
@@ -34,17 +57,17 @@ The `Window` field from the `WindowPage` trait.
 ### Function changes
 
 The window `draw` function now takes `&self`, `Graphics2D` and a closure with `&mut Graphics` as an argument.
-```
+```rust
 pub fn draw<F:FnOnce(&mut Graphics)>(&self,graphics_base:&Graphics2D,f:F)->Result<(),SwapBuffersError>;
 ```
 
 The `on_redraw_requested` function of the `WindowPage` trait now takes `&Window`.
-```
+```rust
 fn on_redraw_requested(&mut self,window:&Window);
 ```
 
 Arguments of `ImageBase::new` was swapped:
-```
+```rust
 pub fn new([x,y,width,height]:[f32;4],colour_filter:Colour)->ImageBase;
 ```
 
@@ -102,7 +125,7 @@ The `ttf-parser` crate to `0.8.3`.
 
 Now you are able to control each audio channel yourself.
 
-```
+```rust
 let audio=Audio::default(AudioSettings::new()).unwrap();
 
 let mut wrapper=AudioWrapper::new(audio);
@@ -222,7 +245,7 @@ The `image` crate version has been changed to `0.23.8`.
 ### Added
 
 Functions to change saved simple objects directly:
-```
+```rust
 window.graphics().set_simple_object_colour(0,White);
 window.graphics().rewrite_simple_object_vertices(0,&[100f32;4])
 ```
@@ -345,7 +368,7 @@ The `paged_format` feature.
 
 All the window modifying functions.
 Now the only way to customize the window is:
-```
+```rust
 let wi=window.display().gl_window();
 let w=wi.window();
 w.set_minimized(false);

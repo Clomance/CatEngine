@@ -11,6 +11,7 @@ use super::{
 use super::graphics::ColourFilter;
 
 use glium::{
+    Surface,
     DrawError,
     index::PrimitiveType,
 };
@@ -29,10 +30,10 @@ impl Quadrilateral{
         }
     }
 
-    pub fn draw(
+    pub fn draw<S:Surface>(
         &self,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_simple(
             self,
@@ -40,12 +41,12 @@ impl Quadrilateral{
         )
     }
 
-    pub fn draw_rotate(
+    pub fn draw_rotate<S:Surface>(
         &self,
         rotation_center:[f32;2],
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_rotate_simple(
             self,
@@ -55,11 +56,11 @@ impl Quadrilateral{
         )
     }
 
-    pub fn draw_shift(
+    pub fn draw_shift<S:Surface>(
         &self,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_shift_simple(
             self,
@@ -122,10 +123,10 @@ impl Rectangle{
         }
     }
 
-    pub fn draw(
+    pub fn draw<S:Surface>(
         &self,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_simple(
             self,
@@ -133,12 +134,12 @@ impl Rectangle{
         )
     }
 
-    pub fn draw_rotate(
+    pub fn draw_rotate<S:Surface>(
         &self,
         rotation_center:[f32;2],
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_rotate_simple(
             self,
@@ -148,11 +149,11 @@ impl Rectangle{
         )
     }
 
-    pub fn draw_shift(
+    pub fn draw_shift<S:Surface>(
         &self,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_shift_simple(
             self,
@@ -234,10 +235,10 @@ impl RectangleBorder{
         }
     }
 
-    pub fn draw(
+    pub fn draw<S:Surface>(
         &self,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_parameters.line_width=Some(self.width);
         graphics.draw_simple(
@@ -246,12 +247,12 @@ impl RectangleBorder{
         )
     }
 
-    pub fn draw_rotate(
+    pub fn draw_rotate<S:Surface>(
         &self,
         rotation_center:[f32;2],
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_parameters.line_width=Some(self.width);
         graphics.draw_rotate_simple(
@@ -262,11 +263,11 @@ impl RectangleBorder{
         )
     }
 
-    pub fn draw_shift(
+    pub fn draw_shift<S:Surface>(
         &self,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_parameters.line_width=Some(self.width);
         graphics.draw_shift_simple(
@@ -335,10 +336,10 @@ impl RectangleWithBorder{
         self
     }
 
-    pub fn draw(
+    pub fn draw<S:Surface>(
         &self,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         self.rect.draw(
             #[cfg(feature="colour_filter")]colour_filter,
@@ -351,12 +352,12 @@ impl RectangleWithBorder{
         )
     }
 
-    pub fn draw_rotate(
+    pub fn draw_rotate<S:Surface>(
         &self,
         rotation_center:[f32;2],
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         self.rect.draw_rotate(
             rotation_center,
@@ -373,11 +374,11 @@ impl RectangleWithBorder{
         )
     }
 
-    pub fn draw_shift(
+    pub fn draw_shift<S:Surface>(
         &self,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         self.rect.draw_shift(
             shift,
@@ -436,10 +437,10 @@ impl Line{
         self.y2+=dy;
     }
 
-    pub fn draw(
+    pub fn draw<S:Surface>(
         &self,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_parameters.line_width=Some(self.radius);
         graphics.draw_simple(
@@ -448,12 +449,12 @@ impl Line{
         )
     }
 
-    pub fn draw_rotate(
+    pub fn draw_rotate<S:Surface>(
         &self,
         rotation_center:[f32;2],
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_parameters.line_width=Some(self.radius);
         graphics.draw_rotate_simple(
@@ -464,11 +465,11 @@ impl Line{
         )
     }
 
-    pub fn draw_shift(
+    pub fn draw_shift<S:Surface>(
         &self,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_parameters.line_width=Some(self.radius);
         graphics.draw_shift_simple(
@@ -524,10 +525,10 @@ impl Circle{
         }
     }
 
-    pub fn draw(
+    pub fn draw<S:Surface>(
         &self,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_simple(
             self,
@@ -535,12 +536,12 @@ impl Circle{
         )
     }
 
-    pub fn draw_rotate(
+    pub fn draw_rotate<S:Surface>(
         &self,
         rotation_center:[f32;2],
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_rotate_simple(
             self,
@@ -550,11 +551,11 @@ impl Circle{
         )
     }
 
-    pub fn draw_shift(
+    pub fn draw_shift<S:Surface>(
         &self,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
-        graphics:&mut Graphics
+        graphics:&mut Graphics<S>
     )->Result<(),DrawError>{
         graphics.draw_shift_simple(
             self,

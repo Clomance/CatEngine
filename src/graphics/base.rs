@@ -34,25 +34,25 @@ use glium::{
 
 /// Простой интерфейс для связи кадра и графических функций.
 /// Simple interface to connect graphics fuctions to the frame.
-pub struct Graphics<'g,'p,'f>{
+pub struct Graphics<'g,'p,'f,S:Surface>{
     pub graphics2d:&'g Graphics2D,
 
     pub draw_parameters:DrawParameters<'p>,
 
-    pub frame:&'f mut Frame,
+    pub frame:&'f mut S,
 }
 
 
 
 
 
-impl<'g,'p,'f> Graphics<'g,'p,'f>{
+impl<'g,'p,'f,S:Surface> Graphics<'g,'p,'f,S>{
     #[inline(always)]
     pub (crate) fn new(
         graphics2d:&'g Graphics2D,
         draw_parameters:DrawParameters<'p>,
-        frame:&'f mut Frame
-    )->Graphics<'g,'p,'f>{
+        frame:&'f mut S
+    )->Graphics<'g,'p,'f,S>{
         Self{
             graphics2d,
             draw_parameters,
@@ -161,7 +161,7 @@ impl<'g,'p,'f> Graphics<'g,'p,'f>{
 
 /// # Функции для работы с простыми объектами. Functions to work with simple objects.
 #[cfg(feature="simple_graphics")]
-impl<'g,'p,'f> Graphics<'g,'p,'f>{
+impl<'g,'p,'f,S:Surface> Graphics<'g,'p,'f,S>{
     /// Рисует простой объект.
     /// 
     /// Draws a simple object.
@@ -303,7 +303,7 @@ impl<'g,'p,'f> Graphics<'g,'p,'f>{
 
 /// # Функции для отрисовки текстур. Texture rendering functions.
 #[cfg(feature="texture_graphics")]
-impl<'g,'p,'f> Graphics<'g,'p,'f>{
+impl<'g,'p,'f,S:Surface> Graphics<'g,'p,'f,S>{
     /// Рисует изображение.
     /// 
     /// Draws a texture.
@@ -455,7 +455,7 @@ impl<'g,'p,'f> Graphics<'g,'p,'f>{
 
 /// # Фукнции для отрисовки глифов. Glyph rendering functions.
 #[cfg(feature="text_graphics")]
-impl<'g,'p,'f> Graphics<'g,'p,'f>{
+impl<'g,'p,'f,S:Surface> Graphics<'g,'p,'f,S>{
     /// Строит и выводит глиф.
     /// 
     /// Builds and draws a glyph.
@@ -725,7 +725,7 @@ impl<'g,'p,'f> Graphics<'g,'p,'f>{
 
 /// # Функции для работы с сохранёнными простыми объектами. Functions to work with saved simple objects.
 #[cfg(feature="simple_graphics")]
-impl<'g,'p,'f> Graphics<'g,'p,'f>{
+impl<'g,'p,'f,S:Surface> Graphics<'g,'p,'f,S>{
     /// Рисует простой объект.
     /// 
     /// Draws the saved simple object.
@@ -822,7 +822,7 @@ impl<'g,'p,'f> Graphics<'g,'p,'f>{
 
 /// # Функции для работы с сохранёнными текстурными объектами. Functions to work with saved textured objects.
 #[cfg(feature="texture_graphics")]
-impl<'g,'p,'f> Graphics<'g,'p,'f>{
+impl<'g,'p,'f,S:Surface> Graphics<'g,'p,'f,S>{
     /// Рисует сохранённый текстурный объект.
     /// 
     /// Draws a saved textured object.
@@ -919,7 +919,7 @@ impl<'g,'p,'f> Graphics<'g,'p,'f>{
 
 /// # Функции для работы с сохранёнными текстовыми объектами. Functions to work with saved text objects.
 #[cfg(feature="text_graphics")]
-impl<'g,'p,'f> Graphics<'g,'p,'f>{
+impl<'g,'p,'f,S:Surface> Graphics<'g,'p,'f,S>{
     /// Рисует сохранённый текстовой объект.
     /// 
     /// Draws a saved text object.

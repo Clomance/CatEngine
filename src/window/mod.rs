@@ -4,6 +4,8 @@ mod event_handlers; // макросы для обратки событий
 mod window_base;
 pub (crate) use window_base::WindowBase;
 
+pub use window_base::default_draw_parameters;
+
 mod window_page;
 pub use window_page::WindowPage;
 

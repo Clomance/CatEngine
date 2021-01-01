@@ -29,7 +29,6 @@ use glium::{
     // structs
     Program,
     Display,
-    Frame,
     DrawParameters,
     vertex::{Vertex,VertexFormat},
     buffer::{
@@ -118,15 +117,16 @@ impl TextureGraphics{
 
     /// Строит объект с нуля и выводит, игнорируя все области.
     /// Переписывает координаты с начала буфера [0..].
-    pub fn draw<O,V,I>(
+    pub fn draw<S,O,V,I>(
         &self,
         object:&O,
         texture:&Texture,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame,
+        frame:&mut S,
     )->Result<(),DrawError>
         where
+            S:Surface,
             O:DependentObject<
                 TexturedVertex2D,
                 u8,
@@ -134,7 +134,7 @@ impl TextureGraphics{
                 Indices=I
             >,
             V:AsRef<[TexturedVertex2D]>,
-            I:AsRef<[u8]>
+            I:AsRef<[u8]>,
     {
         // Вписывание вершин и подготовка к выводу
         let vertex_source=object.write_vertices(
@@ -168,16 +168,17 @@ impl TextureGraphics{
 
     /// Строит объект с нуля и выводит, игнорируя все области.
     /// Переписывает координаты с начала буфера [0..].
-    pub fn draw_shift<O,V,I>(
+    pub fn draw_shift<S,O,V,I>(
         &self,
         object:&O,
         texture:&Texture,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame,
+        frame:&mut S,
     )->Result<(),DrawError>
         where
+            S:Surface,
             O:DependentObject<
                 TexturedVertex2D,
                 u8,
@@ -185,7 +186,7 @@ impl TextureGraphics{
                 Indices=I
             >,
             V:AsRef<[TexturedVertex2D]>,
-            I:AsRef<[u8]>+
+            I:AsRef<[u8]>
     {
         // Вписывание вершин и подготовка к выводу
         let vertex_source=object.write_vertices(
@@ -220,7 +221,7 @@ impl TextureGraphics{
 
     /// Строит объект с нуля и выводит под данным углом, игнорируя все области.
     /// Переписывает координаты с начала буфера [0..].
-    pub fn draw_rotate<O,V,I>(
+    pub fn draw_rotate<S,O,V,I>(
         &self,
         object:&O,
         texture:&Texture,
@@ -228,9 +229,10 @@ impl TextureGraphics{
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame,
+        frame:&mut S,
     )->Result<(),DrawError>
         where
+            S:Surface,
             O:DependentObject<
                 TexturedVertex2D,
                 u8,
@@ -238,7 +240,7 @@ impl TextureGraphics{
                 Indices=I
             >,
             V:AsRef<[TexturedVertex2D]>,
-            I:AsRef<[u8]>+
+            I:AsRef<[u8]>
     {
         // Вписывание вершин и подготовка к выводу
         let vertex_source=object.write_vertices(
@@ -306,7 +308,7 @@ impl TextureGraphics{
                 Indices=I
             >,
             V:AsRef<[TexturedVertex2D]>,
-            I:AsRef<[u8]>+
+            I:AsRef<[u8]>
     {
         // Вершины
         let vertexesb=object.vertices();
@@ -409,12 +411,12 @@ impl TextureGraphics{
 
 /// Функции для рисования объектов.
 impl TextureGraphics{
-    pub fn draw_object(
+    pub fn draw_object<S:Surface>(
         &self,
         index:usize,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>{
         let object=&self.objects[index];
 
@@ -442,13 +444,13 @@ impl TextureGraphics{
         )
     }
 
-    pub fn draw_shift_object(
+    pub fn draw_shift_object<S:Surface>(
         &self,
         index:usize,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>{
         let object=&self.objects[index];
 
@@ -477,14 +479,14 @@ impl TextureGraphics{
         )
     }
 
-    pub fn draw_rotate_object(
+    pub fn draw_rotate_object<S:Surface>(
         &self,
         index:usize,
         rotation_center:[f32;2],
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>{
         let object=&self.objects[index];
 

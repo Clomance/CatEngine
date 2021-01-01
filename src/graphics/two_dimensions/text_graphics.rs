@@ -26,7 +26,6 @@ use glium::{
     Surface,
     // structs
     Program,
-    Frame,
     DrawParameters,
     VertexBuffer,
     Display,
@@ -171,13 +170,13 @@ impl TextGraphics{
     /// 
     /// Перед выводом нужно загрузить вершины
     /// с помощью функции `write_vertices`.
-    pub fn draw_glyph(
+    pub fn draw_glyph<S:Surface>(
         &self,
         glyph:&Texture2d,
         mut colour:Colour,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S,
     )->Result<(),DrawError>{
         let vertices=VerticesSource::VertexBuffer(
             self.vertex_buffer.as_slice_any(),
@@ -207,14 +206,14 @@ impl TextGraphics{
 
 
     /// Рисует глиф с загруженными вершинами.
-    pub fn draw_shift_glyph(
+    pub fn draw_shift_glyph<S:Surface>(
         &self,
         glyph:&Texture2d,
         mut colour:Colour,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>{
         let vertices=VerticesSource::VertexBuffer(
             self.vertex_buffer.as_slice_any(),
@@ -244,7 +243,7 @@ impl TextGraphics{
 
 
     /// Рисует глиф с загруженными вершинами.
-    pub fn draw_rotate_glyph(
+    pub fn draw_rotate_glyph<S:Surface>(
         &self,
         glyph:&Texture2d,
         mut colour:Colour,
@@ -252,7 +251,7 @@ impl TextGraphics{
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>{
         let (sin,cos)=angle.sin_cos();
 
@@ -379,12 +378,12 @@ impl TextGraphics{
 /// Функции для отрисовки объектов.
 impl TextGraphics{
     /// Выводит сохранённый объект.
-    pub fn draw_object(
+    pub fn draw_object<S:Surface>(
         &self,
         index:usize,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>{
         let object=&self.objects[index];
 
@@ -423,13 +422,13 @@ impl TextGraphics{
     }
 
     /// Выводит сдвинутый сохранённый объект.
-    pub fn draw_shift_object(
+    pub fn draw_shift_object<S:Surface>(
         &self,
         index:usize,
         shift:[f32;2],
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>{
         let object=&self.objects[index];
 
@@ -470,14 +469,14 @@ impl TextGraphics{
     }
 
     /// Выводит повёрнутый сохранённый объект.
-    pub fn draw_rotate_object(
+    pub fn draw_rotate_object<S:Surface>(
         &self,
         index:usize,
         rotation_center:[f32;2],
         angle:f32,
         #[cfg(feature="colour_filter")]colour_filter:ColourFilter,
         draw_parameters:&DrawParameters,
-        frame:&mut Frame
+        frame:&mut S
     )->Result<(),DrawError>{
         let object=&self.objects[index];
 
