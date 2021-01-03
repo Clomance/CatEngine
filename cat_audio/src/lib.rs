@@ -104,7 +104,7 @@ use std::{
 #[cfg(feature="extended")]
 use std::sync::mpsc::SendError;
 
-const audio_thread_stack_size:usize=1024;
+const audio_thread_stack_size:usize=1024*1024;
 
 
 #[derive(Clone)]
@@ -127,11 +127,11 @@ pub struct AudioSettings{
     /// The default is 8.
     pub track_storage_capacity:usize,
 
-    /// Максимальное количество одновременно играющих треков.
+    /// Максимальное количество играющих треков.
     /// 
     /// По умолчанию 8.
     /// 
-    /// The maximum amount of playing tracks at one time.
+    /// The limit of playing tracks.
     /// 
     /// The default is 8.
     pub track_playlist_capacity:usize,

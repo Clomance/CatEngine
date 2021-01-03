@@ -1,3 +1,9 @@
+# 0.6.5
+
+### CatAudio
+
+Uncreased the stack size up to 1 MiB (1024 * 1024 bytes) due to problems on some versions of Linux.
+
 # 0.6.4
 
 Now you can draw on everything that implements the `Surface` trait.
