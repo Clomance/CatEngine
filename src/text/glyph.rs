@@ -1,10 +1,8 @@
+use crate::texture::Texture2D;
+
 use super::{
     OutlineCurve,
     Scale,
-};
-
-use glium::{
-    texture::Texture2d,
 };
 
 use ab_glyph_rasterizer::{Point,point,Rasterizer};
@@ -83,41 +81,14 @@ impl<T> RawGlyph<T>{
         ]
     }
 
-    /// Returns glyph's scaled frame.
-    pub fn frame(&self,scale:Scale)->GlyphFrame{
-        GlyphFrame{
-            offset:[
-                self.offset[0]*scale.horizontal,
-                self.offset[1]*scale.vertical
-            ],
-            size:[
-                self.size[0]*scale.horizontal,
-                self.size[1]*scale.vertical
-            ],
-            advance_width:self.advance_width*scale.horizontal,
-        }
-    }
-
-    pub fn scale(&self,scale:Scale)->ScaledGlyph<T>{
-        ScaledGlyph{
-            data:&self.data,
-            offset:[
-                self.offset[0]*scale.horizontal,
-                self.offset[1]*scale.vertical
-            ],
-            size:[
-                (self.size[0]*scale.horizontal).ceil() as u32,
-                (self.size[1]*scale.vertical).ceil() as u32
-            ],
-            scale,
-            advance_width:self.advance_width*scale.horizontal,
-        }
+    pub fn data(&self)->&T{
+        &self.data
     }
 }
 
 
-impl RawGlyph<Texture2d>{
-    pub fn texture(&self)->&Texture2d{
+impl RawGlyph<Texture2D>{
+    pub fn texture(&self)->&Texture2D{
         &self.data
     }
 }
@@ -154,113 +125,12 @@ impl RawGlyph<Vec<OutlineCurve>>{
     }
 }
 
-/// Мастабированный глиф.
-/// A scaled glyph.
-pub struct ScaledGlyph<'a,T:'a>{
-    data:&'a T,
-    // Мастабированный размер
-    size:[u32;2],
-    // Мастабированный сдвиг
-    offset:[f32;2],
-    // Мастабированное расстояние до следующего глифа
-    advance_width:f32,
-    // Мастабирование
-    scale:Scale
-}
-
-impl<'a,T> ScaledGlyph<'a,T>{
-    /// width, height должны быть целыми
-    #[inline(always)]
-    pub const fn new(data:&'a T,[x,y,width,height]:[f32;4],advance_width:f32,scale:Scale)->Self{
-        Self{
-            data,
-            offset:[x,y],
-            size:[width as u32,height as u32],
-            advance_width,
-            scale,
-        }
-    }
-
-    pub fn data(&'a self)->&'a T{
-        self.data
-    }
-
-    #[inline(always)]
-    pub fn offset_x(&self)->f32{
-        self.offset[0]
-    }
-
-    #[inline(always)]
-    pub fn offset_y(&self)->f32{
-        self.offset[1]
-    }
-
-    #[inline(always)]
-    pub fn size(&self)->[u32;2]{
-        self.size
-    }
-
-    pub fn advance_width(&self)->f32{
-        self.advance_width
-    }
-
-    pub fn positioned_bounding_box(&self,position:[f32;2])->[f32;4]{
-        [
-            position[0]+self.offset[0],
-            position[1]-self.offset[1]-self.size[1] as f32,
-            self.size[0] as f32,
-            self.size[1] as f32
-        ]
-    }
-}
-
-impl<'a> ScaledGlyph<'a,Vec<OutlineCurve>>{
-    /// Create an outlined glyph with copied data.
-    pub fn outline(self)->OutlinedGlyph{
-        OutlinedGlyph{
-            offset:self.offset,
-            size:self.size,
-            scale:self.scale,
-            curves:self.data.clone(),
-        }
-    }
-}
-
-/// Глиф с текстурой основой.
-/// Glyph based on a texture.
-pub struct TexturedGlyph<'a>{
-    // Текстура
-    texture:&'a Texture2d,
-    // Размер области для вставки текстуры
-    size:[f32;2],
-}
-
-impl<'a> TexturedGlyph<'a>{
-    pub fn raw(texture:&'a Texture2d,size:[f32;2])->TexturedGlyph<'a>{
-        Self{
-            texture,
-            size,
-        }
-    }
-
-    pub fn texture(&self)->&Texture2d{
-        self.texture
-    }
-
-    pub fn size(&self)->[f32;2]{
-        self.size
-    }
-}
-
 /// Глиф с контурной основой.
 /// Glyph based on an outline.
 #[derive(Clone,Debug)]
 pub struct OutlinedGlyph{
-    // Scaled
     offset:[f32;2],
-    // Scaled
     size:[u32;2],
-    // Scale for `OutlineCurve`
     scale:Scale,
     curves:Vec<OutlineCurve>,
 }
@@ -268,10 +138,10 @@ pub struct OutlinedGlyph{
 impl OutlinedGlyph{
     /// width, height должны быть целыми
     #[inline(always)]
-    pub const fn raw(curves:Vec<OutlineCurve>,offset:[f32;2],[width,height]:[f32;2],scale:Scale)->Self{
+    pub const fn raw(curves:Vec<OutlineCurve>,[width,height]:[u32;2],offset:[f32;2],scale:Scale)->Self{
         Self{
             offset,
-            size:[width as u32,height as u32],
+            size:[width,height],
             scale,
             curves,
         }
@@ -284,6 +154,14 @@ impl OutlinedGlyph{
     #[inline(always)]
     pub fn size(&self)->[u32;2]{
         self.size
+    }
+
+    pub fn scale(&self)->Scale{
+        self.scale
+    }
+
+    pub fn curves(&self)->&Vec<OutlineCurve>{
+        &self.curves
     }
 
     pub fn draw<O:FnMut(usize,f32)>(&self,mut o:O){
@@ -325,12 +203,4 @@ impl OutlinedGlyph{
             o(c,f)
         });
     }
-}
-
-/// Contains glyph's size, offset and advance width.
-#[derive(Debug)]
-pub struct GlyphFrame{
-    pub offset:[f32;2],
-    pub size:[f32;2],
-    pub advance_width:f32,
 }

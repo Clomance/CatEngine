@@ -1,23 +1,14 @@
 use crate::{
     Colour,
-    graphics::{DependentObject,TexturedVertex2D},
+    graphics::{
+        DependentObject,
+        TexturedVertex2D,
+        PrimitiveType,
+        ElementIndexType,
+    },
 };
 
-use glium::index::PrimitiveType;
-
-/// Основа для изображений. An image base.
-/// 
-/// Прямоугольник с вершинами: (x1, y1), (x1, y2), (x2, y1), (x2, y2).
-/// 
-/// Цветовой фильтр - [red, green, blue, alpha].
-/// Цвет = цвет * фильтр.
-/// 
-/// #
-/// 
-/// A rectangle with vertices: (x1, y1), (x1, y2), (x2, y1), (x2, y2).
-/// 
-/// Colour filter - [red, green, blue, alpha].
-/// Colour = colour * filter.
+#[derive(Clone)]
 pub struct ImageObject{
     pub x1:f32,
     pub y1:f32,
@@ -131,25 +122,21 @@ impl ImageObject{
     }
 }
 
-impl DependentObject<TexturedVertex2D,u8> for ImageObject{
+impl DependentObject<TexturedVertex2D,ElementIndexType> for ImageObject{
     type Vertices=[TexturedVertex2D;4];
-    type Indices=[u8;1];
-
-    fn colour(&self)->Colour{
-        self.colour_filter
-    }
+    type Indices=[ElementIndexType;0];
 
     fn vertices(&self)->Self::Vertices{
         [
-            TexturedVertex2D::new([self.x1,self.y1],[self.u1,self.v2]),
-            TexturedVertex2D::new([self.x1,self.y2],[self.u1,self.v1]),
-            TexturedVertex2D::new([self.x2,self.y1],[self.u2,self.v2]),
-            TexturedVertex2D::new([self.x2,self.y2],[self.u2,self.v1])
+            TexturedVertex2D::new([self.x1,self.y1],[self.u1,self.v2],self.colour_filter),
+            TexturedVertex2D::new([self.x1,self.y2],[self.u1,self.v1],self.colour_filter),
+            TexturedVertex2D::new([self.x2,self.y1],[self.u2,self.v2],self.colour_filter),
+            TexturedVertex2D::new([self.x2,self.y2],[self.u2,self.v1],self.colour_filter)
         ]
     }
 
-    fn indices(&self)->Option<Self::Indices>{
-        None
+    fn indices(&self)->[ElementIndexType;0]{
+        []
     }
 
     fn primitive_type(&self)->PrimitiveType{

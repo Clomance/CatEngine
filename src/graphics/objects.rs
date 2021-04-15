@@ -1,20 +1,118 @@
-use crate::Colour;
+use crate::{
+    Colour,
+};
 
-use glium::{
-    index::{
-        PrimitiveType,
-        IndicesSource,
-        IndexType,
+use super::PrimitiveType;
+
+use cat_engine_basement::graphics::{
+    level0::{
+        Vertex,
+        VertexArray,
     },
-    vertex::{
-        VerticesSource,
-        VertexFormat,
-    },
-    buffer::{
-        Buffer,
-        Content,
+    gl::{
+        FLOAT,FALSE,
+        VertexAttribPointer,
+        EnableVertexAttribArray,
     },
 };
+
+use std::mem::size_of;
+
+#[derive(Clone,Debug)]
+pub struct SimpleVertex2D{
+    pub position:[f32;2],
+    pub colour:Colour
+}
+
+impl SimpleVertex2D{
+    pub const fn new(position:[f32;2],colour:Colour)->SimpleVertex2D{
+        Self{
+            position,
+            colour,
+        }
+    }
+}
+
+impl Vertex for SimpleVertex2D{
+    fn bind_for_vertex_array(vertex_array:&VertexArray<Self>){
+        vertex_array.bind();
+
+        unsafe{
+            // layout = 0 - position
+            VertexAttribPointer(0,2,FLOAT,FALSE,size_of::<SimpleVertex2D>() as i32,core::ptr::null());
+            EnableVertexAttribArray(0);
+            // layout = 1 - colour
+            let offset=2*4;
+            VertexAttribPointer(1,4,FLOAT,FALSE,size_of::<SimpleVertex2D>() as i32,offset as *const _);
+            EnableVertexAttribArray(1);
+        }
+    }
+}
+
+#[derive(Clone,Debug)]
+pub struct TexturedVertex2D{
+    pub position:[f32;2],
+    pub tex_coords:[f32;2],
+    pub colour:Colour
+}
+
+impl TexturedVertex2D{
+    pub const fn new(position:[f32;2],tex_coords:[f32;2],colour:Colour)->TexturedVertex2D{
+        Self{
+            position,
+            tex_coords,
+            colour,
+        }
+    }
+}
+
+impl Vertex for TexturedVertex2D{
+    fn bind_for_vertex_array(_vertex_array:&VertexArray<Self>){
+        unsafe{
+            // layout = 0 - position
+            VertexAttribPointer(0,2,FLOAT,FALSE,size_of::<TexturedVertex2D>() as i32,core::ptr::null());
+            EnableVertexAttribArray(0);
+            // layout = 1 - texture_coords
+            let offset=2*4;
+            VertexAttribPointer(1,2,FLOAT,FALSE,size_of::<TexturedVertex2D>() as i32,offset as *const _);
+            EnableVertexAttribArray(1);
+            // layout = 2 - colour_filter
+            let offset=4*4;
+            VertexAttribPointer(2,4,FLOAT,FALSE,size_of::<TexturedVertex2D>() as i32,offset as *const _);
+            EnableVertexAttribArray(2);
+        }
+    }
+}
+
+
+#[derive(Copy,Clone)]
+pub struct TextVertex2D{
+    pub position:[f32;2],
+    pub tex_coords:[f32;2],
+}
+
+impl TextVertex2D{
+    pub const fn new(position:[f32;2],tex_coords:[f32;2])->TextVertex2D{
+        Self{
+            position,
+            tex_coords,
+        }
+    }
+}
+
+impl Vertex for TextVertex2D{
+    fn bind_for_vertex_array(_vertex_array:&VertexArray<Self>){
+        unsafe{
+            // layout = 0 - position
+            VertexAttribPointer(0,2,FLOAT,FALSE,size_of::<TextVertex2D>() as i32,core::ptr::null());
+            EnableVertexAttribArray(0);
+            // layout = 1 - texture_coords
+            let offset=2*4;
+            VertexAttribPointer(1,2,FLOAT,FALSE,size_of::<TextVertex2D>() as i32,offset as *const _);
+            EnableVertexAttribArray(1);
+        }
+    }
+}
 
 /// Типаж для создания объектов, которые зависят от буферов вершин и индексов.
 /// A trait for creating objects depend on vertex and index buffers.
@@ -22,18 +120,9 @@ use glium::{
 /// The crate's graphics engine uses `TexturedVertex2D` and `Vertex2D` for vertices
 /// and `u8` for indices, but you can add your own
 /// and draw objects with `window.draw()`.
-pub trait DependentObject<V:Copy,I:Copy>
-    where
-        [V]:Content,
-        [I]:Content,
-{
+pub trait DependentObject<V:Vertex,I:Sized>{
     type Vertices:AsRef<[V]>;
     type Indices:AsRef<[I]>;
-
-    /// Цвет объекта.
-    /// 
-    /// Object's colour.
-    fn colour(&self)->Colour;
 
     /// Вершины объекта.
     /// 
@@ -44,70 +133,8 @@ pub trait DependentObject<V:Copy,I:Copy>
 
     /// Индексы для построения объекта.
     /// 
-    /// Indices to build the object.
-    fn indices(&self)->Option<Self::Indices>;
+    /// Object's indices.
+    fn indices(&self)->Self::Indices;
 
     fn primitive_type(&self)->PrimitiveType;
-
-    /// Вписывает индексы в буфер индексов и возвращает `Some(IndicesSource)` для рисования
-    /// или `None`, если недостаточно места.
-    /// 
-    /// Writes indices to the index buffer and return `Some(IndicesSource)` to draw
-    /// or `None` if there is not enough space.
-    fn write_indices<'a>(
-        &self,
-        index_buffer:&'a Buffer<[I]>
-    )->Option<IndicesSource<'a>>{
-        Some(
-            if let Some(indicesb)=self.indices(){
-                let indices=indicesb.as_ref();
-
-                let slice=match index_buffer.slice(0..indices.len()){
-                    Some(slice)=>slice,
-                    None=>return None,
-                };
-                slice.write(&indices);
-
-                IndicesSource::IndexBuffer{
-                    buffer:slice.as_slice_any(),
-                    data_type:IndexType::U8,
-                    primitives:self.primitive_type(),
-                }
-            }
-            else{
-                IndicesSource::NoIndices{
-                    primitives:self.primitive_type(),
-                }
-            }
-        )
-    }
-
-    /// Вписывает вершины в буфер индексов и возвращает `Some(IndicesSource)` для рисования
-    /// или `None`, если недостаточно места.
-    /// 
-    /// Writes indices to the index buffer and return `Some(IndicesSource)` to draw
-    /// or `None` if there is not enough space.
-    fn write_vertices<'a>(
-        &self,
-        vertex_buffer:&'a Buffer<[V]>,
-        vertex_format:&'a VertexFormat,
-    )->Option<VerticesSource<'a>>{
-        let verticesb=self.vertices();
-        let vertices:&[V]=verticesb.as_ref();
-
-        let slice=match vertex_buffer.slice(0..vertices.len()){
-            Some(slice)=>slice,
-            None=>return None,
-        };
-
-        slice.write(&vertices);
-
-        Some(
-            VerticesSource::VertexBuffer(
-                slice.as_slice_any(),
-                vertex_format,
-                false
-            )
-        )
-    }
 }

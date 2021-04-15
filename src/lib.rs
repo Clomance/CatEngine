@@ -1,134 +1,60 @@
-#![allow(non_upper_case_globals,unused_must_use,unused_mut,unused_macros,unused_imports,dead_code)]
-
-//! # 2D графический движок с поддержкой аудио. A 2D graphics engine with audio support.
-//! 
-//! "Фичи" по умолчанию - `audio`, `simple_graphics`, `texture_graphics`, `text_graphics`.
-//! 
-//! The default features are `audio`,`simple_graphics`, `texture_graphics`, `text_graphics`.
-//! 
-//! ```rust
-//! use cat_engine::{
-//!     Window,
-//!     WindowEvent
-//! };
-//! 
-//! fn main(){
-//!     // Default settings
-//!     let (mut window,graphics)=Window::new(|_,_|{}).unwrap();
-//! 
-//!     window.run(|window,event|{
-//!         match event{
-//!             WindowEvent::RedrawRequested=>{
-//!                 window.draw(&graphics,|graphics|{
-//!                     graphics.clear_colour([1.0,0.0,0.0,0.0]);
-//!                 }).unwrap();
-//!             }
-//!             _=>{}
-//!         }
-//!     });
-//! }
-//! ```
-//! 
-//! 
-//! 
-//! Modifying a window.
-//! ```rust
-//! let wi=window.display().gl_window();
-//! let w=wi.window();
-//! w.set_minimized(false);
-//! w.set_visible(false);
-//! ```
-
-// re-exports
-pub use glium::{
-    self,
-    glutin::event::{
-        MouseButton,
-        ModifiersState,
-        MouseScrollDelta,
-    },
-};
-
-// re-exports
-#[cfg(any(feature="audio",feature="extended_audio",feature="raw_audio"))]
-pub use cat_audio as audio;
-
-// re-exports
-pub use image;
-
-#[cfg(feature="text_graphics")]
-pub mod text;
-
-pub mod texture;
+#![allow(
+    non_snake_case,
+    non_upper_case_globals,
+    non_camel_case_types,
+    unused_must_use,
+    unused_mut,
+    unused_macros,
+    unused_imports,
+    dead_code
+)]
 
 pub mod graphics;
 
-mod window;
-pub (crate) use window::{
-    WindowBase,
-    InnerWindowEvent,
-};
-pub use window::{
+mod app;
+pub use app::{
     // statics
     window_width,
     window_height,
     mouse_cursor,
     window_center,
-    // functions
-    default_draw_parameters,
-    // else
-    Window,
+    // structs
+    App,
+    AppAttributes,
+    WindowReference,
+    // enums
+    Event,
     WindowEvent,
-    WindowPage,
-    WindowSettings,
-    KeyboardButton,
-    GeneralSettings,
+    LoopControl,
+    Fullscreen,
+    Background,
+    CursorIcon,
+    UpdateInterval,
 };
 
 #[cfg(feature="fps_counter")]
-pub use window::fps;
+pub use app::fps;
+
 #[cfg(feature="ups_counter")]
-pub use window::ups;
+pub use app::ups;
 
-//      Caution      \\
-// Under construction \\
-mod app;
+#[cfg(feature="texture_graphics")]
+pub mod texture;
 
-/// Геометрические фигуры. Geometric shapes.
-/// `feature = "simple_graphics"`, `default_features`
-#[cfg(all(feature="simple_graphics"))]
+#[cfg(feature="text_graphics")]
+pub mod text;
+
+pub use image;
+
+#[cfg(feature="simple_graphics")]
 pub mod shapes;
-
-//    _.---.._             _.---...__
-// .-'   /\   \          .'  /\     /
-// `.   (  )   \        /   (  )   /
-//   `.  \/   .'\      /`.   \/  .'
-//     ``---''   )    (   ``---''
-//             .';.--.;`.
-//           .' /_...._\ `.
-//         .'   `.a  a.'   `.
-//        (        \/        )
-//         `.___..-'`-..___.'
-//            \          /
-//             `-.____.-'
-//      Henlo, Mister Programmer.
-// If you think there are to many cats, you are mistaken.
-// There can't be too many cats.
-// Cats are cute.
-// I'd better write a good documentation rather than paste cats.
-// But......................... Cats are more important!
 
 /// RGBA - [f32; 4]
 pub type Colour=[f32;4];
 
-/// Возвращает прямоугольник размера окна.
-/// Returns a window sized rectangle.
-/// [0, 0, width, height]
-pub fn window_rect()->[f32;4]{
-    unsafe{[
-        0f32,
-        0f32,
-        window_width,
-        window_height,
-    ]}
-}
+pub use cat_engine_basement as basement;
+
+#[cfg(feature="audio")]
+pub use cat_audio as audio;
+
+pub use basement::graphics::gl;

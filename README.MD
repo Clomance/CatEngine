@@ -9,19 +9,18 @@
 [doc.rs]:https://docs.rs/cat_engine/
 
 
-A 2D graphics engine with audio support for Windows and Linux.
+A 2D graphics engine with audio support for Windows.
 
-Uses OpenGL 2.0 and above.
-
-Mac, iOS might work anyway.
+Compatible with OpenGL 3.3 and above.
 
 #### Features
 
-You can disable some unnecessary modules with Rust features (see [list of features](book/EN/features.md)).
+<!-- You can disable some unnecessary modules with Rust features (see [list of features](book/EN/features.md)). -->
 
 
 #### Dependencies
- - Graphics - [glium](https://github.com/glium/glium)
+ - Base - [winapi](https://github.com/retep998/winapi-rs)
+ - Graphics - [gl](https://github.com/brendanzab/gl-rs/)
  - Images - [image](https://github.com/image-rs/image)
  - Fonts - [ttf-parser](https://github.com/RazrFalcon/ttf-parser) and [ab_glyph_rasterizer](https://github.com/alexheretic/ab-glyph)
  - Audio - [cat_audio](https://github.com/Clomance/CatEngine/tree/master/cat_audio)
@@ -29,9 +28,9 @@ You can disable some unnecessary modules with Rust features (see [list of featur
 If you use audio feature, alsa delevopment libraries are required for Linux: `libasound2-dev` for Debian and Ubuntu, `alsa-lib-devel` for Fedora (see [cpal](https://github.com/RustAudio/cpal)).
 
 
-## [The book](book/README.MD)
+<!-- ## [The book](book/README.MD) -->
 
-## [My own game](https://github.com/Clomance/Visual-Novel)
+<!-- ## [My own game](https://github.com/Clomance/Visual-Novel) -->
 
 ## [Release notes](RELEASE-NOTES.MD)
 

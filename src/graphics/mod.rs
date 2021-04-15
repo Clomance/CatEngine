@@ -1,148 +1,398 @@
-//! # Графические основы. Graphics bases.
-//! 
-//! Графический движок разделен на три части:
-//! 1. Простая графика - одноцветные объекты состоящие из `Vertex2D`.
-//! 2. Текстуры (изображения)
-//! 3. Текст
-//! 
-//! #
-//! 
-//! The graphics engine is divided into three parts:
-//! 1. Simple graphics - plain objects composed of `Vertex2D`.
-//! 2. Textures (images)
-//! 3. Text
-
-#[cfg(feature="colour_filter")]
-use crate::Colour;
-
-// #[cfg(feature="2D")]
-pub (crate) mod two_dimensions;
-
-pub use two_dimensions::{
-    Graphics2D,
-    TexturedVertex2D,
-    Vertex2D
+use crate::{
+    // types
+    Colour,
+    // structs
+    App,
+    basement::graphics::{
+        level0::Vertex,
+        level1::texture::texture_2d::Texture2D
+    },
 };
 
+#[cfg(feature="text_graphics")]
+use crate::text::{
+    Scale,
+    CachedFont,
+};
 
-mod base;
-pub use base::Graphics;
+mod object_allocation;
+use object_allocation::{
+    HeapSystem,
+    HeapDrawType,
+    HeapObject,
+    HeapDrawableObject,
+    StackSystem,
+    StackObject,
+    StackDrawType,
+    StackDrawableObject,
+    ObjectAllocation,
+};
 
 mod objects;
-pub use objects::DependentObject;
-
-#[cfg(feature="colour_filter")]
-mod colour_filter;
-#[cfg(feature="colour_filter")]
-pub use colour_filter::{
-    FilteringFunction,
-    ColourFilter,
+pub use objects::{
+    SimpleVertex2D,
+    TexturedVertex2D,
+    TextVertex2D,
+    DependentObject,
 };
 
-#[derive(Clone,Debug)]
-pub enum ObjectType{
-    Simple,
-    Textured,
-    Text,
+mod simple_graphics;
+use simple_graphics::SimpleGraphics;
+
+#[cfg(feature="texture_graphics")]
+mod texture_graphics;
+#[cfg(feature="texture_graphics")]
+use texture_graphics::TextureGraphics;
+
+#[cfg(feature="text_graphics")]
+mod text_graphics;
+#[cfg(feature="text_graphics")]
+use text_graphics::{
+    TextGraphics,
+    TextGraphicsAttributes
+};
+
+mod graphics_2d;
+pub use graphics_2d::{
+    Graphics2DAttributes,
+    Graphics2D,
+};
+
+mod parameters;
+pub use parameters::{
+    GraphicsParameters,
+    BlendingEquation,
+    BlendingFunction,
+    Blending,
+    DrawMode,
+    DrawParameters,
+};
+
+use cat_engine_basement::graphics::gl::{
+    POINTS,
+    LINES,
+    LINE_LOOP,
+    LINE_STRIP,
+    TRIANGLES,
+    TRIANGLE_STRIP,
+    TRIANGLE_FAN,
+    LINES_ADJACENCY,
+    TRIANGLES_ADJACENCY,
+    TRIANGLE_STRIP_ADJACENCY,
+    COLOR_BUFFER_BIT,
+    STENCIL_BUFFER_BIT,
+    DEPTH_BUFFER_BIT,
+    // functions
+    load_with,
+    Clear,
+    Viewport,
+};
+
+pub type FrameIDType=u16;
+pub type ObjectIDType=u16;
+pub type ElementIndexType=u16;
+const frame_size:usize=3;
+/// The minimum of frames per object.
+const minimal_frames:usize=3;
+
+#[derive(Clone,Copy)]
+pub enum PrimitiveType{
+    Points=POINTS as isize,
+    Lines=LINES as isize,
+    LineLoop=LINE_LOOP as isize,
+    LineStrip=LINE_STRIP as isize,
+    Triangles=TRIANGLES as isize,
+    TriangleStrip=TRIANGLE_STRIP as isize,
+    TriangleFan=TRIANGLE_FAN as isize,
+    LinesAdjacency=LINES_ADJACENCY as isize,
+    TrianglesAdjacency=TRIANGLES_ADJACENCY as isize,
+    TriangleStripAdjacency=TRIANGLE_STRIP_ADJACENCY as isize,
 }
 
-#[derive(Clone,Debug)]
-pub enum DrawType{
-    Common,
-    Shifting([f32;2]),
-    Rotating((f32,[f32;2])),
+impl PrimitiveType{
+    pub fn as_gl_enum(self)->u32{
+        self as u32
+    }
 }
 
-#[derive(Clone,Debug)]
-pub struct InnerGraphicsSettings{
-    /// The capacity of the vertex buffer.
-    /// 
-    /// The default is 128.
-    pub vertex_buffer_size:usize,
-
-    /// The [0..offset] range is for common drawing,
-    /// [offset..] is for saving objects.
-    /// 
-    /// The default is 64.
-    pub vertex_buffer_offset:usize,
-
-    /// The capacity of the index buffer.
-    /// 
-    /// The default is 128.
-    pub index_buffer_size:usize,
-
-    /// The [0..offset] range is for common drawing,
-    /// [offset..] is for saving objects.
-    /// 
-    /// The default is 64.
-    pub index_buffer_offset:usize,
-
-    /// The capacity of the object buffer.
-    /// 
-    /// The default is 16.
-    pub object_buffer_size:usize,
+pub struct Graphics{
+    graphics_2d:Graphics2D,
+    parameters:GraphicsParameters,
 }
 
-impl InnerGraphicsSettings{
-    pub const fn new()->InnerGraphicsSettings{
+impl Graphics{
+    pub fn new(window:&App,attributes:Graphics2DAttributes)->Graphics{
+        // Загрузка всех доступных функций
+        load_with(|s|{
+            let string=format!("{}\0",s);
+            window.get_proc_address(&string) as *const _
+        });
+
+        unsafe{
+            let [width,height]=window.client_size();
+            Viewport(0i32,0i32,width as i32,height as i32);
+        }
+
         Self{
-            vertex_buffer_size:128,
-            vertex_buffer_offset:64,
+            graphics_2d:Graphics2D::new(attributes),
+            parameters:GraphicsParameters::new(),
+        }
+    }
 
-            index_buffer_size:128,
-            index_buffer_offset:64,
+    pub fn graphics_2d(&self)->&Graphics2D{
+        &self.graphics_2d
+    }
 
-            object_buffer_size:16,
+    pub fn graphics_2d_mut(&mut self)->&mut Graphics2D{
+        &mut self.graphics_2d
+    }
+
+    pub fn parameters(&self)->&GraphicsParameters{
+        &self.parameters
+    }
+
+    pub fn draw_parameters(&mut self)->&mut DrawParameters{
+        self.graphics_2d.draw_parameters()
+    }
+}
+
+impl Graphics{
+    pub unsafe fn clear(&self,mask:u32){
+        Clear(mask)
+    }
+
+    pub fn clear_colour(&self){
+        unsafe{
+            Clear(COLOR_BUFFER_BIT);
+        }
+    }
+
+    pub fn clear_stencil(&self){
+        unsafe{
+            Clear(STENCIL_BUFFER_BIT);
+        }
+    }
+
+    pub fn clear_depth(&self){
+        unsafe{
+            Clear(DEPTH_BUFFER_BIT)
         }
     }
 }
 
-#[derive(Clone,Debug)]
-pub struct TextGraphicsSettings{
-    /// The size for dynamic glyph rendering.
-    /// 
-    /// The default is [256;2]
-    pub glyph_texture_size:[u32;2],
-
-}
-
-impl TextGraphicsSettings{
-    pub const fn new()->TextGraphicsSettings{
-        Self{
-            glyph_texture_size:[256;2]
-        }
+/// Text graphics.
+#[cfg(feature="text_graphics")]
+impl Graphics{
+    pub fn draw_char(
+        &self,
+        character:char,
+        colour:Colour,
+        position:[f32;2],
+        horisontal_advance:&mut f32,
+        scale:Scale,
+        font:&CachedFont
+    ){
+        self.graphics_2d.draw_char(
+            character,
+            colour,
+            position,
+            horisontal_advance,
+            scale,
+            font,
+        )
     }
 }
 
+/// Simple graphics.
+#[cfg(feature="simple_graphics")]
+impl Graphics{
+    pub fn add_simple_object_raw(
+        &mut self,
+        vertices:&[SimpleVertex2D],
+        indices:&[ElementIndexType],
+        primitive_type:PrimitiveType
+    )->Option<ObjectIDType>{
+        self.graphics_2d.add_simple_object_raw(
+            vertices,
+            indices,
+            primitive_type
+        )
+    }
 
-/// Настройки графических основ.
-/// Settings for graphics bases.
-#[derive(Clone,Debug)]
-pub struct GraphicsSettings{
-    /// feature = "texture_graphics"
-    #[cfg(feature="texture_graphics")]
-    pub texture:InnerGraphicsSettings,
+    pub fn add_simple_object<O:DependentObject<SimpleVertex2D,ElementIndexType>>(
+        &mut self,
+        object:&O
+    )->Option<ObjectIDType>{
+        let vertices=object.vertices();
+        let indices=object.indices();
+        let primitive_type=object.primitive_type();
+        self.graphics_2d.add_simple_object_raw(
+            vertices.as_ref(),
+            indices.as_ref(),
+            primitive_type
+        )
+    }
 
-    /// feature = "simple_graphics"
-    #[cfg(feature="simple_graphics")]
-    pub simple:InnerGraphicsSettings,
+    /// Removes an object.
+    /// 
+    /// It's not actually removes it, just clears it's data.
+    pub fn remove_simple_object(&mut self,index:ObjectIDType){
+        self.graphics_2d.remove_simple_object(index);
+    }
 
-    /// feature = "text_graphics"
-    #[cfg(feature="text_graphics")]
-    pub text:TextGraphicsSettings,
+    pub fn write_heap_simple_object_vertices(&mut self,index:ObjectIDType,vertices:&[SimpleVertex2D]){
+        self.graphics_2d.write_heap_simple_object_vertices(index,vertices)
+    }
+
+    pub fn write_heap_simple_object_indices(&mut self,index:ObjectIDType,indices:&[ElementIndexType]){
+        self.graphics_2d.write_heap_simple_object_indices(index,indices)
+    }
+
+    pub fn draw_heap_simple_object(&self,index:ObjectIDType){
+        self.graphics_2d.draw_heap_simple_object(index);
+    }
+
+    pub fn push_simple_object_raw(
+        &mut self,
+        vertices:&[SimpleVertex2D],
+        indices:&[ElementIndexType],
+        primitive_type:PrimitiveType
+    )->Option<ObjectIDType>{
+        self.graphics_2d.push_simple_object_raw(
+            vertices,
+            indices,
+            primitive_type
+        )
+    }
+
+    pub fn push_simple_object<O:DependentObject<SimpleVertex2D,ElementIndexType>>(
+        &mut self,
+        object:&O
+    )->Option<ObjectIDType>{
+        let vertices=object.vertices();
+        let indices=object.indices();
+        let primitive_type=object.primitive_type();
+        self.graphics_2d.push_simple_object_raw(
+            vertices.as_ref(),
+            indices.as_ref(),
+            primitive_type
+        )
+    }
+
+    pub fn pop_simple_object(&mut self){
+        self.graphics_2d.pop_simple_object();
+    }
+
+    pub fn clear_stack_simple_objects(&mut self){
+        self.graphics_2d.clear_stack_simple_objects()
+    }
+
+    pub fn write_stack_simple_object_vertices(&mut self,index:ObjectIDType,vertices:&[SimpleVertex2D]){
+        self.graphics_2d.write_stack_simple_object_vertices(index,vertices)
+    }
+
+    pub fn write_stack_simple_object_indices(&mut self,index:ObjectIDType,indices:&[ElementIndexType]){
+        self.graphics_2d.write_stack_simple_object_indices(index,indices)
+    }
+
+    pub fn draw_stack_simple_object(&self,index:ObjectIDType){
+        self.graphics_2d.draw_stack_simple_object(index);
+    }
 }
 
-impl GraphicsSettings{
-    pub const fn new()->GraphicsSettings{
-        Self{
-            #[cfg(feature="texture_graphics")]
-            texture:InnerGraphicsSettings::new(),
+/// Texture graphics.
+#[cfg(feature="texture_graphics")]
+impl Graphics{
+    pub fn add_textured_object_raw(
+        &mut self,
+        vertices:&[TexturedVertex2D],
+        indices:&[ElementIndexType],
+        primitive_type:PrimitiveType
+    )->Option<ObjectIDType>{
+        self.graphics_2d.add_textured_object_raw(
+            vertices,
+            indices,
+            primitive_type
+        )
+    }
 
-            #[cfg(feature="simple_graphics")]
-            simple:InnerGraphicsSettings::new(),
+    pub fn add_textured_object<O:DependentObject<TexturedVertex2D,ElementIndexType>>(
+        &mut self,
+        object:&O
+    )->Option<ObjectIDType>{
+        let vertices=object.vertices();
+        let indices=object.indices();
+        let primitive_type=object.primitive_type();
+        self.graphics_2d.add_textured_object_raw(
+            vertices.as_ref(),
+            indices.as_ref(),
+            primitive_type
+        )
+    }
 
-            #[cfg(feature="text_graphics")]
-            text:TextGraphicsSettings::new(),
-        }
+    /// Removes an object.
+    /// 
+    /// It's not actually removes it, just clears it's data.
+    pub fn remove_textured_object(&mut self,index:ObjectIDType){
+        self.graphics_2d.remove_textured_object(index);
+    }
+
+    pub fn clear_stack_textured_objects(&mut self){
+        self.graphics_2d.clear_stack_textured_objects()
+    }
+
+    pub fn write_heap_textured_object_vertices(&mut self,index:ObjectIDType,vertices:&[TexturedVertex2D]){
+        self.graphics_2d.write_heap_textured_object_vertices(index,vertices)
+    }
+
+    pub fn write_heap_textured_object_indices(&mut self,index:ObjectIDType,indices:&[ElementIndexType]){
+        self.graphics_2d.write_heap_textured_object_indices(index,indices)
+    }
+
+    pub fn draw_heap_textured_object(&self,index:ObjectIDType,texture:&Texture2D){
+        self.graphics_2d.draw_heap_textured_object(index,texture);
+    }
+
+    pub fn push_textured_object_raw(
+        &mut self,
+        vertices:&[TexturedVertex2D],
+        indices:&[ElementIndexType],
+        primitive_type:PrimitiveType
+    )->Option<ObjectIDType>{
+        self.graphics_2d.push_textured_object_raw(
+            vertices,
+            indices,
+            primitive_type
+        )
+    }
+
+    pub fn push_textured_object<O:DependentObject<TexturedVertex2D,ElementIndexType>>(
+        &mut self,
+        object:&O
+    )->Option<ObjectIDType>{
+        let vertices=object.vertices();
+        let indices=object.indices();
+        let primitive_type=object.primitive_type();
+        self.graphics_2d.push_textured_object_raw(
+            vertices.as_ref(),
+            indices.as_ref(),
+            primitive_type
+        )
+    }
+
+    pub fn pop_textured_object(&mut self){
+        self.graphics_2d.pop_textured_object();
+    }
+
+    pub fn write_stack_textured_object_vertices(&mut self,index:ObjectIDType,vertices:&[TexturedVertex2D]){
+        self.graphics_2d.write_stack_textured_object_vertices(index,vertices)
+    }
+
+    pub fn write_stack_textured_object_indices(&mut self,index:ObjectIDType,indices:&[ElementIndexType]){
+        self.graphics_2d.write_stack_textured_object_indices(index,indices)
+    }
+
+    pub fn draw_stack_textured_object(&self,index:ObjectIDType,texture:&Texture2D){
+        self.graphics_2d.draw_stack_textured_object(index,texture);
     }
 }

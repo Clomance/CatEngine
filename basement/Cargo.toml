@@ -1,0 +1,29 @@
+[package]
+name = "cat_engine_basement"
+version = "0.0.0-alpha"
+authors = ["Clomance <Hisoskar@gmail.com>"]
+edition = "2018"
+
+[features]
+auto_hide = []
+lazy = []
+file_drop = []
+
+[target.'cfg(windows)'.dependencies.winapi]
+version = "0.3.9"
+features = [
+    "winuser",
+    "windef",
+    "minwindef",
+    "wingdi",
+    "libloaderapi",
+    "errhandlingapi",
+    "processthreadsapi",
+    "profileapi",
+    "commctrl",
+]
+
+
+[dependencies]
+image = "0.23.13"
+gl = "0.14.0"

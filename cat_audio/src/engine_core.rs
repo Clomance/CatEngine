@@ -389,7 +389,7 @@ pub (crate) fn event_loop_handler(
     })
 }
 
-/// Вывод звука и постобработка (`feature="audio_post_processing"`)
+/// Вывод звука и постобработка (`feature="audio_post_processing"`).
 fn output<
     S:SampleTransform,
     #[cfg(feature="audio_post_processing")]P:FnMut(&mut Vec<f32>)
@@ -408,6 +408,7 @@ fn output<
     post_processing(frame);
 
     for b in buffer.iter_mut(){
+        // Обновление кадра
         if c==channels as usize{
             frame=channel_system.next_frame();
             #[cfg(feature="audio_post_processing")]

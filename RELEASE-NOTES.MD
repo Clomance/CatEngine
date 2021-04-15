@@ -1,3 +1,16 @@
+# 1.0.0 - pre-alpha, very-very-raw
+
+### Whole engine redesign.
+ - Raw OpenGL functions.
+ - Raw wrappers.
+ - New object allocation systems: heap- and stack-type.
+ - New app working system.
+ - A basement with secrets and cats.
+ - More unaccomplished features.
+ - More language mistakes :)
+ - Less comments.
+
+
 # 0.6.5
 
 ### CatAudio
