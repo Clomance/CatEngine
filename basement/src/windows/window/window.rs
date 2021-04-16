@@ -18,6 +18,7 @@ use winapi::{
             HDC,
             HGLRC,
             RECT,
+            POINT,
         }
     },
 
@@ -38,6 +39,10 @@ use winapi::{
             UpdateWindow,
             SetWindowPos,
             SetWindowLongPtrW,
+            GetCursorPos,
+            SetCursorPos,
+            ClientToScreen,
+            ScreenToClient,
             // window styles
             WS_BORDER,
             WS_CAPTION,
@@ -289,7 +294,7 @@ impl Window{
         ]
     }
 
-    /// Returns the window coordinates of it's upper-left corner.
+    /// Returns coordinates of window's upper-left corner.
     /// 
     /// Возвращает координаты верхнего левого угла окна.
     /// 
@@ -321,9 +326,9 @@ impl Window{
         window_rectangle
     }
 
-    /// Returns the client area size.
+    /// Returns window's client area size.
     /// 
-    /// Возвращает размеры клиентской области.
+    /// Возвращает размеры клиентской области окна.
     /// 
     /// [width, height]
     pub fn client_size(&self)->[u32;2]{
@@ -371,6 +376,32 @@ impl Window{
 
     pub unsafe fn set_style(&self,style:u32){
         SetWindowLongPtrW(self.handle,GWL_STYLE,style as isize);
+    }
+}
+
+/// Cursor functions.
+impl Window{
+    /// Returns the window's cursor position.
+    /// 
+    /// Возвращает положение курсора окна.
+    pub fn cursor_position(&self)->[i32;2]{
+        unsafe{
+            let mut point:POINT=std::mem::zeroed();
+            GetCursorPos(&mut point);
+            ScreenToClient(self.handle,&mut point);
+            transmute(point)
+        }
+    }
+
+    /// Sets the window's cursor position.
+    /// 
+    /// Устанавливает положение курсора окна.
+    pub fn set_cursor_position(&self,[x,y]:[i32;2]){
+        unsafe{
+            let mut point=POINT{x,y};
+            ClientToScreen(self.handle,&mut point);
+            SetCursorPos(point.x,point.y);
+        }
     }
 }
 

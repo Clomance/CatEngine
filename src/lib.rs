@@ -16,7 +16,6 @@ pub use app::{
     // statics
     window_width,
     window_height,
-    mouse_cursor,
     window_center,
     // structs
     App,
@@ -56,5 +55,3 @@ pub use cat_engine_basement as basement;
 
 #[cfg(feature="audio")]
 pub use cat_audio as audio;
-
-pub use basement::graphics::gl;

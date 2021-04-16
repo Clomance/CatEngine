@@ -36,7 +36,9 @@ pub use objects::{
     DependentObject,
 };
 
+#[cfg(feature="simple_graphics")]
 mod simple_graphics;
+#[cfg(feature="simple_graphics")]
 use simple_graphics::SimpleGraphics;
 
 #[cfg(feature="texture_graphics")]
@@ -121,15 +123,16 @@ pub struct Graphics{
 }
 
 impl Graphics{
-    pub fn new(window:&App,attributes:Graphics2DAttributes)->Graphics{
+    #[cfg(target_os="windows")]
+    pub fn new(app:&App,attributes:Graphics2DAttributes)->Graphics{
         // Загрузка всех доступных функций
         load_with(|s|{
             let string=format!("{}\0",s);
-            window.get_proc_address(&string) as *const _
+            app.get_proc_address(&string) as *const _
         });
 
         unsafe{
-            let [width,height]=window.client_size();
+            let [width,height]=app.client_size();
             Viewport(0i32,0i32,width as i32,height as i32);
         }
 

@@ -123,6 +123,15 @@ impl EventHandler{
 unsafe impl Sync for EventHandler{}
 unsafe impl Send for EventHandler{}
 
+// Mister Programmer, may I have some loops?
+//      /\_____/\
+//     /  o   o  \
+//    ( ==  ^  == )
+//     )         (
+//    (           )
+//   ( (  )   (  ) )
+//  (__(__)___(__)__)
+
 pub struct EventLoop{
     event_handler:Arc<EventHandler>,
     loop_control:Arc<Mutex<LoopControl>>,
@@ -236,6 +245,10 @@ impl EventLoop{
                         if let LockResult::Ok(mut event_handler)=self.event_handler.handler.lock(){
                             let mut loop_control=LoopControl::Run;
                             event_handler(Event::Update(Ticks(tisks_passed as u64)),&mut loop_control);
+                            if let LoopControl::Break=loop_control{
+                                event_handler(Event::EventLoopClose,&mut loop_control);
+                                return
+                            }
                         }
                     }
                 }

@@ -1,19 +1,19 @@
-mod mouse_cursor;
-pub use mouse_cursor::MouseCursor;
-
 use cat_engine_basement::{
     graphics::gl::{
         Viewport,
     },
-    windows::{
-        Window,
-        WindowClass,
-        EventLoop,
-        RenderContext,
-        GraphicsLibrary,
-    },
 };
 
+#[cfg(target_os="windows")]
+use cat_engine_basement::windows::{
+    Window,
+    WindowClass,
+    EventLoop,
+    RenderContext,
+    GraphicsLibrary
+};
+
+#[cfg(target_os="windows")]
 pub use cat_engine_basement::{
     windows::{
         CursorIcon,
@@ -34,8 +34,6 @@ pub use cat_engine_basement::{
 #[cfg(feature="file_drop")]
 use std::path::PathBuf;
 
-/// Положение курсора мыши. The mouse cursor position.
-pub static mut mouse_cursor:MouseCursor=MouseCursor::new();
 
 /// Ширина окна. The window width.
 pub static mut window_width:f32=0f32;
@@ -56,6 +54,7 @@ pub static mut fps:u32=0;
 #[cfg(feature="ups_counter")]
 pub static mut ups:u32=0;
 
+#[cfg(target_os="windows")]
 pub struct App{
     window_class:WindowClass,
     window:Window,
@@ -64,6 +63,7 @@ pub struct App{
     event_loop:EventLoop,
 }
 
+#[cfg(target_os="windows")]
 impl App{
     pub fn raw(
         window_class:WindowClass,
@@ -121,6 +121,7 @@ impl App{
     }
 }
 
+#[cfg(target_os="windows")]
 impl App{
     pub fn position(&self)->[i32;2]{
         self.window.position()
@@ -135,6 +136,7 @@ impl App{
     }
 }
 
+#[cfg(target_os="windows")]
 impl App{
     pub fn run<F:FnMut(Event,&AppControl,WindowReference,&mut LoopControl)>(&mut self,mut event_handler:F){
         let event_loop=unsafe{&mut *(&mut self.event_loop as *mut EventLoop)};
@@ -160,10 +162,6 @@ impl App{
                         window_center=[(width/2u16) as f32,(height/2u16) as f32];
                     }
 
-                    WindowEvent::MouseMove([x,y])=>unsafe{
-                        mouse_cursor.set_position([*x as f32,*y as f32]);
-                    }
-
                     _=>{}
                 }
 
@@ -175,7 +173,7 @@ impl App{
     }
 }
 
-
+#[cfg(target_os="windows")]
 pub struct AppAttributes{
     pub class:WindowClassAttributes,
     pub window:WindowAttributes,
@@ -183,6 +181,7 @@ pub struct AppAttributes{
     pub event_loop:EventLoopAttributes,
 }
 
+#[cfg(target_os="windows")]
 impl AppAttributes{
     pub fn new()->AppAttributes{
         Self{
@@ -194,10 +193,12 @@ impl AppAttributes{
     }
 }
 
+#[cfg(target_os="windows")]
 pub struct AppControl{
     app:&'static App,
 }
 
+#[cfg(target_os="windows")]
 impl AppControl{
     pub fn new(app:&App)->AppControl{
         unsafe{

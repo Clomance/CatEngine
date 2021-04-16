@@ -433,7 +433,6 @@ pub unsafe extern "system" fn window_subclass_procedure(
         UPDATE_EVENT=>{
             let ticks=Ticks(l_param as u64);
             (
-                
                 Event::Update(ticks),
                 Some(0)
             )
@@ -446,10 +445,20 @@ pub unsafe extern "system" fn window_subclass_procedure(
 
     let event_handler_ptr=dwRefData as *const Mutex<Box<dyn FnMut(Event,&mut LoopControl)>>;
     let event_handler_lock=&*event_handler_ptr;
-    
-    if let TryLockResult::Ok(mut event_handler)=event_handler_lock.try_lock(){
-        let mut loop_control=LoopControl::Run;
-        event_handler(event,&mut loop_control)
+
+    let result=std::panic::catch_unwind(||{
+        if let TryLockResult::Ok(mut event_handler)=event_handler_lock.try_lock(){
+            let mut loop_control=LoopControl::Run;
+            event_handler(event,&mut loop_control);
+            if let LoopControl::Break=loop_control{
+                PostQuitMessage(0);
+            }
+        }
+    });
+
+    if let Err(err)=result{
+        println!("{:?}",err);
+        PostQuitMessage(0);
     }
 
     match return_value{
