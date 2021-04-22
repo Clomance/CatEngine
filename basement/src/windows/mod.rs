@@ -6,9 +6,9 @@ pub use images::{
 
 mod opengl;
 pub use opengl::{
-    GraphicsLibrary,
-    RenderContext,
-    RenderContextAttributes,
+    OpenGraphicsLibrary,
+    OpenGLRenderContext,
+    OpenGLRenderContextAttributes,
 };
 
 mod monitor;
@@ -23,7 +23,8 @@ pub use window::{
     CursorIcon,
     Background,
     WindowClass,
-    WindowClassAttributes
+    WindowClassAttributes,
+    WindowSubclassArguments
 };
 
 mod event_loop;
@@ -57,4 +58,3 @@ use winapi::{
 };
 
 pub use winapi;
-

@@ -9,11 +9,11 @@ use crate::{
     },
 };
 
-#[cfg(feature="text_graphics")]
-use crate::text::{
-    Scale,
-    CachedFont,
-};
+// #[cfg(feature="text_graphics")]
+// use crate::text::{
+//     Scale,
+//     CachedFont,
+// };
 
 mod object_allocation;
 use object_allocation::{
@@ -46,13 +46,13 @@ mod texture_graphics;
 #[cfg(feature="texture_graphics")]
 use texture_graphics::TextureGraphics;
 
-#[cfg(feature="text_graphics")]
-mod text_graphics;
-#[cfg(feature="text_graphics")]
-use text_graphics::{
-    TextGraphics,
-    TextGraphicsAttributes
-};
+// #[cfg(feature="text_graphics")]
+// mod text_graphics;
+// #[cfg(feature="text_graphics")]
+// use text_graphics::{
+//     TextGraphics,
+//     TextGraphicsAttributes
+// };
 
 mod graphics_2d;
 pub use graphics_2d::{
@@ -124,18 +124,7 @@ pub struct Graphics{
 
 impl Graphics{
     #[cfg(target_os="windows")]
-    pub fn new(app:&App,attributes:Graphics2DAttributes)->Graphics{
-        // Загрузка всех доступных функций
-        load_with(|s|{
-            let string=format!("{}\0",s);
-            app.get_proc_address(&string) as *const _
-        });
-
-        unsafe{
-            let [width,height]=app.client_size();
-            Viewport(0i32,0i32,width as i32,height as i32);
-        }
-
+    pub fn new(attributes:Graphics2DAttributes)->Graphics{
         Self{
             graphics_2d:Graphics2D::new(attributes),
             parameters:GraphicsParameters::new(),
@@ -184,27 +173,27 @@ impl Graphics{
 }
 
 /// Text graphics.
-#[cfg(feature="text_graphics")]
-impl Graphics{
-    pub fn draw_char(
-        &self,
-        character:char,
-        colour:Colour,
-        position:[f32;2],
-        horisontal_advance:&mut f32,
-        scale:Scale,
-        font:&CachedFont
-    ){
-        self.graphics_2d.draw_char(
-            character,
-            colour,
-            position,
-            horisontal_advance,
-            scale,
-            font,
-        )
-    }
-}
+// #[cfg(feature="text_graphics")]
+// impl Graphics{
+//     pub fn draw_char(
+//         &self,
+//         character:char,
+//         colour:Colour,
+//         position:[f32;2],
+//         horisontal_advance:&mut f32,
+//         scale:Scale,
+//         font:&CachedFont
+//     ){
+//         self.graphics_2d.draw_char(
+//             character,
+//             colour,
+//             position,
+//             horisontal_advance,
+//             scale,
+//             font,
+//         )
+//     }
+// }
 
 /// Simple graphics.
 #[cfg(feature="simple_graphics")]

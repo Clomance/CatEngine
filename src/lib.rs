@@ -13,14 +13,12 @@ pub mod graphics;
 
 mod app;
 pub use app::{
-    // statics
-    window_width,
-    window_height,
-    window_center,
     // structs
     App,
     AppAttributes,
     WindowReference,
+    WindowAttributes,
+    OpenGLRenderContextAttributes,
     // enums
     Event,
     WindowEvent,
@@ -40,8 +38,8 @@ pub use app::ups;
 #[cfg(feature="texture_graphics")]
 pub mod texture;
 
-#[cfg(feature="text_graphics")]
-pub mod text;
+// #[cfg(feature="text_graphics")]
+// pub mod text;
 
 pub use image;
 

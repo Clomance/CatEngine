@@ -1,4 +1,5 @@
 #[derive(Clone,Copy,Debug)]
+#[repr(u32)]
 pub enum DrawMode{
     Shift           =0b1<<0,
     Rotation        =0b1<<1,
@@ -10,6 +11,7 @@ pub enum DrawMode{
 }
 
 pub struct DrawParameters{
+    viewport:[i32;4],
     mode:u32,
     shift:[f32;2],
     rotation:[f32;4], // [cos,sin,center.x,center.y]
@@ -18,6 +20,7 @@ pub struct DrawParameters{
 impl DrawParameters{
     pub fn new()->DrawParameters{
         Self{
+            viewport:[0i32;4],
             mode:0u32,
             shift:[0f32;2],
             rotation:[0f32;4],
@@ -50,6 +53,10 @@ impl DrawParameters{
 }
 
 impl DrawParameters{
+    pub fn set_viewport(&mut self,viewport:[i32;4]){
+        self.viewport=viewport
+    }
+
     pub fn set_shift(&mut self,shift:[f32;2]){
         self.shift=shift
     }
@@ -85,6 +92,10 @@ impl DrawParameters{
 }
 
 impl DrawParameters{
+    pub fn viewport(&self)->[i32;4]{
+        self.viewport
+    }
+
     pub fn flag(&self)->u32{
         self.mode
     }

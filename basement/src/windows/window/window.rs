@@ -132,6 +132,35 @@ pub enum Fullscreen{
     Monitor(Monitor)
 }
 
+/// Arguments that are passed to window subclass procedure.
+/// 
+/// The 'handler' argument defines reference to a event handler.
+/// You can define your own handler.
+/// To remove the default one in `EventLoop` use the `own_event_handler` feature.
+/// 
+/// The 'additional' argument is passed to the event handler as the `WindowEvent`'s 'argument' field.
+pub struct WindowSubclassArguments{
+    pub (crate) handler:*const EventHandler,
+    pub (crate) additional:u64,
+}
+
+impl WindowSubclassArguments{
+    pub fn new(handler:Arc<EventHandler>,additional:u64)->WindowSubclassArguments{
+        Self{
+            handler:Arc::as_ptr(&handler),
+            additional,
+        }
+    }
+}
+
+/// A window with it's context.
+/// 
+/// The window mustn't outlive its class otherwise the class won't be unregistered properly.
+/// 
+/// Note that all windows/classes that an application creates/registers are destroyed/unregistered
+/// when it terminates.
+/// So there no need to do it when the application closes,
+/// but it makes sense when you create-destroy windows and register-unregister classes at the run time.
 pub struct Window{
     handle:HWND,
     context:HDC,
@@ -141,7 +170,7 @@ impl Window{
     pub fn new(
         class:&WindowClass,
         attributes:WindowAttributes,
-        event_handler:Arc<EventHandler>,
+        subclass_args:&WindowSubclassArguments,
     )->Option<Window>{
         let window_name:Vec<u16>=attributes.name
             .encode_wide()
@@ -239,7 +268,7 @@ impl Window{
                     window_handle,
                     Some(window_subclass_procedure),
                     &mut subclass_id as *mut u32 as usize,
-                    Arc::as_ptr(&event_handler) as usize,
+                    subclass_args as *const WindowSubclassArguments as usize,
                 );
 
                 let window_context=GetDC(window_handle);
@@ -261,20 +290,24 @@ impl Window{
     pub fn context(&self)->HDC{
         self.context
     }
+}
 
-    pub fn swap_buffers(&self)->bool{
-        unsafe{
-            SwapBuffers(self.context)!=0
-        }
-    }
-
+/// Requests and sending events.
+impl Window{
     pub fn request_redraw(&self){
         unsafe{
             UpdateWindow(self.handle);
         }
     }
+
+    pub fn destroy(&self){
+        unsafe{
+            DestroyWindow(self.handle);
+        }
+    }
 }
 
+/// Window sizes and positions.
 impl Window{
     /// Returns the window size.
     /// 
@@ -346,30 +379,6 @@ impl Window{
 }
 
 impl Window{
-    // pub fn set_rectangle(&self,[x,y,width,height]:[i32;4]){
-    //     unsafe{
-    //         let ptr=&mut window_rectangle as *mut [i32;4];
-    //         SetWindowPos();
-    //         GetWindowRect(self.handle,ptr as usize as *mut RECT);
-    //     }
-    // }
-
-    // pub fn set_fullscreen(&self,fullscreen:Fullscreen){
-    //     match fullscreen{
-    //         Fullscreen::None=>{
-
-    //         }
-
-    //         Fullscreen::PrimaryMonitor=>{
-
-    //         }
-
-    //         Fullscreen::Monitor(monitor)=>{
-
-    //         }
-    //     }
-    // }
-
     pub unsafe fn set_extended_style(&self,style:u32){
         SetWindowLongPtrW(self.handle,GWL_EXSTYLE,style as isize);
     }
@@ -418,14 +427,18 @@ impl Drop for Window{
 pub struct WindowAttributes{
     /// The window name and title.
     pub name:OsString,
+
     /// The window size.
     /// 
     /// The default is `None`.
     pub size:Option<[i32;2]>,
+
     /// The window position.
     pub position:Option<[i32;2]>,
+
     /// The default is `true`.
     pub visible:bool,
+
     /// If `Fullscreen::PrimaryMonitor` or `Fullscreen::Monitor` is set the size and position are ignored,
     /// but if some error accures they are used to build a window.
     /// 

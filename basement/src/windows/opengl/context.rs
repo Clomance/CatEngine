@@ -41,13 +41,13 @@ use std::{
     mem::size_of,
 };
 
-pub struct RenderContext{
+pub struct OpenGLRenderContext{
     window_context:HDC,
     render_context:HGLRC,
 }
 
-impl RenderContext{
-    pub fn opengl(window_context:HDC,attributes:RenderContextAttributes)->Option<RenderContext>{
+impl OpenGLRenderContext{
+    pub fn new(window_context:HDC,attributes:OpenGLRenderContextAttributes)->Option<OpenGLRenderContext>{
         unsafe{
             let pixel_format_descriptor=PIXELFORMATDESCRIPTOR{
                 nSize:size_of::<PIXELFORMATDESCRIPTOR>() as u16,
@@ -156,12 +156,29 @@ impl RenderContext{
         }
     }
 
-    pub fn raw(&self)->HGLRC{
+    pub fn render_context(&self)->HGLRC{
         self.render_context
+    }
+
+    pub fn make_current(&self,current:bool){
+        unsafe{
+            if current{
+                wglMakeCurrent(self.window_context,self.render_context);
+            }
+            else{
+                wglMakeCurrent(self.window_context,null_mut());
+            }
+        }
+    }
+
+    pub fn swap_buffers(&self)->bool{
+        unsafe{
+            SwapBuffers(self.window_context)!=0
+        }
     }
 }
 
-impl Drop for RenderContext{
+impl Drop for OpenGLRenderContext{
     fn drop(&mut self){
         unsafe{
             wglMakeCurrent(self.window_context,null_mut());
@@ -170,13 +187,13 @@ impl Drop for RenderContext{
     }
 }
 
-pub struct RenderContextAttributes{
+pub struct OpenGLRenderContextAttributes{
     /// The default is 32.
     colour_bits:u8,
 }
 
-impl RenderContextAttributes{
-    pub fn new()->RenderContextAttributes{
+impl OpenGLRenderContextAttributes{
+    pub fn new()->OpenGLRenderContextAttributes{
         Self{
             colour_bits:32u8,
         }

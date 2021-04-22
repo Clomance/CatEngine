@@ -4,11 +4,11 @@ use crate::{
     
 };
 
-#[cfg(feature="text_graphics")]
-use crate::text::{
-    Scale,
-    CachedFont,
-};
+// #[cfg(feature="text_graphics")]
+// use crate::text::{
+//     Scale,
+//     CachedFont,
+// };
 
 use super::{
     //types
@@ -18,21 +18,23 @@ use super::{
     // enums
     DrawMode,
     // structs
-    SimpleGraphics,
     SimpleVertex2D,
     TexturedVertex2D,
     DrawParameters,
     PrimitiveType,
 };
 
+#[cfg(feature="simple_graphics")]
+use super::SimpleGraphics;
+
 #[cfg(feature="texture_graphics")]
 use super::TextureGraphics;
 
-#[cfg(feature="text_graphics")]
-use super::{
-    TextGraphics,
-    TextGraphicsAttributes,
-};
+// #[cfg(feature="text_graphics")]
+// use super::{
+//     TextGraphics,
+//     TextGraphicsAttributes,
+// };
 
 use ttf_parser::{
     GlyphId,
@@ -40,11 +42,17 @@ use ttf_parser::{
 };
 
 pub struct Graphics2DAttributes{
+    #[cfg(feature="simple_graphics")]
     pub simple_stack_vertices:ElementIndexType,
+    #[cfg(feature="simple_graphics")]
     pub simple_stack_indices:i32,
+    #[cfg(feature="simple_graphics")]
     pub simple_stack_objects:ObjectIDType,
+    #[cfg(feature="simple_graphics")]
     pub simple_heap_vertex_frames:FrameIDType,
+    #[cfg(feature="simple_graphics")]
     pub simple_heap_index_frames:FrameIDType,
+    #[cfg(feature="simple_graphics")]
     pub simple_heap_objects:ObjectIDType,
 
     #[cfg(feature="texture_graphics")]
@@ -60,17 +68,23 @@ pub struct Graphics2DAttributes{
     #[cfg(feature="texture_graphics")]
     pub texture_heap_objects:ObjectIDType,
 
-    pub glyph_texture_size:[u32;2]
+    // pub glyph_texture_size:[u32;2]
 }
 
 impl Graphics2DAttributes{
     pub fn new()->Graphics2DAttributes{
         Self{
+            #[cfg(feature="simple_graphics")]
             simple_stack_vertices:128,
+            #[cfg(feature="simple_graphics")]
             simple_stack_indices:128,
+            #[cfg(feature="simple_graphics")]
             simple_stack_objects:32,
+            #[cfg(feature="simple_graphics")]
             simple_heap_vertex_frames:128,
+            #[cfg(feature="simple_graphics")]
             simple_heap_index_frames:128,
+            #[cfg(feature="simple_graphics")]
             simple_heap_objects:32,
 
             #[cfg(feature="texture_graphics")]
@@ -86,22 +100,25 @@ impl Graphics2DAttributes{
             #[cfg(feature="texture_graphics")]
             texture_heap_objects:32,
 
-            glyph_texture_size:[512u32;2]
+            // #[cfg(feature="text_graphics")]
+            // glyph_texture_size:[512u32;2]
         }
     }
 }
 
 pub struct Graphics2D{
+    #[cfg(feature="simple_graphics")]
     simple:SimpleGraphics,
     #[cfg(feature="texture_graphics")]
     texture:TextureGraphics,
-    #[cfg(feature="text_graphics")]
-    text:TextGraphics,
+    // #[cfg(feature="text_graphics")]
+    // text:TextGraphics,
     draw_parameters:DrawParameters,
 }
 
 impl Graphics2D{
     pub fn new(attributes:Graphics2DAttributes)->Graphics2D{
+        #[cfg(feature="simple_graphics")]
         let simple=SimpleGraphics::new(
             attributes.simple_stack_vertices,
             attributes.simple_stack_indices,
@@ -121,15 +138,16 @@ impl Graphics2D{
             attributes.texture_heap_objects
         );
 
-        #[cfg(feature="text_graphics")]
-        let text=TextGraphics::new(attributes.glyph_texture_size);
+        // #[cfg(feature="text_graphics")]
+        // let text=TextGraphics::new(attributes.glyph_texture_size);
 
         Self{
+            #[cfg(feature="simple_graphics")]
             simple,
             #[cfg(feature="texture_graphics")]
             texture,
-            #[cfg(feature="text_graphics")]
-            text,
+            // #[cfg(feature="text_graphics")]
+            // text,
             draw_parameters:DrawParameters::new(),
         }
     }
@@ -140,66 +158,67 @@ impl Graphics2D{
 }
 
 /// Text graphics.
-#[cfg(feature="text_graphics")]
-impl Graphics2D{
-    pub fn build_glyph_image(&self,glyph_id:GlyphId,scale:Scale,font:&Face)->Option<([f32;4],&[u8])>{
-        self.text.build_glyph_image(glyph_id,scale,font)
-    }
+// #[cfg(feature="text_graphics")]
+// impl Graphics2D{
+//     pub fn build_glyph_image(&self,glyph_id:GlyphId,scale:Scale,font:&Face)->Option<([f32;4],&[u8])>{
+//         self.text.build_glyph_image(glyph_id,scale,font)
+//     }
 
-    pub fn draw_glyph(&self,glyph_texture:&Texture2D,colour:Colour,position:[f32;2],size:[f32;2]){
-        self.text.draw_glyph(glyph_texture,colour,position,size);
-    }
+//     pub fn draw_glyph(&self,glyph_texture:&Texture2D,colour:Colour,position:[f32;2],size:[f32;2]){
+//         self.text.draw_glyph(glyph_texture,colour,position,size);
+//     }
 
-    pub fn draw_char(
-        &self,
-        character:char,
-        colour:Colour,
-        position:[f32;2],
-        horisontal_advance:&mut f32,
-        scale:Scale,font:&CachedFont
-    ){
-        let glyph_id=if let Some(id)=font.glyph_id(character){
-            id
-        }
-        else{
-            GlyphId(0u16)
-        };
+//     pub fn draw_char(
+//         &self,
+//         character:char,
+//         colour:Colour,
+//         position:[f32;2],
+//         horisontal_advance:&mut f32,
+//         scale:Scale,font:&CachedFont
+//     ){
+//         let glyph_id=if let Some(id)=font.glyph_id(character){
+//             id
+//         }
+//         else{
+//             GlyphId(0u16)
+//         };
 
-        if let Some(glyph)=font.cached_glyph(glyph_id){
-            let texture=glyph.texture();
-            let advance_width=glyph.advance_width(scale.horizontal);
+//         if let Some(glyph)=font.cached_glyph(glyph_id){
+//             let texture=glyph.texture();
+//             let advance_width=glyph.advance_width(scale.horizontal);
 
-            if !(horisontal_advance as *mut f32).is_null(){
-                *horisontal_advance=advance_width
-            }
+//             if !(horisontal_advance as *mut f32).is_null(){
+//                 *horisontal_advance=advance_width
+//             }
 
-            let [offset_x,offset_y,width,height]=glyph.bounding_box(scale);
+//             let [offset_x,offset_y,width,height]=glyph.bounding_box(scale);
 
-            let position=[
-                position[0]+offset_x,
-                position[1]+offset_y,
-            ];
+//             let position=[
+//                 position[0]+offset_x,
+//                 position[1]+offset_y,
+//             ];
 
-            self.text.draw_glyph(texture,colour,position,[width,height]);
-        }
-        else{
-            if let Some([offset_x,offset_y,_,_])=self.text.load_glyph(glyph_id,scale,font.font().face()){
-                if !(horisontal_advance as *mut f32).is_null(){
-                    *horisontal_advance=font.font().face().glyph_hor_advance(glyph_id).unwrap() as f32*scale.horizontal;
-                }
+//             self.text.draw_glyph(texture,colour,position,[width,height]);
+//         }
+//         else{
+//             if let Some([offset_x,offset_y,_,_])=self.text.load_glyph(glyph_id,scale,font.font().face()){
+//                 if !(horisontal_advance as *mut f32).is_null(){
+//                     *horisontal_advance=font.font().face().glyph_hor_advance(glyph_id).unwrap() as f32*scale.horizontal;
+//                 }
 
-                let position=[
-                    position[0]+offset_x,
-                    position[1]+offset_y,
-                ];
+//                 let position=[
+//                     position[0]+offset_x,
+//                     position[1]+offset_y,
+//                 ];
 
-                self.text.draw_loaded_glyph(colour,position);
-            }
-        }
-    }
-}
+//                 self.text.draw_loaded_glyph(colour,position);
+//             }
+//         }
+//     }
+// }
 
-// Simple graphics.
+/// Simple graphics.
+#[cfg(feature="simple_graphics")]
 impl Graphics2D{
     pub fn add_simple_object_raw(
         &mut self,

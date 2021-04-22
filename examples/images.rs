@@ -4,8 +4,6 @@ use cat_engine::{
     Event,
     WindowEvent,
     graphics::{
-        Graphics,
-        Graphics2DAttributes,
         BlendingFunction,
         PrimitiveType,
         TexturedVertex2D,
@@ -21,8 +19,7 @@ fn main(){
     let app_attributes=AppAttributes::new();
     let mut app=App::new(app_attributes);
 
-    let attributes=Graphics2DAttributes::new();
-    let mut graphics=Graphics::new(&app,attributes);
+    let graphics=app.get_graphics_unchecked_mut(0);
 
     { // Setting blending
         let blending=graphics.parameters().blending();
@@ -70,21 +67,25 @@ fn main(){
     let image3=graphics.push_textured_object(&image_base).unwrap();
 
     let mut colour=[1f32,1f32,1f32,1f32];
-    app.run(|event,_app_control,_window,_control|{
+    app.run(|event,app_control,_control|{
         match event{
-            Event::WindowEvent(WindowEvent::Redraw)=>{
-                if colour[0]<1f32{
-                    colour[0]+=0.01;
+            Event::WindowEvent{window_event,argument,..}=>match window_event{
+                WindowEvent::Redraw=>{
+                    let graphics=app_control.get_graphics_unchecked_mut(argument as usize);
+                    if colour[0]<1f32{
+                        colour[0]+=0.01;
+                    }
+                    else{
+                        colour[0]=0f32;
+                    };
+                    graphics.parameters().set_clear_colour(colour);
+                    graphics.clear_colour();
+                    // Drawing the object that is located in the stack-type buffer.
+                    graphics.draw_stack_textured_object(image1,texture.texture_2d());
+                    graphics.draw_stack_textured_object(image2,texture.texture_2d());
+                    graphics.draw_stack_textured_object(image3,texture.texture_2d());
                 }
-                else{
-                    colour[0]=0f32;
-                };
-                graphics.parameters().set_clear_colour(colour);
-                graphics.clear_colour();
-                // Drawing the object that is located in the stack-type buffer.
-                graphics.draw_stack_textured_object(image1,texture.texture_2d());
-                graphics.draw_stack_textured_object(image2,texture.texture_2d());
-                graphics.draw_stack_textured_object(image3,texture.texture_2d());
+                _=>{}
             }
 
             _=>{}

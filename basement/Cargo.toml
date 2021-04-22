@@ -5,8 +5,11 @@ authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
 
 [features]
-auto_hide = []
-lazy = []
+# Event loop
+
+own_event_handler = [] ### to set your own handler from the very start
+
+# Window events
 file_drop = []
 
 [target.'cfg(windows)'.dependencies.winapi]

@@ -29,7 +29,6 @@ use winapi::{
             TranslateMessage,
             DispatchMessageW,
             DestroyWindow,
-            WM_TIMER,
             WM_QUIT,
             PM_REMOVE,
             WM_USER,
@@ -61,12 +60,23 @@ use std::{
         RwLock,
         TryLockResult,
     },
+    panic::{
+        UnwindSafe,
+        catch_unwind,
+    },
     collections::VecDeque,
+    any::Any,
 };
 
 pub enum LoopControl{
+    /// The loop is running with the defeault settings.
     Run,
+    /// The loop will be closed and it's able to run again.
     Break,
+    /// The loop will be closed and it won't be able to run again.
+    /// 
+    /// That means the end of application work.
+    Close,
 }
 
 unsafe impl Sync for LoopControl{}
@@ -101,12 +111,14 @@ impl Ticks{
 
 pub struct EventHandler{
     pub handler:Mutex<Box<dyn FnMut(Event,&mut LoopControl)>>,
+    pub main_window:HWND,
 }
 
 impl EventHandler{
     pub fn new()->EventHandler{
         Self{
             handler:Mutex::new(Box::new(|_,_|{})),
+            main_window:null_mut(),
         }
     }
 
@@ -117,6 +129,15 @@ impl EventHandler{
                 Box<dyn FnMut(Event,&mut LoopControl)>
             >(Box::new(f));
         }
+    }
+
+    pub fn try_handle(&self,event:Event,mut loop_control:LoopControl)->Result<LoopControl,Box<dyn Any+Send>>{
+        catch_unwind(||{
+            if let TryLockResult::Ok(mut handler)=self.handler.try_lock(){
+                handler(event,&mut loop_control)
+            }
+            loop_control
+        })
     }
 }
 
@@ -133,6 +154,7 @@ unsafe impl Send for EventHandler{}
 //  (__(__)___(__)__)
 
 pub struct EventLoop{
+    #[cfg(not(feature="own_event_handler"))]
     event_handler:Arc<EventHandler>,
     loop_control:Arc<Mutex<LoopControl>>,
     main_window:Option<HWND>,
@@ -162,6 +184,7 @@ impl EventLoop{
         let event_handler=Arc::new(EventHandler::new());
 
         Self{
+            #[cfg(not(feature="own_event_handler"))]
             event_handler,
             loop_control,
             main_window:None,
@@ -178,6 +201,7 @@ impl EventLoop{
         }
     }
 
+    #[cfg(not(feature="own_event_handler"))]
     pub fn get_handler(&self)->Arc<EventHandler>{
         self.event_handler.clone()
     }

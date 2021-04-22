@@ -31,6 +31,7 @@ pub use window::{
     Window,
     WindowAttributes,
     WindowStyles,
+    WindowSubclassArguments,
 };
 
 use winapi::{
@@ -68,6 +69,7 @@ pub struct WindowReference{
     context:HDC,
 }
 
+
 impl WindowReference{
     pub fn new(window:&Window)->WindowReference{
         Self{
@@ -76,15 +78,43 @@ impl WindowReference{
         }
     }
 
-    pub fn swap_buffers(&self){
+    /// Returns window's client area size.
+    /// 
+    /// Возвращает размеры клиентской области окна.
+    /// 
+    /// [width, height]
+    pub fn client_size(&self)->[u32;2]{
+        let mut client_rectangle=[0i32;4];
         unsafe{
-            let _result=SwapBuffers(self.context);
+            let ptr=&mut client_rectangle as *mut [i32;4];
+            GetClientRect(self.handle,ptr as usize as *mut RECT);
+        }
+        let [_,_,width,height]=client_rectangle;
+        [
+            width as u32,
+            height as u32,
+        ]
+    }
+}
+
+/// Requests and sending events.
+impl WindowReference{
+    pub fn request_redraw(&self){
+        unsafe{
+            UpdateWindow(self.handle);
         }
     }
 
-    pub fn request_redraw(&self){
+    pub fn destroy(&self){
         unsafe{
-            let _result=UpdateWindow(self.handle);
+            DestroyWindow(self.handle);
         }
+    }
+}
+
+
+impl std::fmt::Debug for WindowReference{
+    fn fmt(&self,formatter:&mut std::fmt::Formatter)->std::fmt::Result{
+        formatter.debug_struct("WindowReference").finish()
     }
 }

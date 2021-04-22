@@ -52,12 +52,6 @@ impl GraphicsParameters{
 }
 
 impl GraphicsParameters{
-    pub fn set_viewport(&self,[x,y,width,height]:[i32;4]){
-        unsafe{
-            Viewport(x,y,width,height);
-        }
-    }
-
     /// Specifies clear values for the colour buffers.
     pub fn set_clear_colour(&self,[red,greed,blue,alpha]:Colour){
         unsafe{

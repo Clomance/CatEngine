@@ -1,6 +1,5 @@
 use crate::{
     Colour,
-    window_center,
     text::{
         Scale,
         OutlinedGlyph,

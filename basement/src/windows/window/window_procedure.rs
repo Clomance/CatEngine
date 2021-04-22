@@ -7,6 +7,7 @@ use super::{
     Icon,
     WindowReference,
     EventHandler,
+    WindowSubclassArguments,
     // enums
     Event,
     WindowEvent,
@@ -41,6 +42,7 @@ use winapi::{
             DefWindowProcW,
             DestroyWindow,
             GetDC,
+            ReleaseDC,
             UpdateWindow,
             MapVirtualKeyW,
             // constants
@@ -342,7 +344,13 @@ pub unsafe extern "system" fn window_subclass_procedure(
     _uIdSubclass:usize,
     dwRefData:usize,
 )->LRESULT{
-    let (event,return_value):(Event,Option<isize>)=match message{
+    let window_subclass_arguments_ptr=dwRefData as *const WindowSubclassArguments;
+    let window_subclass_arguments=&*window_subclass_arguments_ptr;
+
+    let event_handler_ptr=window_subclass_arguments.handler as *const EventHandler;
+    let event_handler=&*event_handler_ptr;
+
+    let (window_event,return_value):(WindowEvent,Option<isize>)=match message{
         // Sent prior to the WM_CREATE message when a window is first created.
         // wParam - This parameter is not used.
         // lParam - A pointer to the CREATESTRUCT structure.
@@ -363,16 +371,15 @@ pub unsafe extern "system" fn window_subclass_procedure(
         }
 
         // Запрос на закрытие окна
-        WM_CLOSE=>{
-            DestroyWindow(window);
-            return DefSubclassProc(window,message,w_param,l_param)
-        }
+        WM_CLOSE=>(
+            WindowEvent::CloseRequest,
+            Some(0)
+        ),
 
         // Закрытие окна
         WM_DESTROY=>{
-            PostQuitMessage(0);
             (
-                Event::WindowEvent(WindowEvent::Close),
+                WindowEvent::Destroy,
                 None
             )
         }
@@ -380,7 +387,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         // Запрос на перерисовку содержимого окна
         WM_PAINT=>{
             (
-                Event::WindowEvent(WindowEvent::Redraw),
+                WindowEvent::Redraw,
                 Some(0)
             )
         }
@@ -389,7 +396,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         WM_SIZE=>{
             let [width,height,_,_]:[u16;4]=transmute(l_param);
             (
-                Event::WindowEvent(WindowEvent::Resize([width,height])),
+                WindowEvent::Resize([width,height]),
                 Some(0)
             )
         }
@@ -398,7 +405,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         WM_MOVE=>{
             let [x,y,_,_]:[i16;4]=transmute(l_param);
             (
-                Event::WindowEvent(WindowEvent::Move([x,y])),
+                WindowEvent::Move([x,y]),
                 Some(0)
             )
         }
@@ -407,7 +414,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         WM_MOUSEMOVE=>{
             let [x,y,_,_]:[u16;4]=transmute(l_param);
             (
-                Event::WindowEvent(WindowEvent::MouseMove([x,y])),
+                WindowEvent::MouseMove([x,y]),
                 None
             )
         }
@@ -416,7 +423,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
             let [_count1,_count2,scan_code,_flags]:[u8;4]=transmute(l_param as u32);
             let virtual_key=MapVirtualKeyW(scan_code as u32,MAPVK_VSC_TO_VK);
             (
-                Event::WindowEvent(WindowEvent::KeyPress(transmute(virtual_key as u8))),
+                WindowEvent::KeyPress(transmute(virtual_key as u8)),
                 Some(0)
             )
         }
@@ -425,17 +432,29 @@ pub unsafe extern "system" fn window_subclass_procedure(
             let [_count1,_count2,scan_code,_flags]:[u8;4]=transmute(l_param as u32);
             let virtual_key=MapVirtualKeyW(scan_code as u32,MAPVK_VSC_TO_VK);
             (
-                Event::WindowEvent(WindowEvent::KeyRelease(transmute(virtual_key as u8))),
+                WindowEvent::KeyRelease(transmute(virtual_key as u8)),
                 Some(0)
             )
         }
 
+        // Только для главного окна
         UPDATE_EVENT=>{
             let ticks=Ticks(l_param as u64);
-            (
-                Event::Update(ticks),
-                Some(0)
-            )
+
+            let mut loop_control=LoopControl::Run;
+            let result=event_handler.try_handle(Event::Update(ticks),loop_control);
+
+            match result{
+                Ok(loop_control)=>if let LoopControl::Break=loop_control{
+                    PostQuitMessage(0);
+                }
+                Err(err)=>{
+                    println!("{:?}",err);
+                    PostQuitMessage(0);
+                }
+            }
+
+            return 0;
         }
 
         _=>{
@@ -443,22 +462,29 @@ pub unsafe extern "system" fn window_subclass_procedure(
         }
     };
 
-    let event_handler_ptr=dwRefData as *const Mutex<Box<dyn FnMut(Event,&mut LoopControl)>>;
-    let event_handler_lock=&*event_handler_ptr;
+    let window_context=GetDC(window);
+    let mut loop_control=LoopControl::Run;
+    let window_reference=WindowReference{
+        handle:window,
+        context:window_context,
+    };
+    let event=Event::WindowEvent{
+        window_reference,
+        window_event,
+        argument:window_subclass_arguments.additional,
+    };
+    let result=event_handler.try_handle(event,loop_control);
 
-    let result=std::panic::catch_unwind(||{
-        if let TryLockResult::Ok(mut event_handler)=event_handler_lock.try_lock(){
-            let mut loop_control=LoopControl::Run;
-            event_handler(event,&mut loop_control);
-            if let LoopControl::Break=loop_control{
-                PostQuitMessage(0);
-            }
+    ReleaseDC(window,window_context);
+
+    match result{
+        Ok(loop_control)=>if let LoopControl::Break=loop_control{
+            PostQuitMessage(0);
         }
-    });
-
-    if let Err(err)=result{
-        println!("{:?}",err);
-        PostQuitMessage(0);
+        Err(err)=>{
+            println!("{:?}",err);
+            PostQuitMessage(0);
+        }
     }
 
     match return_value{

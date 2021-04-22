@@ -1,7 +1,7 @@
 mod context;
 pub use context::{
-    RenderContext,
-    RenderContextAttributes,
+    OpenGLRenderContext,
+    OpenGLRenderContextAttributes,
 };
 
 use winapi::{
@@ -42,8 +42,11 @@ use winapi::{
     }
 };
 
+use gl::{
+    load_with,
+};
 
-pub struct GraphicsLibrary{
+pub struct OpenGraphicsLibrary{
     /// Для некоторых старых функций (начиная с OpenGL 1.1).
     /// Оставил тут для дальнейшей доработки и оптимизаций.
     /// Например, точечная загрузка нужных функций, а не всех сразу,
@@ -51,20 +54,32 @@ pub struct GraphicsLibrary{
     module:HMODULE,
 }
 
-impl GraphicsLibrary{
-    pub fn opengl()->GraphicsLibrary{
+impl OpenGraphicsLibrary{
+    pub fn new()->OpenGraphicsLibrary{
+        let module=unsafe{LoadLibraryA("opengl32.dll\0".as_ptr() as *const i8)};
+
+        // Загрузка всех доступных функций
+        load_with(|s|{
+            let name=format!("{}\0",s);
+            get_proc_address(module,&name) as *const _
+        });
+
         Self{
-            module:unsafe{LoadLibraryA("opengl32.dll\0".as_ptr() as *const i8)}
+            module,
         }
     }
 
     pub fn get_proc_address(&self,name:&str)->PROC{
-        unsafe{
-            let ptr=wglGetProcAddress(name.as_ptr() as *const i8);
-            match ptr as usize {
-                0 | 1 | 2 | 3 | usize::MAX=>GetProcAddress(self.module,name.as_ptr() as *const i8),
-                _=>ptr,
-            }
+        get_proc_address(self.module,name)
+    }
+}
+
+fn get_proc_address(module:HMODULE,name:&str)->PROC{
+    unsafe{
+        let ptr=wglGetProcAddress(name.as_ptr() as *const i8);
+        match ptr as usize {
+            0 | 1 | 2 | 3 | usize::MAX=>GetProcAddress(module,name.as_ptr() as *const i8),
+            _=>ptr,
         }
     }
 }

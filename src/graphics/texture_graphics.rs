@@ -1,7 +1,3 @@
-use crate::{
-    window_center,
-};
-
 use super::{
     // types
     FrameIDType,
@@ -56,7 +52,7 @@ use cat_engine_basement::graphics::{
         MultiDrawElements,
         MultiDrawArrays,
         ActiveTexture,
-        Uniform2f,
+        Viewport,
     }
 };
 
@@ -154,7 +150,17 @@ impl TextureGraphics{
         if let Some(object)=self.object_allocation.heap_system.get_drawable_object(index){
             self.draw.bind();
 
-            let _=self.draw.set_uniform_value("window_half_size",unsafe{window_center});
+            let [x,y,width,height]=draw_parameters.viewport();
+            unsafe{
+                Viewport(x,y,width,height);
+            }
+
+            let window_center=[
+                width as f32/2f32,
+                height as f32/2f32,
+            ];
+
+            let _=self.draw.set_uniform_value("window_half_size",window_center);
 
             let _=self.draw.set_uniform_value("draw_mode",draw_parameters.flag());
         
@@ -238,7 +244,17 @@ impl TextureGraphics{
 
             self.draw.bind();
 
-            let _=self.draw.set_uniform_value("window_half_size",unsafe{window_center});
+            let [x,y,width,height]=draw_parameters.viewport();
+            unsafe{
+                Viewport(x,y,width,height);
+            }
+
+            let window_center=[
+                width as f32/2f32,
+                height as f32/2f32,
+            ];
+
+            let _=self.draw.set_uniform_value("window_half_size",window_center);
 
             let _=self.draw.set_uniform_value("draw_mode",draw_parameters.flag());
 

@@ -1,12 +1,22 @@
+use crate::windows::{
+    WindowReference,
+};
+
 use super::Ticks;
 
 #[derive(Debug,Clone)]
 pub enum Event{
     EventLoopStart,
 
-    WindowEvent(WindowEvent),
+    WindowEvent{
+        window_reference:WindowReference,
+        window_event:WindowEvent,
+        argument:u64,
+    },
 
     Update(Ticks),
+
+    EventLoopBreak,
 
     EventLoopClose,
 }
@@ -29,7 +39,9 @@ pub enum WindowEvent{
 
     Move([i16;2]),
 
-    Close,
+    CloseRequest,
+
+    Destroy,
 }
 
 
