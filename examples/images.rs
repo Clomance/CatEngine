@@ -1,8 +1,10 @@
 use cat_engine::{
-    App,
-    AppAttributes,
-    Event,
-    WindowEvent,
+    app::{
+        App,
+        AppAttributes,
+        Event,
+        WindowEvent,
+    },
     graphics::{
         BlendingFunction,
         PrimitiveType,
@@ -67,23 +69,34 @@ fn main(){
     let image3=graphics.push_textured_object(&image_base).unwrap();
 
     let mut colour=[1f32,1f32,1f32,1f32];
-    app.run(|event,app_control,_control|{
+    app.run(|event,app_control|{
         match event{
-            Event::WindowEvent{window_event,argument,..}=>match window_event{
-                WindowEvent::Redraw=>{
-                    let graphics=app_control.get_graphics_unchecked_mut(argument as usize);
-                    if colour[0]<1f32{
-                        colour[0]+=0.01;
-                    }
-                    else{
-                        colour[0]=0f32;
-                    };
-                    graphics.parameters().set_clear_colour(colour);
-                    graphics.clear_colour();
-                    // Drawing the object that is located in the stack-type buffer.
-                    graphics.draw_stack_textured_object(image1,texture.texture_2d());
-                    graphics.draw_stack_textured_object(image2,texture.texture_2d());
-                    graphics.draw_stack_textured_object(image3,texture.texture_2d());
+            Event::Redraw=>{
+                let window=app_control.get_window_unchecked(0);
+
+                let window_size=window.client_size();
+
+                let graphics=app_control.get_graphics_unchecked_mut(0);
+                if colour[0]<1f32{
+                    colour[0]+=0.01;
+                }
+                else{
+                    colour[0]=0f32;
+                };
+                graphics.parameters().set_clear_colour(colour);
+                graphics.draw_parameters().set_viewport([0,0,window_size[0] as i32,window_size[1] as i32]);
+                graphics.clear_colour();
+                // Drawing the object that is located in the stack-type buffer.
+                graphics.draw_stack_textured_object(image1,texture.texture_2d());
+                graphics.draw_stack_textured_object(image2,texture.texture_2d());
+                graphics.draw_stack_textured_object(image3,texture.texture_2d());
+
+                app_control.get_render_context_unchecked(0).swap_buffers().unwrap();
+            }
+
+            Event::WindowEvent{window_event,window_id:_}=>match window_event{
+                WindowEvent::CloseRequest=>{
+                    app_control.exit();
                 }
                 _=>{}
             }

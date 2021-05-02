@@ -35,7 +35,6 @@ features = [
     # AUDIO
     "extended_audio",
     # WINDOW
-    "auto_hide",
     "fps_counter",
     "ups_counter",
     "file_drop"
@@ -63,12 +62,9 @@ texture_graphics = []
 # text
 text_graphics = ["ttf-parser","ab_glyph_rasterizer"]
 
-
 ### WINDOW
-# auto_hide = ["cat_engine_basement/auto_hide"]
 # fps_counter = []
 # ups_counter = []
-# lazy = ["cat_engine_basement/lazy"]
 # file_drop = ["cat_engine_basement/file_drop"]
 
 

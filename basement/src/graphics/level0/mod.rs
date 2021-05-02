@@ -1,7 +1,6 @@
 mod error;
 pub use error::{
-    Error,
-    get_error,
+    GLError,
 };
 
 mod buffer;

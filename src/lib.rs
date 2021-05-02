@@ -11,23 +11,7 @@
 
 pub mod graphics;
 
-mod app;
-pub use app::{
-    // structs
-    App,
-    AppAttributes,
-    WindowReference,
-    WindowAttributes,
-    OpenGLRenderContextAttributes,
-    // enums
-    Event,
-    WindowEvent,
-    LoopControl,
-    Fullscreen,
-    Background,
-    CursorIcon,
-    UpdateInterval,
-};
+pub mod app;
 
 #[cfg(feature="fps_counter")]
 pub use app::fps;
@@ -48,8 +32,6 @@ pub mod shapes;
 
 /// RGBA - [f32; 4]
 pub type Colour=[f32;4];
-
-pub use cat_engine_basement as basement;
 
 #[cfg(feature="audio")]
 pub use cat_audio as audio;

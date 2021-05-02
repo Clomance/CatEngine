@@ -1,12 +1,11 @@
 use crate::{
     // types
     Colour,
-    // structs
-    App,
-    basement::graphics::{
-        level0::Vertex,
-        level1::texture::texture_2d::Texture2D
-    },
+};
+
+use cat_engine_basement::graphics::{
+    level0::Vertex,
+    level1::texture::texture_2d::Texture2D
 };
 
 // #[cfg(feature="text_graphics")]

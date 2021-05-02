@@ -5,10 +5,6 @@ authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
 
 [features]
-# Event loop
-
-own_event_handler = [] ### to set your own handler from the very start
-
 # Window events
 file_drop = []
 
@@ -24,6 +20,7 @@ features = [
     "processthreadsapi",
     "profileapi",
     "commctrl",
+    "winbase",
 ]
 # optional = true
 

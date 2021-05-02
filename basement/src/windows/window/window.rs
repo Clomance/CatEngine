@@ -1,3 +1,5 @@
+use crate::windows::WinError;
+
 use super::{
     // structures
     WindowClass,
@@ -5,7 +7,6 @@ use super::{
     // enums
     WindowEvent,
     LoopControl,
-    EventHandler,
     // functions
     window_subclass_procedure,
 };
@@ -32,6 +33,7 @@ use winapi::{
             // SetCapture,
             CreateWindowExW,
             DestroyWindow,
+            SendMessageW,
             GetDC,
             GetWindowRect,
             GetClientRect,
@@ -97,6 +99,7 @@ use winapi::{
             GWL_EXSTYLE,
             GWL_STYLE,
             CW_USEDEFAULT,
+            WM_APP,
         },
         commctrl::{
             // functions
@@ -140,15 +143,15 @@ pub enum Fullscreen{
 /// 
 /// The 'additional' argument is passed to the event handler as the `WindowEvent`'s 'argument' field.
 pub struct WindowSubclassArguments{
-    pub (crate) handler:*const EventHandler,
-    pub (crate) additional:u64,
+    pub (crate) main_thread_id:usize,
+    pub (crate) window_id:usize,
 }
 
 impl WindowSubclassArguments{
-    pub fn new(handler:Arc<EventHandler>,additional:u64)->WindowSubclassArguments{
+    pub fn new(main_thread_id:usize,window_id:usize)->WindowSubclassArguments{
         Self{
-            handler:Arc::as_ptr(&handler),
-            additional,
+            main_thread_id,
+            window_id,
         }
     }
 }
@@ -171,7 +174,7 @@ impl Window{
         class:&WindowClass,
         attributes:WindowAttributes,
         subclass_args:&WindowSubclassArguments,
-    )->Option<Window>{
+    )->Result<Window,WinError>{
         let window_name:Vec<u16>=attributes.name
             .encode_wide()
             .chain(Some(0).into_iter())
@@ -260,7 +263,7 @@ impl Window{
             );
 
             if window_handle.is_null(){
-                None
+                Err(WinError::get_last_error())
             }
             else{
                 let mut subclass_id=0u32;
@@ -273,7 +276,7 @@ impl Window{
 
                 let window_context=GetDC(window_handle);
 
-                Some(
+                Ok(
                     Self{
                         handle:window_handle,
                         context:window_context,
@@ -294,15 +297,21 @@ impl Window{
 
 /// Requests and sending events.
 impl Window{
-    pub fn request_redraw(&self){
+    // pub fn request_redraw(&self){
+    //     unsafe{
+    //         UpdateWindow(self.handle);
+    //     }
+    // }
+
+    pub (crate) fn destroy_local(&self){
         unsafe{
-            UpdateWindow(self.handle);
+            DestroyWindow(self.handle);
         }
     }
 
     pub fn destroy(&self){
         unsafe{
-            DestroyWindow(self.handle);
+            SendMessageW(self.handle,WM_APP+1,0,0);
         }
     }
 }
@@ -418,7 +427,7 @@ impl Drop for Window{
     fn drop(&mut self){
         unsafe{
             ReleaseDC(self.handle,self.context);
-            let _result=DestroyWindow(self.handle);
+            self.destroy();
         }
     }
 }

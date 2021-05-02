@@ -5,8 +5,6 @@ use crate::windows::{
 use super::{
     // structs
     Icon,
-    WindowReference,
-    EventHandler,
     WindowSubclassArguments,
     // enums
     Event,
@@ -39,6 +37,7 @@ use winapi::{
             PostQuitMessage,
             PostMessageW,
             SendMessageW,
+            PostThreadMessageW,
             DefWindowProcW,
             DestroyWindow,
             GetDC,
@@ -47,6 +46,7 @@ use winapi::{
             MapVirtualKeyW,
             // constants
             MAPVK_VSC_TO_VK,
+            WHEEL_DELTA,
             // window messages
             WM_NULL,
             WM_CREATE,
@@ -326,15 +326,9 @@ use gl::{
 use std::{
     ptr::null_mut,
     mem::transmute,
-    sync::{
-        Mutex,
-        TryLockResult,
-    },
-    collections::VecDeque,
 };
 
-/// Sended only to the main window.
-const UPDATE_EVENT:u32=WM_USER;
+const DESTROY_EVENT:u32=WM_APP+1;
 
 pub unsafe extern "system" fn window_subclass_procedure(
     window:HWND,
@@ -347,10 +341,10 @@ pub unsafe extern "system" fn window_subclass_procedure(
     let window_subclass_arguments_ptr=dwRefData as *const WindowSubclassArguments;
     let window_subclass_arguments=&*window_subclass_arguments_ptr;
 
-    let event_handler_ptr=window_subclass_arguments.handler as *const EventHandler;
-    let event_handler=&*event_handler_ptr;
+    let main_thread_id=window_subclass_arguments.main_thread_id;
+    let window_id=window_subclass_arguments.window_id;
 
-    let (window_event,return_value):(WindowEvent,Option<isize>)=match message{
+    let (window_event,return_value):(WindowEvent,isize)=match message{
         // Sent prior to the WM_CREATE message when a window is first created.
         // wParam - This parameter is not used.
         // lParam - A pointer to the CREATESTRUCT structure.
@@ -371,33 +365,43 @@ pub unsafe extern "system" fn window_subclass_procedure(
         }
 
         // Запрос на закрытие окна
-        WM_CLOSE=>(
-            WindowEvent::CloseRequest,
-            Some(0)
-        ),
+        WM_CLOSE=>{
+            (
+                WindowEvent::CloseRequest,
+                0
+            )
+        }
 
-        // Закрытие окна
+        // Sent when a window is being destroyed.
+        // It is sent to the window procedure of the window being destroyed
+        // after the window is removed from the screen.
+        // This message is sent first to the window being destroyed
+        // and then to the child windows (if any) as they are destroyed.
+        // During the processing of the message, it can be assumed that all child windows still exist.
+        // A window receives this message through its WindowProc function.
+        // If the window being destroyed is part of the clipboard viewer chain (set by calling the SetClipboardViewer function),
+        // the window must remove itself from the chain by processing the ChangeClipboardChain function before returning from the WM_DESTROY message.
         WM_DESTROY=>{
             (
                 WindowEvent::Destroy,
-                None
+                0
             )
         }
 
         // Запрос на перерисовку содержимого окна
-        WM_PAINT=>{
-            (
-                WindowEvent::Redraw,
-                Some(0)
-            )
-        }
+        // WM_PAINT=>{
+        //     (
+        //         WindowEvent::Redraw,
+        //         0
+        //     )
+        // }
 
         // Изменение размера окна
         WM_SIZE=>{
             let [width,height,_,_]:[u16;4]=transmute(l_param);
             (
                 WindowEvent::Resize([width,height]),
-                Some(0)
+                0
             )
         }
 
@@ -406,54 +410,167 @@ pub unsafe extern "system" fn window_subclass_procedure(
             let [x,y,_,_]:[i16;4]=transmute(l_param);
             (
                 WindowEvent::Move([x,y]),
-                Some(0)
+                0
             )
         }
 
+        // Mouse events
+        // События мыши
         // Движение мыши
         WM_MOUSEMOVE=>{
             let [x,y,_,_]:[u16;4]=transmute(l_param);
             (
                 WindowEvent::MouseMove([x,y]),
-                None
+                0
+            )
+        }
+        // Нажата левая кнопка мыши
+        WM_LBUTTONDOWN=>{
+            let [x,y,_,_]:[u16;4]=transmute(l_param);
+            (
+                WindowEvent::MousePress{
+                    cursor_position:[x,y],
+                    button:MouseButton::Left,
+                },
+                0
+            )
+        }
+        // Нажата средняя кнопка мыши
+        WM_MBUTTONDOWN=>{
+            let [x,y,_,_]:[u16;4]=transmute(l_param);
+            (
+                WindowEvent::MousePress{
+                    cursor_position:[x,y],
+                    button:MouseButton::Middle,
+                },
+                0
+            )
+        }
+        // Нажата правая кнопка мыши
+        WM_RBUTTONDOWN=>{
+            let [x,y,_,_]:[u16;4]=transmute(l_param);
+            (
+                WindowEvent::MousePress{
+                    cursor_position:[x,y],
+                    button:MouseButton::Right,
+                },
+                0
+            )
+        }
+        // Нажата дополнительная кнопка мыши (4 или 5)
+        WM_XBUTTONDOWN=>{
+            let [x,y,_,_]:[u16;4]=transmute(l_param);
+            let [_,button,_,_]:[u16;4]=transmute(w_param);
+            let button=if button==0{
+                MouseButton::Button4
+            }
+            else{
+                MouseButton::Button5
+            };
+
+            (
+                WindowEvent::MousePress{
+                    cursor_position:[x,y],
+                    button,
+                },
+                0
+            )
+        }
+        // Отпущена левая кнопка мыши
+        WM_LBUTTONUP=>{
+            let [x,y,_,_]:[u16;4]=transmute(l_param);
+            (
+                WindowEvent::MouseRelease{
+                    cursor_position:[x,y],
+                    button:MouseButton::Left,
+                },
+                0
+            )
+        }
+        // Отпущена средняя кнопка мыши
+        WM_MBUTTONUP=>{
+            let [x,y,_,_]:[u16;4]=transmute(l_param);
+            (
+                WindowEvent::MouseRelease{
+                    cursor_position:[x,y],
+                    button:MouseButton::Middle,
+                },
+                0
+            )
+        }
+        // Отпущена правая кнопка мыши
+        WM_RBUTTONUP=>{
+            let [x,y,_,_]:[u16;4]=transmute(l_param);
+            (
+                WindowEvent::MouseRelease{
+                    cursor_position:[x,y],
+                    button:MouseButton::Right,
+                },
+                0
+            )
+        }
+        // Отпущена дополнительная кнопка мыши (4 или 5)
+        WM_XBUTTONUP=>{
+            let [x,y,_,_]:[u16;4]=transmute(l_param);
+            let [_,button,_,_]:[u16;4]=transmute(w_param);
+            let button=if button==0{
+                MouseButton::Button4
+            }
+            else{
+                MouseButton::Button5
+            };
+
+            (
+                WindowEvent::MouseRelease{
+                    cursor_position:[x,y],
+                    button,
+                },
+                0
+            )
+        }
+        // Прокрутка колёсика
+        WM_MOUSEWHEEL=>{
+            let [_,scroll_delta,_,_]:[i16;4]=transmute(w_param);
+            (
+                WindowEvent::MouseScroll(scroll_delta/WHEEL_DELTA),
+                0
             )
         }
 
+        // Keyboard events
+        // События клавиатуры
+        // Клавиша нажата
         WM_KEYDOWN=>{
             let [_count1,_count2,scan_code,_flags]:[u8;4]=transmute(l_param as u32);
             let virtual_key=MapVirtualKeyW(scan_code as u32,MAPVK_VSC_TO_VK);
             (
                 WindowEvent::KeyPress(transmute(virtual_key as u8)),
-                Some(0)
+                0
             )
         }
-
+        // Клавиша отпущена
         WM_KEYUP=>{
             let [_count1,_count2,scan_code,_flags]:[u8;4]=transmute(l_param as u32);
             let virtual_key=MapVirtualKeyW(scan_code as u32,MAPVK_VSC_TO_VK);
             (
                 WindowEvent::KeyRelease(transmute(virtual_key as u8)),
-                Some(0)
+                0
+            )
+        }
+        // Ввод символов (обычные|системные|составные - é)
+        WM_CHAR|WM_SYSCHAR|WM_DEADCHAR=>{
+            let utf16_character=w_param as u16;
+            let character=std::char::decode_utf16(vec![utf16_character]).next().unwrap().unwrap();
+            (
+                WindowEvent::CharacterInput(character),
+                0
             )
         }
 
-        // Только для главного окна
-        UPDATE_EVENT=>{
-            let ticks=Ticks(l_param as u64);
-
-            let mut loop_control=LoopControl::Run;
-            let result=event_handler.try_handle(Event::Update(ticks),loop_control);
-
-            match result{
-                Ok(loop_control)=>if let LoopControl::Break=loop_control{
-                    PostQuitMessage(0);
-                }
-                Err(err)=>{
-                    println!("{:?}",err);
-                    PostQuitMessage(0);
-                }
-            }
-
+        // Additional events
+        // Дополнительные события
+        DESTROY_EVENT=>{
+            DestroyWindow(window);
             return 0;
         }
 
@@ -462,33 +579,11 @@ pub unsafe extern "system" fn window_subclass_procedure(
         }
     };
 
-    let window_context=GetDC(window);
-    let mut loop_control=LoopControl::Run;
-    let window_reference=WindowReference{
-        handle:window,
-        context:window_context,
-    };
-    let event=Event::WindowEvent{
-        window_reference,
-        window_event,
-        argument:window_subclass_arguments.additional,
-    };
-    let result=event_handler.try_handle(event,loop_control);
+    // Упаковывание... подарочков :)
+    let boxed_event=Box::new(window_event);
+    let arguments_ptr=Box::leak(boxed_event) as *mut WindowEvent as isize;
+    // Отправка подарочков в главный поток
+    PostThreadMessageW(main_thread_id as u32,WM_APP,window_id,arguments_ptr);
 
-    ReleaseDC(window,window_context);
-
-    match result{
-        Ok(loop_control)=>if let LoopControl::Break=loop_control{
-            PostQuitMessage(0);
-        }
-        Err(err)=>{
-            println!("{:?}",err);
-            PostQuitMessage(0);
-        }
-    }
-
-    match return_value{
-        Some(value)=>value,
-        None=>DefSubclassProc(window,message,w_param,l_param)
-    }
+    return_value
 }

@@ -1,3 +1,5 @@
+use crate::windows::WinError;
+
 use winapi::{
     shared::{
         minwindef::{
@@ -47,7 +49,10 @@ pub struct OpenGLRenderContext{
 }
 
 impl OpenGLRenderContext{
-    pub fn new(window_context:HDC,attributes:OpenGLRenderContextAttributes)->Option<OpenGLRenderContext>{
+    pub fn new(
+        window_context:HDC,
+        attributes:OpenGLRenderContextAttributes
+    )->Result<OpenGLRenderContext,WinError>{
         unsafe{
             let pixel_format_descriptor=PIXELFORMATDESCRIPTOR{
                 nSize:size_of::<PIXELFORMATDESCRIPTOR>() as u16,
@@ -68,7 +73,7 @@ impl OpenGLRenderContext{
                 cAccumGreenBits:0,
                 cAccumBlueBits:0,
                 cAccumAlphaBits:0,
-                cDepthBits:0, // Number of bits for the depthbuffer
+                cDepthBits:attributes.depth_bits, // Number of bits for the depthbuffer
                 cStencilBits:0, // Number of bits for the stencilbuffer
                 cAuxBuffers:0, // Number of Aux buffers in the framebuffer.
                 iLayerType:PFD_MAIN_PLANE,
@@ -80,22 +85,22 @@ impl OpenGLRenderContext{
 
             let pixel_format=ChoosePixelFormat(window_context,&pixel_format_descriptor);
             if pixel_format==0{
-                return None
+                return Err(WinError::get_last_error())
             }
 
             let result=SetPixelFormat(window_context,pixel_format,&pixel_format_descriptor);
             if result==0{
-                return None
+                return Err(WinError::get_last_error())
             }
 
             // Создание временного контектса для создания расширенного
             let temp_context=wglCreateContext(window_context);
             if temp_context.is_null(){
-                return None
+                return Err(WinError::get_last_error())
             }
 
             if wglMakeCurrent(window_context,temp_context)==0{
-                return None
+                return Err(WinError::get_last_error())
             }
 
             // Загрузка функций расширенного OpenGL
@@ -116,8 +121,8 @@ impl OpenGLRenderContext{
                 WGL_SUPPORT_OPENGL_ARB,1i32,
                 WGL_DOUBLE_BUFFER_ARB,1i32,
                 WGL_PIXEL_TYPE_ARB,WGL_TYPE_RGBA_ARB,
-                WGL_COLOR_BITS_ARB,32i32,
-                WGL_DEPTH_BITS_ARB,0i32,
+                WGL_COLOR_BITS_ARB,attributes.colour_bits as i32,
+                WGL_DEPTH_BITS_ARB,attributes.depth_bits as i32,
                 WGL_STENCIL_BITS_ARB,0i32,
                 0i32,
             ];
@@ -129,27 +134,27 @@ impl OpenGLRenderContext{
                 wglChoosePixelFormatARB.expect("wglChoosePixelFormatARB is not loaded")(window_context,attributes.as_ptr(),null_mut(),1,&mut pixel_format,&mut num_formats);
 
             if result==0{
-                panic!("No such pixel format");
+                return Err(WinError::get_last_error())
             }
 
             let render_context=
                 wglCreateContextAttribsARB.expect("wglCreateContextAttribsARB is not loaded")(window_context,temp_context,&pixel_format);
             if render_context.is_null(){
-                panic!("Error :)");
+                return Err(WinError::get_last_error())
             }
 
             // Удаление временного контекста и переключение к новому
             if wglMakeCurrent(window_context,render_context)==0{
-                panic!("Error");
+                return Err(WinError::get_last_error())
             }
             if wglDeleteContext(temp_context)==0{
-                panic!("ErrorDelete");
+                return Err(WinError::get_last_error())
             }
 
             // vsync
             wglSwapIntervalEXT.expect("wglSwapIntervalEXT is not loaded")(1);
 
-            Some(Self{
+            Ok(Self{
                 window_context,
                 render_context,
             })
@@ -160,20 +165,41 @@ impl OpenGLRenderContext{
         self.render_context
     }
 
-    pub fn make_current(&self,current:bool){
+    /// Makes given context current.
+    /// 
+    /// If there's several contexts (for example, for several windows),
+    /// they can be switched with this function.
+    /// 
+    /// Делает данный контекст текущим.
+    /// 
+    /// Если создано несколько контекстов (для нескольких окон, например),
+    /// то их можно переключать с помощью этой функции.
+    pub fn make_current(&self,current:bool)->Result<(),WinError>{
         unsafe{
-            if current{
-                wglMakeCurrent(self.window_context,self.render_context);
+            let result=if current{
+                wglMakeCurrent(self.window_context,self.render_context)
             }
             else{
-                wglMakeCurrent(self.window_context,null_mut());
+                wglMakeCurrent(self.window_context,null_mut())
+            };
+
+            if result==1{
+                Ok(())
+            }
+            else{
+                Err(WinError::get_last_error())
             }
         }
     }
 
-    pub fn swap_buffers(&self)->bool{
+    pub fn swap_buffers(&self)->Result<(),WinError>{
         unsafe{
-            SwapBuffers(self.window_context)!=0
+            if SwapBuffers(self.window_context)==1{
+                Ok(())
+            }
+            else{
+                Err(WinError::get_last_error())
+            }
         }
     }
 }
@@ -189,13 +215,17 @@ impl Drop for OpenGLRenderContext{
 
 pub struct OpenGLRenderContextAttributes{
     /// The default is 32.
-    colour_bits:u8,
+    pub colour_bits:u8,
+
+    /// The default is 0.
+    pub depth_bits:u8,
 }
 
 impl OpenGLRenderContextAttributes{
     pub fn new()->OpenGLRenderContextAttributes{
         Self{
             colour_bits:32u8,
+            depth_bits:0u8,
         }
     }
 }

@@ -14,7 +14,8 @@ use gl::{
 use std::mem::transmute;
 
 #[repr(u32)]
-pub enum Error{
+#[derive(Debug)]
+pub enum GLError{
     NO_ERROR=NO_ERROR,
     INVALID_ENUM=INVALID_ENUM,
     INVALID_VALUE=INVALID_VALUE,
@@ -23,8 +24,10 @@ pub enum Error{
     OUT_OF_MEMORY=OUT_OF_MEMORY,
 }
 
-pub fn get_error()->Error{
-    unsafe{
-        transmute(GetError())
+impl GLError{
+    pub (crate) fn get_error()->GLError{
+        unsafe{
+            transmute(GetError())
+        }
     }
 }

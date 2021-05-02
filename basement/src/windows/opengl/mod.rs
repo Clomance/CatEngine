@@ -58,12 +58,6 @@ impl OpenGraphicsLibrary{
     pub fn new()->OpenGraphicsLibrary{
         let module=unsafe{LoadLibraryA("opengl32.dll\0".as_ptr() as *const i8)};
 
-        // Загрузка всех доступных функций
-        load_with(|s|{
-            let name=format!("{}\0",s);
-            get_proc_address(module,&name) as *const _
-        });
-
         Self{
             module,
         }
@@ -72,9 +66,17 @@ impl OpenGraphicsLibrary{
     pub fn get_proc_address(&self,name:&str)->PROC{
         get_proc_address(self.module,name)
     }
+
+    pub fn load_functions(&self){
+        // Загрузка всех доступных функций
+        load_with(|s|{
+            let name=format!("{}\0",s);
+            get_proc_address(self.module,&name) as *const _
+        });
+    }
 }
 
-fn get_proc_address(module:HMODULE,name:&str)->PROC{
+pub fn get_proc_address(module:HMODULE,name:&str)->PROC{
     unsafe{
         let ptr=wglGetProcAddress(name.as_ptr() as *const i8);
         match ptr as usize {

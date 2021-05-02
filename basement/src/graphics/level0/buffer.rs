@@ -49,34 +49,42 @@ pub enum BufferUsage{
     /// The data store contents are modified by the application,
     /// and used as the source for GL drawing and image specification commands.
     StreamDraw=STREAM_DRAW as isize,
+
     /// The data store contents will be modified once and used at most a few times.
     /// The data store contents are modified by reading data from the GL,
     /// and used to return that data when queried by the application.
     StreamRead=STREAM_READ as isize,
+
     /// The data store contents will be modified once and used at most a few times.
     /// The data store contents are modified by reading data from the GL,
     /// and used as the source for GL drawing and image specification commands.
     StreamCopy=STREAM_COPY as isize,
+
     /// The data store contents will be modified once and used many times.
     /// The data store contents are modified by the application,
     /// and used as the source for GL drawing and image specification commands.
     StaticDraw=STATIC_DRAW as isize,
+
     /// The data store contents will be modified once and used many times.
     /// The data store contents are modified by reading data from the GL,
     /// and used to return that data when queried by the application.
     StaticRead=STATIC_READ as isize,
+
     /// The data store contents will be modified once and used many times.
     /// The data store contents are modified by reading data from the GL,
     /// and used as the source for GL drawing and image specification commands.
     StaticCopy=STATIC_COPY as isize,
+
     /// The data store contents will be modified repeatedly and used many times.
     /// The data store contents are modified by the application,
     /// and used as the source for GL drawing and image specification commands.
     DynamicDraw=DYNAMIC_DRAW as isize,
+
     /// The data store contents will be modified repeatedly and used many times.
     /// The data store contents are modified by reading data from the GL,
     /// and used to return that data when queried by the application.
     DynamicRead=DYNAMIC_READ as isize,
+
     /// The data store contents will be modified repeatedly and used many times.
     /// The data store contents are modified by reading data from the GL,
     /// and used as the source for GL drawing and image specification commands.

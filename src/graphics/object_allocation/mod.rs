@@ -1,4 +1,4 @@
-use crate::basement::graphics::level0::Vertex;
+use cat_engine_basement::graphics::level0::Vertex;
 
 use super::{
     // types

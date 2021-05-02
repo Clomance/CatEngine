@@ -1,3 +1,5 @@
+use crate::windows::WinError;
+
 use super::{
     Icon,
     Bitmap,
@@ -99,7 +101,7 @@ pub struct WindowClass{
 }
 
 impl WindowClass{
-    pub fn new(attributes:WindowClassAttributes)->Option<WindowClass>{
+    pub fn new(attributes:WindowClassAttributes)->Result<WindowClass,WinError>{
         let class_name:Vec<u16>=attributes.name
             .encode_wide()
             .chain(Some(0).into_iter())
@@ -139,12 +141,6 @@ impl WindowClass{
         // to create opengl context
         let mut style=CS_OWNDC;
 
-        if attributes.vredraw{
-            style|=CS_VREDRAW
-        }
-        if attributes.hredraw{
-            style|=CS_HREDRAW
-        }
         if attributes.no_close{
             style|=CS_NOCLOSE
         }
@@ -174,10 +170,10 @@ impl WindowClass{
         let class=unsafe{RegisterClassExW(&class_attributes)};
 
         if class==0{
-            None
+            Err(WinError::get_last_error())
         }
         else{
-            Some(Self{
+            Ok(Self{
                 name:class_name,
                 // #[cfg(feature="window_background_image")]
                 // background_image,
@@ -237,18 +233,6 @@ pub struct WindowClassAttributes{
     /// The default is `None`.
     pub background:Background,
 
-    /// Redraws the entire window
-    /// if a movement or size adjustment changes the height of the client area.
-    /// 
-    /// The default is `true`.
-    pub vredraw:bool,
-
-    /// Redraws the entire window
-    /// if a movement or size adjustment changes the width of the client area.
-    /// 
-    /// The default is `true`.
-    pub hredraw:bool,
-
     /// Disables Close on the window menu.
     /// 
     /// The default is `false`.
@@ -281,8 +265,6 @@ impl WindowClassAttributes{
             window_icon:None,
             cursor_icon:CursorIcon::None,
             background:Background::None,
-            vredraw:true,
-            hredraw:true,
             no_close:false,
             drop_shadow:false,
             double_clicks:false,

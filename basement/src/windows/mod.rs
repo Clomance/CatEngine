@@ -1,3 +1,6 @@
+mod error;
+pub use error::WinError;
+
 mod images;
 pub use images::{
     Bitmap,
@@ -18,7 +21,6 @@ mod window;
 pub use window::{
     Fullscreen,
     Window,
-    WindowReference,
     WindowAttributes,
     CursorIcon,
     Background,
@@ -34,11 +36,6 @@ pub use event_loop::{
     LoopControl,
     UpdateInterval,
     EventLoopAttributes,
-    EventHandler,
-
-    Event,
-    WindowEvent,
-    MouseButton,
     KeyboardButton,
     VirtualKeyCode,
 };
