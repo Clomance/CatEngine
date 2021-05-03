@@ -351,10 +351,12 @@ impl App{
             event_handler(event,&mut app_control);
             if let LoopControl::Exit=app_control.loop_control{
                 exit=true;
+                event_handler(Event::EventLoopExit,&mut app_control);
             }
         });
 
         if exit{
+            
             self.command_sender.call_break();
         }
     }
@@ -421,11 +423,11 @@ impl AppControl{
     }
 
     pub fn exit(&mut self){
-        *self.loop_control=LoopControl::Break;
+        *self.loop_control=LoopControl::Exit;
     }
 
     pub fn break_loop(&mut self){
-        *self.loop_control=LoopControl::Exit;
+        *self.loop_control=LoopControl::Break;
     }
 
     pub fn lazy(&mut self,lazy:bool){

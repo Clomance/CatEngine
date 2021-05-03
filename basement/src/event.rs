@@ -19,6 +19,10 @@ pub enum Event{
     Update(Ticks),
 
     EventLoopBreak,
+
+    /// After this event the cycle closes forever.
+    #[cfg(target_os="windows")]
+    EventLoopExit,
 }
 
 unsafe impl Sync for Event{}

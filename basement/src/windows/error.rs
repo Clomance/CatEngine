@@ -22,7 +22,6 @@ use std::{
     ptr::null_mut
 };
 
-#[derive(Debug)]
 pub struct WinError{
     code:u32,
 }
@@ -53,5 +52,15 @@ impl WinError{
 
             String::from_utf8(vec).unwrap()
         }
+    }
+}
+
+impl std::fmt::Debug for WinError{
+    fn fmt(&self,f:&mut std::fmt::Formatter)->Result<(),std::fmt::Error>{
+        let text=self.to_string();
+        f.debug_struct("WinError")
+            .field("code",&self.code)
+            .field("description",&text)
+            .finish()
     }
 }
