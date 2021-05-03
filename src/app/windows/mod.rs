@@ -330,7 +330,9 @@ impl App{
 
 impl App{
     pub fn run<F:FnMut(Event,&mut AppControl)>(&mut self,mut event_handler:F){
-        let event_loop=unsafe{&mut *(&mut self.event_loop as *mut EventLoop)};
+        let event_loop:&'static mut EventLoop=unsafe{std::mem::transmute(&mut self.event_loop)};
+
+        let mut exit=false;
 
         event_loop.run(|event,loop_control|{
             let mut app_control=AppControl::new(self,loop_control);
@@ -346,10 +348,15 @@ impl App{
                 _=>{},
             }
 
-            event_handler(event,&mut app_control)
+            event_handler(event,&mut app_control);
+            if let LoopControl::Exit=app_control.loop_control{
+                exit=true;
+            }
         });
 
-        self.command_sender.call_break();
+        if exit{
+            self.command_sender.call_break();
+        }
     }
 }
 
@@ -417,6 +424,10 @@ impl AppControl{
         *self.loop_control=LoopControl::Break;
     }
 
+    pub fn break_loop(&mut self){
+        *self.loop_control=LoopControl::Exit;
+    }
+
     pub fn lazy(&mut self,lazy:bool){
         if lazy{
             *self.loop_control=LoopControl::Lazy;
@@ -465,20 +476,21 @@ impl AppControl{
         self.app.window_storage.get_graphics_unchecked_mut(id)
     }
 
-    pub fn draw<F:FnMut(&mut Graphics)>(&mut self,id:usize,mut f:F)->Result<(),WinError>{
+    pub fn draw<F:FnMut(&Window,&mut Graphics)>(&mut self,id:usize,mut f:F)->Result<(),WinError>{
         if let Some(window)=self.app.window_storage.get_window(id){
-            let [width,height]=window.size();
+            let window:&'static Window=unsafe{std::mem::transmute(window)};
             // Указатель на графические функции (чтобы не ругался)
-            let graphics_ptr=self.app.window_storage.get_graphics_unchecked_mut(id) as *mut Graphics;
+            let graphics:&'static mut Graphics=unsafe{std::mem::transmute(
+                self.app.window_storage.get_graphics_unchecked_mut(id) as *mut Graphics
+            )};
 
             let render_context=self.app.window_storage.get_render_context_unchecked(id);
             render_context.make_current(true)?;
 
-            // Ссылка на графические функции
-            let graphics=unsafe{&mut *graphics_ptr};
+            let [width,height]=window.client_size();
             graphics.draw_parameters().set_viewport([0,0,width as i32,height as i32]);
 
-            f(graphics);
+            f(window,graphics);
 
             render_context.swap_buffers()?;
         }

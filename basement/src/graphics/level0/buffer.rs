@@ -166,7 +166,7 @@ impl<I:Sized> Buffer<I>{
         buffer.bind(target);
 
         let data_ref=(value as *const Item) as *const core::ffi::c_void;
-        BufferData(target as u32,size_of::<I>() as isize,data_ref,usage as u32);
+        BufferData(target as u32,size_of::<Item>() as isize,data_ref,usage as u32);
 
         buffer
     }

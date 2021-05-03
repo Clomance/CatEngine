@@ -75,10 +75,14 @@ use std::{
 pub enum LoopControl{
     /// The loop is running with the defeault settings.
     Run,
+
+    Lazy,
+
     /// The loop will be closed and it's able to run again.
     Break,
 
-    Lazy,
+    /// The loop will be closed and it won't be able to run again.
+    Exit,
 }
 
 unsafe impl Sync for LoopControl{}
@@ -194,7 +198,7 @@ impl EventLoop{
                                     };
 
                                     f(event,&mut loop_control);
-                                    if let LoopControl::Break=loop_control{
+                                    if let LoopControl::Break|LoopControl::Exit=loop_control{
                                         break
                                     }
                                 }
@@ -219,7 +223,7 @@ impl EventLoop{
 
                             f(Event::Update(Ticks(ticks_passed as u64)),&mut loop_control);
 
-                            if let LoopControl::Break=loop_control{
+                            if let LoopControl::Break|LoopControl::Exit=loop_control{
                                 break
                             }
                         }
@@ -246,7 +250,7 @@ impl EventLoop{
                                     };
 
                                     f(event,&mut loop_control);
-                                    if let LoopControl::Break=loop_control{
+                                    if let LoopControl::Break|LoopControl::Exit=loop_control{
                                         break
                                     }
                                 }
@@ -256,7 +260,7 @@ impl EventLoop{
                         }
                     }
 
-                    LoopControl::Break=>break,
+                    LoopControl::Break|LoopControl::Exit=>break,
                 }
 
                 // Текущее время в тактах
@@ -274,7 +278,7 @@ impl EventLoop{
 
                     f(Event::Redraw,&mut loop_control);
 
-                    if let LoopControl::Break=loop_control{
+                    if let LoopControl::Break|LoopControl::Exit=loop_control{
                         break
                     }
                 }

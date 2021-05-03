@@ -21,6 +21,9 @@ pub enum Event{
     EventLoopBreak,
 }
 
+unsafe impl Sync for Event{}
+unsafe impl Send for Event{}
+
 #[derive(Debug)]
 pub enum WindowEvent{
     MouseMove([u16;2]),
@@ -50,9 +53,6 @@ pub enum WindowEvent{
 
     Destroy,
 }
-
-unsafe impl Sync for Event{}
-unsafe impl Send for Event{}
 
 /// Describes mouse buttons.
 /// 
