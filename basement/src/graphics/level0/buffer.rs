@@ -1,3 +1,5 @@
+use super::GLError;
+
 use std::{
     marker::PhantomData,
     mem::{
@@ -222,12 +224,6 @@ impl<I:Sized> Buffer<I>{
         self.bind(BufferTarget::CopyWriteBuffer);
         buffer.bind(BufferTarget::CopyReadBuffer);
         CopyBufferSubData(COPY_READ_BUFFER,COPY_WRITE_BUFFER,offset as isize,from as isize,size as isize)
-    }
-
-    pub unsafe fn rewrite(&self,target:BufferTarget,items:&[I]){
-        BindBuffer(target as u32,self.id);
-        let data_ref=(items as *const [I]) as *const core::ffi::c_void;
-        BufferData(target as u32,(items.len()*size_of::<I>()) as isize,data_ref,DYNAMIC_DRAW);
     }
 }
 

@@ -14,14 +14,14 @@ use gl::{
 use std::mem::transmute;
 
 #[repr(u32)]
-#[derive(Debug)]
+#[derive(Clone,Copy,Debug)]
 pub enum GLError{
-    NO_ERROR=NO_ERROR,
-    INVALID_ENUM=INVALID_ENUM,
-    INVALID_VALUE=INVALID_VALUE,
-    INVALID_OPERATION=INVALID_OPERATION,
-    INVALID_FRAMEBUFFER_OPERATION=INVALID_FRAMEBUFFER_OPERATION,
-    OUT_OF_MEMORY=OUT_OF_MEMORY,
+    NoError=NO_ERROR,
+    InvalidEnum=INVALID_ENUM,
+    InvalidValue=INVALID_VALUE,
+    InvalidOperation=INVALID_OPERATION,
+    InvalidFramebufferOperation=INVALID_FRAMEBUFFER_OPERATION,
+    OutOfMemory=OUT_OF_MEMORY,
 }
 
 impl GLError{

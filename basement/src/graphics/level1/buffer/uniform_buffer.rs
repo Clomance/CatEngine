@@ -49,18 +49,6 @@ impl<U:Sized> UniformBuffer<U>{
             }
         }
     }
-
-    pub fn write(&self,offset:usize,uniform:&U){
-        unsafe{
-            self.buffer.write_value(BufferTarget::UniformBuffer,offset,uniform)
-        }
-    }
-
-    pub fn rewrite(&self,indices:&[U]){
-        unsafe{
-            self.buffer.rewrite(BufferTarget::UniformBuffer,indices)
-        }
-    }
 }
 
 pub trait UniformBlock{

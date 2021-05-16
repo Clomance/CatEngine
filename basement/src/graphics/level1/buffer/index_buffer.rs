@@ -55,20 +55,6 @@ impl<I:Sized> IndexBuffer<I>{
             }
         }
     }
-
-    #[inline(always)]
-    pub fn write(&self,offset:usize,indices:&[I]){
-        unsafe{
-            self.buffer.write(BufferTarget::ElementArrayBuffer,offset,indices)
-        }
-    }
-
-    #[inline(always)]
-    pub fn rewrite(&self,indices:&[I]){
-        unsafe{
-            self.buffer.rewrite(BufferTarget::ElementArrayBuffer,indices)
-        }
-    }
 }
 
 pub struct BoundIndexBuffer<'a,I:Sized>{

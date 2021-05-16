@@ -9,6 +9,7 @@
     dead_code
 )]
 
+pub mod support;
 
 pub mod graphics;
 

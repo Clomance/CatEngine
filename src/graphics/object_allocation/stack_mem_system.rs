@@ -154,7 +154,7 @@ impl<V:Vertex> StackSystem<V>{
                 }
             ).collect();
             // Запись индексов
-            index_buffer.write(self.index_buffer_ptr as usize,&offset_indices);
+            index_buffer.bind().write(self.index_buffer_ptr as usize,&offset_indices);
             self.index_buffer_ptr+=index_count;
         }
 

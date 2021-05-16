@@ -16,4 +16,5 @@ pub use windows::{
     EventLoopAttributes,
     OpenGLRenderContextAttributes,
     UpdateInterval,
+    WinError,
 };

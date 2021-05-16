@@ -149,5 +149,3 @@ impl<'a> BoundFrameBuffer<'a>{
     //     BufferData(self.target,(items.len()*size_of::<I>()) as isize,data_ref,DYNAMIC_DRAW);
     // }
 }
-
-pub struct ScreenFrameBuffer;

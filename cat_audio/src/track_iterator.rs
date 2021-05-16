@@ -1,11 +1,11 @@
-use crate::support::{
-    math::gcd,
-    SyncRawPtr,
-};
-
 use super::{
     SampleTransform,
     MonoTrack,
+};
+
+use cat_engine_basement::support::{
+    math::gcd,
+    SyncRawPtr,
 };
 
 enum PlayType{
@@ -13,9 +13,9 @@ enum PlayType{
     None,
     /// Пауза при однократном проигрывании
     PausedOnce,
-    /// 
+    /// Пауза при повторении
     PausedRepeat,
-    /// 
+    /// Пауза при проигрывании вечно
     PausedForever,
     /// Сыграть один раз
     Once,

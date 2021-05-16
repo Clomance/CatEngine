@@ -37,4 +37,5 @@ pub use texture::{
     TextureFilter,
     TextureInternalFormat,
     ImageDataFormat,
+    Texture2DTarget,
 };

@@ -34,19 +34,29 @@ impl WinError{
         }
     }
 
+    pub fn raw(code:u32)->WinError{
+        WinError{
+            code,
+        }
+    }
+
     pub fn to_string(&self)->String{
         unsafe{
-            let mut buffer=null_mut();
+            let mut buffer:*mut u8=null_mut();
 
-            let size=FormatMessageA(
+            let size=FormatMessageW(
                 FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER,
                 null_mut(),
                 self.code,
                 MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT) as u32,
-                buffer,
+                &mut buffer as *mut*mut u8 as *mut u16,
                 0,
                 null_mut()
             );
+
+            if size==0{
+                println!("code: {}",WinError::get_last_error().code);
+            }
 
             let vec=Vec::from_raw_parts(buffer as *mut u8,size as usize,size as usize+1); // (+1 - the terminating null)
 
@@ -63,4 +73,13 @@ impl std::fmt::Debug for WinError{
             .field("description",&text)
             .finish()
     }
+}
+
+#[test]
+fn test_error_to_string() {
+    let error=WinError{
+        code:6, // ERROR_INVALID_HANDLE
+    };
+
+    assert_eq!("The handle is invalid",error.to_string());
 }

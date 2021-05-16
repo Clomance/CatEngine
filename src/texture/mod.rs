@@ -1,9 +1,12 @@
 pub use cat_engine_basement::graphics::{
+    gl::BindFramebuffer,
     level0::{
         BoundTexture,
         TextureFilter,
         TextureInternalFormat,
         ImageDataFormat,
+        Texture2DTarget,
+        FrameBufferTarget,
     },
     level1::texture::{
         texture_2d::{
@@ -67,7 +70,7 @@ impl Texture{
         }
     }
 
-    // flips verticaly
+    /// Flips verticaly.
     pub fn from_path<P:AsRef<Path>>(path:P)->Option<Texture>{
         if let Ok(image)=image::open(path){
             let (w,h)=image.dimensions();
@@ -113,5 +116,35 @@ impl Texture{
 
     pub fn into_texture_2d(self)->Texture2D{
         self.texture
+    }
+}
+
+impl Texture{
+    pub fn write(&self,offset:[u32;2],image_data_format:ImageDataFormat,size:[u32;2],data:&[u8]){
+        self.texture.bind().write_image(offset,size,image_data_format,data)
+    }
+
+    pub fn write_rbga(&self,offset:[u32;2],image:&RgbaImage){
+        let (w,h)=image.dimensions();
+        self.texture.bind().write_image(offset,[w,h],ImageDataFormat::RGBA_U8,image)
+    }
+
+    pub fn write_image(&self,image:&RgbaImage){
+        let (w,h)=image.dimensions();
+        self.texture.bind().write_image([0;2],[w,h],ImageDataFormat::RGBA_U8,image)
+    }
+
+    pub fn write_screen_buffer(&self,screen_offset:[u32;2],texture_offset:[u32;2],size:[u32;2]){
+        unsafe{BindFramebuffer(FrameBufferTarget::Read as u32,0)}
+        self.texture.texture().bind(Texture2DTarget::Texture2D as u32).write_read_framebuffer(
+            screen_offset,
+            texture_offset,
+            size,
+        );
+    }
+
+    pub fn rewrite_image(&self,texture_internal_format:TextureInternalFormat,image:&RgbaImage){
+        let (w,h)=image.dimensions();
+        self.texture.bind().rewrite_image(texture_internal_format,[w,h],ImageDataFormat::RGBA_U8,image)
     }
 }

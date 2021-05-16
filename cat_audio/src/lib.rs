@@ -57,8 +57,6 @@ pub use tracks::*;
 mod sample;
 use sample::SampleTransform;
 
-mod support;
-
 #[cfg(not(feature="raw"))]
 mod wrapper;
 #[cfg(not(feature="raw"))]
