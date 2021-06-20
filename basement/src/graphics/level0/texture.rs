@@ -1,3 +1,5 @@
+use super::GLError;
+
 use gl::{
     // consts
     MAX_TEXTURE_SIZE,
@@ -330,7 +332,7 @@ pub enum TextureInternalFormat{
     R_F32=R32F,
 
     R_I8=R8I,
-    R_U8=R8UI,
+    R_U8=R8,
     R8_SNorm=R8_SNORM,
     R_I16=R16I,
     R_U16=R16UI,
@@ -456,8 +458,10 @@ impl Texture{
             texture.bind(TEXTURE_2D).rewrite_image_2d(texture_internal_format,size,image_data_format,data);
 
             TexParameteri(TEXTURE_2D,TEXTURE_MAG_FILTER,mag_filter as i32);
-
+           
             TexParameteri(TEXTURE_2D,TEXTURE_MIN_FILTER,min_filter as i32);
+
+            
 
             texture
         }

@@ -22,8 +22,8 @@ pub use app::ups;
 #[cfg(feature="texture_graphics")]
 pub mod texture;
 
-// #[cfg(feature="text_graphics")]
-// pub mod text;
+#[cfg(feature="text_graphics")]
+pub mod text;
 
 pub use image;
 

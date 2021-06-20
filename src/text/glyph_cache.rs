@@ -15,6 +15,14 @@ use super::{
     Scale,
 };
 
+use cat_engine_basement::{
+    graphics::level0::GLError,
+    graphics::gl::{
+        PixelStorei,
+        UNPACK_ALIGNMENT,
+    },
+};
+
 use ttf_parser::{
     Face,
     GlyphId,
@@ -144,14 +152,18 @@ fn build_glyph(id:GlyphId,scale:Scale,face:&Face,graphics:&Graphics2D)->Option<R
     ))=graphics.build_glyph_image(id,scale,face){
         let size=[width as u32,height as u32];
 
+        unsafe{PixelStorei(UNPACK_ALIGNMENT,1)}
+
         let texture_2d=Texture2D::new(
-            TextureInternalFormat::R8,
+            TextureInternalFormat::R_U8,
             TextureFilter::Linear,
             TextureFilter::Linear,
             size,
             ImageDataFormat::R_U8,
             &image
         );
+
+        unsafe{PixelStorei(UNPACK_ALIGNMENT,4)}
 
         let advance_width=face.glyph_hor_advance(id).unwrap() as f32*scale.horizontal;
 

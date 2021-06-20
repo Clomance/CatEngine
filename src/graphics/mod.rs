@@ -8,11 +8,11 @@ use cat_engine_basement::graphics::{
     level1::texture::texture_2d::Texture2D
 };
 
-// #[cfg(feature="text_graphics")]
-// use crate::text::{
-//     Scale,
-//     CachedFont,
-// };
+#[cfg(feature="text_graphics")]
+use crate::text::{
+    Scale,
+    CachedFont,
+};
 
 mod object_allocation;
 use object_allocation::{
@@ -45,13 +45,13 @@ mod texture_graphics;
 #[cfg(feature="texture_graphics")]
 use texture_graphics::TextureGraphics;
 
-// #[cfg(feature="text_graphics")]
-// mod text_graphics;
-// #[cfg(feature="text_graphics")]
-// use text_graphics::{
-//     TextGraphics,
-//     TextGraphicsAttributes
-// };
+#[cfg(feature="text_graphics")]
+mod text_graphics;
+#[cfg(feature="text_graphics")]
+use text_graphics::{
+    TextGraphics,
+    TextGraphicsAttributes
+};
 
 mod graphics_2d;
 pub use graphics_2d::{
@@ -172,27 +172,27 @@ impl Graphics{
 }
 
 /// Text graphics.
-// #[cfg(feature="text_graphics")]
-// impl Graphics{
-//     pub fn draw_char(
-//         &self,
-//         character:char,
-//         colour:Colour,
-//         position:[f32;2],
-//         horisontal_advance:&mut f32,
-//         scale:Scale,
-//         font:&CachedFont
-//     ){
-//         self.graphics_2d.draw_char(
-//             character,
-//             colour,
-//             position,
-//             horisontal_advance,
-//             scale,
-//             font,
-//         )
-//     }
-// }
+#[cfg(feature="text_graphics")]
+impl Graphics{
+    pub fn draw_char(
+        &self,
+        character:char,
+        colour:Colour,
+        position:[f32;2],
+        horisontal_advance:&mut f32,
+        scale:Scale,
+        font:&CachedFont
+    ){
+        self.graphics_2d.draw_char(
+            character,
+            colour,
+            position,
+            horisontal_advance,
+            scale,
+            font,
+        )
+    }
+}
 
 /// Simple graphics.
 #[cfg(feature="simple_graphics")]

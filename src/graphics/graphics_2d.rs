@@ -4,11 +4,11 @@ use crate::{
 
 use cat_engine_basement::graphics::level1::texture::texture_2d::Texture2D;
 
-// #[cfg(feature="text_graphics")]
-// use crate::text::{
-//     Scale,
-//     CachedFont,
-// };
+#[cfg(feature="text_graphics")]
+use crate::text::{
+    Scale,
+    CachedFont,
+};
 
 use super::{
     //types
@@ -30,11 +30,11 @@ use super::SimpleGraphics;
 #[cfg(feature="texture_graphics")]
 use super::TextureGraphics;
 
-// #[cfg(feature="text_graphics")]
-// use super::{
-//     TextGraphics,
-//     TextGraphicsAttributes,
-// };
+#[cfg(feature="text_graphics")]
+use super::{
+    TextGraphics,
+    TextGraphicsAttributes,
+};
 
 use ttf_parser::{
     GlyphId,
@@ -68,7 +68,7 @@ pub struct Graphics2DAttributes{
     #[cfg(feature="texture_graphics")]
     pub texture_heap_objects:ObjectIDType,
 
-    // pub glyph_texture_size:[u32;2]
+    pub glyph_texture_size:[u32;2]
 }
 
 impl Graphics2DAttributes{
@@ -100,8 +100,8 @@ impl Graphics2DAttributes{
             #[cfg(feature="texture_graphics")]
             texture_heap_objects:32,
 
-            // #[cfg(feature="text_graphics")]
-            // glyph_texture_size:[512u32;2]
+            #[cfg(feature="text_graphics")]
+            glyph_texture_size:[512u32;2]
         }
     }
 }
@@ -111,8 +111,8 @@ pub struct Graphics2D{
     simple:SimpleGraphics,
     #[cfg(feature="texture_graphics")]
     texture:TextureGraphics,
-    // #[cfg(feature="text_graphics")]
-    // text:TextGraphics,
+    #[cfg(feature="text_graphics")]
+    text:TextGraphics,
     draw_parameters:DrawParameters,
 }
 
@@ -138,16 +138,16 @@ impl Graphics2D{
             attributes.texture_heap_objects
         );
 
-        // #[cfg(feature="text_graphics")]
-        // let text=TextGraphics::new(attributes.glyph_texture_size);
+        #[cfg(feature="text_graphics")]
+        let text=TextGraphics::new(attributes.glyph_texture_size);
 
         Self{
             #[cfg(feature="simple_graphics")]
             simple,
             #[cfg(feature="texture_graphics")]
             texture,
-            // #[cfg(feature="text_graphics")]
-            // text,
+            #[cfg(feature="text_graphics")]
+            text,
             draw_parameters:DrawParameters::new(),
         }
     }
@@ -158,64 +158,65 @@ impl Graphics2D{
 }
 
 /// Text graphics.
-// #[cfg(feature="text_graphics")]
-// impl Graphics2D{
-//     pub fn build_glyph_image(&self,glyph_id:GlyphId,scale:Scale,font:&Face)->Option<([f32;4],&[u8])>{
-//         self.text.build_glyph_image(glyph_id,scale,font)
-//     }
+#[cfg(feature="text_graphics")]
+impl Graphics2D{
+    pub fn build_glyph_image(&self,glyph_id:GlyphId,scale:Scale,font:&Face)->Option<([f32;4],&[u8])>{
+        self.text.build_glyph_image(glyph_id,scale,font)
+    }
 
-//     pub fn draw_glyph(&self,glyph_texture:&Texture2D,colour:Colour,position:[f32;2],size:[f32;2]){
-//         self.text.draw_glyph(glyph_texture,colour,position,size);
-//     }
+    pub fn draw_glyph(&self,glyph_texture:&Texture2D,colour:Colour,position:[f32;2],size:[f32;2]){
+        self.text.draw_glyph(glyph_texture,colour,position,size,&self.draw_parameters);
+    }
 
-//     pub fn draw_char(
-//         &self,
-//         character:char,
-//         colour:Colour,
-//         position:[f32;2],
-//         horisontal_advance:&mut f32,
-//         scale:Scale,font:&CachedFont
-//     ){
-//         let glyph_id=if let Some(id)=font.glyph_id(character){
-//             id
-//         }
-//         else{
-//             GlyphId(0u16)
-//         };
+    pub fn draw_char(
+        &self,
+        character:char,
+        colour:Colour,
+        position:[f32;2],
+        horisontal_advance:&mut f32,
+        scale:Scale,
+        font:&CachedFont
+    ){
+        let glyph_id=if let Some(id)=font.glyph_id(character){
+            id
+        }
+        else{
+            GlyphId(0u16)
+        };
 
-//         if let Some(glyph)=font.cached_glyph(glyph_id){
-//             let texture=glyph.texture();
-//             let advance_width=glyph.advance_width(scale.horizontal);
+        if let Some(glyph)=font.cached_glyph(glyph_id){
+            let texture=glyph.texture();
+            let advance_width=glyph.advance_width(scale.horizontal);
 
-//             if !(horisontal_advance as *mut f32).is_null(){
-//                 *horisontal_advance=advance_width
-//             }
+            if !(horisontal_advance as *mut f32).is_null(){
+                *horisontal_advance=advance_width
+            }
 
-//             let [offset_x,offset_y,width,height]=glyph.bounding_box(scale);
+            let [offset_x,offset_y,width,height]=glyph.bounding_box(scale);
 
-//             let position=[
-//                 position[0]+offset_x,
-//                 position[1]+offset_y,
-//             ];
+            let position=[
+                position[0]+offset_x,
+                position[1]+offset_y,
+            ];
 
-//             self.text.draw_glyph(texture,colour,position,[width,height]);
-//         }
-//         else{
-//             if let Some([offset_x,offset_y,_,_])=self.text.load_glyph(glyph_id,scale,font.font().face()){
-//                 if !(horisontal_advance as *mut f32).is_null(){
-//                     *horisontal_advance=font.font().face().glyph_hor_advance(glyph_id).unwrap() as f32*scale.horizontal;
-//                 }
+            self.text.draw_glyph(texture,colour,position,[width,height],&self.draw_parameters);
+        }
+        else{
+            if let Some([offset_x,offset_y,_,_])=self.text.load_glyph(glyph_id,scale,font.font().face()){
+                if !(horisontal_advance as *mut f32).is_null(){
+                    *horisontal_advance=font.font().face().glyph_hor_advance(glyph_id).unwrap() as f32*scale.horizontal;
+                }
 
-//                 let position=[
-//                     position[0]+offset_x,
-//                     position[1]+offset_y,
-//                 ];
+                let position=[
+                    position[0]+offset_x,
+                    position[1]+offset_y,
+                ];
 
-//                 self.text.draw_loaded_glyph(colour,position);
-//             }
-//         }
-//     }
-// }
+                self.text.draw_loaded_glyph(colour,position,&self.draw_parameters);
+            }
+        }
+    }
+}
 
 /// Simple graphics.
 #[cfg(feature="simple_graphics")]
