@@ -24,9 +24,9 @@ fn main(){
     let graphics=app.get_graphics_unchecked_mut(0);
 
     { // Setting blending
-        let blending=graphics.parameters().blending();
+        let blending=graphics.core().blending();
         blending.enable();
-        blending.set_blending_function(
+        blending.set_function(
             BlendingFunction::SourceAlpha,
             BlendingFunction::OneMinusSourceAlpha
         );
@@ -83,7 +83,7 @@ fn main(){
                 else{
                     colour[0]=0f32;
                 };
-                graphics.parameters().set_clear_colour(colour);
+                graphics.core().set_clear_colour(colour);
                 graphics.draw_parameters().set_viewport([0,0,window_size[0] as i32,window_size[1] as i32]);
                 graphics.clear_colour();
                 // Drawing the object that is located in the stack-type buffer.

@@ -45,98 +45,102 @@ use gl::{
 };
 
 /// Specifies the expected usage pattern of the data store.
+#[repr(u32)]
 #[derive(Clone,Copy,Debug)]
 pub enum BufferUsage{
     /// The data store contents will be modified once and used at most a few times.
     /// The data store contents are modified by the application,
     /// and used as the source for GL drawing and image specification commands.
-    StreamDraw=STREAM_DRAW as isize,
+    StreamDraw=STREAM_DRAW,
 
     /// The data store contents will be modified once and used at most a few times.
     /// The data store contents are modified by reading data from the GL,
     /// and used to return that data when queried by the application.
-    StreamRead=STREAM_READ as isize,
+    StreamRead=STREAM_READ,
 
     /// The data store contents will be modified once and used at most a few times.
     /// The data store contents are modified by reading data from the GL,
     /// and used as the source for GL drawing and image specification commands.
-    StreamCopy=STREAM_COPY as isize,
+    StreamCopy=STREAM_COPY,
 
     /// The data store contents will be modified once and used many times.
     /// The data store contents are modified by the application,
     /// and used as the source for GL drawing and image specification commands.
-    StaticDraw=STATIC_DRAW as isize,
+    StaticDraw=STATIC_DRAW,
 
     /// The data store contents will be modified once and used many times.
     /// The data store contents are modified by reading data from the GL,
     /// and used to return that data when queried by the application.
-    StaticRead=STATIC_READ as isize,
+    StaticRead=STATIC_READ,
 
     /// The data store contents will be modified once and used many times.
     /// The data store contents are modified by reading data from the GL,
     /// and used as the source for GL drawing and image specification commands.
-    StaticCopy=STATIC_COPY as isize,
+    StaticCopy=STATIC_COPY,
 
     /// The data store contents will be modified repeatedly and used many times.
     /// The data store contents are modified by the application,
     /// and used as the source for GL drawing and image specification commands.
-    DynamicDraw=DYNAMIC_DRAW as isize,
+    DynamicDraw=DYNAMIC_DRAW,
 
     /// The data store contents will be modified repeatedly and used many times.
     /// The data store contents are modified by reading data from the GL,
     /// and used to return that data when queried by the application.
-    DynamicRead=DYNAMIC_READ as isize,
+    DynamicRead=DYNAMIC_READ,
 
     /// The data store contents will be modified repeatedly and used many times.
     /// The data store contents are modified by reading data from the GL,
     /// and used as the source for GL drawing and image specification commands.
-    DynamicCopy=DYNAMIC_COPY as isize,
+    DynamicCopy=DYNAMIC_COPY,
 }
 
+#[repr(u32)]
 #[derive(Clone,Copy,Debug)]
 pub enum BufferTarget{
     /// Vertex attributes.
-    ArrayBuffer=ARRAY_BUFFER as isize,
+    ArrayBuffer=ARRAY_BUFFER,
     /// Atomic counter storage.
     /// 
     /// Since OpenGL 4.2.
-    AtomicCounterBuffer=ATOMIC_COUNTER_BUFFER as isize,
+    AtomicCounterBuffer=ATOMIC_COUNTER_BUFFER,
     /// Buffer copy source.
     /// 
     /// Since OpenGL 3.1.
-    CopyReadBuffer=COPY_READ_BUFFER as isize,
+    CopyReadBuffer=COPY_READ_BUFFER,
     /// Buffer copy destination.
     /// 
     /// Since OpenGL 3.1.
-    CopyWriteBuffer=COPY_WRITE_BUFFER as isize,
+    CopyWriteBuffer=COPY_WRITE_BUFFER,
     /// Indirect compute dispatch commands.
     /// 
     /// Since OpenGL 4.3.
-    DispatchIndirectBuffer=DISPATCH_INDIRECT_BUFFER as isize,
+    DispatchIndirectBuffer=DISPATCH_INDIRECT_BUFFER,
     /// Indirect command arguments.
-    DrawIndirectBuffer=DRAW_INDIRECT_BUFFER as isize,
+    DrawIndirectBuffer=DRAW_INDIRECT_BUFFER,
     /// Vertex array indices.
-    ElementArrayBuffer=ELEMENT_ARRAY_BUFFER as isize,
+    ElementArrayBuffer=ELEMENT_ARRAY_BUFFER,
     /// Pixel read target.
-    PixelPackBuffer=PIXEL_PACK_BUFFER as isize,
+    PixelPackBuffer=PIXEL_PACK_BUFFER,
     /// Texture data source.
-    PixelUnpackBuffer=PIXEL_UNPACK_BUFFER as isize,
+    PixelUnpackBuffer=PIXEL_UNPACK_BUFFER,
     /// Query result buffer.
     /// 
     /// Since OpenGL 4.4.
-    QueryBuffer=QUERY_BUFFER as isize,
+    QueryBuffer=QUERY_BUFFER,
     /// Read-write storage for shaders.
     /// 
     /// Since OpenGL 4.3.
-    ShaderStorageBuffer=SHADER_STORAGE_BUFFER as isize,
+    ShaderStorageBuffer=SHADER_STORAGE_BUFFER,
     /// Texture data buffer.
     /// 
     /// Since OpenGL 3.1.
-    TextureBuffer=TEXTURE_BUFFER as isize,
+    TextureBuffer=TEXTURE_BUFFER,
     /// Transform feedback buffer.
-    TransformFeedbackBuffer=TRANSFORM_FEEDBACK_BUFFER as isize,
+    TransformFeedbackBuffer=TRANSFORM_FEEDBACK_BUFFER,
     /// Uniform block storage.
-    UniformBuffer=UNIFORM_BUFFER as isize,
+    /// 
+    /// Since OpenGL 3.1.
+    UniformBuffer=UNIFORM_BUFFER,
 }
 
 pub struct Buffer<I:Sized>{
@@ -148,7 +152,7 @@ impl<I:Sized> Buffer<I>{
     pub fn initialize()->Buffer<I>{
         unsafe{
             let mut id:u32=MaybeUninit::uninit().assume_init();
-            GenBuffers(1,&mut id as *mut u32);
+            GenBuffers(1,&mut id);
 
             Self{
                 id,
@@ -215,15 +219,6 @@ impl<I:Sized> Buffer<I>{
         BindBuffer(target as u32,self.id);
         let data_ref=(value as *const I) as *const core::ffi::c_void;
         BufferSubData(target as u32,offset as isize,size_of::<I>() as isize,data_ref)
-    }
-
-    /// Offset in bytes.
-    /// 
-    /// Since OpenGL 3.1.
-    pub unsafe fn write_buffer<I2>(&self,offset:usize,buffer:&Buffer<I2>,from:usize,size:usize){
-        self.bind(BufferTarget::CopyWriteBuffer);
-        buffer.bind(BufferTarget::CopyReadBuffer);
-        CopyBufferSubData(COPY_READ_BUFFER,COPY_WRITE_BUFFER,offset as isize,from as isize,size as isize)
     }
 }
 

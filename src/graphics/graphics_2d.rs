@@ -230,7 +230,7 @@ impl Graphics2D{
         self.simple.add_object_raw(
             vertices,
             indices,
-            primitive_type.as_gl_enum()
+            primitive_type as u32
         )
     }
 
@@ -262,7 +262,7 @@ impl Graphics2D{
         self.simple.push_object_raw(
             vertices,
             indices,
-            primitive_type.as_gl_enum()
+            primitive_type as u32
         )
     }
 
@@ -299,7 +299,7 @@ impl Graphics2D{
         self.texture.add_object_raw(
             vertices,
             indices,
-            primitive_type.as_gl_enum()
+            primitive_type as u32
         )
     }
 
@@ -331,7 +331,7 @@ impl Graphics2D{
         self.texture.push_object_raw(
             vertices,
             indices,
-            primitive_type.as_gl_enum()
+            primitive_type as u32
         )
     }
 

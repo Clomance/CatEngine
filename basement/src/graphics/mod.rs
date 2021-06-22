@@ -5,3 +5,6 @@ pub mod level1;
 pub mod level2;
 
 pub use gl;
+
+pub type ColourComponent=f32;
+pub type Colour=[ColourComponent;4];

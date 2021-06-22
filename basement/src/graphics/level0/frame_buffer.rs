@@ -27,18 +27,20 @@ use gl::{
     DeleteFramebuffers,
 };
 
+#[repr(u32)]
 #[derive(Clone,Copy,Debug)]
 pub enum FrameBufferTarget{
-    Read=READ_FRAMEBUFFER as isize,
-    Draw=DRAW_FRAMEBUFFER as isize,
-    FrameBuffer=FRAMEBUFFER as isize,
+    Read=READ_FRAMEBUFFER,
+    Draw=DRAW_FRAMEBUFFER,
+    FrameBuffer=FRAMEBUFFER,
 }
 
+#[repr(u32)]
 #[derive(Clone,Copy,Debug)]
 pub enum FrameBufferAttachment{
-    ColourAttachment0=COLOR_ATTACHMENT0 as isize,
-    DepthAttachment=DEPTH_ATTACHMENT as isize,
-    StencilAttachment=STENCIL_ATTACHMENT as isize,
+    ColourAttachment0=COLOR_ATTACHMENT0,
+    DepthAttachment=DEPTH_ATTACHMENT,
+    StencilAttachment=STENCIL_ATTACHMENT,
 }
 
 /// Since OpenGL 3.0.
@@ -91,14 +93,14 @@ impl<'a> FrameBuffer<'a>{
     // pub unsafe fn write(&self,target:u32,offset:usize,items:&[I]){
     //     BindFramebuffer(target,self.id);
     //     let data_ref=(items as *const [I]) as *const core::ffi::c_void;
-    //     BufferSubData(target,(offset*size_of::<I>()) as isize,(items.len()*size_of::<I>()) as isize,data_ref)
+    //     BufferSubData(target,(offset*size_of::<I>()),(items.len()*size_of::<I>()),data_ref)
     // }
 
     // /// Offset in bytes.
     // pub unsafe fn write_value(&self,target:u32,offset:usize,value:&I){
     //     BindFramebuffer(target,self.id);
     //     let data_ref=(value as *const I) as *const core::ffi::c_void;
-    //     BufferSubData(target,offset as isize,size_of::<I>() as isize,data_ref)
+    //     BufferSubData(target,offset,size_of::<I>(),data_ref)
     // }    
 
     /// Offset in bytes.
@@ -121,7 +123,7 @@ impl<'a> FrameBuffer<'a>{
     // pub unsafe fn rewrite(&self,target:u32,items:&[I]){
     //     BindFramebuffer(target,self.id);
     //     let data_ref=(items as *const [I]) as *const core::ffi::c_void;
-    //     BufferData(target,(items.len()*size_of::<I>()) as isize,data_ref,DYNAMIC_DRAW);
+    //     BufferData(target,(items.len()*size_of::<I>()),data_ref,DYNAMIC_DRAW);
     // }
 }
 
@@ -141,11 +143,11 @@ pub struct BoundFrameBuffer<'a>{
 impl<'a> BoundFrameBuffer<'a>{
     // pub unsafe fn write(&self,offset:usize,items:&[I]){
     //     let data_ref=(items as *const [I]) as *const core::ffi::c_void;
-    //     BufferSubData(self.target,(offset*size_of::<I>()) as isize,(items.len()*size_of::<I>()) as isize,data_ref)
+    //     BufferSubData(self.target,(offset*size_of::<I>()),(items.len()*size_of::<I>()),data_ref)
     // }
 
     // pub unsafe fn rewrite(&self,items:&[I]){
     //     let data_ref=(items as *const [I]) as *const core::ffi::c_void;
-    //     BufferData(self.target,(items.len()*size_of::<I>()) as isize,data_ref,DYNAMIC_DRAW);
+    //     BufferData(self.target,(items.len()*size_of::<I>()),data_ref,DYNAMIC_DRAW);
     // }
 }

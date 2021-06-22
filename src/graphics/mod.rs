@@ -4,8 +4,19 @@ use crate::{
 };
 
 use cat_engine_basement::graphics::{
-    level0::Vertex,
+    level0::{
+        Vertex,
+    },
     level1::texture::texture_2d::Texture2D
+};
+
+pub use cat_engine_basement::graphics::{
+    level0::{
+        GraphicsCore,
+        BlendingEquation,
+        BlendingFunction,
+        Blending,
+    },
 };
 
 #[cfg(feature="text_graphics")]
@@ -59,12 +70,8 @@ pub use graphics_2d::{
     Graphics2D,
 };
 
-mod parameters;
-pub use parameters::{
-    GraphicsParameters,
-    BlendingEquation,
-    BlendingFunction,
-    Blending,
+mod draw_parameters;
+pub use draw_parameters::{
     DrawMode,
     DrawParameters,
 };
@@ -96,37 +103,32 @@ const frame_size:usize=3;
 /// The minimum of frames per object.
 const minimal_frames:usize=3;
 
+#[repr(u32)]
 #[derive(Clone,Copy)]
 pub enum PrimitiveType{
-    Points=POINTS as isize,
-    Lines=LINES as isize,
-    LineLoop=LINE_LOOP as isize,
-    LineStrip=LINE_STRIP as isize,
-    Triangles=TRIANGLES as isize,
-    TriangleStrip=TRIANGLE_STRIP as isize,
-    TriangleFan=TRIANGLE_FAN as isize,
-    LinesAdjacency=LINES_ADJACENCY as isize,
-    TrianglesAdjacency=TRIANGLES_ADJACENCY as isize,
-    TriangleStripAdjacency=TRIANGLE_STRIP_ADJACENCY as isize,
-}
-
-impl PrimitiveType{
-    pub fn as_gl_enum(self)->u32{
-        self as u32
-    }
+    Points=POINTS,
+    Lines=LINES,
+    LineLoop=LINE_LOOP,
+    LineStrip=LINE_STRIP,
+    Triangles=TRIANGLES,
+    TriangleStrip=TRIANGLE_STRIP,
+    TriangleFan=TRIANGLE_FAN,
+    LinesAdjacency=LINES_ADJACENCY,
+    TrianglesAdjacency=TRIANGLES_ADJACENCY,
+    TriangleStripAdjacency=TRIANGLE_STRIP_ADJACENCY,
 }
 
 pub struct Graphics{
+    graphics_core:GraphicsCore,
     graphics_2d:Graphics2D,
-    parameters:GraphicsParameters,
 }
 
 impl Graphics{
     #[cfg(target_os="windows")]
     pub fn new(attributes:Graphics2DAttributes)->Graphics{
         Self{
+            graphics_core:GraphicsCore{},
             graphics_2d:Graphics2D::new(attributes),
-            parameters:GraphicsParameters::new(),
         }
     }
 
@@ -138,8 +140,8 @@ impl Graphics{
         &mut self.graphics_2d
     }
 
-    pub fn parameters(&self)->&GraphicsParameters{
-        &self.parameters
+    pub fn core(&self)->&GraphicsCore{
+        &self.graphics_core
     }
 
     pub fn draw_parameters(&mut self)->&mut DrawParameters{

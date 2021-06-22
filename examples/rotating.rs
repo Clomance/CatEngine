@@ -22,10 +22,10 @@ fn main(){
     let graphics=app.get_graphics_unchecked_mut(0);
 
     { // Setting blending and the clear colour
-        graphics.parameters().set_clear_colour([1f32;4]);
-        let blending=graphics.parameters().blending();
+        graphics.core().set_clear_colour([1f32;4]);
+        let blending=graphics.core().blending();
         blending.enable();
-        blending.set_blending_function(
+        blending.set_function(
             BlendingFunction::SourceAlpha,
             BlendingFunction::OneMinusSourceAlpha
         );

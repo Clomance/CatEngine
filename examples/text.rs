@@ -26,9 +26,9 @@ fn main(){
     let graphics=app.get_graphics_unchecked_mut(0);
 
     { // Setting blending
-        let blending=graphics.parameters().blending();
+        let blending=graphics.core().blending();
         blending.enable();
-        blending.set_blending_function(
+        blending.set_function(
             BlendingFunction::SourceAlpha,
             BlendingFunction::OneMinusSourceAlpha
         );
@@ -45,7 +45,7 @@ fn main(){
     );
     let image=graphics.push_textured_object(&image_base).unwrap();
 
-    graphics.parameters().set_clear_colour([0f32,0f32,0f32,1f32]);
+    graphics.core().set_clear_colour([0f32,0f32,0f32,1f32]);
     app.run(|event,app_control|{
         match event{
             Event::Redraw=>{
