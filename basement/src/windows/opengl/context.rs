@@ -93,63 +93,64 @@ impl OpenGLRenderContext{
                 return Err(WinError::get_last_error())
             }
 
-            // Создание временного контектса для создания расширенного
-            let temp_context=wglCreateContext(window_context);
-            if temp_context.is_null(){
+            // // Создание временного контектса для создания расширенного
+            // Создание контектса
+            let render_context=wglCreateContext(window_context);
+            if render_context.is_null(){
                 return Err(WinError::get_last_error())
             }
 
-            if wglMakeCurrent(window_context,temp_context)==0{
+            if wglMakeCurrent(window_context,render_context)==0{
                 return Err(WinError::get_last_error())
             }
 
             // Загрузка функций расширенного OpenGL
-            let wglChoosePixelFormatARB:wglChoosePixelFormatARB_t=core::mem::transmute({
-                wglGetProcAddress("wglChoosePixelFormatARB\0".as_ptr() as *const i8)
-            });
+            // let wglChoosePixelFormatARB:wglChoosePixelFormatARB_t=core::mem::transmute({
+            //     wglGetProcAddress("wglChoosePixelFormatARB\0".as_ptr() as *const i8)
+            // });
 
-            let wglCreateContextAttribsARB:wglCreateContextAttribsARB_t=core::mem::transmute(
-                wglGetProcAddress("wglCreateContextAttribsARB\0".as_ptr() as *const i8)
-            );
+            // let wglCreateContextAttribsARB:wglCreateContextAttribsARB_t=core::mem::transmute(
+            //     wglGetProcAddress("wglCreateContextAttribsARB\0".as_ptr() as *const i8)
+            // );
 
             let wglSwapIntervalEXT:wglSwapIntervalEXT_t=core::mem::transmute(
                 wglGetProcAddress("wglSwapIntervalEXT\0".as_ptr() as *const i8)
             );
 
-            let attributes=[
-                WGL_DRAW_TO_WINDOW_ARB,1i32,
-                WGL_SUPPORT_OPENGL_ARB,1i32,
-                WGL_DOUBLE_BUFFER_ARB,1i32,
-                WGL_PIXEL_TYPE_ARB,WGL_TYPE_RGBA_ARB,
-                WGL_COLOR_BITS_ARB,attributes.colour_bits as i32,
-                WGL_DEPTH_BITS_ARB,attributes.depth_bits as i32,
-                WGL_STENCIL_BITS_ARB,0i32,
-                0i32,
-            ];
+            // let attributes=[
+            //     WGL_DRAW_TO_WINDOW_ARB,1i32,
+            //     WGL_SUPPORT_OPENGL_ARB,1i32,
+            //     WGL_DOUBLE_BUFFER_ARB,1i32,
+            //     WGL_PIXEL_TYPE_ARB,WGL_TYPE_RGBA_ARB,
+            //     WGL_COLOR_BITS_ARB,attributes.colour_bits as i32,
+            //     WGL_DEPTH_BITS_ARB,attributes.depth_bits as i32,
+            //     WGL_STENCIL_BITS_ARB,0i32,
+            //     0i32,
+            // ];
 
-            let mut pixel_format=0i32;
-            let mut num_formats=0u32;
+            // let mut pixel_format=0i32;
+            // let mut num_formats=0u32;
 
-            let mut result=
-                wglChoosePixelFormatARB.expect("wglChoosePixelFormatARB is not loaded")(window_context,attributes.as_ptr(),null_mut(),1,&mut pixel_format,&mut num_formats);
+            // let mut result=
+            //     wglChoosePixelFormatARB.expect("wglChoosePixelFormatARB is not loaded")(window_context,attributes.as_ptr(),null_mut(),1,&mut pixel_format,&mut num_formats);
 
-            if result==0{
-                return Err(WinError::get_last_error())
-            }
+            // if result==0{
+            //     return Err(WinError::get_last_error())
+            // }
 
-            let render_context=
-                wglCreateContextAttribsARB.expect("wglCreateContextAttribsARB is not loaded")(window_context,temp_context,&pixel_format);
-            if render_context.is_null(){
-                return Err(WinError::get_last_error())
-            }
+            // let render_context=
+            //     wglCreateContextAttribsARB.expect("wglCreateContextAttribsARB is not loaded")(window_context,temp_context,&pixel_format);
+            // if render_context.is_null(){
+            //     return Err(WinError::get_last_error())
+            // }
 
-            // Удаление временного контекста и переключение к новому
-            if wglMakeCurrent(window_context,render_context)==0{
-                return Err(WinError::get_last_error())
-            }
-            if wglDeleteContext(temp_context)==0{
-                return Err(WinError::get_last_error())
-            }
+            // // Удаление временного контекста и переключение к новому
+            // if wglMakeCurrent(window_context,render_context)==0{
+            //     return Err(WinError::get_last_error())
+            // }
+            // if wglDeleteContext(temp_context)==0{
+            //     return Err(WinError::get_last_error())
+            // }
 
             // vsync
             wglSwapIntervalEXT.expect("wglSwapIntervalEXT is not loaded")(1);

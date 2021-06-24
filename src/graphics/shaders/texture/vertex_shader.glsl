@@ -4,16 +4,15 @@ layout (location = 0) in vec2 vertex_position;
 layout (location = 1) in vec2 texture_coords;
 layout (location = 2) in vec4 texture_colour_filter;
 
+layout (std140) uniform DrawParameters{
+    vec4 viewport;
+    uint draw_mode;
+    vec2 vertex_shift; // [dx, dy]
+    vec4 vertex_rotation; // [cos, sin, rotation_center]
+};
+
 out vec2 tex_coords;
 out vec4 colour_filter;
-
-uniform vec2 window_half_size;
-
-uniform uint draw_mode;
-
-uniform vec2 vertex_shift; // [dx, dy]
-
-uniform vec4 vertex_rotation; // [cos, sin, rotation_center]
 
 void main() {
     tex_coords = vec2(texture_coords);
@@ -36,9 +35,12 @@ void main() {
         position += rotation_center;
     }
 
+    vec2 viewport_offset = vec2(viewport.xy);
+    vec2 viewport_size = vec2(viewport.zw);
+
     position = vec2(
-        position.x / window_half_size.x - 1.0,
-        1.0 - position.y / window_half_size.y
+        2 * (position.x + viewport_offset.x) / viewport_size.x - 1.0,
+        1.0 - 2 * (position.y + viewport_offset.y) / viewport_size.y
     );
 
     gl_Position = vec4(position, 0.0, 1.0);

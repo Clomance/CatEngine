@@ -13,10 +13,6 @@ use cat_engine::{
         CachedFont,
         Scale,
     },
-    texture::{
-        Texture,
-        ImageBase,
-    }
 };
 
 fn main(){
@@ -37,14 +33,6 @@ fn main(){
     let font_owner=FontOwner::load("resources/font1").unwrap();
     let font=CachedFont::new_alphabet(font_owner,"aAbBcCwW",Scale::new(0.1f32,0.1f32),graphics.graphics_2d());
 
-    let texture=Texture::from_path("logo_400x400.png").unwrap();
-
-    let image_base=ImageBase::new(
-        [400f32,400f32,400f32,400f32], // position and size
-        [1.0;4] // colour filter
-    );
-    let image=graphics.push_textured_object(&image_base).unwrap();
-
     graphics.core().set_clear_colour([0f32,0f32,0f32,1f32]);
     app.run(|event,app_control|{
         match event{
@@ -55,10 +43,10 @@ fn main(){
 
                 let graphics=app_control.get_graphics_unchecked_mut(0);
 
-                graphics.draw_parameters().set_viewport([0,0,window_size[0] as i32,window_size[1] as i32]);
+                graphics.core().viewport().set([0,0,window_size[0] as i32,window_size[1] as i32]);
+                graphics.draw_parameters().set_viewport([0f32,0f32,window_size[0] as f32,window_size[1] as f32]);
+                graphics.draw_parameters().update();
                 graphics.clear_colour();
-
-                graphics.draw_stack_textured_object(image,texture.texture_2d());
 
                 graphics.draw_char('a',[1f32;4],[100f32;2],&mut 0f32,Scale::new(1f32,1f32),&font);
                 graphics.draw_char('Р',[1f32;4],[150f32,250f32],&mut 0f32,Scale::new(0.1f32,0.1f32),&font);

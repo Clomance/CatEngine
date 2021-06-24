@@ -16,6 +16,8 @@ use std::{
 use gl::{
     // constants
     LINK_STATUS,
+    INVALID_INDEX,
+    MAX_UNIFORM_BUFFER_BINDINGS,
     // functions
     CreateProgram,
     AttachShader,
@@ -23,6 +25,8 @@ use gl::{
     GetProgramiv,
     GetProgramInfoLog,
     GetUniformLocation,
+    GetUniformBlockIndex,
+    UniformBlockBinding,
     UseProgram,
     DeleteProgram,
 };
@@ -88,10 +92,53 @@ impl Program{
         }
     }
 
+    pub unsafe fn set_uniform_value_raw<V:UniformValue>(&self,uniform_id:i32,value:V){
+        Uniform::raw(uniform_id).set(value)
+    }
+
     pub fn set_uniform_value<V:UniformValue>(&self,name:&str,value:V)->bool{
         if let Some(uniform)=Uniform::new(self,name){
             uniform.set(value);
             true
+        }
+        else{
+            false
+        }
+    }
+
+    pub fn get_uniform_block_index(&self,name:&str)->Option<u32>{
+        unsafe{
+            if let Ok(name)=CString::new(name){
+                let id=GetUniformBlockIndex(self.id,name.as_ptr());
+
+                if id==INVALID_INDEX{
+                    None
+                }
+                else{
+                    Some(id)
+                }
+            }
+            else{
+                None
+            }
+        }
+    }
+
+    pub unsafe fn bind_uniform_block_raw(&self,uniform_block_index:u32,binding_index:u32){
+        UniformBlockBinding(self.id,uniform_block_index,binding_index);
+    }
+
+    pub fn bind_uniform_block(&self,name:&str,binding_index:u32)->bool{
+        if binding_index<MAX_UNIFORM_BUFFER_BINDINGS{
+            if let Some(index)=self.get_uniform_block_index(name){
+                unsafe{
+                    UniformBlockBinding(self.id,index,binding_index);
+                }
+                true
+            }
+            else{
+                false
+            }
         }
         else{
             false

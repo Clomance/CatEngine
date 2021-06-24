@@ -44,6 +44,13 @@ pub struct Uniform<'a>{
 }
 
 impl<'a> Uniform<'a>{
+    pub unsafe fn raw(id:i32)->Uniform<'a>{
+        Self{
+            id,
+            marker:PhantomData,
+        }
+    }
+
     pub fn new(program:&'a Program,name:&str)->Option<Uniform<'a>>{
         if let Some(id)=program.get_uniform_location(name){
             Some(Self{

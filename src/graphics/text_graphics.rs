@@ -100,9 +100,11 @@ impl TextGraphics{
         let vertex_shader=VertexShader::new(&include_str!("shaders/text/vertex_shader.glsl")).unwrap();
         let fragment_shader=FragmentShader::new(&include_str!("shaders/text/fragment_shader.glsl")).unwrap();
 
+        let program=Program::new(&vertex_shader,&fragment_shader).unwrap();
+        program.bind_uniform_block("DrawParameters",0u32);
+
         let vertex_buffer=VertexBuffer::<TextVertex2D>::empty(4,BufferUsage::DynamicDraw);
 
-        
         let texture=Texture2D::empty(
             TextureInternalFormat::R_U8,
             TextureFilter::Linear,
@@ -128,7 +130,7 @@ impl TextGraphics{
                 glyph_texture_size[1] as f32,
             ],
 
-            draw:Program::new(&vertex_shader,&fragment_shader).unwrap(),
+            draw:program,
         }
     }
 }
@@ -198,19 +200,6 @@ impl TextGraphics{
             position[1]+height as f32,
         ];
 
-        let [width_scale,height_scale]={
-            let [x,y,width,height]=draw_parameters.viewport();
-            unsafe{
-                Viewport(x,y,width,height);
-            }
-            [width as f32,height as f32]
-        };
-
-        let window_center=[
-            width_scale as f32/2f32,
-            height_scale as f32/2f32,
-        ];
-
         // The normalized size of the loaded glyph image
         let uwidth=width as f32/self.texture_size[0];
         let vheight=height as f32/self.texture_size[1];
@@ -222,7 +211,6 @@ impl TextGraphics{
             TextVertex2D::new([x2,y2],[uwidth,0f32]),
         ];
 
-        
         self.load_vertices(vertices);
         self.draw.bind();
         self.vertex_array.bind();
@@ -230,18 +218,7 @@ impl TextGraphics{
         self.texture.bind();
 
         let _=self.draw.set_uniform_value("glyph_colour",colour);
-
-        let _=self.draw.set_uniform_value("window_half_size",window_center);
-
-        let _=self.draw.set_uniform_value("draw_mode",draw_parameters.flag());
-
-        if let Some(shift)=draw_parameters.shift(){
-            let _=self.draw.set_uniform_value("vertex_shift",shift);
-        }
-
-        if let Some(rotation)=draw_parameters.rotation(){
-            let _=self.draw.set_uniform_value("vertex_rotation",rotation);
-        }
+        draw_parameters.bind_uniform();
 
         unsafe{
             DrawArrays(TRIANGLE_STRIP,0,4);
@@ -264,19 +241,6 @@ impl TextGraphics{
             y+height,
         ];
 
-        let [width_scale,height_scale]={
-            let [x,y,width,height]=draw_parameters.viewport();
-            unsafe{
-                Viewport(x,y,width,height);
-            }
-            [width as f32,height as f32]
-        };
-
-        let window_center=[
-            width_scale as f32/2f32,
-            height_scale as f32/2f32,
-        ];
-
         let vertices=&[
             TextVertex2D::new([x1,y1],[0f32,1f32]),
             TextVertex2D::new([x2,y1],[1f32,1f32]),
@@ -292,17 +256,7 @@ impl TextGraphics{
 
         let _=self.draw.set_uniform_value("glyph_colour",colour);
 
-        let _=self.draw.set_uniform_value("window_half_size",window_center);
-
-        let _=self.draw.set_uniform_value("draw_mode",draw_parameters.flag());
-
-        if let Some(shift)=draw_parameters.shift(){
-            let _=self.draw.set_uniform_value("vertex_shift",shift);
-        }
-
-        if let Some(rotation)=draw_parameters.rotation(){
-            let _=self.draw.set_uniform_value("vertex_rotation",rotation);
-        }
+        draw_parameters.bind_uniform();
 
         unsafe{
             DrawArrays(TRIANGLE_STRIP,0,4);

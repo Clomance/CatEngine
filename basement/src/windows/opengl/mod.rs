@@ -10,30 +10,9 @@ use winapi::{
             PROC,
             HMODULE,
         },
-        windef::{
-            HGLRC,
-            HDC,
-        },
     },
     um::{
-        wingdi::{
-            // constants
-            PFD_DRAW_TO_WINDOW,
-            PFD_SUPPORT_OPENGL,
-            PFD_DOUBLEBUFFER,
-            PFD_TYPE_RGBA,
-            PFD_MAIN_PLANE,
-            // functions
-            ChoosePixelFormat,
-            SetPixelFormat,
-            wglCreateContext,
-            wglMakeCurrent,
-            wglDeleteContext,
-            SwapBuffers,
-            wglGetProcAddress,
-            // structs
-            PIXELFORMATDESCRIPTOR,
-        },
+        wingdi::wglGetProcAddress,
         libloaderapi::{
             LoadLibraryA,
             FreeLibrary,

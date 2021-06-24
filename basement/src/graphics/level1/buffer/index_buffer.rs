@@ -30,7 +30,7 @@ impl<I:Sized> IndexBuffer<I>{
     pub fn empty(size:usize,usage:BufferUsage)->IndexBuffer<I>{
         unsafe{
             Self{
-                buffer:Buffer::empty(BufferTarget::ElementArrayBuffer,size,usage),
+                buffer:Buffer::empty(BufferTarget::ElementArrayBuffer,size as isize,usage),
             }
         }
     }
@@ -65,7 +65,7 @@ impl<'a,I> BoundIndexBuffer<'a,I>{
     #[inline(always)]
     pub fn write(&self,offset:usize,indices:&[I]){
         unsafe{
-            self.marker.write(offset,indices)
+            self.marker.write(offset as isize,indices)
         }
     }
 

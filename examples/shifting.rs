@@ -39,10 +39,10 @@ fn main(){
     );
     let image=graphics.push_textured_object(&image_base).unwrap();
 
-    let mut angle=0f32;
+    let mut shift=0f32;
     app.run(|event,app_control|{
         match event{
-            Event::Update(_)=>angle+=0.01,
+            Event::Update(_)=>shift+=0.1,
 
             Event::Redraw=>{
                 let window=app_control.get_window_unchecked(0);
@@ -54,13 +54,13 @@ fn main(){
                 graphics.core().viewport().set([0,0,width as i32,height as i32]);
 
                 graphics.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
-                graphics.draw_parameters().switch(DrawMode::Rotation);
-                graphics.draw_parameters().set_rotation([angle.cos(),angle.sin(),width as f32/2f32,height as f32/2f32]);
+                graphics.draw_parameters().switch(DrawMode::Shift);
+                graphics.draw_parameters().set_shift([shift,shift]);
                 graphics.draw_parameters().update();
 
                 graphics.draw_stack_textured_object(image,texture.texture_2d());
 
-                graphics.draw_parameters().switch(DrawMode::Rotation);
+                graphics.draw_parameters().switch(DrawMode::Shift);
                 graphics.draw_parameters().update();
 
                 app_control.get_render_context_unchecked(0).swap_buffers().unwrap();

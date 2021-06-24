@@ -74,7 +74,7 @@ fn main(){
             Event::Redraw=>{
                 let window=app_control.get_window_unchecked(0);
 
-                let window_size=window.client_size();
+                let [width,height]=window.client_size();
 
                 let graphics=app_control.get_graphics_unchecked_mut(0);
                 if colour[0]<1f32{
@@ -84,7 +84,10 @@ fn main(){
                     colour[0]=0f32;
                 };
                 graphics.core().set_clear_colour(colour);
-                graphics.draw_parameters().set_viewport([0,0,window_size[0] as i32,window_size[1] as i32]);
+                graphics.core().viewport().set([0,0,width as i32,height as i32]);
+
+                graphics.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
+                graphics.draw_parameters().update();
                 graphics.clear_colour();
                 // Drawing the object that is located in the stack-type buffer.
                 graphics.draw_stack_textured_object(image1,texture.texture_2d());

@@ -67,7 +67,8 @@ impl TexturedVertex2D{
 }
 
 impl Vertex for TexturedVertex2D{
-    fn bind_for_vertex_array(_vertex_array:&VertexArray<Self>){
+    fn bind_for_vertex_array(vertex_array:&VertexArray<Self>){
+        vertex_array.bind();
         unsafe{
             // layout = 0 - position
             VertexAttribPointer(0,2,FLOAT,FALSE,size_of::<TexturedVertex2D>() as i32,core::ptr::null());

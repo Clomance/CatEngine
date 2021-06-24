@@ -5,43 +5,56 @@ use super::level0::{
     BufferUsage
 };
 
-pub struct BoundUniformBuffer<'a,U:Sized>{
-    marker:BoundBuffer<'a,U>
-}
+use gl::{
+    MAX_UNIFORM_BUFFER_BINDINGS
+};
 
 /// Since 3.1.
 /// 
-/// Not supported yet.
+/// Not fully supported yet.
 pub struct UniformBuffer<U:Sized>{
     buffer:Buffer<U>,
 }
 
 impl<U:Sized> UniformBuffer<U>{
+    #[inline(always)]
     pub fn initialize()->UniformBuffer<U>{
         Self{
             buffer:Buffer::initialize(),
         }
     }
 
+    #[inline(always)]
     pub fn new(uniform:&U,usage:BufferUsage)->UniformBuffer<U>{
         unsafe{
             Self{
-                buffer:Buffer::new_value(BufferTarget::UniformBuffer,uniform,usage),
+                buffer:Buffer::new(BufferTarget::UniformBuffer,uniform,usage),
             }
         }
     }
 
-    /// The size is the amount of Iertices.
-    pub fn empty(size:usize,usage:BufferUsage)->UniformBuffer<U>{
+    #[inline(always)]
+    pub fn empty(usage:BufferUsage)->UniformBuffer<U>{
         unsafe{
             Self{
-                buffer:Buffer::empty(BufferTarget::UniformBuffer,size,usage),
+                buffer:Buffer::empty(BufferTarget::UniformBuffer,1,usage),
             }
         }
+    }
+
+    #[inline(always)]
+    pub fn raw(&self)->&Buffer<U>{
+        &self.buffer
+    }
+
+    #[inline(always)]
+    pub fn into_raw(self)->Buffer<U>{
+        self.buffer
     }
 }
 
 impl<U:Sized> UniformBuffer<U>{
+    #[inline(always)]
     pub fn bind(&self)->BoundUniformBuffer<U>{
         unsafe{
             BoundUniformBuffer{
@@ -49,14 +62,43 @@ impl<U:Sized> UniformBuffer<U>{
             }
         }
     }
+
+    pub fn bind_base(&self,binding_index:u32){
+        unsafe{
+            if binding_index<MAX_UNIFORM_BUFFER_BINDINGS{
+                self.buffer.bind_base(BufferTarget::UniformBuffer,binding_index)
+            }
+        }
+    }
+
+    // offset, size - bytes
+    pub fn bind_range(&self,binding_index:u32,offset:isize,size:isize){
+        unsafe{
+            if binding_index<MAX_UNIFORM_BUFFER_BINDINGS{
+                self.buffer.bind_range(BufferTarget::UniformBuffer,binding_index,offset,size)
+            }
+        }
+    }
 }
 
-pub trait UniformBlock{
-    
+pub struct BoundUniformBuffer<'a,U:Sized>{
+    marker:BoundBuffer<'a,U>
 }
 
-pub trait UniformValue{
+impl<'a,U:Sized> BoundUniformBuffer<'a,U>{
+    #[inline(always)]
+    pub fn write(&self,uniform:&U){
+        unsafe{
+            self.marker.write(0,uniform)
+        }
+    }
 
+    #[inline(always)]
+    pub fn rewrite(&self,uniform:&U,usage:BufferUsage){
+        unsafe{
+            self.marker.rewrite(uniform,usage)
+        }
+    }
 }
 
 // Unicorn - why not?

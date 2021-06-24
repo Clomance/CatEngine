@@ -77,6 +77,9 @@ impl SimpleGraphics{
         let vertex_shader=VertexShader::new(&include_str!("shaders/simple/vertex_shader.glsl")).unwrap();
         let fragment_shader=FragmentShader::new(&include_str!("shaders/simple/fragment_shader.glsl")).unwrap();
 
+        let program=Program::new(&vertex_shader,&fragment_shader).unwrap();
+        program.bind_uniform_block("DrawParameters",0u32);
+
         let heap_vertex_buffer_size=heap_vertex_frames as ElementIndexType*frame_size as ElementIndexType;
 
         let heap_index_buffer_size=heap_index_frames as ElementIndexType*frame_size as ElementIndexType;
@@ -98,7 +101,7 @@ impl SimpleGraphics{
                 heap_objects,
             ),
 
-            draw:Program::new(&vertex_shader,&fragment_shader).unwrap(),
+            draw:program,
         }
     }
 }
@@ -143,31 +146,11 @@ impl SimpleGraphics{
         if let Some(object)=self.object_allocation.heap_system.get_drawable_object(index){
             self.draw.bind();
 
-            let [x,y,width,height]=draw_parameters.viewport();
-            unsafe{
-                Viewport(x,y,width,height);
-            }
-
-            let window_center=[
-                width as f32/2f32,
-                height as f32/2f32,
-            ];
-
-            let _=self.draw.set_uniform_value("window_half_size",window_center);
-
-            let _=self.draw.set_uniform_value("draw_mode",draw_parameters.flag());
-
-            if let Some(shift)=draw_parameters.shift(){
-                let _=self.draw.set_uniform_value("vertex_shift",shift);
-            }
-
-            if let Some(rotation)=draw_parameters.rotation(){
-                let _=self.draw.set_uniform_value("vertex_rotation",rotation);
-            }
-
             self.vertex_array.bind();
             self.index_buffer.bind();
             self.vertex_buffer.bind();
+
+            draw_parameters.bind_uniform();
 
             match object.draw_type{
                 HeapDrawType::Vertices(first)=>unsafe{
@@ -228,31 +211,11 @@ impl SimpleGraphics{
         if let Some(object)=&self.object_allocation.stack_system.get_drawable_object(index){
             self.draw.bind();
 
-            let [x,y,width,height]=draw_parameters.viewport();
-            unsafe{
-                Viewport(x,y,width,height);
-            }
-
-            let window_center=[
-                width as f32/2f32,
-                height as f32/2f32,
-            ];
-
-            let _=self.draw.set_uniform_value("window_half_size",window_center);
-
-            let _=self.draw.set_uniform_value("draw_mode",draw_parameters.flag());
-
-            if let Some(shift)=draw_parameters.shift(){
-                let _=self.draw.set_uniform_value("vertex_shift",shift);
-            }
-
-            if let Some(rotation)=draw_parameters.rotation(){
-                let _=self.draw.set_uniform_value("vertex_rotation",rotation);
-            }
-
             self.vertex_array.bind();
             self.vertex_buffer.bind();
             self.index_buffer.bind();
+
+            draw_parameters.bind_uniform();
 
             match object.draw_type{
                 StackDrawType::Vertices(first)=>unsafe{

@@ -38,7 +38,9 @@ use gl::{
     // functions
     GenBuffers,
     BindBuffer,
-    BufferData,
+    BindBufferBase,
+    BindBufferRange,
+    BufferData as glBufferData,
     BufferSubData,
     DeleteBuffers,
     CopyBufferSubData,
@@ -143,6 +145,45 @@ pub enum BufferTarget{
     UniformBuffer=UNIFORM_BUFFER,
 }
 
+pub trait BufferData{
+    /// Returns the whole size of data.
+    fn size(&self)->isize;
+    /// Returns a pointer to data.
+    fn ptr(&self)->*const core::ffi::c_void;
+    /// Returns an offset of `items` elements.
+    /// 
+    /// `Result = items * element_size`
+    fn offset(&self,items:isize)->isize;
+}
+
+impl<I:Sized> BufferData for &'_ I{
+    fn size(&self)->isize{
+        size_of::<I>() as isize
+    }
+
+    fn ptr(&self)->*const core::ffi::c_void{
+        *self as *const I as *const core::ffi::c_void
+    }
+
+    fn offset(&self,items:isize)->isize{
+        size_of::<I>() as isize*items
+    }
+}
+
+impl<I:Sized> BufferData for &'_ [I]{
+    fn size(&self)->isize{
+        (self.len()*size_of::<I>()) as isize
+    }
+
+    fn ptr(&self)->*const core::ffi::c_void{
+        &self[0] as *const I as *const core::ffi::c_void
+    }
+
+    fn offset(&self,items:isize)->isize{
+        size_of::<I>() as isize*items
+    }
+}
+
 pub struct Buffer<I:Sized>{
     id:u32,
     marker:PhantomData<I>,
@@ -161,35 +202,16 @@ impl<I:Sized> Buffer<I>{
         }
     }
 
-    pub unsafe fn new(target:BufferTarget,items:&[I],usage:BufferUsage)->Buffer<I>{
+    pub unsafe fn new<Data:BufferData>(target:BufferTarget,data:Data,usage:BufferUsage)->Buffer<I>{
         let buffer=Buffer::initialize();
-        buffer.bind(target).rewrite(items,usage);
+        buffer.bind(target).rewrite(data,usage);
         buffer
     }
 
-    pub unsafe fn new_value<Item>(target:BufferTarget,value:&Item,usage:BufferUsage)->Buffer<I>{
+    /// The size is the amount of items.
+    pub unsafe fn empty(target:BufferTarget,size:isize,usage:BufferUsage)->Buffer<I>{
         let buffer=Buffer::initialize();
-        buffer.bind(target);
-
-        let data_ref=(value as *const Item) as *const core::ffi::c_void;
-        BufferData(target as u32,size_of::<Item>() as isize,data_ref,usage as u32);
-
-        buffer
-    }
-
-    /// The size is the amount of vertices.
-    pub unsafe fn empty(target:BufferTarget,size:usize,usage:BufferUsage)->Buffer<I>{
-        let buffer=Buffer::initialize();
-        buffer.bind(target);
-
-        // Arguments:
-        // 1 - the target (the type of the buffer)
-        // 2 - the size of the vertices
-        // 3 - the data
-        // 4 - type of managing the data
-        let data_ref=core::ptr::null();
-        BufferData(target as u32,(size*size_of::<I>()) as isize,data_ref,usage as u32);
-
+        buffer.bind(target).rewrite_empty(size,usage);
         buffer
     }
 
@@ -208,17 +230,21 @@ impl<I:Sized> Buffer<I>{
         }
     }
 
-    pub unsafe fn write(&self,target:BufferTarget,offset:usize,items:&[I]){
-        BindBuffer(target as u32,self.id);
-        let data_ref=(items as *const [I]) as *const core::ffi::c_void;
-        BufferSubData(target as u32,(offset*size_of::<I>()) as isize,(items.len()*size_of::<I>()) as isize,data_ref)
+    // AtomicCounterBuffer
+    // ShaderStorageBuffer
+    // TransformFeedbackBuffer
+    // UniformBuffer
+    pub unsafe fn bind_base(&self,target:BufferTarget,binding_index:u32){
+        BindBufferBase(target as u32,binding_index,self.id)
     }
 
-    /// Offset in bytes.
-    pub unsafe fn write_value(&self,target:BufferTarget,offset:usize,value:&I){
-        BindBuffer(target as u32,self.id);
-        let data_ref=(value as *const I) as *const core::ffi::c_void;
-        BufferSubData(target as u32,offset as isize,size_of::<I>() as isize,data_ref)
+    // AtomicCounterBuffer
+    // ShaderStorageBuffer
+    // TransformFeedbackBuffer
+    // UniformBuffer
+    // offset, size - bytes
+    pub unsafe fn bind_range(&self,target:BufferTarget,binding_index:u32,offset:isize,size:isize){
+        BindBufferRange(target as u32,binding_index,self.id,offset,size)
     }
 }
 
@@ -236,18 +262,15 @@ pub struct BoundBuffer<'a,I:Sized>{
 }
 
 impl<'a,I:Sized> BoundBuffer<'a,I>{
-    pub unsafe fn write(&self,offset:usize,items:&[I]){
-        let data_ref=(items as *const [I]) as *const core::ffi::c_void;
-        BufferSubData(self.target,(offset*size_of::<I>()) as isize,(items.len()*size_of::<I>()) as isize,data_ref)
+    pub unsafe fn write<Data:BufferData>(&self,offset:isize,data:Data){
+        BufferSubData(self.target,data.offset(offset),data.size(),data.ptr())
     }
 
-    pub unsafe fn rewrite(&self,items:&[I],usage:BufferUsage){
-        let data_ref=(items as *const [I]) as *const core::ffi::c_void;
-        // Arguments:
-        // 1 - the target (the type of the buffer)
-        // 2 - the size of the vertices
-        // 3 - the data
-        // 4 - type of managing the data
-        BufferData(self.target,(items.len()*size_of::<I>()) as isize,data_ref,usage as u32);
+    pub unsafe fn rewrite<Data:BufferData>(&self,data:Data,usage:BufferUsage){
+        glBufferData(self.target,data.size(),data.ptr(),usage as u32);
+    }
+
+    pub unsafe fn rewrite_empty(&self,size:isize,usage:BufferUsage){
+        glBufferData(self.target,size*size_of::<I>() as isize,core::ptr::null(),usage as u32);
     }
 }

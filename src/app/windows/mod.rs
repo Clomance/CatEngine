@@ -490,7 +490,9 @@ impl AppControl{
             render_context.make_current(true)?;
 
             let [width,height]=window.client_size();
-            graphics.draw_parameters().set_viewport([0,0,width as i32,height as i32]);
+            graphics.core().viewport().set([0,0,width as i32,height as i32]);
+            graphics.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
+            graphics.draw_parameters().update();
 
             f(window,graphics);
 
