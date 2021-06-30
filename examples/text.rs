@@ -44,8 +44,7 @@ fn main(){
                 let graphics=app_control.get_graphics_unchecked_mut(0);
 
                 graphics.core().viewport().set([0,0,window_size[0] as i32,window_size[1] as i32]);
-                graphics.draw_parameters().set_viewport([0f32,0f32,window_size[0] as f32,window_size[1] as f32]);
-                graphics.draw_parameters().update();
+                graphics.draw_parameters().change_viewport([0f32,0f32,window_size[0] as f32,window_size[1] as f32]);
                 graphics.clear_colour();
 
                 graphics.draw_char('a',[1f32;4],[100f32;2],&mut 0f32,Scale::new(1f32,1f32),&font);

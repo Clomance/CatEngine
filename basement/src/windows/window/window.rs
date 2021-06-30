@@ -131,7 +131,6 @@ use std::{
 
 pub enum Fullscreen{
     None,
-    PrimaryMonitor,
     Monitor(Monitor)
 }
 
@@ -192,51 +191,35 @@ impl Window{
             style|=WS_VISIBLE;
         }
 
+        if attributes.topmost{
+            extended_style|=WS_EX_TOPMOST;
+        }
+
         // Размер, установленный пользователем
         let [mut width,mut height]=if let Some(size)=attributes.size{
             size
         }
         else{
-            [
-                CW_USEDEFAULT,
-                CW_USEDEFAULT
-            ]
+            [CW_USEDEFAULT,CW_USEDEFAULT]
         };
         // Положение, установленное пользователем
         let [mut x,mut y]=if let Some(position)=attributes.position{
             position
         }
         else{
-            [
-                CW_USEDEFAULT,
-                CW_USEDEFAULT
-            ]
+            [CW_USEDEFAULT,CW_USEDEFAULT]
         };
 
         match attributes.fullscreen{
             Fullscreen::None=>{
                 style|=WS_SIZEBOX|WS_CAPTION|WS_MAXIMIZEBOX|WS_MINIMIZEBOX;
             }
-            Fullscreen::PrimaryMonitor=>{
-                let monitor=Monitor::get_primary_monitor();
-                if let Some(info)=monitor.get_monitor_info(){
-                    style|=WS_POPUP;
-                    style&=!(WS_SIZEBOX|WS_CAPTION|WS_MAXIMIZEBOX|WS_MINIMIZEBOX);
-
-                    extended_style|=WS_EX_TOPMOST|WS_EX_APPWINDOW;
-
-                    x=info.rcMonitor.left;
-                    y=info.rcMonitor.top;
-                    width=info.rcMonitor.right-info.rcMonitor.left;
-                    height=info.rcMonitor.bottom-info.rcMonitor.top;
-                }
-            }
             Fullscreen::Monitor(monitor)=>{
                 if let Some(info)=monitor.get_monitor_info(){
                     style|=WS_POPUP;
                     style&=!(WS_SIZEBOX|WS_CAPTION|WS_MAXIMIZEBOX|WS_MINIMIZEBOX);
 
-                    extended_style|=WS_EX_TOPMOST|WS_EX_APPWINDOW;
+                    extended_style|=WS_EX_APPWINDOW;
 
                     x=info.rcMonitor.left;
                     y=info.rcMonitor.top;
@@ -274,12 +257,10 @@ impl Window{
                     subclass_args as *const WindowSubclassArguments as usize,
                 );
 
-                let window_context=GetDC(window_handle);
-
                 Ok(
                     Self{
                         handle:window_handle,
-                        context:window_context,
+                        context:GetDC(window_handle),
                     }
                 )
             }
@@ -385,6 +366,10 @@ impl Window{
             height as u32,
         ]
     }
+
+    // pub unsafe fn set_window_position(&self){
+    //     SetWindowPos(&self,)
+    // }
 }
 
 impl Window{
@@ -395,6 +380,27 @@ impl Window{
     pub unsafe fn set_style(&self,style:u32){
         SetWindowLongPtrW(self.handle,GWL_STYLE,style as isize);
     }
+
+    // pub fn set_fullscreen(&self,fullscreen:Fullscreen){
+    //     match fullscreen{
+    //         Fullscreen::None=>{
+
+    //         }
+    //         Fullscreen::Monitor(monitor)=>{
+    //             if let Some(info)=monitor.get_monitor_info(){
+    //                 let style = WS_POPUP;
+    //                 style&=!(WS_SIZEBOX|WS_CAPTION|WS_MAXIMIZEBOX|WS_MINIMIZEBOX);
+
+    //                 let extended_style=WS_EX_APPWINDOW;
+
+    //                 x=info.rcMonitor.left;
+    //                 y=info.rcMonitor.top;
+    //                 width=info.rcMonitor.right-info.rcMonitor.left;
+    //                 height=info.rcMonitor.bottom-info.rcMonitor.top;
+    //             }
+    //         }
+    //     }
+    // }
 }
 
 /// Cursor functions.
@@ -448,6 +454,11 @@ pub struct WindowAttributes{
     /// The default is `true`.
     pub visible:bool,
 
+    /// The window should be placed above all non-topmost windows
+    /// and should stay above them,
+    /// even when the window is deactivated.
+    pub topmost:bool,
+
     /// If `Fullscreen::PrimaryMonitor` or `Fullscreen::Monitor` is set the size and position are ignored,
     /// but if some error accures they are used to build a window.
     /// 
@@ -462,6 +473,7 @@ impl WindowAttributes{
             size:None,
             position:None,
             visible:true,
+            topmost:false,
             fullscreen:Fullscreen::None,
         }
     }

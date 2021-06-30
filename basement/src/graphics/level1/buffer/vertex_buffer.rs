@@ -63,6 +63,16 @@ pub struct BoundVertexBuffer<'a,V:Sized>{
 
 impl<'a,V> BoundVertexBuffer<'a,V>{
     #[inline(always)]
+    pub fn raw(&self)->&BoundBuffer<'a,V>{
+        &self.marker
+    }
+
+    #[inline(always)]
+    pub fn into_raw(self)->BoundBuffer<'a,V>{
+        self.marker
+    }
+
+    #[inline(always)]
     pub fn write(&self,offset:usize,vertices:&[V]){
         unsafe{
             self.marker.write(offset as isize,vertices)

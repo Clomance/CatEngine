@@ -81,8 +81,12 @@ pub enum LoopControl{
     /// The loop will be closed and it's able to run again.
     Break,
 
-    /// The loop will be closed and it won't be able to run again.
-    Exit,
+    /// The loop will be destroyed and it won't be able to run again.
+    /// 
+    /// Set this flag when you need to shut an app down immediately.
+    /// 
+    /// Used outside of the event loop.
+    Destroy,
 }
 
 unsafe impl Sync for LoopControl{}
@@ -179,6 +183,7 @@ impl EventLoop{
             QueryPerformanceCounter(transmute(&mut last_update));
             let mut last_redraw=last_update;
 
+            // Начальное событие
             f(Event::EventLoopStart,&mut loop_control);
 
             loop{
@@ -198,9 +203,6 @@ impl EventLoop{
                                     };
 
                                     f(event,&mut loop_control);
-                                    if let LoopControl::Break|LoopControl::Exit=loop_control{
-                                        break
-                                    }
                                 }
 
                                 WM_QUIT=>break,
@@ -222,19 +224,12 @@ impl EventLoop{
                             }
 
                             f(Event::Update(Ticks(ticks_passed as u64)),&mut loop_control);
-
-                            if let LoopControl::Break|LoopControl::Exit=loop_control{
-                                break
-                            }
                         }
                     },
 
                     LoopControl::Lazy=>{
                         match GetMessageW(&mut message,null_mut(),0,0){
-                            -1=>{
-                                println!("Error");
-                                break
-                            }
+                            -1=>break,
                             0=>break,
 
                             _=>match message.message{
@@ -250,9 +245,6 @@ impl EventLoop{
                                     };
 
                                     f(event,&mut loop_control);
-                                    if let LoopControl::Break|LoopControl::Exit=loop_control{
-                                        break
-                                    }
                                 }
 
                                 _=>{},
@@ -260,7 +252,11 @@ impl EventLoop{
                         }
                     }
 
-                    LoopControl::Break|LoopControl::Exit=>break,
+                    LoopControl::Break|LoopControl::Destroy=>break,
+                }
+
+                if let LoopControl::Break|LoopControl::Destroy=loop_control{
+                    break
                 }
 
                 // Текущее время в тактах
@@ -277,10 +273,6 @@ impl EventLoop{
                     }
 
                     f(Event::Redraw,&mut loop_control);
-
-                    if let LoopControl::Break|LoopControl::Exit=loop_control{
-                        break
-                    }
                 }
             }
 

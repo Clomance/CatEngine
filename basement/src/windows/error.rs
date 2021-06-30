@@ -27,7 +27,7 @@ pub struct WinError{
 }
 
 impl WinError{
-    pub (crate) fn get_last_error()->WinError{
+    pub fn get_last_error()->WinError{
         let code=unsafe{GetLastError()};
         WinError{
             code,

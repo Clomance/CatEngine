@@ -155,7 +155,7 @@ pub enum BlendingFunction{
 
 /// A wrapper for blending functions.
 /// 
-/// Disabled by default.
+/// Blending is disabled by default.
 /// 
 /// The default blending constant colour is `[0f32;4]`.
 /// 

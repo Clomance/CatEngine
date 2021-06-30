@@ -15,7 +15,7 @@ pub use opengl::{
 };
 
 mod monitor;
-use monitor::Monitor;
+pub use monitor::Monitor;
 
 mod window;
 pub use window::{

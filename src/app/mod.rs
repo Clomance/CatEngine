@@ -8,6 +8,7 @@ pub use windows::{
     CursorIcon,
     Background,
     Fullscreen,
+    Monitor,
     WindowAttributes,
     WindowClassAttributes,
     Event,

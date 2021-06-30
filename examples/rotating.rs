@@ -56,12 +56,12 @@ fn main(){
                 graphics.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
                 graphics.draw_parameters().switch(DrawMode::Rotation);
                 graphics.draw_parameters().set_rotation([angle.cos(),angle.sin(),width as f32/2f32,height as f32/2f32]);
+                // using the `update` function to load all the parameters
                 graphics.draw_parameters().update();
 
                 graphics.draw_stack_textured_object(image,texture.texture_2d());
-
-                graphics.draw_parameters().switch(DrawMode::Rotation);
-                graphics.draw_parameters().update();
+                // using the `change` function to load only one parameter
+                graphics.draw_parameters().change_switch(DrawMode::Rotation);
 
                 app_control.get_render_context_unchecked(0).swap_buffers().unwrap();
             }

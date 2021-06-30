@@ -18,11 +18,17 @@ pub enum Event{
     #[cfg(target_os="windows")]
     Update(Ticks),
 
+    /// After this event the cycle is closed, but still working.
     EventLoopBreak,
 
-    /// After this event the cycle closes forever.
+    /// Emits after the `LoopControl::Destroy` flag had been set.
+    /// 
+    /// After this event the cycle is destroyed
+    /// and all the windows is closed, too.
+    /// 
+    /// The event loop can't be started again.
     #[cfg(target_os="windows")]
-    EventLoopExit,
+    EventLoopDestroy,
 }
 
 unsafe impl Sync for Event{}

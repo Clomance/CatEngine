@@ -14,7 +14,7 @@ use gl::{
 use std::mem::transmute;
 
 #[repr(u32)]
-#[derive(Clone,Copy,Debug)]
+#[derive(Clone,Copy,Debug,PartialEq,Eq)]
 pub enum GLError{
     NoError=NO_ERROR,
     InvalidEnum=INVALID_ENUM,
@@ -25,7 +25,8 @@ pub enum GLError{
 }
 
 impl GLError{
-    pub (crate) fn get_error()->GLError{
+    /// Returns a error.
+    pub fn get_error()->GLError{
         unsafe{
             transmute(GetError())
         }

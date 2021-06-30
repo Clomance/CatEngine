@@ -86,8 +86,7 @@ fn main(){
                 graphics.core().set_clear_colour(colour);
                 graphics.core().viewport().set([0,0,width as i32,height as i32]);
 
-                graphics.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
-                graphics.draw_parameters().update();
+                graphics.draw_parameters().change_viewport([0f32,0f32,width as f32,height as f32]);
                 graphics.clear_colour();
                 // Drawing the object that is located in the stack-type buffer.
                 graphics.draw_stack_textured_object(image1,texture.texture_2d());

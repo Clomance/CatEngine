@@ -63,6 +63,16 @@ pub struct BoundIndexBuffer<'a,I:Sized>{
 
 impl<'a,I> BoundIndexBuffer<'a,I>{
     #[inline(always)]
+    pub fn raw(&self)->&BoundBuffer<'a,I>{
+        &self.marker
+    }
+
+    #[inline(always)]
+    pub fn into_raw(self)->BoundBuffer<'a,I>{
+        self.marker
+    }
+
+    #[inline(always)]
     pub fn write(&self,offset:usize,indices:&[I]){
         unsafe{
             self.marker.write(offset as isize,indices)

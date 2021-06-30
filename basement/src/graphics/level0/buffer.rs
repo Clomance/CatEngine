@@ -184,12 +184,18 @@ impl<I:Sized> BufferData for &'_ [I]{
     }
 }
 
+/// A low-level buffer.
+/// 
+/// All the errors are ignored.
+/// If you want to check whether any error accured,
+/// use the `GLError::get_error()` function.
 pub struct Buffer<I:Sized>{
     id:u32,
     marker:PhantomData<I>,
 }
 
 impl<I:Sized> Buffer<I>{
+    /// Creates a buffer without memory allocation.
     pub fn initialize()->Buffer<I>{
         unsafe{
             let mut id:u32=MaybeUninit::uninit().assume_init();
@@ -202,19 +208,30 @@ impl<I:Sized> Buffer<I>{
         }
     }
 
+    /// Creates a buffer with `size` capacity and writes data to it.
+    /// 
+    /// The size is in bytes.
+    pub unsafe fn raw(target:BufferTarget,data:*const I,size:isize,usage:BufferUsage)->Buffer<I>{
+        let buffer=Buffer::initialize();
+        buffer.bind(target).rewrite_raw(data,size,usage);
+        buffer
+    }
+
+    /// Creates a buffer with capacity equal to the data size and writes data to it.
     pub unsafe fn new<Data:BufferData>(target:BufferTarget,data:Data,usage:BufferUsage)->Buffer<I>{
         let buffer=Buffer::initialize();
         buffer.bind(target).rewrite(data,usage);
         buffer
     }
 
-    /// The size is the amount of items.
+    /// Creates a buffer with `size * size_of::<I>()` capacity in bytes.
     pub unsafe fn empty(target:BufferTarget,size:isize,usage:BufferUsage)->Buffer<I>{
         let buffer=Buffer::initialize();
         buffer.bind(target).rewrite_empty(size,usage);
         buffer
     }
 
+    /// Returns the identifier of a buffer.
     #[inline(always)]
     pub fn id(&self)->u32{
         self.id
@@ -222,6 +239,7 @@ impl<I:Sized> Buffer<I>{
 }
 
 impl<I:Sized> Buffer<I>{
+    /// Binds a buffer to the specified target.
     pub unsafe fn bind<'a>(&'a self,target:BufferTarget)->BoundBuffer<'a,I>{
         BindBuffer(target as u32,self.id);
         BoundBuffer{
@@ -230,19 +248,28 @@ impl<I:Sized> Buffer<I>{
         }
     }
 
-    // AtomicCounterBuffer
-    // ShaderStorageBuffer
-    // TransformFeedbackBuffer
-    // UniformBuffer
+    /// Binds a buffer to the specified binding with the specified target.
+    /// 
+    /// Only these targets are available:
+    /// - `BufferTarget::AtomicCounterBuffer`,
+    /// - `BufferTarget::ShaderStorageBuffer`,
+    /// - `BufferTarget::TransformFeedbackBuffer`,
+    /// - `BufferTarget::UniformBuffer`.
+    #[inline(always)]
     pub unsafe fn bind_base(&self,target:BufferTarget,binding_index:u32){
         BindBufferBase(target as u32,binding_index,self.id)
     }
 
-    // AtomicCounterBuffer
-    // ShaderStorageBuffer
-    // TransformFeedbackBuffer
-    // UniformBuffer
-    // offset, size - bytes
+    /// Binds a buffer to the specified binding with the specified target and buffer range.
+    /// 
+    /// The offset and size are in bytes.
+    /// 
+    /// Only these targets are available:
+    /// - `BufferTarget::AtomicCounterBuffer`,
+    /// - `BufferTarget::ShaderStorageBuffer`,
+    /// - `BufferTarget::TransformFeedbackBuffer`,
+    /// - `BufferTarget::UniformBuffer`.
+    #[inline(always)]
     pub unsafe fn bind_range(&self,target:BufferTarget,binding_index:u32,offset:isize,size:isize){
         BindBufferRange(target as u32,binding_index,self.id,offset,size)
     }
@@ -256,20 +283,61 @@ impl<I:Sized> Drop for Buffer<I>{
     }
 }
 
+/// A representation of a bound buffer.
+/// 
+/// Does not guarantee a buffer be bound all the time.
+/// 
+/// ```
+/// let b1 = buffer1.bind(BufferTarget::ArrayBuffer);
+/// 
+/// // `b1` bound
+/// b1.write(0,data);
+/// 
+/// let b2 = buffer2.bind(BufferTarget::ArrayBuffer);
+/// 
+/// // `b2` bound, but `b1` not bound
+/// b1.write(0,data); // this will do the same
+/// b2.write(0,data); // as this
+/// ```
 pub struct BoundBuffer<'a,I:Sized>{
     target:u32,
     marker:PhantomData<&'a Buffer<I>>,
 }
 
 impl<'a,I:Sized> BoundBuffer<'a,I>{
+    /// Writes data to a buffer.
+    /// 
+    /// The offset and size are in bytes.
+    #[inline(always)]
+    pub unsafe fn write_raw(&self,data:*const I,offset:isize,size:isize){
+        BufferSubData(self.target,offset,size,data as *const core::ffi::c_void)
+    }
+
+    /// Writes data to a buffer.
+    /// 
+    /// The offset is the amount of items.
     pub unsafe fn write<Data:BufferData>(&self,offset:isize,data:Data){
         BufferSubData(self.target,data.offset(offset),data.size(),data.ptr())
     }
 
+    /// Reallocates and rewrites data of a buffer.
+    /// 
+    /// The new capacity is `size` in bytes.
+    #[inline(always)]
+    pub unsafe fn rewrite_raw(&self,data:*const I,size:isize,usage:BufferUsage){
+        glBufferData(self.target,size,data as *const core::ffi::c_void,usage as u32)
+    }
+
+    /// Reallocates and rewrites data of a buffer.
+    /// 
+    /// The new capacity is the data size.
     pub unsafe fn rewrite<Data:BufferData>(&self,data:Data,usage:BufferUsage){
         glBufferData(self.target,data.size(),data.ptr(),usage as u32);
     }
 
+    /// Reallocates data of a buffer.
+    /// 
+    /// The new capacity is `size * size_of::<I>()` in bytes.
     pub unsafe fn rewrite_empty(&self,size:isize,usage:BufferUsage){
         glBufferData(self.target,size*size_of::<I>() as isize,core::ptr::null(),usage as u32);
     }

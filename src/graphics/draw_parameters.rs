@@ -6,13 +6,18 @@ use cat_engine_basement::graphics::{
 #[derive(Clone,Copy,Debug,PartialEq,Eq)]
 #[repr(u32)]
 pub enum DrawMode{
-    Shift           =0b1<<0,
-    Rotation        =0b1<<1,
-    // Scale           =0b1<<2,
-    // Ignores `Shift`, `Rotation` and `Scale`.
-    // Transform       =0b1<<3,
-    // ColourInversion =0b1<<4,
-    // GreyScale       =0b1<<5,
+    /// Applied firstly.
+    Shift               =0b1<<0,
+    /// Applied after shift.
+    Rotation            =0b1<<1,
+    // / Applied after rotation.
+    // Scale               =0b1<<2,
+    // /// Ignores `Shift`, `Rotation` and `Scale` modes.
+    // Transformation      =0b1<<3,
+    // /// Applied firstly.
+    // ColourInversion     =0b1<<4,
+    // /// Applied after colour inversion.
+    // GreyScale           =0b1<<5,
 }
 
 struct DrawParametersUniform{
@@ -20,10 +25,9 @@ struct DrawParametersUniform{
     viewport:[f32;4],
 
     mode:[u32;2],
-    /// Applied firstly.
     shift:[f32;2],
-    /// Applied after the shift.
     rotation:[f32;4],
+    scale:[f32;2],
 }
 
 impl DrawParametersUniform{
@@ -33,6 +37,7 @@ impl DrawParametersUniform{
             mode:[0u32;2],
             shift:[0f32;2],
             rotation:[0f32;4],
+            scale:[1f32;2],
         }
     }
 }
@@ -52,12 +57,8 @@ impl DrawParameters{
         }
     }
 
-    pub (crate) fn bind_uniform(&self){
+    pub fn bind_uniform(&self){
         self.uniform_buffer.bind_base(0);
-    }
-
-    pub fn update(&self){
-        self.uniform_buffer.bind().write(&self.uniform)
     }
 
     pub fn switch_raw(&mut self,mode:u32){
@@ -82,6 +83,104 @@ impl DrawParameters{
 
     pub fn disable(&mut self,mode:DrawMode){
         self.uniform.mode[0]&=!(mode as u32)
+    }
+}
+
+impl DrawParameters{
+    pub fn update(&self){
+        self.uniform_buffer.bind().write(&self.uniform)
+    }
+
+    pub fn update_viewport(&self){
+        let data=&self.uniform.viewport[0] as *const f32 as *const DrawParametersUniform;
+        unsafe{
+            self.uniform_buffer.bind().raw().write_raw(data,0,16)
+        }
+    }
+
+    pub fn update_mode(&self){
+        let data=&self.uniform.mode[0] as *const u32 as *const DrawParametersUniform;
+        unsafe{
+            self.uniform_buffer.bind().raw().write_raw(data,16,8)
+        }
+    }
+
+    pub fn update_shift(&self){
+        let data=&self.uniform.shift[0] as *const f32 as *const DrawParametersUniform;
+        unsafe{
+            self.uniform_buffer.bind().raw().write_raw(data,24,8)
+        }
+    }
+
+    pub fn update_rotation(&self){
+        let data=&self.uniform.rotation[0] as *const f32 as *const DrawParametersUniform;
+        unsafe{
+            self.uniform_buffer.bind().raw().write_raw(data,32,16)
+        }
+    }
+
+    pub fn update_rotation_cos_sin(&self){
+        let data=&self.uniform.rotation[0] as *const f32 as *const DrawParametersUniform;
+        unsafe{
+            self.uniform_buffer.bind().raw().write_raw(data,32,8)
+        }
+    }
+
+    pub fn update_rotation_center(&self){
+        let data=&self.uniform.rotation[2] as *const f32 as *const DrawParametersUniform;
+        unsafe{
+            self.uniform_buffer.bind().raw().write_raw(data,40,8)
+        }
+    }
+}
+
+impl DrawParameters{
+    pub fn change_enable(&mut self,mode:DrawMode){
+        self.uniform.mode[0]|=mode as u32;
+        self.update_mode()
+    }
+
+    pub fn change_disable(&mut self,mode:DrawMode){
+        self.uniform.mode[0]&=!(mode as u32);
+        self.update_mode()
+    }
+
+    pub fn change_switch(&mut self,mode:DrawMode){
+        self.uniform.mode[0]^=mode as u32;
+        self.update_mode()
+    }
+
+    pub fn change_viewport(&mut self,viewport:[f32;4]){
+        self.uniform.viewport=viewport;
+        self.update_viewport()
+    }
+
+    pub fn change_shift(&mut self,shift:[f32;2]){
+        self.uniform.shift=shift;
+        self.update_shift()
+    }
+
+    pub fn change_add_shift(&mut self,shift:[f32;2]){
+        self.uniform.shift[0]+=shift[0];
+        self.uniform.shift[1]+=shift[1];
+        self.update_shift()
+    }
+
+    pub fn change_rotation(&mut self,[cos,sin,rotation_center_x,rotation_center_y]:[f32;4]){
+        self.uniform.rotation=[cos,sin,rotation_center_x,rotation_center_y];
+        self.update_rotation()
+    }
+
+    pub fn change_rotation_cos_sin(&mut self,[cos,sin]:[f32;2]){
+        self.uniform.rotation[0]=cos;
+        self.uniform.rotation[1]=sin;
+        self.update_rotation()
+    }
+
+    pub fn change_rotation_center(&mut self,[x,y]:[f32;2]){
+        self.uniform.rotation[2]=x;
+        self.uniform.rotation[3]=y;
+        self.update_rotation()
     }
 }
 

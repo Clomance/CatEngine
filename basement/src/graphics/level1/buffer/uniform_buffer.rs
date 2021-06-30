@@ -87,6 +87,16 @@ pub struct BoundUniformBuffer<'a,U:Sized>{
 
 impl<'a,U:Sized> BoundUniformBuffer<'a,U>{
     #[inline(always)]
+    pub fn raw(&self)->&BoundBuffer<'a,U>{
+        &self.marker
+    }
+
+    #[inline(always)]
+    pub fn into_raw(self)->BoundBuffer<'a,U>{
+        self.marker
+    }
+
+    #[inline(always)]
     pub fn write(&self,uniform:&U){
         unsafe{
             self.marker.write(0,uniform)

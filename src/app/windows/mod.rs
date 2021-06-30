@@ -26,6 +26,7 @@ pub use cat_engine_basement::{
         CursorIcon,
         Background,
         Fullscreen,
+        Monitor,
         WindowAttributes,
         WindowClassAttributes,
         VirtualKeyCode,
@@ -349,14 +350,13 @@ impl App{
             }
 
             event_handler(event,&mut app_control);
-            if let LoopControl::Exit=app_control.loop_control{
+            if let LoopControl::Destroy=app_control.loop_control{
                 exit=true;
-                event_handler(Event::EventLoopExit,&mut app_control);
+                event_handler(Event::EventLoopDestroy,&mut app_control);
             }
         });
 
         if exit{
-            
             self.command_sender.call_break();
         }
     }
@@ -368,7 +368,6 @@ impl Drop for App{
     }
 }
 
-#[cfg(target_os="windows")]
 pub struct AppAttributes{
     pub windows_limit:u8,
     pub event_loop:EventLoopAttributes,
@@ -378,7 +377,6 @@ pub struct AppAttributes{
     pub graphics:Graphics2DAttributes,
 }
 
-#[cfg(target_os="windows")]
 impl AppAttributes{
     pub fn new()->AppAttributes{
         Self{
@@ -392,13 +390,11 @@ impl AppAttributes{
     }
 }
 
-#[cfg(target_os="windows")]
 pub struct AppControl{
     app:&'static mut App,
     loop_control:&'static mut LoopControl,
 }
 
-#[cfg(target_os="windows")]
 impl AppControl{
     pub fn new(app:&mut App,loop_control:&mut LoopControl)->AppControl{
         unsafe{
@@ -422,14 +418,17 @@ impl AppControl{
         )
     }
 
+    /// Destroyes app's event loop and windows.
     pub fn exit(&mut self){
-        *self.loop_control=LoopControl::Exit;
+        *self.loop_control=LoopControl::Destroy;
     }
 
+    /// Break app's event loop.
     pub fn break_loop(&mut self){
         *self.loop_control=LoopControl::Break;
     }
 
+    /// Sets the 'lazy' mode flag.
     pub fn lazy(&mut self,lazy:bool){
         if lazy{
             *self.loop_control=LoopControl::Lazy;
@@ -440,8 +439,8 @@ impl AppControl{
     }
 }
 
-#[cfg(target_os="windows")]
 impl AppControl{
+    /// Checks whether an app has any windows.
     pub fn is_any_window(&self)->bool{
         self.app.window_storage.is_any_window()
     }
@@ -491,8 +490,7 @@ impl AppControl{
 
             let [width,height]=window.client_size();
             graphics.core().viewport().set([0,0,width as i32,height as i32]);
-            graphics.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
-            graphics.draw_parameters().update();
+            graphics.draw_parameters().change_viewport([0f32,0f32,width as f32,height as f32]);
 
             f(window,graphics);
 

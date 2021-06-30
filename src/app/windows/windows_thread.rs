@@ -82,10 +82,7 @@ pub fn create_windows_thread(channel:CommandReceiver)->JoinHandle<()>{
                 }
 
                 match GetMessageW(&mut message,null_mut(),0,0){
-                    -1=>{
-                        println!("Error");
-                        break
-                    }
+                    -1=>break,
 
                     0=>break,
 
@@ -123,7 +120,9 @@ pub enum CommandResult{
 unsafe impl Send for CommandResult{}
 
 pub struct CommandSender{
+    /// Отправляет команду
     command:Sender<Command>,
+    /// Принимает результат
     result:Receiver<CommandResult>,
 }
 
@@ -146,13 +145,16 @@ impl CommandSender{
         }
     }
 
+    /// Завершает цикл и закрывает поток.
     pub fn call_break(&self){
         self.command.send(Command::Break);
     }
 }
 
 pub struct CommandReceiver{
+    /// Принимает команду
     command:Receiver<Command>,
+    /// Отправляет результат
     result:Sender<CommandResult>,
 }
 
