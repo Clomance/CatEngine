@@ -1,5 +1,3 @@
-use super::GLError;
-
 use gl::{
     // consts
     MAX_TEXTURE_SIZE,
@@ -139,7 +137,6 @@ use gl::{
     LINEAR_MIPMAP_LINEAR,
 
     // functions
-    GetError,
     GenTextures,
     BindTexture,
     TexParameteri,

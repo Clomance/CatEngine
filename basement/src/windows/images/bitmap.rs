@@ -1,34 +1,18 @@
 use winapi::{
-    shared::{
-        windef::{
-            HICON,
-            HBITMAP,
-        }
+    shared::windef::HBITMAP,
+
+    um::wingdi::{
+        CreateBitmap,
+        DeleteObject,
     },
-
-    um::{
-        winuser::{
-            CreateIconIndirect,
-            DestroyIcon,
-            ICONINFO,
-        },
-
-        wingdi::{
-            CreateBitmap,
-            DeleteObject,
-        },
-        //errhandlingapi::{GetLastError},
-    }
 };
 
 use image::{
-    RgbaImage,
     ImageBuffer,
     Bgra,
 };
 
 use std::{
-    ptr::null_mut,
     mem::transmute,
 };
 

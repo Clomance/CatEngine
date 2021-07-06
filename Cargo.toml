@@ -10,12 +10,12 @@ documentation = "https://docs.rs/cat_engine/"
 license = "MIT"
 readme = "README.md"
 keywords = [
-    "gamedev",
+    "windows",
+    "windowing",
     "graphics",
     "opengl",
     "audio",
     "playback",
-    "windows"
 ]
 
 exclude = [
@@ -35,9 +35,9 @@ features = [
     # AUDIO
     "extended_audio",
     # WINDOW
-    "fps_counter",
-    "ups_counter",
-    "file_drop"
+    # "fps_counter",
+    # "ups_counter",
+    # "file_drop"
 ]
 
 [features]
@@ -66,6 +66,9 @@ text_graphics = ["ttf-parser","ab_glyph_rasterizer"]
 # fps_counter = []
 # ups_counter = []
 # file_drop = ["cat_engine_basement/file_drop"]
+
+### APPLICATION
+# multi_windowing = []
 
 
 # audio

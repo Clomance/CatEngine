@@ -17,12 +17,9 @@ features = [
     "wingdi",
     "libloaderapi",
     "errhandlingapi",
-    "processthreadsapi",
     "profileapi",
-    "commctrl",
     "winbase",
 ]
-# optional = true
 
 
 [dependencies]

@@ -1,7 +1,23 @@
 use super::level0;
 
-pub mod buffer;
+mod buffer;
+pub use buffer::{
+    VertexBuffer,
+    BoundVertexBuffer,
+    IndexBuffer,
+    BoundIndexBuffer,
+    UniformBuffer,
+    BoundUniformBuffer,
+};
 
-pub mod shader;
+mod shader;
+pub use shader::{
+    VertexShader,
+    FragmentShader,
+};
 
-pub mod texture;
+mod texture;
+pub use texture::texture_2d::{
+    Texture2D,
+    BoundTexture2D,
+};

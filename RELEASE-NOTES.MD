@@ -8,7 +8,7 @@
  - A basement with secrets and cats.
  - More unaccomplished features.
  - More language mistakes :)
- - Less comments.
+ - Less comments and docs.
 
 
 # 0.6.5

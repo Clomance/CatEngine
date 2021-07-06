@@ -10,14 +10,15 @@ use super::{
     Bitmap,
     Icon,
     // enums
-
     LoopControl,
-    KeyboardButton,
     VirtualKeyCode,
 };
 
 mod window_procedure;
-use window_procedure::window_subclass_procedure;
+use window_procedure::{
+    default_window_procedure,
+    window_procedure
+};
 
 mod window_class;
 pub use window_class::{
@@ -32,36 +33,20 @@ mod window;
 pub use window::{
     Fullscreen,
     Window,
+    CreateParameters,
     WindowAttributes,
     WindowStyles,
-    WindowSubclassArguments,
 };
 
-use winapi::{
-    shared::{
-        ntdef::{LPSTR,LPCWSTR},
-        windef::{
-            HWND,
-            HDC,
-            HGLRC,
-            RECT,
-        }
-    },
 
-    um::{
-        processthreadsapi::GetCurrentThreadId,
-        wingdi::SwapBuffers,
-        winuser::{
-            // ShowWindow,
-            // SetFocus,
-            // SetForegroundWindow,
-            // SetCapture,
-            DestroyWindow,
-            GetDC,
-            GetWindowRect,
-            GetClientRect,
-            UpdateWindow,
-        },
-        errhandlingapi::{GetLastError},
+/// Defines window's behavior.
+pub trait WindowProcedure<A:Sized>{
+    fn handle(window:&Window,args:&mut A,event:WindowEvent);
+}
+
+/// Indicates to the event loop that it's thread has made a request to close.
+pub fn quit(){
+    unsafe{
+        winapi::um::winuser::PostQuitMessage(0);
     }
-};
+}

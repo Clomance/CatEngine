@@ -2,7 +2,7 @@
 
 # Содержание
 
- - ["Фичи" Rust](RUS/features.md)
+ <!-- - ["Фичи" Rust](RUS/features.md) -->
  - [Аудио](RUS/audio.md)
- - [Окна](RUS/window.md)
- - [Графика](RUS/graphics.md)
+ <!-- - [Окна](RUS/window.md)
+ - [Графика](RUS/graphics.md) -->

@@ -1,4 +1,4 @@
-pub use super::level0::{
+use super::level0::{
     Texture,
     BoundTexture,
     TextureFilter,
@@ -8,25 +8,10 @@ pub use super::level0::{
 
 use gl::{
     // consts
-    NO_ERROR,
     TEXTURE_2D,
-    RGBA,
-    RGBA8,
-    UNSIGNED_BYTE,
-    TEXTURE_MIN_FILTER,
-    TEXTURE_MAG_FILTER,
-    NEAREST,
-    LINEAR,
 
     // functions
-    GetError,
-    GenTextures,
-    BindTexture,
-    TexParameteri,
-    TexImage2D,
     TexSubImage2D,
-    GetTexImage,
-    DeleteTextures,
 };
 
 pub struct Texture2D{

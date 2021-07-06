@@ -3,12 +3,7 @@ use crate::{
     Colour,
 };
 
-use cat_engine_basement::graphics::{
-    level0::{
-        Vertex,
-    },
-    level1::texture::texture_2d::Texture2D
-};
+use cat_engine_basement::graphics::level1::Texture2D;
 
 pub use cat_engine_basement::graphics::{
     level0::{
@@ -17,6 +12,7 @@ pub use cat_engine_basement::graphics::{
         BlendingFunction,
         Blending,
     },
+    PrimitiveType,
 };
 
 #[cfg(feature="text_graphics")]
@@ -59,10 +55,7 @@ use texture_graphics::TextureGraphics;
 #[cfg(feature="text_graphics")]
 mod text_graphics;
 #[cfg(feature="text_graphics")]
-use text_graphics::{
-    TextGraphics,
-    TextGraphicsAttributes
-};
+use text_graphics::TextGraphics;
 
 mod graphics_2d;
 pub use graphics_2d::{
@@ -77,23 +70,11 @@ pub use draw_parameters::{
 };
 
 use cat_engine_basement::graphics::gl::{
-    POINTS,
-    LINES,
-    LINE_LOOP,
-    LINE_STRIP,
-    TRIANGLES,
-    TRIANGLE_STRIP,
-    TRIANGLE_FAN,
-    LINES_ADJACENCY,
-    TRIANGLES_ADJACENCY,
-    TRIANGLE_STRIP_ADJACENCY,
     COLOR_BUFFER_BIT,
     STENCIL_BUFFER_BIT,
     DEPTH_BUFFER_BIT,
     // functions
-    load_with,
     Clear,
-    Viewport,
 };
 
 pub type FrameIDType=u16;
@@ -102,21 +83,6 @@ pub type ElementIndexType=u16;
 const frame_size:usize=3;
 /// The minimum of frames per object.
 const minimal_frames:usize=3;
-
-#[repr(u32)]
-#[derive(Clone,Copy)]
-pub enum PrimitiveType{
-    Points=POINTS,
-    Lines=LINES,
-    LineLoop=LINE_LOOP,
-    LineStrip=LINE_STRIP,
-    Triangles=TRIANGLES,
-    TriangleStrip=TRIANGLE_STRIP,
-    TriangleFan=TRIANGLE_FAN,
-    LinesAdjacency=LINES_ADJACENCY,
-    TrianglesAdjacency=TRIANGLES_ADJACENCY,
-    TriangleStripAdjacency=TRIANGLE_STRIP_ADJACENCY,
-}
 
 pub struct Graphics{
     graphics_core:GraphicsCore,

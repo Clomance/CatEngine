@@ -1,9 +1,9 @@
-use crate::texture::Texture2D;
-
 use super::{
     OutlineCurve,
     Scale,
 };
+
+use cat_engine_basement::graphics::level1::Texture2D;
 
 use ab_glyph_rasterizer::{Point,point,Rasterizer};
 

@@ -6,26 +6,24 @@ use super::{
     Monitor,
     // enums
     WindowEvent,
-    LoopControl,
+    // trait
+    WindowProcedure,
     // functions
-    window_subclass_procedure,
+    window_procedure,
 };
 
 use winapi::{
     shared::{
-        ntdef::{LPSTR,LPCWSTR},
+        ntdef::LPCWSTR,
         windef::{
             HWND,
             HDC,
-            HGLRC,
             RECT,
             POINT,
         }
     },
 
     um::{
-        processthreadsapi::GetCurrentThreadId,
-        wingdi::SwapBuffers,
         winuser::{
             // ShowWindow,
             // SetFocus,
@@ -37,10 +35,10 @@ use winapi::{
             GetDC,
             GetWindowRect,
             GetClientRect,
-            ReleaseDC,
-            UpdateWindow,
+            RedrawWindow,
             SetWindowPos,
             SetWindowLongPtrW,
+            GetWindowLongPtrW,
             GetCursorPos,
             SetCursorPos,
             ClientToScreen,
@@ -98,15 +96,12 @@ use winapi::{
             // other
             GWL_EXSTYLE,
             GWL_STYLE,
+            GWLP_USERDATA,
+            GWLP_WNDPROC,
             CW_USEDEFAULT,
-            WM_APP,
+            RDW_INTERNALPAINT,
+            RDW_INVALIDATE,
         },
-        commctrl::{
-            // functions
-            SetWindowSubclass,
-            DefSubclassProc,
-        },
-        //errhandlingapi::{GetLastError},
     }
 };
 
@@ -116,16 +111,7 @@ use std::{
         OsString,
     },
     os::windows::ffi::OsStrExt,
-    mem::{
-        transmute,
-        zeroed
-    },
-    sync::{
-        Arc,
-        Mutex,
-        RwLock,
-    },
-    collections::VecDeque,
+    mem::transmute,
 };
 
 
@@ -134,25 +120,14 @@ pub enum Fullscreen{
     Monitor(Monitor)
 }
 
-/// Arguments that are passed to window subclass procedure.
-/// 
-/// The 'handler' argument defines reference to a event handler.
-/// You can define your own handler.
-/// To remove the default one in `EventLoop` use the `own_event_handler` feature.
-/// 
-/// The 'additional' argument is passed to the event handler as the `WindowEvent`'s 'argument' field.
-pub struct WindowSubclassArguments{
-    pub (crate) main_thread_id:usize,
-    pub (crate) window_id:usize,
-}
-
-impl WindowSubclassArguments{
-    pub fn new(main_thread_id:usize,window_id:usize)->WindowSubclassArguments{
-        Self{
-            main_thread_id,
-            window_id,
-        }
-    }
+pub struct CreateParameters<A>{
+    pub window_procedure:unsafe extern "system" fn(
+        handle:HWND,
+        message:u32,
+        w_param:usize,
+        l_param:isize,
+    )->isize,
+    pub window_procedure_args:*mut A,
 }
 
 /// A window with it's context.
@@ -163,16 +138,16 @@ impl WindowSubclassArguments{
 /// when it terminates.
 /// So there no need to do it when the application closes,
 /// but it makes sense when you create-destroy windows and register-unregister classes at the run time.
+#[derive(Clone)]
 pub struct Window{
-    handle:HWND,
-    context:HDC,
+    pub (crate) handle:HWND,
 }
 
 impl Window{
-    pub fn new(
+    pub fn new<W:WindowProcedure<A>,A>(
         class:&WindowClass,
         attributes:WindowAttributes,
-        subclass_args:&WindowSubclassArguments,
+        window_procedure_args:&mut A,
     )->Result<Window,WinError>{
         let window_name:Vec<u16>=attributes.name
             .encode_wide()
@@ -230,6 +205,10 @@ impl Window{
         };
 
         unsafe{
+            let create_parameters=CreateParameters{
+                window_procedure:window_procedure::<W,A>,
+                window_procedure_args
+            };
             let window_handle=CreateWindowExW(
                 extended_style, // Extended Window Style
                 class.as_ptr(),
@@ -242,27 +221,16 @@ impl Window{
                 null_mut(), // parent window
                 null_mut(), // window menu
                 null_mut(),
-                null_mut()
+                transmute(&create_parameters),
             );
 
             if window_handle.is_null(){
                 Err(WinError::get_last_error())
             }
             else{
-                let mut subclass_id=0u32;
-                SetWindowSubclass(
-                    window_handle,
-                    Some(window_subclass_procedure),
-                    &mut subclass_id as *mut u32 as usize,
-                    subclass_args as *const WindowSubclassArguments as usize,
-                );
-
-                Ok(
-                    Self{
-                        handle:window_handle,
-                        context:GetDC(window_handle),
-                    }
-                )
+                Ok(Self{
+                    handle:window_handle,
+                })
             }
         }
     }
@@ -271,28 +239,24 @@ impl Window{
         self.handle
     }
 
-    pub fn context(&self)->HDC{
-        self.context
+    pub fn get_context(&self)->HDC{
+        unsafe{
+            GetDC(self.handle)
+        }
     }
 }
 
 /// Requests and sending events.
 impl Window{
-    // pub fn request_redraw(&self){
-    //     unsafe{
-    //         UpdateWindow(self.handle);
-    //     }
-    // }
-
-    pub (crate) fn destroy_local(&self){
+    pub fn redraw(&self){
         unsafe{
-            DestroyWindow(self.handle);
+            RedrawWindow(self.handle,null_mut(),null_mut(),RDW_INVALIDATE);
         }
     }
 
     pub fn destroy(&self){
         unsafe{
-            SendMessageW(self.handle,WM_APP+1,0,0);
+            DestroyWindow(self.handle);
         }
     }
 }
@@ -361,6 +325,7 @@ impl Window{
             GetClientRect(self.handle,ptr as usize as *mut RECT);
         }
         let [_,_,width,height]=client_rectangle;
+
         [
             width as u32,
             height as u32,
@@ -401,6 +366,22 @@ impl Window{
     //         }
     //     }
     // }
+
+    pub (crate) unsafe fn set_user_data<D:Sized>(&self,data:&mut D){
+        SetWindowLongPtrW(self.handle,GWLP_USERDATA,data as *const D as isize);
+    }
+
+    pub (crate) unsafe fn get_user_data(&self)->isize{
+        GetWindowLongPtrW(self.handle,GWLP_USERDATA)
+    }
+
+    pub unsafe fn set_window_procedure(&self,procedure:unsafe extern "system" fn(HWND,u32,usize,isize)->isize){
+        SetWindowLongPtrW(self.handle,GWLP_WNDPROC,procedure as isize);
+    }
+
+    pub unsafe fn set_window_handle<W:WindowProcedure<A>,A>(&self){
+        SetWindowLongPtrW(self.handle,GWLP_WNDPROC,window_procedure::<W,A> as isize);
+    }
 }
 
 /// Cursor functions.
@@ -431,10 +412,7 @@ impl Window{
 
 impl Drop for Window{
     fn drop(&mut self){
-        unsafe{
-            ReleaseDC(self.handle,self.context);
-            self.destroy();
-        }
+        self.destroy();
     }
 }
 

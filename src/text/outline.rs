@@ -5,7 +5,6 @@ use ab_glyph_rasterizer::{
 };
 
 use ttf_parser::{
-    Rect,
     Face,
     GlyphId,
     OutlineBuilder,

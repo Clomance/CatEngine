@@ -2,7 +2,7 @@ use crate::{
     Colour,
 };
 
-use cat_engine_basement::graphics::level1::texture::texture_2d::Texture2D;
+use cat_engine_basement::graphics::level1::Texture2D;
 
 #[cfg(feature="text_graphics")]
 use crate::text::{
@@ -15,8 +15,6 @@ use super::{
     FrameIDType,
     ObjectIDType,
     ElementIndexType,
-    // enums
-    DrawMode,
     // structs
     SimpleVertex2D,
     TexturedVertex2D,
@@ -31,10 +29,7 @@ use super::SimpleGraphics;
 use super::TextureGraphics;
 
 #[cfg(feature="text_graphics")]
-use super::{
-    TextGraphics,
-    TextGraphicsAttributes,
-};
+use super::TextGraphics;
 
 use ttf_parser::{
     GlyphId,

@@ -1,15 +1,9 @@
 use crate::windows::WinError;
 
 use winapi::{
-    shared::{
-        minwindef::{
-            PROC,
-            HMODULE,
-        },
-        windef::{
-            HGLRC,
-            HDC,
-        },
+    shared::windef::{
+        HGLRC,
+        HDC,
     },
     um::{
         wingdi::{
@@ -29,11 +23,6 @@ use winapi::{
             wglGetProcAddress,
             // structs
             PIXELFORMATDESCRIPTOR,
-        },
-        libloaderapi::{
-            LoadLibraryA,
-            FreeLibrary,
-            GetProcAddress,
         },
     }
 };

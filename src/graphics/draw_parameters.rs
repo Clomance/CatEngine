@@ -1,6 +1,6 @@
 use cat_engine_basement::graphics::{
     level0::BufferUsage,
-    level1::buffer::UniformBuffer,
+    level1::UniformBuffer,
 };
 
 #[derive(Clone,Copy,Debug,PartialEq,Eq)]
@@ -27,7 +27,7 @@ struct DrawParametersUniform{
     mode:[u32;2],
     shift:[f32;2],
     rotation:[f32;4],
-    scale:[f32;2],
+    // scale:[f32;2],
 }
 
 impl DrawParametersUniform{
@@ -37,7 +37,7 @@ impl DrawParametersUniform{
             mode:[0u32;2],
             shift:[0f32;2],
             rotation:[0f32;4],
-            scale:[1f32;2],
+            // scale:[1f32;2],
         }
     }
 }

@@ -2,8 +2,11 @@ use cat_engine::{
     app::{
         App,
         AppAttributes,
-        Event,
+        Window,
+        WindowInner,
         WindowEvent,
+        WindowProcedure,
+        quit,
     },
     graphics::{
         BlendingFunction,
@@ -17,11 +20,42 @@ use cat_engine::{
     },
 };
 
+struct WindowHandle;
+
+impl WindowProcedure<WindowInner<Option<Texture>>> for WindowHandle{
+    fn handle(window:&Window,window_inner:&mut WindowInner<Option<Texture>>,event:WindowEvent){
+        match event{
+            WindowEvent::Redraw=>{
+                window_inner.draw(window,|window,graphics,texture|{
+                    graphics.clear_colour();
+
+                    if let Some(texture)=texture.as_ref(){
+                        let [width,height]=window.client_size();
+                        graphics.draw_parameters().change_viewport([0f32,0f32,width as f32,height as f32]);
+
+                        graphics.draw_stack_textured_object(0,texture.texture_2d());
+                        graphics.draw_stack_textured_object(1,texture.texture_2d());
+                        graphics.draw_stack_textured_object(2,texture.texture_2d());
+                    }
+                    unsafe{cat_engine_basement::graphics::gl::Finish()};
+                }).unwrap_or_else(|_|{quit()});
+                window.redraw();
+            }
+
+            WindowEvent::CloseRequest=>quit(),
+            _=>{}
+        }
+    }
+}
+
 fn main(){
     let app_attributes=AppAttributes::new();
-    let mut app=App::new(app_attributes);
 
-    let graphics=app.get_graphics_unchecked_mut(0);
+    let texture:Option<Texture>=None;
+    let mut app=App::new::<WindowHandle>(app_attributes,texture);
+
+    let graphics=app.window_graphics_mut();
+    graphics.core().set_clear_colour([1f32;4]);
 
     { // Setting blending
         let blending=graphics.core().blending();
@@ -31,8 +65,6 @@ fn main(){
             BlendingFunction::OneMinusSourceAlpha
         );
     }
-
-    let texture=Texture::from_path("logo_400x400.png").unwrap();
 
     // CREATING FROM PARTS
     let vertices=[
@@ -47,7 +79,7 @@ fn main(){
     ];
 
     // Pushing to the stack-type buffer.
-    let image1=graphics.push_textured_object_raw(
+    let _image1=graphics.push_textured_object_raw(
         &vertices, // vertices
         &[0,1,3,1,2,3], // indicies associated with the given vertices
         PrimitiveType::Triangles // drawing type
@@ -58,7 +90,7 @@ fn main(){
         [400f32,0f32,400f32,400f32], // position and size
         [0.5,0.5,0.5,1.0] // colour filter
     );
-    let image2=graphics.push_textured_object(&image_base).unwrap();
+    let _image2=graphics.push_textured_object(&image_base).unwrap();
 
     // CREATING WITH IMAGEOBJECT
     let image_base=ImageObject::new(
@@ -66,42 +98,13 @@ fn main(){
         [0f32,0f32,0.5f32,1f32], // texture position and size
         [1.0;4] // colour filter
     );
-    let image3=graphics.push_textured_object(&image_base).unwrap();
+    let _image3=graphics.push_textured_object(&image_base).unwrap();
 
-    let mut colour=[1f32,1f32,1f32,1f32];
-    app.run(|event,app_control|{
+    *app.app_storage_mut()=Some(Texture::from_path("logo_400x400.png").unwrap());
+
+    app.run(|event,_app_control|{
         match event{
-            Event::Redraw=>{
-                let window=app_control.get_window_unchecked(0);
-
-                let [width,height]=window.client_size();
-
-                let graphics=app_control.get_graphics_unchecked_mut(0);
-                if colour[0]<1f32{
-                    colour[0]+=0.01;
-                }
-                else{
-                    colour[0]=0f32;
-                };
-                graphics.core().set_clear_colour(colour);
-                graphics.core().viewport().set([0,0,width as i32,height as i32]);
-
-                graphics.draw_parameters().change_viewport([0f32,0f32,width as f32,height as f32]);
-                graphics.clear_colour();
-                // Drawing the object that is located in the stack-type buffer.
-                graphics.draw_stack_textured_object(image1,texture.texture_2d());
-                graphics.draw_stack_textured_object(image2,texture.texture_2d());
-                graphics.draw_stack_textured_object(image3,texture.texture_2d());
-
-                app_control.get_render_context_unchecked(0).swap_buffers().unwrap();
-            }
-
-            Event::WindowEvent{window_event,window_id:_}=>match window_event{
-                WindowEvent::CloseRequest=>{
-                    app_control.exit();
-                }
-                _=>{}
-            }
+            
 
             _=>{}
         }

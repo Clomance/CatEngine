@@ -5,10 +5,7 @@ use super::{
 
 use std::{
     marker::PhantomData,
-    mem::{
-        size_of,
-        MaybeUninit
-    },
+    mem::MaybeUninit,
 };
 
 use gl::{

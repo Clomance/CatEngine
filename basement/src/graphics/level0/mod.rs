@@ -1,13 +1,10 @@
+use super::GLError;
+
 mod blending;
 pub use blending::{
     Blending,
     BlendingEquation,
     BlendingFunction,
-};
-
-mod error;
-pub use error::{
-    GLError,
 };
 
 mod buffer;

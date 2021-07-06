@@ -1,7 +1,6 @@
 use super::{
     Colour,
     graphics::{
-        Graphics,
         DependentObject,
         SimpleVertex2D,
         PrimitiveType,

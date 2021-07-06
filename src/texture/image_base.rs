@@ -3,7 +3,6 @@ use crate::{
     Colour,
     // structs
     graphics::{
-        Graphics,
         TexturedVertex2D,
         DependentObject,
         PrimitiveType,

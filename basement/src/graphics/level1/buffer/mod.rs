@@ -13,4 +13,7 @@ pub use vertex_buffer::{
 };
 
 mod uniform_buffer;
-pub use uniform_buffer::UniformBuffer;
+pub use uniform_buffer::{
+    UniformBuffer,
+    BoundUniformBuffer,
+};

@@ -20,11 +20,11 @@ pub struct ImageObject{
     pub u2:f32,
     pub v2:f32,
 
-    pub colour_filter:[f32;4],
+    pub colour_filter:Colour,
 }
 
 impl ImageObject{
-    pub fn new([x,y,width,height]:[f32;4],[u,v,uwidth,vheight]:[f32;4],colour_filter:[f32;4])->ImageObject{
+    pub fn new([x,y,width,height]:[f32;4],[u,v,uwidth,vheight]:[f32;4],colour_filter:Colour)->ImageObject{
         Self{
             x1:x,
             y1:y,
@@ -40,7 +40,7 @@ impl ImageObject{
         }
     }
 
-    pub fn raw([x1,y1,x2,y2]:[f32;4],[u1,v1,u2,v2]:[f32;4],colour_filter:[f32;4])->ImageObject{
+    pub fn raw([x1,y1,x2,y2]:[f32;4],[u1,v1,u2,v2]:[f32;4],colour_filter:Colour)->ImageObject{
         Self{
             x1,
             y1,
@@ -56,7 +56,7 @@ impl ImageObject{
         }
     }
 
-    pub fn raw_uv([x,y,width,height]:[f32;4],[u1,v1,u2,v2]:[f32;4],colour_filter:[f32;4])->ImageObject{
+    pub fn raw_uv([x,y,width,height]:[f32;4],[u1,v1,u2,v2]:[f32;4],colour_filter:Colour)->ImageObject{
         Self{
             x1:x,
             y1:y,
@@ -93,7 +93,7 @@ impl ImageObject{
         self.v2=v2;
     }
 
-    pub fn set_new(&mut self,[x,y,width,height]:[f32;4],[u,v,uwidth,vheight]:[f32;4],colour_filter:[f32;4]){
+    pub fn set_new(&mut self,[x,y,width,height]:[f32;4],[u,v,uwidth,vheight]:[f32;4],colour_filter:Colour){
         self.x1=x;
         self.y1=y;
         self.x2=x+width;
@@ -107,7 +107,7 @@ impl ImageObject{
         self.colour_filter=colour_filter
     }
 
-    pub fn set_new_raw_uv(&mut self,[x,y,width,height]:[f32;4],[u1,v1,u2,v2]:[f32;4],colour_filter:[f32;4]){
+    pub fn set_new_raw_uv(&mut self,[x,y,width,height]:[f32;4],[u1,v1,u2,v2]:[f32;4],colour_filter:Colour){
         self.x1=x;
         self.y1=y;
         self.x2=x+width;

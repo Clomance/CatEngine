@@ -1,5 +1,3 @@
-use super::GLError;
-
 use std::{
     marker::PhantomData,
     mem::{
@@ -45,6 +43,8 @@ use gl::{
     DeleteBuffers,
     CopyBufferSubData,
 };
+
+use std::mem::transmute;
 
 /// Specifies the expected usage pattern of the data store.
 #[repr(u32)]
@@ -162,7 +162,9 @@ impl<I:Sized> BufferData for &'_ I{
     }
 
     fn ptr(&self)->*const core::ffi::c_void{
-        *self as *const I as *const core::ffi::c_void
+        unsafe{
+            transmute(*self)
+        }
     }
 
     fn offset(&self,items:isize)->isize{
@@ -176,7 +178,9 @@ impl<I:Sized> BufferData for &'_ [I]{
     }
 
     fn ptr(&self)->*const core::ffi::c_void{
-        &self[0] as *const I as *const core::ffi::c_void
+        unsafe{
+            transmute(&self[0])
+        }
     }
 
     fn offset(&self,items:isize)->isize{
@@ -301,7 +305,7 @@ impl<I:Sized> Drop for Buffer<I>{
 /// ```
 pub struct BoundBuffer<'a,I:Sized>{
     target:u32,
-    marker:PhantomData<&'a Buffer<I>>,
+    marker:PhantomData<&'a I>,
 }
 
 impl<'a,I:Sized> BoundBuffer<'a,I>{

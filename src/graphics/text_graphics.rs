@@ -2,8 +2,6 @@ use crate::{
     Colour,
     text::{
         Scale,
-        OutlinedGlyph,
-        OutlineCurve,
         GlyphImageBuilder,
     },
 };
@@ -22,65 +20,29 @@ use cat_engine_basement::graphics::{
         ImageDataFormat,
     },
     level1::{
-        buffer::{
-            VertexBuffer,
-            IndexBuffer,
-        },
-        shader::{
-            VertexShader,
-            FragmentShader
-        },
-        texture::texture_2d::{
-            Texture2D,
-        },
+        VertexBuffer,
+        VertexShader,
+        FragmentShader,
+        Texture2D,
     },
     level2::Program,
     gl::{
         // consts
-        TEXTURE_2D,
-        TEXTURE0,
-        UNSIGNED_BYTE,
         TRIANGLE_STRIP,
-        TRIANGLES,
         UNPACK_ALIGNMENT,
         // functions
         DrawArrays,
-        DrawElements,
-        Finish,
-        ActiveTexture,
-        Uniform4f,
-        GetUniformLocation,
-        Viewport,
         PixelStorei,
     },
 };
 
 
 use ttf_parser::{
-    Rect,
     GlyphId,
     Face,
 };
-use ab_glyph_rasterizer::{
-    Rasterizer,
-    Point,
-    point
-};
 
 use std::cell::UnsafeCell;
-
-pub struct TextGraphicsAttributes{
-    // The default is [512;2]
-    pub glyph_texture_size:[u32;2]
-}
-
-impl TextGraphicsAttributes{
-    pub fn new()->TextGraphicsAttributes{
-        Self{
-            glyph_texture_size:[512u32;2],
-        }
-    }
-}
 
 pub struct TextGraphics{
     vertex_buffer:VertexBuffer<TextVertex2D>,

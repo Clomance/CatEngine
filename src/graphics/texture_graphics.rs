@@ -5,15 +5,10 @@ use super::{
     ElementIndexType,
     // consts
     frame_size,
-    minimal_frames,
     // structs
     TexturedVertex2D,
-    HeapSystem,
-    StackSystem,
     HeapObject,
     StackObject,
-    HeapDrawableObject,
-    StackDrawableObject,
     ObjectAllocation,
     DrawParameters,
     // enums
@@ -27,32 +22,22 @@ use cat_engine_basement::graphics::{
         BufferUsage
     },
     level1::{
-        buffer::{
-            VertexBuffer,
-            IndexBuffer,
-        },
-        shader::{
-            VertexShader,
-            FragmentShader
-        },
-        texture::texture_2d::Texture2D,
+        VertexBuffer,
+        IndexBuffer,
+        VertexShader,
+        FragmentShader,
+        Texture2D,
     },
     level2::Program,
 
     gl::{
         // constants
-        TEXTURE_2D,
-        TEXTURE,
-        UNSIGNED_BYTE,
         UNSIGNED_SHORT,
         // functions
         DrawArrays,
         DrawElements,
-        DrawRangeElements,
         MultiDrawElements,
         MultiDrawArrays,
-        ActiveTexture,
-        Viewport,
     }
 };
 

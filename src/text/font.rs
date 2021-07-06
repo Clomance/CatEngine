@@ -1,7 +1,4 @@
-use crate::{
-    graphics::Graphics2D,
-    texture::Texture2D
-};
+use crate::graphics::Graphics2D;
 
 use super::{
     OutlineCurveBuilder,
@@ -10,6 +7,8 @@ use super::{
     OutlineCurve,
     GlyphCache,
 };
+
+use cat_engine_basement::graphics::level1::Texture2D;
 
 use ttf_parser::{
     Face,

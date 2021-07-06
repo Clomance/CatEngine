@@ -1,7 +1,6 @@
 use crate::{
     graphics::Graphics2D,
     texture::{
-        Texture2D,
         TextureFilter,
         TextureInternalFormat,
         ImageDataFormat,
@@ -9,15 +8,13 @@ use crate::{
 };
 
 use super::{
-    OutlineCurveBuilder,
     RawGlyph,
-    OutlinedGlyph,
     Scale,
 };
 
-use cat_engine_basement::{
-    graphics::level0::GLError,
-    graphics::gl::{
+use cat_engine_basement::graphics::{
+    level1::Texture2D,
+    gl::{
         PixelStorei,
         UNPACK_ALIGNMENT,
     },
@@ -28,11 +25,8 @@ use ttf_parser::{
     GlyphId,
 };
 
-use ab_glyph_rasterizer::Rasterizer;
-
 use std::{
     collections::HashMap,
-    borrow::Cow,
     ops::Range,
 };
 

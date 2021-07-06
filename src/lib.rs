@@ -9,15 +9,12 @@
     dead_code
 )]
 
+/// The dark side of the engine.
+pub use cat_engine_basement as basement;
+
 pub mod graphics;
 
 pub mod app;
-
-#[cfg(feature="fps_counter")]
-pub use app::fps;
-
-#[cfg(feature="ups_counter")]
-pub use app::ups;
 
 #[cfg(feature="texture_graphics")]
 pub mod texture;

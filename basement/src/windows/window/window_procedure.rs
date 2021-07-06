@@ -4,15 +4,13 @@ use crate::windows::{
 
 use super::{
     // structs
-    Icon,
-    WindowSubclassArguments,
+    Window,
+    CreateParameters,
     // enums
-    Event,
     WindowEvent,
-    KeyboardButton,
-    VirtualKeyCode,
     MouseButton,
-    LoopControl,
+    // traits
+    WindowProcedure,
 };
 
 use winapi::{
@@ -32,18 +30,12 @@ use winapi::{
         winuser::{
             // structs
             CREATESTRUCTW,
-            MONITORINFO,
             // functions
-            PostQuitMessage,
-            PostMessageW,
-            SendMessageW,
-            PostThreadMessageW,
             DefWindowProcW,
-            DestroyWindow,
-            GetDC,
-            ReleaseDC,
-            UpdateWindow,
             MapVirtualKeyW,
+            BeginPaint,
+            EndPaint,
+            SetWindowLongPtrW,
             // constants
             MAPVK_VSC_TO_VK,
             WHEEL_DELTA,
@@ -298,29 +290,10 @@ use winapi::{
             WM_APP,
             WM_USER,
 
-            // The window sizing and positioning flags
-            SWP_NOSIZE,
-            SWP_NOREDRAW,
+            GWLP_WNDPROC,
+            GWLP_USERDATA,
         },
-
-        wingdi::{
-            CreateSolidBrush,
-            RGB,
-            CreateBitmap,
-        },
-        commctrl::{
-            // functions
-            SetWindowSubclass,
-            DefSubclassProc,
-        },
-        //errhandlingapi::{GetLastError},
     }
-};
-
-use image::RgbaImage;
-
-use gl::{
-    Viewport,
 };
 
 use std::{
@@ -328,32 +301,74 @@ use std::{
     mem::transmute,
 };
 
-const DESTROY_EVENT:u32=WM_APP+1;
 
-pub unsafe extern "system" fn window_subclass_procedure(
-    window:HWND,
+pub unsafe extern "system" fn default_window_procedure(
+    handle:HWND,
     message:UINT,
     w_param:WPARAM,
     l_param:LPARAM,
-    _uIdSubclass:usize,
-    dwRefData:usize,
 )->LRESULT{
-    let window_subclass_arguments_ptr=dwRefData as *const WindowSubclassArguments;
-    let window_subclass_arguments=&*window_subclass_arguments_ptr;
-
-    let main_thread_id=window_subclass_arguments.main_thread_id;
-    let window_id=window_subclass_arguments.window_id;
-
-    let (window_event,return_value):(WindowEvent,isize)=match message{
+    match message{
         // Sent prior to the WM_CREATE message when a window is first created.
         // wParam - This parameter is not used.
         // lParam - A pointer to the CREATESTRUCT structure.
         // If an application processes this message, it should return TRUE to continue creation of the window.
         // If the application returns FALSE, the CreateWindow or CreateWindowEx function will return a NULL handle.
         WM_NCCREATE=>{
+            let create_struct:&mut CREATESTRUCTW=transmute(l_param);
+
+            let create_parameters:&mut CreateParameters<u8>=transmute(create_struct.lpCreateParams);
+
+            // Установка аргуметов для подфункции окна
+            SetWindowLongPtrW(handle,GWLP_USERDATA,create_parameters.window_procedure_args as isize);
+
+            // Установка функции окна
+            SetWindowLongPtrW(handle,GWLP_WNDPROC,create_parameters.window_procedure as isize);
+
             return 1;
         }
+        _=>DefWindowProcW(handle,message,w_param,l_param)
+    }
+}
 
+pub unsafe extern "system" fn window_procedure<W:WindowProcedure<A>,A>(
+    handle:HWND,
+    message:UINT,
+    w_param:WPARAM,
+    l_param:LPARAM,
+)->LRESULT{
+    let window:&Window=transmute(&handle);
+    let args=&mut *(window.get_user_data() as *mut A);
+
+    // Запрос на перерисовку содержимого окна
+    if message==WM_PAINT{
+        let mut paint=std::mem::zeroed();
+        let _=BeginPaint(handle,&mut paint);
+
+        W::handle(window,args,WindowEvent::Redraw);
+
+        // EndPaint releases the display device context that BeginPaint retrieved.
+        EndPaint(handle,&paint);
+        return 0
+    }
+
+    match wrap_event(window,message,w_param,l_param){
+        EventWrapResult::None(lresult)=>lresult,
+        EventWrapResult::Event(window_event,lresult)=>{
+            W::handle(window,args,window_event);
+            lresult
+        }
+    }
+}
+
+enum EventWrapResult{
+    None(isize),
+    Event(WindowEvent,isize)
+}
+
+
+unsafe fn wrap_event(window:&Window,message:UINT,w_param:WPARAM,l_param:LPARAM)->EventWrapResult{
+    match message{
         // The window procedure of the new window receives this message after the window is created,
         // but before the window becomes visible.
         // wParam - This parameter is not used.
@@ -361,16 +376,15 @@ pub unsafe extern "system" fn window_subclass_procedure(
         // If an application processes this message, it should return zero to continue creation of the window.
         // If the application returns –1, the window is destroyed and the CreateWindowEx or CreateWindow function returns a NULL handle.
         WM_CREATE=>{
-            return 0;
+            return EventWrapResult::None(0);
         }
 
         // Запрос на закрытие окна
-        WM_CLOSE=>{
+        WM_CLOSE=>EventWrapResult::Event
             (
                 WindowEvent::CloseRequest,
                 0
-            )
-        }
+            ),
 
         // Sent when a window is being destroyed.
         // It is sent to the window procedure of the window being destroyed
@@ -381,25 +395,16 @@ pub unsafe extern "system" fn window_subclass_procedure(
         // A window receives this message through its WindowProc function.
         // If the window being destroyed is part of the clipboard viewer chain (set by calling the SetClipboardViewer function),
         // the window must remove itself from the chain by processing the ChangeClipboardChain function before returning from the WM_DESTROY message.
-        WM_DESTROY=>{
+        WM_DESTROY=>EventWrapResult::Event
             (
                 WindowEvent::Destroy,
                 0
-            )
-        }
-
-        // Запрос на перерисовку содержимого окна
-        // WM_PAINT=>{
-        //     (
-        //         WindowEvent::Redraw,
-        //         0
-        //     )
-        // }
+            ),
 
         // Изменение размера окна
         WM_SIZE=>{
             let [width,height,_,_]:[u16;4]=transmute(l_param);
-            (
+            EventWrapResult::Event(
                 WindowEvent::Resize([width,height]),
                 0
             )
@@ -408,7 +413,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         // Сдвиг окна
         WM_MOVE=>{
             let [x,y,_,_]:[i16;4]=transmute(l_param);
-            (
+            EventWrapResult::Event(
                 WindowEvent::Move([x,y]),
                 0
             )
@@ -419,7 +424,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         // Движение мыши
         WM_MOUSEMOVE=>{
             let [x,y,_,_]:[u16;4]=transmute(l_param);
-            (
+            EventWrapResult::Event(
                 WindowEvent::MouseMove([x,y]),
                 0
             )
@@ -427,7 +432,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         // Нажата левая кнопка мыши
         WM_LBUTTONDOWN=>{
             let [x,y,_,_]:[u16;4]=transmute(l_param);
-            (
+            EventWrapResult::Event(
                 WindowEvent::MousePress{
                     cursor_position:[x,y],
                     button:MouseButton::Left,
@@ -438,7 +443,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         // Нажата средняя кнопка мыши
         WM_MBUTTONDOWN=>{
             let [x,y,_,_]:[u16;4]=transmute(l_param);
-            (
+            EventWrapResult::Event(
                 WindowEvent::MousePress{
                     cursor_position:[x,y],
                     button:MouseButton::Middle,
@@ -449,7 +454,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         // Нажата правая кнопка мыши
         WM_RBUTTONDOWN=>{
             let [x,y,_,_]:[u16;4]=transmute(l_param);
-            (
+            EventWrapResult::Event(
                 WindowEvent::MousePress{
                     cursor_position:[x,y],
                     button:MouseButton::Right,
@@ -468,7 +473,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
                 MouseButton::Button5
             };
 
-            (
+            EventWrapResult::Event(
                 WindowEvent::MousePress{
                     cursor_position:[x,y],
                     button,
@@ -479,7 +484,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         // Отпущена левая кнопка мыши
         WM_LBUTTONUP=>{
             let [x,y,_,_]:[u16;4]=transmute(l_param);
-            (
+            EventWrapResult::Event(
                 WindowEvent::MouseRelease{
                     cursor_position:[x,y],
                     button:MouseButton::Left,
@@ -490,7 +495,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         // Отпущена средняя кнопка мыши
         WM_MBUTTONUP=>{
             let [x,y,_,_]:[u16;4]=transmute(l_param);
-            (
+            EventWrapResult::Event(
                 WindowEvent::MouseRelease{
                     cursor_position:[x,y],
                     button:MouseButton::Middle,
@@ -501,7 +506,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         // Отпущена правая кнопка мыши
         WM_RBUTTONUP=>{
             let [x,y,_,_]:[u16;4]=transmute(l_param);
-            (
+            EventWrapResult::Event(
                 WindowEvent::MouseRelease{
                     cursor_position:[x,y],
                     button:MouseButton::Right,
@@ -520,7 +525,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
                 MouseButton::Button5
             };
 
-            (
+            EventWrapResult::Event(
                 WindowEvent::MouseRelease{
                     cursor_position:[x,y],
                     button,
@@ -531,7 +536,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         // Прокрутка колёсика
         WM_MOUSEWHEEL=>{
             let [_,scroll_delta,_,_]:[i16;4]=transmute(w_param);
-            (
+            EventWrapResult::Event(
                 WindowEvent::MouseScroll(scroll_delta/WHEEL_DELTA),
                 0
             )
@@ -543,7 +548,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         WM_KEYDOWN=>{
             let [_count1,_count2,scan_code,_flags]:[u8;4]=transmute(l_param as u32);
             let virtual_key=MapVirtualKeyW(scan_code as u32,MAPVK_VSC_TO_VK);
-            (
+            EventWrapResult::Event(
                 WindowEvent::KeyPress(transmute(virtual_key as u8)),
                 0
             )
@@ -552,7 +557,7 @@ pub unsafe extern "system" fn window_subclass_procedure(
         WM_KEYUP=>{
             let [_count1,_count2,scan_code,_flags]:[u8;4]=transmute(l_param as u32);
             let virtual_key=MapVirtualKeyW(scan_code as u32,MAPVK_VSC_TO_VK);
-            (
+            EventWrapResult::Event(
                 WindowEvent::KeyRelease(transmute(virtual_key as u8)),
                 0
             )
@@ -561,29 +566,12 @@ pub unsafe extern "system" fn window_subclass_procedure(
         WM_CHAR|WM_SYSCHAR|WM_DEADCHAR=>{
             let utf16_character=w_param as u16;
             let character=std::char::decode_utf16(vec![utf16_character]).next().unwrap().unwrap();
-            (
+            EventWrapResult::Event(
                 WindowEvent::CharacterInput(character),
                 0
             )
         }
 
-        // Additional events
-        // Дополнительные события
-        DESTROY_EVENT=>{
-            DestroyWindow(window);
-            return 0;
-        }
-
-        _=>{
-            return DefSubclassProc(window,message,w_param,l_param)
-        }
-    };
-
-    // Упаковывание... подарочков :)
-    let boxed_event=Box::new(window_event);
-    let arguments_ptr=Box::leak(boxed_event) as *mut WindowEvent as isize;
-    // Отправка подарочков в главный поток
-    PostThreadMessageW(main_thread_id as u32,WM_APP,window_id,arguments_ptr);
-
-    return_value
+        _=>EventWrapResult::None(DefWindowProcW(window.handle,message,w_param,l_param))
+    }
 }

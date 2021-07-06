@@ -5,21 +5,15 @@ use super::{
     ElementIndexType,
     // consts
     frame_size,
-    minimal_frames,
     // structs
     SimpleVertex2D,
-    HeapSystem,
-    StackSystem,
     HeapObject,
     StackObject,
-    HeapDrawableObject,
-    StackDrawableObject,
     ObjectAllocation,
     DrawParameters,
     // enums
     HeapDrawType,
     StackDrawType,
-    DrawMode,
 };
 
 use cat_engine_basement::graphics::{
@@ -28,33 +22,23 @@ use cat_engine_basement::graphics::{
         BufferUsage,
     },
     level1::{
-        buffer::{
-            VertexBuffer,
-            IndexBuffer,
-        },
-        shader::{
-            VertexShader,
-            FragmentShader
-        }
+        VertexBuffer,
+        IndexBuffer,
+        VertexShader,
+        FragmentShader
     },
     level2::Program,
     gl::{
         // constants
-        UNSIGNED_BYTE,
         UNSIGNED_SHORT,
         // functions
         DrawArrays,
         DrawElements,
         MultiDrawElements,
         MultiDrawArrays,
-        Viewport,
     },
 };
 
-use std::{
-    mem::size_of,
-    ffi::c_void
-};
 
 pub struct SimpleGraphics{
     vertex_buffer:VertexBuffer<SimpleVertex2D>,

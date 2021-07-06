@@ -1,4 +1,4 @@
-pub use super::level1::shader::{
+pub use super::level1::{
     VertexShader,
     FragmentShader,
 };

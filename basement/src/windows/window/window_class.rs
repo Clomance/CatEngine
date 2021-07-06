@@ -3,6 +3,7 @@ use crate::windows::WinError;
 use super::{
     Icon,
     Bitmap,
+    default_window_procedure,
 };
 
 use winapi::{
@@ -23,13 +24,9 @@ use winapi::{
         winuser::{
             RegisterClassExW,
             UnregisterClassW,
-            LoadCursorFromFileW,
             WNDCLASSEXW,
-            PostQuitMessage,
             DefWindowProcW,
-            CreateIconIndirect,
-            ICONINFO,
-            DestroyWindow,
+            LoadCursorW,
             // window class styles
             CS_HREDRAW,
             CS_VREDRAW,
@@ -43,16 +40,16 @@ use winapi::{
             CS_BYTEALIGNWINDOW,
             CS_GLOBALCLASS,
             CS_DROPSHADOW,
+            // Cursors
+            IDC_ARROW,
         },
 
         wingdi::{
             CreateSolidBrush,
             CreatePatternBrush,
             RGB,
-            CreateBitmap,
             DeleteObject,
         },
-        //errhandlingapi::{GetLastError},
     }
 };
 
@@ -63,9 +60,6 @@ use image::{
     Bgra
 };
 
-use gl::{
-    Viewport,
-};
 
 use std::{
     ptr::{null_mut},
@@ -113,7 +107,9 @@ impl WindowClass{
         };
 
         let cursor=match attributes.cursor_icon{
-            CursorIcon::None=>null_mut(),
+            CursorIcon::None=>unsafe{
+                LoadCursorW(null_mut(),IDC_ARROW)
+            },
             CursorIcon::BGRA8{
                 position,
                 image
@@ -153,9 +149,9 @@ impl WindowClass{
         }
 
         let class_attributes=WNDCLASSEXW{
-            cbSize:std::mem::size_of::<WNDCLASSEXW>() as UINT,
+            cbSize:std::mem::size_of::<WNDCLASSEXW>() as u32,
             style,
-            lpfnWndProc:Some(DefWindowProcW),
+            lpfnWndProc:Some(default_window_procedure),
             cbClsExtra:0,
             cbWndExtra:0,
             hInstance:null_mut(),
@@ -183,16 +179,6 @@ impl WindowClass{
 
     pub fn as_ptr(&self)->*const u16{
         self.name.as_ptr()
-    }
-
-    pub fn unregister(&self){
-        unsafe{
-            let _result=UnregisterClassW(self.name.as_ptr(),null_mut());
-            // #[cfg(feature="window_background_image")]
-            // if let Some(background_image)=self.background_image.take(){
-            //     background_image.destroy()
-            // }
-        }
     }
 }
 

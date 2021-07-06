@@ -1,9 +1,9 @@
+mod mono_windowing;
 #[cfg(target_os="windows")]
-mod windows;
-#[cfg(target_os="windows")]
-pub use windows::{
+pub use mono_windowing::windows::{
     App,
     AppAttributes,
+    Window,
     AppControl,
     CursorIcon,
     Background,
@@ -11,6 +11,7 @@ pub use windows::{
     Monitor,
     WindowAttributes,
     WindowClassAttributes,
+    WindowInner,
     Event,
     WindowEvent,
     VirtualKeyCode,
@@ -18,4 +19,6 @@ pub use windows::{
     OpenGLRenderContextAttributes,
     UpdateInterval,
     WinError,
+    WindowProcedure,
+    quit,
 };

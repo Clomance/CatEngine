@@ -307,7 +307,7 @@ impl Blending{
     pub fn get_function_dst_alpha(&self)->BlendingFunction{
         unsafe{
             let mut function=BlendingFunction::Zero;
-            GetIntegerv(BLEND_DST_RGB,transmute(&mut function));
+            GetIntegerv(BLEND_DST_ALPHA,transmute(&mut function));
             function
         }
     }
@@ -316,7 +316,7 @@ impl Blending{
     #[inline(always)]
     pub fn write_function_dst_alpha(&self,function:&mut BlendingFunction){
         unsafe{
-            GetIntegerv(BLEND_DST_RGB,transmute(function));
+            GetIntegerv(BLEND_DST_ALPHA,transmute(function));
         }
     }
 }

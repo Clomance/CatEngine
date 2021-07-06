@@ -15,7 +15,6 @@ use winapi::{
         wingdi::{
             CreateBitmap,
         },
-        //errhandlingapi::{GetLastError},
     }
 };
 

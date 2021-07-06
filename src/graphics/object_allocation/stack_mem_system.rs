@@ -1,28 +1,16 @@
 use crate::{
     graphics::{
         // types
-        FrameIDType,
         ObjectIDType,
         ElementIndexType,
-        // consts
-        frame_size,
-        minimal_frames,
     },
 };
 
 use cat_engine_basement::graphics::{
     level0::Vertex,
-    level1::buffer::{
+    level1::{
         VertexBuffer,
         IndexBuffer,
-    },
-    gl::{
-        // constants
-        UNSIGNED_BYTE,
-        UNSIGNED_SHORT,
-        // functions
-        MultiDrawElements,
-        MultiDrawArrays,
     },
 };
 

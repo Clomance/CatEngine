@@ -8,11 +8,9 @@ pub use cat_engine_basement::graphics::{
         Texture2DTarget,
         FrameBufferTarget,
     },
-    level1::texture::{
-        texture_2d::{
-            Texture2D,
-            BoundTexture2D,
-        },
+    level1::{
+        Texture2D,
+        BoundTexture2D,
     },
 };
 
