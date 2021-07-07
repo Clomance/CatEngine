@@ -145,45 +145,45 @@ pub enum BufferTarget{
     UniformBuffer=UNIFORM_BUFFER,
 }
 
-pub trait BufferData{
+pub trait BufferData:Clone+Copy{
     /// Returns the whole size of data.
-    fn size(&self)->isize;
+    fn size(self)->isize;
     /// Returns a pointer to data.
-    fn ptr(&self)->*const core::ffi::c_void;
+    fn ptr(self)->*const core::ffi::c_void;
     /// Returns an offset of `items` elements.
     /// 
     /// `Result = items * element_size`
-    fn offset(&self,items:isize)->isize;
+    fn offset(self,items:isize)->isize;
 }
 
 impl<I:Sized> BufferData for &'_ I{
-    fn size(&self)->isize{
+    fn size(self)->isize{
         size_of::<I>() as isize
     }
 
-    fn ptr(&self)->*const core::ffi::c_void{
+    fn ptr(self)->*const core::ffi::c_void{
         unsafe{
-            transmute(*self)
+            transmute(self)
         }
     }
 
-    fn offset(&self,items:isize)->isize{
+    fn offset(self,items:isize)->isize{
         size_of::<I>() as isize*items
     }
 }
 
 impl<I:Sized> BufferData for &'_ [I]{
-    fn size(&self)->isize{
+    fn size(self)->isize{
         (self.len()*size_of::<I>()) as isize
     }
 
-    fn ptr(&self)->*const core::ffi::c_void{
+    fn ptr(self)->*const core::ffi::c_void{
         unsafe{
             transmute(&self[0])
         }
     }
 
-    fn offset(&self,items:isize)->isize{
+    fn offset(self,items:isize)->isize{
         size_of::<I>() as isize*items
     }
 }
@@ -305,7 +305,7 @@ impl<I:Sized> Drop for Buffer<I>{
 /// ```
 pub struct BoundBuffer<'a,I:Sized>{
     target:u32,
-    marker:PhantomData<&'a I>,
+    marker:PhantomData<&'a Buffer<I>>,
 }
 
 impl<'a,I:Sized> BoundBuffer<'a,I>{

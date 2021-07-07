@@ -1,11 +1,4 @@
-use crate::{
-    graphics::Graphics2D,
-    texture::{
-        TextureFilter,
-        TextureInternalFormat,
-        ImageDataFormat,
-    }
-};
+use crate::graphics::Graphics2D;
 
 use super::{
     RawGlyph,
@@ -13,6 +6,11 @@ use super::{
 };
 
 use cat_engine_basement::graphics::{
+    level0::{
+        TextureFilter,
+        TextureInternalFormat,
+        ImageDataFormat,
+    },
     level1::Texture2D,
     gl::{
         PixelStorei,

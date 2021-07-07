@@ -1,7 +1,7 @@
 use crate::{
     Colour,
     graphics::{
-        DependentObject,
+        ShapeObject,
         TexturedVertex2D,
         PrimitiveType,
         ElementIndexType,
@@ -122,7 +122,7 @@ impl ImageObject{
     }
 }
 
-impl DependentObject<TexturedVertex2D,ElementIndexType> for ImageObject{
+impl ShapeObject<TexturedVertex2D,ElementIndexType> for ImageObject{
     type Vertices=[TexturedVertex2D;4];
     type Indices=[ElementIndexType;0];
 

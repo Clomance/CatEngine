@@ -138,7 +138,7 @@ impl<'a> FaceWrapper<'a>{
 
 
 /// Шрифт с хранилищем глифов.
-/// A font with glyph cache.
+/// A font with a glyph cache.
 pub struct CachedFont{
     font:FontOwner,
     cache:GlyphCache,

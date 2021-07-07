@@ -6,12 +6,11 @@ use crate::{
 use cat_engine_basement::graphics::level1::Texture2D;
 
 pub use cat_engine_basement::graphics::{
-    level0::{
-        GraphicsCore,
-        BlendingEquation,
-        BlendingFunction,
-        Blending,
-    },
+    GraphicsCore,
+    BlendingEquation,
+    BlendingFunction,
+    Blending,
+    Viewport,
     PrimitiveType,
 };
 
@@ -39,7 +38,7 @@ pub use objects::{
     SimpleVertex2D,
     TexturedVertex2D,
     TextVertex2D,
-    DependentObject,
+    ShapeObject,
 };
 
 #[cfg(feature="simple_graphics")]
@@ -178,7 +177,7 @@ impl Graphics{
         )
     }
 
-    pub fn add_simple_object<O:DependentObject<SimpleVertex2D,ElementIndexType>>(
+    pub fn add_simple_object<O:ShapeObject<SimpleVertex2D,ElementIndexType>>(
         &mut self,
         object:&O
     )->Option<ObjectIDType>{
@@ -224,7 +223,7 @@ impl Graphics{
         )
     }
 
-    pub fn push_simple_object<O:DependentObject<SimpleVertex2D,ElementIndexType>>(
+    pub fn push_simple_object<O:ShapeObject<SimpleVertex2D,ElementIndexType>>(
         &mut self,
         object:&O
     )->Option<ObjectIDType>{
@@ -275,7 +274,7 @@ impl Graphics{
         )
     }
 
-    pub fn add_textured_object<O:DependentObject<TexturedVertex2D,ElementIndexType>>(
+    pub fn add_textured_object<O:ShapeObject<TexturedVertex2D,ElementIndexType>>(
         &mut self,
         object:&O
     )->Option<ObjectIDType>{
@@ -325,7 +324,7 @@ impl Graphics{
         )
     }
 
-    pub fn push_textured_object<O:DependentObject<TexturedVertex2D,ElementIndexType>>(
+    pub fn push_textured_object<O:ShapeObject<TexturedVertex2D,ElementIndexType>>(
         &mut self,
         object:&O
     )->Option<ObjectIDType>{

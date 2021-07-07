@@ -11,6 +11,7 @@ use crate::{
 };
 
 use cat_engine_basement::graphics::{
+    PrimitiveType,
     level0::Vertex,
     level1::{
         VertexBuffer,
@@ -29,7 +30,7 @@ pub struct HeapObject{
     pub last_vertex_frame_size:u8,
     pub index_frames:Vec<FrameIDType>,
     pub last_index_frame_size:u8,
-    pub primitive_type:u32,
+    pub primitive_type:PrimitiveType,
 }
 
 impl HeapObject{
@@ -63,7 +64,7 @@ impl HeapObject{
 
             for &frame_id in &self.index_frames{
                 let start_index=frame_id*frame_size as FrameIDType;
-                start.push((start_index as usize*size_of::<ElementIndexType>()) as *const c_void);
+                start.push(start_index as isize*size_of::<ElementIndexType>() as isize);
                 count.push(frame_size as i32);
             }
 
@@ -91,14 +92,14 @@ impl HeapObject{
 
 #[derive(Debug)]
 pub enum HeapDrawType{
-    Vertices(Vec<i32>),
-    Indices(Vec<*const c_void>),
+    Vertices(Vec<i32>), // count
+    Indices(Vec<isize>), // start
 }
 
 pub struct HeapDrawableObject{
     pub draw_type:HeapDrawType,
     pub count:Vec<i32>,
-    pub primitive_type:u32,
+    pub primitive_type:PrimitiveType,
 }
 
 pub struct HeapSystem<V:Vertex>{
@@ -136,7 +137,7 @@ impl<V:Vertex> HeapSystem<V>{
                 last_vertex_frame_size:0u8,
                 index_frames:Vec::with_capacity(minimal_frames),
                 last_index_frame_size:0u8,
-                primitive_type:0u32,
+                primitive_type:PrimitiveType::Points,
             };
             object_array.push(object)
         }
@@ -165,7 +166,7 @@ impl<V:Vertex> HeapSystem<V>{
         index_buffer:&IndexBuffer<ElementIndexType>,
         vertices:&[V],
         indices:&[ElementIndexType],
-        primitive_type:u32
+        primitive_type:PrimitiveType
     )->Option<ObjectIDType>{
         if let Some(object_id)=self.free_objects.pop(){
             // Количество блоков для вершин и индексов

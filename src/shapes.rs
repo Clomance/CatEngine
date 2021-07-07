@@ -1,7 +1,7 @@
 use super::{
     Colour,
     graphics::{
-        DependentObject,
+        ShapeObject,
         SimpleVertex2D,
         PrimitiveType,
         ElementIndexType,
@@ -26,7 +26,7 @@ impl Quadrilateral{
     }
 }
 
-impl DependentObject<SimpleVertex2D,ElementIndexType> for Quadrilateral{
+impl ShapeObject<SimpleVertex2D,ElementIndexType> for Quadrilateral{
     type Vertices=[SimpleVertex2D;4];
     type Indices=[ElementIndexType;0];
 
@@ -87,7 +87,7 @@ impl Rectangle{
     }
 }
 
-impl DependentObject<SimpleVertex2D,ElementIndexType> for Rectangle{
+impl ShapeObject<SimpleVertex2D,ElementIndexType> for Rectangle{
     type Vertices=[SimpleVertex2D;4];
     type Indices=[ElementIndexType;0];
 
@@ -152,7 +152,7 @@ impl RectangleBorder{
     }
 }
 
-impl DependentObject<SimpleVertex2D,ElementIndexType> for RectangleBorder{
+impl ShapeObject<SimpleVertex2D,ElementIndexType> for RectangleBorder{
     type Vertices=[SimpleVertex2D;4];
     type Indices=[ElementIndexType;0];
 
@@ -217,7 +217,7 @@ impl Line{
 }
 
 
-impl <'o> DependentObject<SimpleVertex2D,ElementIndexType> for Line{
+impl <'o> ShapeObject<SimpleVertex2D,ElementIndexType> for Line{
     type Vertices=[SimpleVertex2D;2];
     type Indices=[ElementIndexType;0];
 
@@ -258,7 +258,7 @@ impl <'o> DependentObject<SimpleVertex2D,ElementIndexType> for Line{
 //     }
 // }
 
-// impl <'o> DependentObject<SimpleVertex2D,ElementIndexType> for Circle{
+// impl <'o> ShapeObject<SimpleVertex2D,ElementIndexType> for Circle{
 //     type Vertices=Vec<SimpleVertex2D>;
 //     type Indices=[ElementIndexType;0];
 

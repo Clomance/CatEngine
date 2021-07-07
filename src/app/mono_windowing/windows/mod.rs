@@ -86,7 +86,6 @@ pub struct App<S:Sized+'static>{
     window:Window,
     window_inner:Box<WindowInner<S>>,
     app_storage:Box<S>,
-    graphics_library:OpenGraphicsLibrary,
 }
 
 impl<S:Sized+'static> App<S>{
@@ -129,7 +128,6 @@ impl<S:Sized+'static> App<S>{
             window,
             window_inner,
             app_storage,
-            graphics_library:library,
         }
     }
 

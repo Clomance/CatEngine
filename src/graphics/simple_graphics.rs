@@ -17,6 +17,8 @@ use super::{
 };
 
 use cat_engine_basement::graphics::{
+    Drawing,
+    PrimitiveType,
     level0::{
         VertexArray,
         BufferUsage,
@@ -96,7 +98,7 @@ impl SimpleGraphics{
         &mut self,
         vertices:&[SimpleVertex2D],
         indices:&[ElementIndexType],
-        primitive_type:u32
+        primitive_type:PrimitiveType
     )->Option<ObjectIDType>{
         self.object_allocation.heap_system.add_object(
             &self.vertex_buffer,
@@ -137,16 +139,15 @@ impl SimpleGraphics{
             draw_parameters.bind_uniform();
 
             match object.draw_type{
-                HeapDrawType::Vertices(first)=>unsafe{
-                    let count=object.count.as_ptr();
-                    let draw_count=first.len() as i32;
-                    MultiDrawArrays(object.primitive_type,first.as_ptr(),count,draw_count)
-                }
-                HeapDrawType::Indices(indices)=>unsafe{
-                    let count=object.count.as_ptr();
-                    let draw_count=indices.len() as i32;
-                    MultiDrawElements(object.primitive_type,count,UNSIGNED_SHORT,indices.as_ptr(),draw_count);
-                }
+                HeapDrawType::Vertices(first)=>
+                    Drawing.multi_draw_arrays(&first,&object.count,object.primitive_type),
+
+                HeapDrawType::Indices(indices)=>
+                    Drawing.multi_draw_elements_typed::<ElementIndexType>(
+                        &indices,
+                        &object.count,
+                        object.primitive_type
+                    ),
             }
 
             VertexArray::<SimpleVertex2D>::unbind();
@@ -160,7 +161,7 @@ impl SimpleGraphics{
         &mut self,
         vertices:&[SimpleVertex2D],
         indices:&[ElementIndexType],
-        primitive_type:u32
+        primitive_type:PrimitiveType
     )->Option<ObjectIDType>{
         self.object_allocation.stack_system.push_object_raw(
             &self.vertex_buffer,
@@ -202,13 +203,15 @@ impl SimpleGraphics{
             draw_parameters.bind_uniform();
 
             match object.draw_type{
-                StackDrawType::Vertices(first)=>unsafe{
-                    DrawArrays(object.primitive_type,first,object.count);
-                }
+                StackDrawType::Vertices(first)=>
+                    Drawing.draw_arrays(first,object.count,object.primitive_type),
 
-                StackDrawType::Indices(first)=>unsafe{
-                    DrawElements(object.primitive_type,object.count,UNSIGNED_SHORT,first);
-                }
+                StackDrawType::Indices(first)=>
+                    Drawing.draw_elements_typed::<ElementIndexType>(
+                        first,
+                        object.count,
+                        object.primitive_type
+                    ),
             }
 
             VertexArray::<SimpleVertex2D>::unbind();

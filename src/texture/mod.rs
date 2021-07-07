@@ -1,12 +1,11 @@
-pub use cat_engine_basement::graphics::{
+use cat_engine_basement::graphics::{
     gl::BindFramebuffer,
     level0::{
-        BoundTexture,
+        FrameBufferTarget,
+        Texture2DTarget,
         TextureFilter,
         TextureInternalFormat,
         ImageDataFormat,
-        Texture2DTarget,
-        FrameBufferTarget,
     },
     level1::{
         Texture2D,

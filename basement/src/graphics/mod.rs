@@ -1,3 +1,15 @@
+mod gl_core;
+pub use gl_core::{
+    GraphicsCore,
+    Blending,
+    BlendingEquation,
+    BlendingFunction,
+    Viewport,
+    Drawing,
+    IndexType,
+    PrimitiveType,
+};
+
 pub mod level0;
 
 pub mod level1;
@@ -10,21 +22,6 @@ pub type ColourComponent=f32;
 pub type Colour=[ColourComponent;4];
 
 use gl::{
-    // Primitive types
-    POINTS,
-    LINES,
-    LINE_LOOP,
-    LINE_STRIP,
-    TRIANGLES,
-    TRIANGLE_STRIP,
-    TRIANGLE_FAN,
-    LINES_ADJACENCY,
-    TRIANGLES_ADJACENCY,
-    TRIANGLE_STRIP_ADJACENCY,
-    COLOR_BUFFER_BIT,
-    STENCIL_BUFFER_BIT,
-    DEPTH_BUFFER_BIT,
-
     // Errors
     NO_ERROR,
     INVALID_ENUM,
@@ -38,21 +35,6 @@ use gl::{
 };
 
 use std::mem::transmute;
-
-#[repr(u32)]
-#[derive(Clone,Copy)]
-pub enum PrimitiveType{
-    Points=POINTS,
-    Lines=LINES,
-    LineLoop=LINE_LOOP,
-    LineStrip=LINE_STRIP,
-    Triangles=TRIANGLES,
-    TriangleStrip=TRIANGLE_STRIP,
-    TriangleFan=TRIANGLE_FAN,
-    LinesAdjacency=LINES_ADJACENCY,
-    TrianglesAdjacency=TRIANGLES_ADJACENCY,
-    TriangleStripAdjacency=TRIANGLE_STRIP_ADJACENCY,
-}
 
 #[repr(u32)]
 #[derive(Clone,Copy,Debug,PartialEq,Eq)]

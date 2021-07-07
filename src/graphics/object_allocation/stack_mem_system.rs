@@ -7,6 +7,7 @@ use crate::{
 };
 
 use cat_engine_basement::graphics::{
+    PrimitiveType,
     level0::Vertex,
     level1::{
         VertexBuffer,
@@ -25,7 +26,7 @@ pub struct StackObject{
     pub vertex_count:i32,
     pub index_start:i32,
     pub index_count:i32,
-    pub primitive_type:u32,
+    pub primitive_type:PrimitiveType,
 }
 
 impl StackObject{
@@ -38,9 +39,7 @@ impl StackObject{
         }
         else{
             (
-                StackDrawType::Indices(
-                    (self.index_start*size_of::<ElementIndexType>() as i32) as *const c_void
-                ),
+                StackDrawType::Indices(self.index_start),
                 self.index_count
             )
         };
@@ -55,14 +54,14 @@ impl StackObject{
 
 #[derive(Debug)]
 pub enum StackDrawType{
-    Vertices(i32),
-    Indices(*const c_void),
+    Vertices(i32), // count
+    Indices(i32), // start
 }
 
 pub struct StackDrawableObject{
     pub draw_type:StackDrawType,
     pub count:i32,
-    pub primitive_type:u32,
+    pub primitive_type:PrimitiveType,
 }
 
 pub struct StackSystem<V:Vertex>{
@@ -108,7 +107,7 @@ impl<V:Vertex> StackSystem<V>{
         index_buffer:&IndexBuffer<ElementIndexType>,
         vertices:&[V],
         indices:&[ElementIndexType],
-        primitive_type:u32
+        primitive_type:PrimitiveType
     )->Option<ObjectIDType>{
         // Количество вершин
         let vertex_count=vertices.len() as i32;

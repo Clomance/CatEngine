@@ -51,10 +51,10 @@ use gl::{
 
 use std::mem::transmute;
 
-#[repr(u32)]
 /// The `BlendingEquation::MIN` and `BlendingEquation::MAX` equations
 /// do not use the source or destination factors,
 /// only the source and destination colors.
+#[repr(u32)]
 pub enum BlendingEquation{
     /// The default, adds both colours to each other.
     /// 
@@ -89,60 +89,75 @@ pub enum BlendingFunction{
     /// 
     /// Result = Colour * 0.
     Zero=ZERO,
+
     /// Multiply the component by one.
     /// 
     /// Result = Colour * 1.
     One=ONE,
+
     /// Multiply the component by its corresponding value in the source.
     /// 
     /// Result = Colour * SourceColour.
     SourceColour=SRC_COLOR,
+
     /// Equivalent to `1 - SourceColour`.
     /// 
     /// Result = Result = Colour * (1 - SourceColour).
     OneMinusSourceColour=ONE_MINUS_SRC_COLOR,
+
     /// Multiply the component by its corresponding value in the destination.
     /// 
     /// Result = Colour * DestinationColour
     DestinationColour=DST_COLOR,
+
     /// Equivalent to `1 - DestinationColour`.
     /// 
     /// Result = Result = Colour * (1 - DestinationColour).
     OneMinusDestinationColour=ONE_MINUS_DST_COLOR,
+
     /// Multiply the component by the alpha value of the source.
     /// 
     /// Result = Colour * SourceAlpha.
     SourceAlpha=SRC_ALPHA,
+
     /// Equivalent to `1 - SourceAlpha`.
     /// 
     /// Result = Colour * (1 - SourceAlpha).
     OneMinusSourceAlpha=ONE_MINUS_SRC_ALPHA,
+
     /// Multiply the component by the alpha value of the destination.
     /// 
     /// Result = Colour * DestinationAlpha.
     DestinationAlpha=DST_ALPHA,
+
     /// Equivalent to `1 - DestinationAlpha`.
     /// 
     /// Result = Colour * (1 - DestinationAlpha).
     OneMinusDestinationAlpha=ONE_MINUS_DST_ALPHA,
+
     /// Multiply the component by the corresponding value in the blending constant colour.
     /// 
     /// Result = Colour * ConstantColour.
     ConstantColour=CONSTANT_COLOR,
+
     /// Equivalent to `1 - ConstantColour`.
     /// 
     /// Result = Colour * (1 - ConstantColour).
     OneMinusConstantColour=ONE_MINUS_CONSTANT_COLOR,
+
     /// Multiply the component by the alpha value of the blending constant colour.
     /// 
     /// Result = Colour * ConstantAlpha.
     ConstantAlpha=CONSTANT_ALPHA,
+
     /// Equivalent to `1 - ConstantAlpha`.
     /// 
     /// Result = Colour * (1 - ConstantAlpha).
     OneMinusConstantAlpha=ONE_MINUS_CONSTANT_ALPHA,
+
     /// Multiply the component by the smallest value of `SourceAlpha` and `1 - DestinationAlpha`.
     SourceAlphaSaturate=SRC_ALPHA_SATURATE,
+
     // /// Not fully supported yet.
     // Source1Colour=SRC1_COLOR,
     // /// Not fully supported yet.
@@ -312,7 +327,7 @@ impl Blending{
         }
     }
 
-    /// Writes the blending function for the Aplha colour component to `function`.
+    /// Writes the blending function for the Alpha colour component to `function`.
     #[inline(always)]
     pub fn write_function_dst_alpha(&self,function:&mut BlendingFunction){
         unsafe{
@@ -332,7 +347,11 @@ impl Blending{
 
     /// Sets the equation for the RGB blending equation and the Alpha blend equation sepatately.
     #[inline(always)]
-    pub fn set_equation_separate(&self,equation_rgb:BlendingEquation,equation_alpha:BlendingEquation){
+    pub fn set_equation_separate(
+        &self,
+        equation_rgb:BlendingEquation,
+        equation_alpha:BlendingEquation
+    ){
         unsafe{
             BlendEquationSeparate(equation_rgb as u32,equation_alpha as u32)
         }

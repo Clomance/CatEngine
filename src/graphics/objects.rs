@@ -115,13 +115,7 @@ impl Vertex for TextVertex2D{
     }
 }
 
-/// Типаж для создания объектов, которые зависят от буферов вершин и индексов.
-/// A trait for creating objects depend on vertex and index buffers.
-/// 
-/// The crate's graphics engine uses `TexturedVertex2D` and `Vertex2D` for vertices
-/// and `u8` for indices, but you can add your own
-/// and draw objects with `window.draw()`.
-pub trait DependentObject<V:Vertex,I:Sized>{
+pub trait ShapeObject<V:Vertex,I:Sized>{
     type Vertices:AsRef<[V]>;
     type Indices:AsRef<[I]>;
 

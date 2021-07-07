@@ -4,7 +4,7 @@ use crate::{
     // structs
     graphics::{
         TexturedVertex2D,
-        DependentObject,
+        ShapeObject,
         PrimitiveType,
         ElementIndexType,
     },
@@ -45,7 +45,7 @@ impl ImageBase{
     }
 }
 
-impl<'o> DependentObject<TexturedVertex2D,ElementIndexType> for ImageBase{
+impl<'o> ShapeObject<TexturedVertex2D,ElementIndexType> for ImageBase{
     type Vertices=[TexturedVertex2D;4];
     type Indices=[ElementIndexType;0];
 
