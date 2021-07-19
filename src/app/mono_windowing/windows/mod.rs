@@ -30,14 +30,14 @@ pub use cat_engine_basement::{
         quit,
     },
     event::{
-        Event,
+        ProcessEvent,
         WindowEvent,
     },
 };
 
 use std::mem::MaybeUninit;
 
-struct EmptyHandler;
+pub struct EmptyHandler;
 
 impl<S> WindowProcedure<WindowInner<S>> for EmptyHandler{
     fn handle(_:&Window,_:&mut WindowInner<S>,_:WindowEvent){}
@@ -50,6 +50,10 @@ pub struct WindowInner<S>{
 }
 
 impl<S> WindowInner<S>{
+    pub fn graphics_ref(&self)->&Graphics{
+        &self.graphics
+    }
+
     pub fn graphics(&mut self)->&mut Graphics{
         &mut self.graphics
     }
@@ -68,14 +72,15 @@ impl<S> WindowInner<S>{
         self.context.make_current(true)?;
 
         let [width,height]=window.client_size();
-        self.graphics.core().viewport().set([0,0,width as i32,height as i32]);
-        self.graphics.draw_parameters().change_viewport([0f32,0f32,width as f32,height as f32]);
+        unsafe{
+            self.graphics.core().viewport.set([0,0,width as i32,height as i32]);
+        }
+        self.graphics.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
 
         f(window,&mut self.graphics,unsafe{&*self.storage});
 
-        unsafe{cat_engine_basement::graphics::gl::Finish()};
+        self.graphics.core().finish();
         self.context.swap_buffers()?;
-        self.context.make_current(false)?;
         Ok(())
     }
 }
@@ -98,10 +103,14 @@ impl<S:Sized+'static> App<S>{
         let inner=unsafe{inner.assume_init()};
         let mut window_inner:Box<WindowInner<S>>=Box::new(inner);
 
-        let window=Window::new::<EmptyHandler,WindowInner<S>>(&class,attributes.window,window_inner.as_mut()).unwrap();
+        let window=Window::new::<EmptyHandler,WindowInner<S>>(
+            &class,
+            attributes.window,
+            window_inner.as_mut()
+        ).unwrap();
 
         let context=OpenGLRenderContext::new(
-            window.get_context(),
+            &window,
             attributes.render_context
         ).unwrap();
 
@@ -165,7 +174,7 @@ impl<S:Sized+'static> App<S>{
 }
 
 impl<S:Sized+'static> App<S>{
-    pub fn run<F:FnMut(Event,&mut AppControl<S>)>(&mut self,mut event_handler:F){
+    pub fn run<F:FnMut(ProcessEvent,&mut AppControl<S>)>(&mut self,mut event_handler:F){
         let event_loop:&'static mut EventLoop=unsafe{std::mem::transmute(&mut self.event_loop)};
 
         event_loop.run(|event,loop_control|{

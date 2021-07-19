@@ -6,12 +6,14 @@ use cat_engine::{
         WindowInner,
         WindowEvent,
         WindowProcedure,
+        VirtualKeyCode,
         quit,
     },
     graphics::{
         BlendingFunction,
         PrimitiveType,
         TexturedVertex2D,
+        ShapeObject,
     },
     texture::{
         ImageBase,
@@ -26,16 +28,31 @@ impl WindowProcedure<WindowInner<Option<Texture>>> for WindowHandle{
     fn handle(window:&Window,window_inner:&mut WindowInner<Option<Texture>>,event:WindowEvent){
         match event{
             WindowEvent::Redraw=>{
-                window_inner.draw(window,|_window,graphics,texture|{
-                    graphics.clear_colour([1f32;4]);
+                window_inner.context().make_current(true).unwrap_or_else(|_|{quit()});
+                let [width,height]=window.client_size();
+                unsafe{
+                    window_inner.graphics().core().viewport.set([0,0,width as i32,height as i32]);
+                }
+                window_inner.graphics().draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
 
-                    if let Some(texture)=texture.as_ref(){
-                        graphics.draw_stack_textured_object(0,texture.texture_2d());
-                        graphics.draw_stack_textured_object(1,texture.texture_2d());
-                        graphics.draw_stack_textured_object(2,texture.texture_2d());
-                    }
-                }).unwrap_or_else(|_|{quit()});
+                if let Some(texture)=window_inner.storage().as_ref(){
+                    window_inner.graphics_ref().clear_colour([1f32;4]);
+                    window_inner.graphics_ref().draw_stack_textured_object(0,texture.texture_2d());
+                    window_inner.graphics_ref().draw_stack_textured_object(1,texture.texture_2d());
+                    window_inner.graphics_ref().draw_stack_textured_object(2,texture.texture_2d());
+
+                    window_inner.graphics_ref().core().finish();
+                    window_inner.context().swap_buffers().unwrap_or_else(|_|{quit()});
+                }
                 window.redraw();
+            }
+
+            WindowEvent::KeyPress(VirtualKeyCode::A)=>{
+                let image_base=ImageBase::new(
+                    [400f32,100f32,100f32,100f32], // position and size
+                    [0.5,0.5,0.5,1.0] // colour filter
+                );
+                window_inner.graphics().write_stack_textured_object_vertices(1,&image_base.vertices());
             }
 
             WindowEvent::CloseRequest=>quit(),

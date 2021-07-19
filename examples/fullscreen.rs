@@ -27,12 +27,12 @@ impl WindowProcedure<WindowInner<Option<Texture>>> for WindowHandle{
         match event{
             WindowEvent::Redraw=>{
                 window_inner.draw(window,|window,graphics,texture|{
-                    graphics.clear_colour();
+                    graphics.clear_colour([1f32;4]);
 
                     if let Some(texture)=texture.as_ref(){
                         let [width,height]=window.client_size();
 
-                        graphics.draw_parameters().change_shift([(width/2) as f32-200f32,(height/2) as f32-200f32]);
+                        graphics.draw_parameters().set_shift([(width/2) as f32-200f32,(height/2) as f32-200f32]);
                         graphics.draw_stack_textured_object(0,texture.texture_2d());
                     }
                 }).unwrap_or_else(|_|{quit()});
@@ -54,18 +54,15 @@ fn main(){
     let mut app=App::new::<WindowHandle>(app_attributes,texture);
 
     let graphics=app.window_graphics_mut();
-    graphics.core().set_clear_colour([1f32;4]);
 
-    graphics.draw_parameters().change_enable(DrawMode::Shift);
+    graphics.draw_parameters().enable(DrawMode::Shift);
 
-    { // Setting blending
-        let blending=graphics.core().blending();
-        blending.enable();
-        blending.set_function(
-            BlendingFunction::SourceAlpha,
-            BlendingFunction::OneMinusSourceAlpha
-        );
-    }
+    // Setting blending
+    graphics.core().blending.enable();
+    graphics.core().blending.set_function(
+        BlendingFunction::SourceAlpha,
+        BlendingFunction::OneMinusSourceAlpha
+    );
 
     let image_base=ImageBase::new(
         [0f32,0f32,400f32,400f32], // position and size

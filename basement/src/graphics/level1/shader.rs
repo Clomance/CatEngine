@@ -1,6 +1,6 @@
-use super::level0::{
-    Shader,
-    ShaderType
+use crate::graphics::{
+    core::shader::ShaderType,
+    level0::Shader,
 };
 
 pub struct VertexShader{

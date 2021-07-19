@@ -3,17 +3,6 @@ use crate::{
     Colour,
 };
 
-use cat_engine_basement::graphics::level1::Texture2D;
-
-pub use cat_engine_basement::graphics::{
-    GraphicsCore,
-    BlendingEquation,
-    BlendingFunction,
-    Blending,
-    Viewport,
-    PrimitiveType,
-};
-
 #[cfg(feature="text_graphics")]
 use crate::text::{
     Scale,
@@ -68,12 +57,18 @@ pub use draw_parameters::{
     DrawParameters,
 };
 
-use cat_engine_basement::graphics::gl::{
-    COLOR_BUFFER_BIT,
-    STENCIL_BUFFER_BIT,
-    DEPTH_BUFFER_BIT,
-    // functions
-    Clear,
+use cat_engine_basement::graphics::level1::Texture2D;
+
+use cat_engine_basement::graphics::GCore;
+
+pub use cat_engine_basement::graphics::core::{
+    GraphicsCore,
+    ClearMask,
+    drawing::PrimitiveType,
+    blending::{
+        BlendingEquation,
+        BlendingFunction,
+    },
 };
 
 pub type FrameIDType=u16;
@@ -84,7 +79,6 @@ const frame_size:usize=3;
 const minimal_frames:usize=3;
 
 pub struct Graphics{
-    graphics_core:GraphicsCore,
     graphics_2d:Graphics2D,
 }
 
@@ -92,7 +86,6 @@ impl Graphics{
     #[cfg(target_os="windows")]
     pub fn new(attributes:Graphics2DAttributes)->Graphics{
         Self{
-            graphics_core:GraphicsCore{},
             graphics_2d:Graphics2D::new(attributes),
         }
     }
@@ -106,7 +99,9 @@ impl Graphics{
     }
 
     pub fn core(&self)->&GraphicsCore{
-        &self.graphics_core
+        unsafe{
+            &GCore
+        }
     }
 
     pub fn draw_parameters(&mut self)->&mut DrawParameters{
@@ -115,25 +110,10 @@ impl Graphics{
 }
 
 impl Graphics{
-    pub unsafe fn clear(&self,mask:u32){
-        Clear(mask)
-    }
-
-    pub fn clear_colour(&self){
+    pub fn clear_colour(&self,colour:Colour){
         unsafe{
-            Clear(COLOR_BUFFER_BIT);
-        }
-    }
-
-    pub fn clear_stencil(&self){
-        unsafe{
-            Clear(STENCIL_BUFFER_BIT);
-        }
-    }
-
-    pub fn clear_depth(&self){
-        unsafe{
-            Clear(DEPTH_BUFFER_BIT)
+            GCore.set_clear_colour(colour);
+            GCore.clear(ClearMask::Colour)
         }
     }
 }

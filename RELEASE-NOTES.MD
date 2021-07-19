@@ -1,10 +1,11 @@
-# 1.0.0 - pre-alpha, very-very-raw
+# 1.0.0 - pre-alpha
 
 ### Whole engine redesign.
  - Raw OpenGL functions.
  - Raw wrappers.
  - New object allocation systems: heap- and stack-type.
- - New app working system.
+ - A new windowing system.
+ - A new app working system.
  - A basement with secrets and cats.
  - More unaccomplished features.
  - More language mistakes :)

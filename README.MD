@@ -2,7 +2,7 @@
 
 # CatEngine [![Crate badge]][crates.io] [![Doc badge]][doc.rs]
 
-[Crate badge]:http://meritbadge.herokuapp.com/cat_engine
+[Crate badge]:https://img.shields.io/crates/v/cat_engine.svg
 [crates.io]:https://crates.io/crates/cat_engine
 
 [Doc badge]:https://img.shields.io/badge/documentation-doc.rs-green
@@ -11,7 +11,7 @@
 
 A 2D graphics engine with audio support for Windows.
 
-Compatible with OpenGL 3.3 and above.
+Compatible with OpenGL 3.3 and greater.
 
 #### Features
 

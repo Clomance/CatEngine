@@ -1,8 +1,8 @@
 pub mod math;
 
-/// Сырой указатель,
-/// который можно передавать
-/// по потокам.
+/// A raw pointer that can be sent between threads.
+/// 
+/// Сырой указатель, который можно передавать по потокам.
 #[derive(Clone)]
 pub struct SyncRawPtr<T>{
     ptr:*const T,
@@ -21,9 +21,9 @@ impl<T> SyncRawPtr<T>{
         }
     }
 
-    pub fn offset(&mut self,value:isize){
+    pub fn offset(&mut self,offset:isize){
         unsafe{
-            self.ptr=self.ptr.offset(value);
+            self.ptr=self.ptr.offset(offset);
         }
     }
 }
@@ -39,10 +39,9 @@ impl<T> AsRef<T> for SyncRawPtr<T>{
     }
 }
 
-/// Сырой указатель,
-/// который можно передавать
-/// по потокам и который позволяет
-/// менять данные.
+/// A raw mutable pointer that can be sent between threads.
+/// 
+/// Сырой изменяемый указатель, который можно передавать по потокам.
 #[derive(Clone)]
 pub struct SyncRawMutPtr<T>{
     ptr:*mut T,
@@ -62,9 +61,9 @@ impl<T> SyncRawMutPtr<T>{
         }
     }
 
-    pub fn offset(&mut self,value:isize){
+    pub fn offset(&mut self,offset:isize){
         unsafe{
-            self.ptr=self.ptr.offset(value);
+            self.ptr=self.ptr.offset(offset);
         }
     }
 }

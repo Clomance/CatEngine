@@ -1,8 +1,10 @@
-use super::level0::{
-    Buffer,
-    BoundBuffer,
-    BufferTarget,
-    BufferUsage
+use crate::graphics::{
+    core::buffer::{
+        BufferTarget,
+        BufferIndexedTarget,
+        BufferUsage,
+    },
+    level0::Buffer,
 };
 
 pub struct VertexBuffer<V:Sized>{
@@ -11,9 +13,9 @@ pub struct VertexBuffer<V:Sized>{
 
 impl<V:Sized> VertexBuffer<V>{
     #[inline(always)]
-    pub fn initialize()->VertexBuffer<V>{
+    pub fn initiate()->VertexBuffer<V>{
         Self{
-            buffer:Buffer::initialize(),
+            buffer:Buffer::initiate(),
         }
     }
 
@@ -27,10 +29,10 @@ impl<V:Sized> VertexBuffer<V>{
     }
 
     #[inline(always)]
-    pub fn empty(size:usize,usage:BufferUsage)->VertexBuffer<V>{
+    pub fn empty(size:isize,usage:BufferUsage)->VertexBuffer<V>{
         unsafe{
             Self{
-                buffer:Buffer::empty(BufferTarget::ArrayBuffer,size as isize,usage),
+                buffer:Buffer::empty(BufferTarget::ArrayBuffer,size,usage),
             }
         }
     }
@@ -44,45 +46,19 @@ impl<V:Sized> VertexBuffer<V>{
     pub fn into_raw(self)->Buffer<V>{
         self.buffer
     }
-}
 
-impl<V:Sized> VertexBuffer<V>{
     #[inline(always)]
-    pub fn bind(&self)->BoundVertexBuffer<V>{
-        unsafe{
-            BoundVertexBuffer{
-                marker:self.buffer.bind(BufferTarget::ArrayBuffer)
-            }
-        }
-    }
-}
-
-pub struct BoundVertexBuffer<'a,V:Sized>{
-    marker:BoundBuffer<'a,V>
-}
-
-impl<'a,V> BoundVertexBuffer<'a,V>{
-    #[inline(always)]
-    pub fn raw(&self)->&BoundBuffer<'a,V>{
-        &self.marker
+    pub fn bind(&self){
+        self.buffer.bind(BufferTarget::ArrayBuffer).unwrap()
     }
 
     #[inline(always)]
-    pub fn into_raw(self)->BoundBuffer<'a,V>{
-        self.marker
-    }
-
-    #[inline(always)]
-    pub fn write(&self,offset:usize,vertices:&[V]){
-        unsafe{
-            self.marker.write(offset as isize,vertices)
-        }
+    pub fn write(&self,offset:isize,vertices:&[V]){
+        self.buffer.write(BufferTarget::ArrayBuffer,offset,vertices).unwrap()
     }
 
     #[inline(always)]
     pub fn rewrite(&self,vertices:&[V],usage:BufferUsage){
-        unsafe{
-            self.marker.rewrite(vertices,usage)
-        }
+        self.buffer.rewrite(BufferTarget::ArrayBuffer,vertices,usage).unwrap()
     }
 }

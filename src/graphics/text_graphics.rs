@@ -12,12 +12,19 @@ use super::{
 };
 
 use cat_engine_basement::graphics::{
+    GCore,
+    core::UNPACK_ALIGNMENT,
+    core::buffer::BufferUsage,
+    core::drawing::PrimitiveType,
+    core::texture::{
+        Texture2DInternalFormat,
+        TextureMagFilter,
+        TextureMinFilter,
+        ImageDataFormat,
+        ImageDataType
+    },
     level0::{
         VertexArray,
-        BufferUsage,
-        TextureInternalFormat,
-        TextureFilter,
-        ImageDataFormat,
     },
     level1::{
         VertexBuffer,
@@ -26,14 +33,6 @@ use cat_engine_basement::graphics::{
         Texture2D,
     },
     level2::Program,
-    gl::{
-        // consts
-        TRIANGLE_STRIP,
-        UNPACK_ALIGNMENT,
-        // functions
-        DrawArrays,
-        PixelStorei,
-    },
 };
 
 
@@ -66,19 +65,18 @@ impl TextGraphics{
         program.bind_uniform_block("DrawParameters",0u32);
 
         let vertex_buffer=VertexBuffer::<TextVertex2D>::empty(4,BufferUsage::DynamicDraw);
+        let vertex_array=VertexArray::<TextVertex2D>::new(vertex_buffer.raw());
 
         let texture=Texture2D::empty(
-            TextureInternalFormat::R_U8,
-            TextureFilter::Linear,
-            TextureFilter::Linear,
+            Texture2DInternalFormat::R8,
+            TextureMagFilter::Linear,
+            TextureMinFilter::Linear,
             glyph_texture_size
         );
-        
 
         Self{
             vertex_buffer,
-
-            vertex_array:VertexArray::<TextVertex2D>::new(),
+            vertex_array,
 
             glyph_image_builder:UnsafeCell::new(
                 GlyphImageBuilder::new([
@@ -100,13 +98,13 @@ impl TextGraphics{
 
 impl TextGraphics{
     fn load_vertices(&self,vertices:&[TextVertex2D;4]){
-        self.vertex_buffer.bind().write(0,vertices);
+        self.vertex_buffer.write(0,vertices);
     }
 
     pub fn load_glyph_image(&self,size:[u32;2],image:&[u8]){
-        unsafe{PixelStorei(UNPACK_ALIGNMENT,1)}
-        self.texture.bind().write_image([0u32;2],size,ImageDataFormat::R_U8,image);
-        unsafe{PixelStorei(UNPACK_ALIGNMENT,4)}
+        unsafe{GCore.set_pixel_storage_modei(UNPACK_ALIGNMENT,1)}
+        self.texture.write_image([0,0,size[0] as i32,size[1] as i32],ImageDataFormat::Red,ImageDataType::U8,image);
+        unsafe{GCore.set_pixel_storage_modei(UNPACK_ALIGNMENT,4)}
     }
 
     /// [offset_x,offset_y,width,height]
@@ -179,13 +177,24 @@ impl TextGraphics{
         self.vertex_buffer.bind();
         self.texture.bind();
 
+        let _=self.draw.set_uniform_value("viewport",draw_parameters.viewport());
+
+        let _=self.draw.set_uniform_value("draw_mode",draw_parameters.flag());
+
+        if let Some(shift)=draw_parameters.shift(){
+            let _=self.draw.set_uniform_value("vertex_shift",shift);
+        }
+
+        if let Some(rotation)=draw_parameters.rotation(){
+            let _=self.draw.set_uniform_value("vertex_rotation",rotation);
+        }
+
         let _=self.draw.set_uniform_value("glyph_colour",colour);
-        draw_parameters.bind_uniform();
 
         unsafe{
-            DrawArrays(TRIANGLE_STRIP,0,4);
+            GCore.drawing.draw_arrays(0,4,PrimitiveType::TriangleStrip)
         }
-        VertexArray::<TextVertex2D>::unbind();
+        self.vertex_array.unbind();
     }
 
     pub fn draw_glyph(
@@ -216,13 +225,23 @@ impl TextGraphics{
         self.vertex_buffer.bind();
         glyph_texture.bind();
 
+        let _=self.draw.set_uniform_value("viewport",draw_parameters.viewport());
+
+        let _=self.draw.set_uniform_value("draw_mode",draw_parameters.flag());
+
+        if let Some(shift)=draw_parameters.shift(){
+            let _=self.draw.set_uniform_value("vertex_shift",shift);
+        }
+
+        if let Some(rotation)=draw_parameters.rotation(){
+            let _=self.draw.set_uniform_value("vertex_rotation",rotation);
+        }
+
         let _=self.draw.set_uniform_value("glyph_colour",colour);
 
-        draw_parameters.bind_uniform();
-
         unsafe{
-            DrawArrays(TRIANGLE_STRIP,0,4);
+            GCore.drawing.draw_arrays(0,4,PrimitiveType::TriangleStrip)
         }
-        VertexArray::<TextVertex2D>::unbind();
+        self.vertex_array.unbind();
     }
 }

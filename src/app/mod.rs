@@ -12,7 +12,7 @@ pub use mono_windowing::windows::{
     WindowAttributes,
     WindowClassAttributes,
     WindowInner,
-    Event,
+    ProcessEvent,
     WindowEvent,
     VirtualKeyCode,
     EventLoopAttributes,
@@ -20,5 +20,6 @@ pub use mono_windowing::windows::{
     UpdateInterval,
     WinError,
     WindowProcedure,
+    EmptyHandler,
     quit,
 };

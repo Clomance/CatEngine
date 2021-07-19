@@ -25,11 +25,10 @@ impl WindowProcedure<WindowInner<Option<CachedFont>>> for WindowHandle{
         match event{
             WindowEvent::Redraw=>{
                 window_inner.draw(window,|_,graphics,font|{
-                    graphics.clear_colour();
+                    graphics.clear_colour([0f32,0f32,0f32,1f32]);
 
                     // read here (line 83)
                     if let Some(font)=font.as_ref(){
-
                         graphics.draw_char('a',[1f32;4],[100f32;2],&mut 0f32,Scale::new(1f32,1f32),font);
                         graphics.draw_char('Р',[1f32;4],[150f32,250f32],&mut 0f32,Scale::new(0.1f32,0.1f32),font);
                         graphics.draw_char('B',[1f32;4],[350f32,250f32],&mut 0f32,Scale::new(1f32,1f32),font);
@@ -52,16 +51,13 @@ fn main(){
     let mut app=App::new::<WindowHandle>(app_attributes,font);
 
     let graphics=app.window_graphics_mut();
-    graphics.core().set_clear_colour([0f32,0f32,0f32,1f32]);
 
-    { // Setting blending
-        let blending=graphics.core().blending();
-        blending.enable();
-        blending.set_function(
-            BlendingFunction::SourceAlpha,
-            BlendingFunction::OneMinusSourceAlpha
-        );
-    }
+    // Setting blending
+    graphics.core().blending.enable();
+    graphics.core().blending.set_function(
+        BlendingFunction::SourceAlpha,
+        BlendingFunction::OneMinusSourceAlpha
+    );
 
     let font_owner=FontOwner::load("resources/font1").unwrap();
     *app.app_storage_mut()=Some(

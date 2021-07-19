@@ -1,26 +1,23 @@
-use super::level0::{
-    Buffer,
-    BoundBuffer,
-    BufferTarget,
-    BufferUsage
+use crate::graphics::{
+    core::buffer::{
+        BufferTarget,
+        BufferIndexedTarget,
+        BufferUsage,
+    },
+    level0::Buffer,
 };
 
-use gl::{
-    MAX_UNIFORM_BUFFER_BINDINGS
-};
+use core::mem::size_of;
 
-/// Since 3.1.
-/// 
-/// Not fully supported yet.
 pub struct UniformBuffer<U:Sized>{
     buffer:Buffer<U>,
 }
 
 impl<U:Sized> UniformBuffer<U>{
     #[inline(always)]
-    pub fn initialize()->UniformBuffer<U>{
+    pub fn initiate()->UniformBuffer<U>{
         Self{
-            buffer:Buffer::initialize(),
+            buffer:Buffer::initiate(),
         }
     }
 
@@ -28,7 +25,7 @@ impl<U:Sized> UniformBuffer<U>{
     pub fn new(uniform:&U,usage:BufferUsage)->UniformBuffer<U>{
         unsafe{
             Self{
-                buffer:Buffer::new(BufferTarget::UniformBuffer,uniform,usage),
+                buffer:Buffer::new_raw(BufferTarget::UniformBuffer,size_of::<U>() as isize,uniform,usage),
             }
         }
     }
@@ -51,63 +48,30 @@ impl<U:Sized> UniformBuffer<U>{
     pub fn into_raw(self)->Buffer<U>{
         self.buffer
     }
-}
 
-impl<U:Sized> UniformBuffer<U>{
     #[inline(always)]
-    pub fn bind(&self)->BoundUniformBuffer<U>{
-        unsafe{
-            BoundUniformBuffer{
-                marker:self.buffer.bind(BufferTarget::UniformBuffer)
-            }
-        }
+    pub fn bind(&self){
+        self.buffer.bind(BufferTarget::UniformBuffer).unwrap()
     }
 
+    #[inline(always)]
     pub fn bind_base(&self,binding_index:u32){
-        unsafe{
-            if binding_index<MAX_UNIFORM_BUFFER_BINDINGS{
-                self.buffer.bind_base(BufferTarget::UniformBuffer,binding_index)
-            }
-        }
+        self.buffer.bind_base(BufferIndexedTarget::UniformBuffer,binding_index).unwrap()
     }
 
-    // offset, size - bytes
+    #[inline(always)]
     pub fn bind_range(&self,binding_index:u32,offset:isize,size:isize){
-        unsafe{
-            if binding_index<MAX_UNIFORM_BUFFER_BINDINGS{
-                self.buffer.bind_range(BufferTarget::UniformBuffer,binding_index,offset,size)
-            }
-        }
-    }
-}
-
-pub struct BoundUniformBuffer<'a,U:Sized>{
-    marker:BoundBuffer<'a,U>
-}
-
-impl<'a,U:Sized> BoundUniformBuffer<'a,U>{
-    #[inline(always)]
-    pub fn raw(&self)->&BoundBuffer<'a,U>{
-        &self.marker
-    }
-
-    #[inline(always)]
-    pub fn into_raw(self)->BoundBuffer<'a,U>{
-        self.marker
+        self.buffer.bind_range(BufferIndexedTarget::UniformBuffer,binding_index,offset,size).unwrap()
     }
 
     #[inline(always)]
     pub fn write(&self,uniform:&U){
-        unsafe{
-            self.marker.write(0,uniform)
-        }
+        self.buffer.write_raw(BufferTarget::UniformBuffer,0,size_of::<U>() as isize,uniform).unwrap()
     }
 
     #[inline(always)]
     pub fn rewrite(&self,uniform:&U,usage:BufferUsage){
-        unsafe{
-            self.marker.rewrite(uniform,usage)
-        }
+        self.buffer.rewrite_raw(BufferTarget::UniformBuffer,size_of::<U>() as isize,uniform,usage).unwrap()
     }
 }
 

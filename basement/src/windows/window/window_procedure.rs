@@ -36,6 +36,7 @@ use winapi::{
             BeginPaint,
             EndPaint,
             SetWindowLongPtrW,
+            PostQuitMessage,
             // constants
             MAPVK_VSC_TO_VK,
             WHEEL_DELTA,
@@ -338,25 +339,37 @@ pub unsafe extern "system" fn window_procedure<W:WindowProcedure<A>,A>(
     l_param:LPARAM,
 )->LRESULT{
     let window:&Window=transmute(&handle);
-    let args=&mut *(window.get_user_data() as *mut A);
 
-    // Запрос на перерисовку содержимого окна
-    if message==WM_PAINT{
-        let mut paint=std::mem::zeroed();
-        let _=BeginPaint(handle,&mut paint);
+    let result=std::panic::catch_unwind(||{
+        let args=&mut *(window.get_user_data() as *mut A);
 
-        W::handle(window,args,WindowEvent::Redraw);
+        // Запрос на перерисовку содержимого окна
+        if message==WM_PAINT{
+            let mut paint=std::mem::zeroed();
+            let _=BeginPaint(handle,&mut paint);
+    
+            W::handle(window,args,WindowEvent::Redraw);
+    
+            // EndPaint releases the display device context that BeginPaint retrieved.
+            EndPaint(handle,&paint);
+            return 0
+        }
+    
+        match wrap_event(window,message,w_param,l_param){
+            EventWrapResult::None(lresult)=>lresult,
+            EventWrapResult::Event(window_event,lresult)=>{
+                W::handle(window,args,window_event);
+                lresult
+            }
+        }
+    });
 
-        // EndPaint releases the display device context that BeginPaint retrieved.
-        EndPaint(handle,&paint);
-        return 0
-    }
-
-    match wrap_event(window,message,w_param,l_param){
-        EventWrapResult::None(lresult)=>lresult,
-        EventWrapResult::Event(window_event,lresult)=>{
-            W::handle(window,args,window_event);
-            lresult
+    match result{
+        Ok(result)=>result,
+        Err(e)=>{
+            println!("{:?}",e);
+            PostQuitMessage(0);
+            DefWindowProcW(handle,message,w_param,l_param)
         }
     }
 }

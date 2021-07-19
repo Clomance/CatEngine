@@ -31,6 +31,7 @@ use super::TextureGraphics;
 #[cfg(feature="text_graphics")]
 use super::TextGraphics;
 
+#[cfg(feature="text_graphics")]
 use ttf_parser::{
     GlyphId,
     Face
@@ -63,6 +64,7 @@ pub struct Graphics2DAttributes{
     #[cfg(feature="texture_graphics")]
     pub texture_heap_objects:ObjectIDType,
 
+    #[cfg(feature="text_graphics")]
     pub glyph_texture_size:[u32;2]
 }
 
@@ -136,6 +138,8 @@ impl Graphics2D{
         #[cfg(feature="text_graphics")]
         let text=TextGraphics::new(attributes.glyph_texture_size);
 
+        let draw_parameters=DrawParameters::new();
+
         Self{
             #[cfg(feature="simple_graphics")]
             simple,
@@ -143,7 +147,7 @@ impl Graphics2D{
             texture,
             #[cfg(feature="text_graphics")]
             text,
-            draw_parameters:DrawParameters::new(),
+            draw_parameters,
         }
     }
 

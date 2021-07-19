@@ -17,12 +17,12 @@ use super::{
 };
 
 use cat_engine_basement::graphics::{
-    Drawing,
-    PrimitiveType,
-    level0::{
-        VertexArray,
-        BufferUsage
+    GCore,
+    core::{
+        drawing::PrimitiveType,
+        buffer::BufferUsage,
     },
+    level0::VertexArray,
     level1::{
         VertexBuffer,
         IndexBuffer,
@@ -31,16 +31,6 @@ use cat_engine_basement::graphics::{
         Texture2D,
     },
     level2::Program,
-
-    gl::{
-        // constants
-        UNSIGNED_SHORT,
-        // functions
-        DrawArrays,
-        DrawElements,
-        MultiDrawElements,
-        MultiDrawArrays,
-    }
 };
 
 pub struct TextureGraphics{
@@ -67,7 +57,6 @@ impl TextureGraphics{
         let fragment_shader=FragmentShader::new(&include_str!("shaders/texture/fragment_shader.glsl")).unwrap();
 
         let program=Program::new(&vertex_shader,&fragment_shader).unwrap();
-        program.bind_uniform_block("DrawParameters",0u32);
 
         let heap_vertex_buffer_size=heap_vertex_frames as ElementIndexType*frame_size as ElementIndexType;
 
@@ -76,10 +65,14 @@ impl TextureGraphics{
         let vertex_buffer_size=heap_vertex_buffer_size+stack_vertices;
         let index_buffer_size=heap_index_buffer_size+stack_indices as ElementIndexType;
 
+        let vertex_buffer=VertexBuffer::empty(vertex_buffer_size as isize,BufferUsage::DynamicDraw);
+        let index_buffer=IndexBuffer::empty(index_buffer_size as isize,BufferUsage::DynamicDraw);
+        let vertex_array=VertexArray::new(vertex_buffer.raw());
+
         Self{
-            vertex_buffer:VertexBuffer::empty(vertex_buffer_size as usize,BufferUsage::DynamicDraw),
-            index_buffer:IndexBuffer::empty(index_buffer_size as usize,BufferUsage::DynamicDraw),
-            vertex_array:VertexArray::new(),
+            vertex_buffer,
+            index_buffer,
+            vertex_array,
 
             object_allocation:ObjectAllocation::new(
                 stack_vertices,
@@ -140,27 +133,39 @@ impl TextureGraphics{
         if let Some(object)=self.object_allocation.heap_system.get_drawable_object(index){
             self.draw.bind();
 
+            let _=self.draw.set_uniform_value("viewport",draw_parameters.viewport());
+
+            let _=self.draw.set_uniform_value("draw_mode",draw_parameters.flag());
+
+            if let Some(shift)=draw_parameters.shift(){
+                let _=self.draw.set_uniform_value("vertex_shift",shift);
+            }
+
+            if let Some(rotation)=draw_parameters.rotation(){
+                let _=self.draw.set_uniform_value("vertex_rotation",rotation);
+            }
+
             self.vertex_array.bind();
             self.index_buffer.bind();
             self.vertex_buffer.bind();
 
-            draw_parameters.bind_uniform();
-
             texture.bind();
 
             match object.draw_type{
-                HeapDrawType::Vertices(first)=>
-                    Drawing.multi_draw_arrays(&first,&object.count,object.primitive_type),
+                HeapDrawType::Vertices(first)=>unsafe{
+                    GCore.drawing.multi_draw_arrays(&first,&object.count,object.primitive_type)
+                }
 
-                HeapDrawType::Indices(indices)=>
-                    Drawing.multi_draw_elements_typed::<ElementIndexType>(
+                HeapDrawType::Indices(indices)=>unsafe{
+                   GCore.drawing.multi_draw_elements_typed::<ElementIndexType>(
                         &indices,
                         &object.count,
                         object.primitive_type
-                    ),
+                    )
+                }
             }
 
-            VertexArray::<TexturedVertex2D>::unbind();
+            self.vertex_array.unbind();
         }
     }
 }
@@ -215,24 +220,36 @@ impl TextureGraphics{
             self.vertex_buffer.bind();
             self.index_buffer.bind();
 
-            draw_parameters.bind_uniform();
+            let _=self.draw.set_uniform_value("viewport",draw_parameters.viewport());
+
+            let _=self.draw.set_uniform_value("draw_mode",draw_parameters.flag());
+
+            if let Some(shift)=draw_parameters.shift(){
+                let _=self.draw.set_uniform_value("vertex_shift",shift);
+            }
+
+            if let Some(rotation)=draw_parameters.rotation(){
+                let _=self.draw.set_uniform_value("vertex_rotation",rotation);
+            }
 
             texture.bind();
 
             let drawable=object.drawable();
             match drawable.draw_type{
-                StackDrawType::Vertices(first)=>
-                    Drawing.draw_arrays(first,drawable.count,object.primitive_type),
+                StackDrawType::Vertices(first)=>unsafe{
+                    GCore.drawing.draw_arrays(first,drawable.count,object.primitive_type)
+                }
 
-                StackDrawType::Indices(first)=>
-                    Drawing.draw_elements_typed::<ElementIndexType>(
+                StackDrawType::Indices(first)=>unsafe{
+                    GCore.drawing.draw_elements_typed::<ElementIndexType>(
                         first,
                         drawable.count,
                         object.primitive_type
-                    ),
+                    )
+                }
             }
 
-            VertexArray::<TexturedVertex2D>::unbind();
+            self.vertex_array.unbind();
         }
     }
 }

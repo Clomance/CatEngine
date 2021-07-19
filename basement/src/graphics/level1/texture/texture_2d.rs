@@ -1,17 +1,18 @@
-use super::level0::{
-    Texture,
-    BoundTexture,
-    TextureFilter,
-    TextureInternalFormat,
-    ImageDataFormat,
-};
-
-use gl::{
-    // consts
-    TEXTURE_2D,
-
-    // functions
-    TexSubImage2D,
+use crate::graphics::{
+    core::texture::{
+        TextureBindTarget,
+        Texture2DRewriteTarget,
+        Texture2DWriteTarget,
+        TextureMagFilter,
+        TextureMinFilter,
+        Texture2DInternalFormat,
+        ImageDataFormat,
+        ImageDataType,
+    },
+    level0::{
+        Texture,
+        // BoundTexture,
+    },
 };
 
 pub struct Texture2D{
@@ -19,19 +20,20 @@ pub struct Texture2D{
 }
 
 impl Texture2D{
-    pub fn initialize()->Texture2D{
+    pub fn initiate()->Texture2D{
         Self{
-            texture:Texture::initialize(),
+            texture:Texture::initiate(),
         }
     }
 
     /// mag for scaling upwards, min for scaling downwards
     pub fn new(
-        texture_internal_format:TextureInternalFormat,
-        mag:TextureFilter,
-        min:TextureFilter,
+        texture_internal_format:Texture2DInternalFormat,
+        mag:TextureMagFilter,
+        min:TextureMinFilter,
         size:[u32;2],
         image_data_format:ImageDataFormat,
+        image_data_type:ImageDataType,
         data:&[u8]
     )->Texture2D{
         let texture=Texture::new_2d(
@@ -40,6 +42,7 @@ impl Texture2D{
             min,
             size,
             image_data_format,
+            image_data_type,
             data
         );
 
@@ -49,17 +52,18 @@ impl Texture2D{
     }
 
     pub fn empty(
-        texture_internal_format:TextureInternalFormat,
-        mag:TextureFilter,
-        min:TextureFilter,
+        texture_internal_format:Texture2DInternalFormat,
+        mag:TextureMagFilter,
+        min:TextureMinFilter,
         size:[u32;2]
     )->Texture2D{
-        let texture=Texture::new_2d(
+        let texture=Texture::new_2d::<()>(
             texture_internal_format,
             mag,
             min,
             size,
-            ImageDataFormat::R_U8,
+            ImageDataFormat::Red,
+            ImageDataType::U8,
             &[]
         );
 
@@ -74,62 +78,46 @@ impl Texture2D{
         }
     }
 
-    pub fn texture(&self)->&Texture{
+    pub fn as_raw(&self)->&Texture{
         &self.texture
     }
 
-    pub fn bind<'a>(&'a self)->BoundTexture2D<'a>{
-        BoundTexture2D::raw(self.texture.bind(TEXTURE_2D))
-    }
-}
-
-
-pub struct BoundTexture2D<'a>{
-    marker:BoundTexture<'a>,
-}
-
-impl<'a> BoundTexture2D<'a>{
-    pub fn raw(bound_texture:BoundTexture<'a>)->BoundTexture2D<'a>{
-        Self{
-            marker:bound_texture
-        }
+    pub fn bind(&self){
+        self.texture.bind(TextureBindTarget::Texture2D)
     }
 
     pub fn rewrite_image(
         &self,
-        texture_internal_format:TextureInternalFormat,
+        texture_internal_format:Texture2DInternalFormat,
         size:[u32;2],
         image_data_format:ImageDataFormat,
+        image_data_type:ImageDataType,
         data:&[u8]
     ){
-        self.marker.rewrite_image_2d(
+        self.texture.rewrite_image_2d(
+            Texture2DRewriteTarget::Texture2D,
             texture_internal_format,
             size,
             image_data_format,
+            image_data_type,
             data
         )
     }
 
-    pub fn write_image(&self,offset:[u32;2],size:[u32;2],image_data_format:ImageDataFormat,data:&[u8]){
-        unsafe{
-            let data_ref=if data.len()!=0{
-                (data as *const [u8]) as *const core::ffi::c_void
-            }
-            else{
-                0 as *const core::ffi::c_void
-            };
-            let [image_type,image_format]=image_data_format.as_gl_enums();
-            TexSubImage2D(
-                self.marker.target(),
-                0,
-                offset[0] as i32,
-                offset[1] as i32,
-                size[0] as i32,
-                size[1] as i32,
-                image_type,
-                image_format,
-                data_ref
-            );
-        }
+
+    pub fn write_image(
+        &self,
+        [x,y,width,height]:[i32;4],
+        image_data_format:ImageDataFormat,
+        image_data_type:ImageDataType,
+        data:&[u8]
+    ){
+        self.texture.write_image_2d(
+            Texture2DWriteTarget::Texture2D,
+            [x,y,width,height],
+            image_data_format,
+            image_data_type,
+            data
+        )
     }
 }

@@ -11,7 +11,7 @@ use crate::{
 };
 
 use cat_engine_basement::graphics::{
-    PrimitiveType,
+    core::drawing::PrimitiveType,
     level0::Vertex,
     level1::{
         VertexBuffer,
@@ -26,9 +26,13 @@ use std::{
 };
 
 pub struct HeapObject{
+    /// Номера блоков с вершинами
     pub vertex_frames:Vec<FrameIDType>,
+    /// Размер последнего блока (если ноль, то он полный)
     pub last_vertex_frame_size:u8,
+    /// Номера блоков с индексами
     pub index_frames:Vec<FrameIDType>,
+    /// Размер последнего блока (если ноль, то он полный)
     pub last_index_frame_size:u8,
     pub primitive_type:PrimitiveType,
 }
@@ -113,7 +117,7 @@ pub struct HeapSystem<V:Vertex>{
 }
 
 impl<V:Vertex> HeapSystem<V>{
-    /// One frame = three elements.
+    /// Один блок равен трём элементам.
     pub fn new(
         vertex_frames:FrameIDType,
         index_frames:FrameIDType,
@@ -199,15 +203,13 @@ impl<V:Vertex> HeapSystem<V>{
 
                 // Загрузка вершин
                 {
-                    // Привязка буфера вершин
-                    let bound_vertex_buffer=vertex_buffer.bind();
                     for c in 0..vertex_frames-1{
                         // Добавление блока в объект
                         let vertex_frame_id=self.free_vertex_frames.pop().unwrap();
                         object.vertex_frames.push(vertex_frame_id);
                         // Запись в буфер вершин
                         let offset=vertex_frame_id as usize*frame_size;
-                        bound_vertex_buffer.write(offset,&vertices[c*frame_size..(c+1)*frame_size])
+                        vertex_buffer.write(offset as isize,&vertices[c*frame_size..(c+1)*frame_size])
                     }
                     { // Последний блок вершин
                         let vertex_frame_id=self.free_vertex_frames.pop().unwrap();
@@ -215,14 +217,12 @@ impl<V:Vertex> HeapSystem<V>{
                         // Запись в буфер вершин
                         let offset=vertex_frame_id as usize*frame_size;
                         let c=vertex_frames-1;
-                        bound_vertex_buffer.write(offset,&vertices[c*frame_size..])
+                        vertex_buffer.write(offset as isize,&vertices[c*frame_size..])
                     }
                 }
 
                 // Загрузка индексов
                 if index_frames!=0{
-                    // Привязка буфера индексов
-                    let bound_index_buffer=index_buffer.bind();
                     // Временный блок для новых индексов
                     let mut new_indices:[ElementIndexType;frame_size]=[0;frame_size];
                     
@@ -251,7 +251,7 @@ impl<V:Vertex> HeapSystem<V>{
                         }
                         // Запись в буфер вершин
                         let offset=index_frame_id as usize*frame_size;
-                        bound_index_buffer.write(offset,&new_indices)
+                        index_buffer.write(offset as isize,&new_indices)
                     }
                     // Последний блок индексов
                     let c=index_frames-1;
@@ -278,7 +278,7 @@ impl<V:Vertex> HeapSystem<V>{
                     }
                     // Запись в буфер вершин
                     let offset=index_frame_id as usize*frame_size;
-                    bound_index_buffer.write(offset,&new_indices)
+                    index_buffer.write(offset as isize,&new_indices)
                 }
 
                 Some(object_id)
@@ -330,14 +330,16 @@ impl<V:Vertex> HeapSystem<V>{
         vertices:&[V]
     ){
         if let Some(object)=self.get_object(id){
-            let flag=if object.last_vertex_frame_size==0{
-                vertices.len()==object.vertex_frames.len()*frame_size
+            // Количество вершин объекта
+            let object_vertices_len=if object.last_vertex_frame_size==0{
+                object.vertex_frames.len()*frame_size
             }
             else{
-                vertices.len()-1==object.vertex_frames.len()*frame_size
+                object.last_vertex_frame_size as usize+(object.vertex_frames.len()-1)*frame_size
             };
 
-            if flag{
+            // Проверка количества вписываемых вершин
+            if vertices.len()!=object_vertices_len{
                 return
             }
 
@@ -345,7 +347,7 @@ impl<V:Vertex> HeapSystem<V>{
                 let offset=object.vertex_frames[c] as usize*frame_size;
                 let vertices_slice=&vertices[c*frame_size..(c+1)*frame_size];
 
-                vertex_buffer.bind().write(offset as usize,vertices_slice)
+                vertex_buffer.write(offset as isize,vertices_slice)
             }
         }
     }
@@ -357,14 +359,16 @@ impl<V:Vertex> HeapSystem<V>{
         indices:&[ElementIndexType]
     ){
         if let Some(object)=self.get_object(id){
-            let flag=if object.last_index_frame_size==0{
-                indices.len()==object.index_frames.len()*frame_size
+            // Количество индексов объекта
+            let object_indices_len=if object.last_index_frame_size==0{
+                object.index_frames.len()*frame_size
             }
             else{
-                indices.len()-1==object.index_frames.len()*frame_size
+                object.last_index_frame_size as usize+(object.index_frames.len()-1)*frame_size
             };
 
-            if flag{
+            // Проверка количества вписываемых индексов
+            if indices.len()!=object_indices_len{
                 return
             }
 
@@ -372,7 +376,7 @@ impl<V:Vertex> HeapSystem<V>{
                 let offset=object.index_frames[c] as usize*frame_size;
                 let indices_slice=&indices[c*frame_size..(c+1)*frame_size];
 
-                index_buffer.bind().write(offset as usize,indices_slice)
+                index_buffer.write(offset as isize,indices_slice)
             }
         }
     }

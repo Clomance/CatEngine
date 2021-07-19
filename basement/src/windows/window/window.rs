@@ -130,7 +130,7 @@ pub struct CreateParameters<A>{
     pub window_procedure_args:*mut A,
 }
 
-/// A window with it's context.
+/// A window handle.
 /// 
 /// The window mustn't outlive its class otherwise the class won't be unregistered properly.
 /// 
@@ -600,7 +600,7 @@ pub enum ExtendedWindowStyles{
     ClientEdge=WS_EX_CLIENTEDGE,
 
     /// Paints all descendants of a window in bottom-to-top painting order using double-buffering.
-    /// Bottom-to-top painting order allows a descendent window to have translucency (alpha) and transparency (color-key) effects,
+    /// Bottom-to-top painting order allows a descendent window to have translucency (alpha) and transparency (colour-key) effects,
     /// but only if the descendent window also has the WS_EX_TRANSPARENT bit set.
     /// Double-buffering allows the window and its descendents to be painted without flicker.
     /// This cannot be used if the window has a class style of either CS_OWNDC or CS_CLASSDC.

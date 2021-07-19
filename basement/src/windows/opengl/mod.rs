@@ -1,3 +1,5 @@
+use crate::graphics::GCore;
+
 mod context;
 pub use context::{
     OpenGLRenderContext,
@@ -21,10 +23,6 @@ use winapi::{
     }
 };
 
-use gl::{
-    load_with,
-};
-
 pub struct OpenGraphicsLibrary{
     /// Для некоторых старых функций (начиная с OpenGL 1.1).
     /// Оставил тут для дальнейшей доработки и оптимизаций.
@@ -42,16 +40,15 @@ impl OpenGraphicsLibrary{
         }
     }
 
+    /// Needs the terminating null
     pub fn get_proc_address(&self,name:&str)->PROC{
         get_proc_address(self.module,name)
     }
 
     pub fn load_functions(&self){
-        // Загрузка всех доступных функций
-        load_with(|s|{
-            let name=format!("{}\0",s);
-            get_proc_address(self.module,&name) as *const _
-        });
+        unsafe{
+            GCore.load_functions(self);
+        }
     }
 }
 

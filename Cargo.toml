@@ -74,7 +74,6 @@ text_graphics = ["ttf-parser","ab_glyph_rasterizer"]
 # audio
 [dependencies.cat_audio]
 path = "cat_audio"
-version = "0.0.4"
 optional = true
 
 
@@ -83,9 +82,6 @@ path = "basement"
 
 
 [dependencies]
-# main
-image = "0.23.13"
-
 # text
 ttf-parser = { version = "0.11.0", optional = true }
 ab_glyph_rasterizer = { version = "0.1.4", optional = true }

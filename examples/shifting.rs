@@ -3,7 +3,7 @@ use cat_engine::{
         App,
         AppAttributes,
         Window,
-        Event,
+        ProcessEvent,
         WindowEvent,
         WindowProcedure,
         WindowInner,
@@ -26,18 +26,16 @@ impl WindowProcedure<WindowInner<Option<(Texture,f32)>>> for WindowHandle{
         match event{
             WindowEvent::Redraw=>{
                 window_inner.draw(window,|_,graphics,texture|{
-                    graphics.clear_colour();
+                    graphics.clear_colour([1f32;4]);
 
                     // read here (line 83)
                     if let Some((texture,shift))=texture.as_ref(){
                         graphics.draw_parameters().switch(DrawMode::Shift);
                         graphics.draw_parameters().set_shift([*shift;2]);
-                        // using the `update` function to load all the parameters
-                        graphics.draw_parameters().update();
 
                         graphics.draw_stack_textured_object(0,texture.texture_2d());
 
-                        graphics.draw_parameters().change_switch(DrawMode::Shift);
+                        graphics.draw_parameters().switch(DrawMode::Shift);
                     }
                 }).unwrap_or_else(|_|{quit()});
                 window.redraw();
@@ -57,15 +55,12 @@ fn main(){
 
     let graphics=app.window_graphics_mut();
 
-    { // Setting blending and the clear colour
-        graphics.core().set_clear_colour([1f32;4]);
-        let blending=graphics.core().blending();
-        blending.enable();
-        blending.set_function(
-            BlendingFunction::SourceAlpha,
-            BlendingFunction::OneMinusSourceAlpha
-        );
-    }
+    // Setting blending
+    graphics.core().blending.enable();
+    graphics.core().blending.set_function(
+        BlendingFunction::SourceAlpha,
+        BlendingFunction::OneMinusSourceAlpha
+    );
 
     let image_base=ImageBase::new(
         [0f32,0f32,400f32,400f32], // position and size
@@ -77,7 +72,7 @@ fn main(){
 
     app.run(|event,app_control|{
         match event{
-            Event::Update(_)=>if let Some((_,shift))=app_control.app_storage_mut(){
+            ProcessEvent::Update(_)=>if let Some((_,shift))=app_control.app_storage_mut(){
                 *shift+=1f32
             }
 

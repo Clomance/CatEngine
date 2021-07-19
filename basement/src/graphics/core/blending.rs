@@ -1,55 +1,51 @@
-use crate::graphics::Colour;
-
-use gl::{
-    // constants
-    BLEND,
-    ZERO,
-    ONE,
-    SRC_COLOR,
-    ONE_MINUS_SRC_COLOR,
-    DST_COLOR,
-    ONE_MINUS_DST_COLOR,
-    SRC_ALPHA,
-    ONE_MINUS_SRC_ALPHA,
-    DST_ALPHA,
-    ONE_MINUS_DST_ALPHA,
-    CONSTANT_COLOR,
-    ONE_MINUS_CONSTANT_COLOR,
-    CONSTANT_ALPHA,
-    ONE_MINUS_CONSTANT_ALPHA,
-    SRC_ALPHA_SATURATE,
-    SRC1_COLOR,
-    ONE_MINUS_SRC1_COLOR,
-    SRC1_ALPHA,
-    ONE_MINUS_SRC1_ALPHA,
-
-    FUNC_ADD,
-    FUNC_SUBTRACT,
-    FUNC_REVERSE_SUBTRACT,
-    MIN,
-    MAX,
-
-    BLEND_COLOR,
-    BLEND_SRC_RGB,
-    BLEND_SRC_ALPHA,
-    BLEND_DST_RGB,
-    BLEND_DST_ALPHA,
-    BLEND_EQUATION_RGB,
-    BLEND_EQUATION_ALPHA,
-    // functions
-    Enable,
-    Disable,
-    IsEnabled,
-    GetFloatv,
-    GetIntegerv,
-    BlendFunc,
-    BlendFuncSeparate,
-    BlendColor,
-    BlendEquation,
-    BlendEquationSeparate,
+use crate::{
+    graphics::{
+        Colour,
+        GCore,
+        core::GLCapability,
+    },
+    windows::OpenGraphicsLibrary,
 };
 
-use std::mem::transmute;
+use core::mem::transmute;
+
+// Blending functions
+const ZERO:u32=0;
+const ONE:u32=1;
+const SRC_COLOR:u32=0x0300;
+const ONE_MINUS_SRC_COLOR:u32=0x0301;
+const SRC_ALPHA:u32=0x0302;
+const ONE_MINUS_SRC_ALPHA:u32=0x0303;
+const DST_ALPHA:u32=0x0304;
+const ONE_MINUS_DST_ALPHA:u32=0x0305;
+const DST_COLOR:u32=0x0306;
+const ONE_MINUS_DST_COLOR:u32=0x0307;
+const SRC_ALPHA_SATURATE:u32=0x0308;
+const CONSTANT_COLOR:u32=0x8001;
+const ONE_MINUS_CONSTANT_COLOR:u32=0x8002;
+const CONSTANT_ALPHA:u32=0x8003;
+const ONE_MINUS_CONSTANT_ALPHA:u32=0x8004;
+const SRC1_ALPHA:u32=0x8589;
+const SRC1_COLOR:u32=0x88F9;
+const ONE_MINUS_SRC1_COLOR:u32=0x88FA;
+const ONE_MINUS_SRC1_ALPHA:u32=0x88FB;
+
+// Blending equation
+const FUNC_ADD:u32=0x8006;
+const FUNC_SUBTRACT:u32=0x800A;
+const FUNC_REVERSE_SUBTRACT:u32=0x800B;
+const MIN:u32=0x8007;
+const MAX:u32=0x8008;
+
+// Blending parameters
+const BLEND_COLOR:u32=0x8005;
+const BLEND_DST_ALPHA:u32=0x80CA;
+const BLEND_DST_RGB:u32=0x80C8;
+const BLEND_EQUATION:u32=0x8009;
+const BLEND_EQUATION_ALPHA:u32=0x883D;
+const BLEND_EQUATION_RGB:u32=0x8009;
+const BLEND_SRC_ALPHA:u32=0x80CB;
+const BLEND_SRC_RGB:u32=0x80C9;
 
 /// The `BlendingEquation::MIN` and `BlendingEquation::MAX` equations
 /// do not use the source or destination factors,
@@ -158,13 +154,13 @@ pub enum BlendingFunction{
     /// Multiply the component by the smallest value of `SourceAlpha` and `1 - DestinationAlpha`.
     SourceAlphaSaturate=SRC_ALPHA_SATURATE,
 
-    // /// Not fully supported yet.
+    // not supported
     // Source1Colour=SRC1_COLOR,
-    // /// Not fully supported yet.
+    // 
     // OneMinusSource1Colour=ONE_MINUS_SRC1_COLOR,
-    // /// Not fully supported yet.
+    // 
     // Source1Alpha=SRC1_ALPHA,
-    // /// Not fully supported yet.
+    // 
     // OneMinusSourse1Alpha=ONE_MINUS_SRC1_ALPHA,
 }
 
@@ -179,14 +175,42 @@ pub enum BlendingFunction{
 /// The default blending functions for `Destination` are `BlendingFunction::Zero`.
 /// 
 /// The default blending equations are `BlendingEquation::Addition`.
-pub struct Blending;
+pub struct Blending{
+    glBlendColor:usize,
+    glBlendFunc:usize,
+    glBlendFuncSeparate:usize,
+    glBlendEquation:usize,
+    glBlendEquationSeparate:usize,
+}
+
+impl Blending{
+    pub const fn new()->Blending{
+        Self{
+            glBlendColor:0,
+            glBlendFunc:0,
+            glBlendFuncSeparate:0,
+            glBlendEquation:0,
+            glBlendEquationSeparate:0,
+        }
+    }
+
+    pub fn load(&mut self,library:&OpenGraphicsLibrary){
+        unsafe{
+            self.glBlendColor=transmute(library.get_proc_address("glBlendColor\0"));
+            self.glBlendFunc=transmute(library.get_proc_address("glBlendFunc\0"));
+            self.glBlendFuncSeparate=transmute(library.get_proc_address("glBlendFuncSeparate\0"));
+            self.glBlendEquation=transmute(library.get_proc_address("glBlendEquation\0"));
+            self.glBlendEquationSeparate=transmute(library.get_proc_address("glBlendEquationSeparate\0"));
+        }
+    }
+}
 
 impl Blending{
     /// Enables blending.
     #[inline(always)]
     pub fn enable(&self){
         unsafe{
-            Enable(BLEND)
+            GCore.enable(GLCapability::Blend)
         }
     }
 
@@ -194,7 +218,7 @@ impl Blending{
     #[inline(always)]
     pub fn disable(&self){
         unsafe{
-            Disable(BLEND);
+            GCore.disable(GLCapability::Blend)
         }
     }
 
@@ -202,7 +226,7 @@ impl Blending{
     #[inline(always)]
     pub fn is_enabled(&self)->bool{
         unsafe{
-            transmute(IsEnabled(BLEND))
+            GCore.is_enabled(GLCapability::Blend)
         }
     }
 }
@@ -210,9 +234,9 @@ impl Blending{
 impl Blending{
     /// Sets the blending constant colour.
     #[inline(always)]
-    pub fn set_blending_colour(&self,[r,g,b,a]:Colour){
+    pub fn set_blending_colour(&self,[red,greed,blue,alpha]:Colour){
         unsafe{
-            BlendColor(r,g,b,a)
+            transmute::<usize,fn(f32,f32,f32,f32)>(self.glBlendColor)(red,greed,blue,alpha)
         }
     }
 
@@ -221,7 +245,7 @@ impl Blending{
     pub fn get_blending_colour(&self)->Colour{
         unsafe{
             let mut colour=[0f32;4];
-            GetFloatv(BLEND_COLOR,colour.get_unchecked_mut(0));
+            GCore.get_float_v(BLEND_COLOR,colour.get_unchecked_mut(0));
             colour
         }
     }
@@ -230,7 +254,7 @@ impl Blending{
     #[inline(always)]
     pub fn write_blending_colour(&self,colour:&mut Colour){
         unsafe{
-            GetFloatv(BLEND_COLOR,colour.get_unchecked_mut(0));
+            GCore.get_float_v(BLEND_COLOR,colour.get_unchecked_mut(0))
         }
     }
 }
@@ -240,7 +264,7 @@ impl Blending{
     #[inline(always)]
     pub fn set_function(&self,sourse_factor:BlendingFunction,destination_factor:BlendingFunction){
         unsafe{
-            BlendFunc(sourse_factor as u32,destination_factor as u32)
+            transmute::<usize,fn(BlendingFunction,BlendingFunction)>(self.glBlendFunc)(sourse_factor,destination_factor)
         }
     }
 
@@ -254,11 +278,11 @@ impl Blending{
         destination_factor_alpha:BlendingFunction,
     ){
         unsafe{
-            BlendFuncSeparate(
-                sourse_factor_rgb as u32,
-                destination_factor_rgb as u32,
-                sourse_factor_alpha as u32,
-                destination_factor_alpha as u32
+            transmute::<usize,fn(BlendingFunction,BlendingFunction,BlendingFunction,BlendingFunction)>(self.glBlendFuncSeparate)(
+                sourse_factor_rgb,
+                destination_factor_rgb,
+                sourse_factor_alpha,
+                destination_factor_alpha
             )
         }
     }
@@ -268,7 +292,7 @@ impl Blending{
     pub fn get_function_src_rgb(&self)->BlendingFunction{
         unsafe{
             let mut function=BlendingFunction::One;
-            GetIntegerv(BLEND_SRC_RGB,transmute(&mut function));
+            GCore.get_integer_v(BLEND_SRC_RGB,transmute(&mut function));
             function
         }
     }
@@ -277,7 +301,7 @@ impl Blending{
     #[inline(always)]
     pub fn write_function_src_rgb(&self,function:&mut BlendingFunction){
         unsafe{
-            GetIntegerv(BLEND_SRC_RGB,transmute(function));
+            GCore.get_integer_v(BLEND_SRC_RGB,transmute(function))
         }
     }
 
@@ -286,7 +310,7 @@ impl Blending{
     pub fn get_function_src_alpha(&self)->BlendingFunction{
         unsafe{
             let mut function=BlendingFunction::One;
-            GetIntegerv(BLEND_SRC_ALPHA,transmute(&mut function));
+            GCore.get_integer_v(BLEND_SRC_ALPHA,transmute(&mut function));
             function
         }
     }
@@ -295,7 +319,7 @@ impl Blending{
     #[inline(always)]
     pub fn write_function_src_alpha(&self,function:&mut BlendingFunction){
         unsafe{
-            GetIntegerv(BLEND_SRC_ALPHA,transmute(function));
+            GCore.get_integer_v(BLEND_SRC_ALPHA,transmute(function))
         }
     }
 
@@ -304,7 +328,7 @@ impl Blending{
     pub fn get_function_dst_rgb(&self)->BlendingFunction{
         unsafe{
             let mut function=BlendingFunction::Zero;
-            GetIntegerv(BLEND_DST_RGB,transmute(&mut function));
+            GCore.get_integer_v(BLEND_DST_RGB,transmute(&mut function));
             function
         }
     }
@@ -313,7 +337,7 @@ impl Blending{
     #[inline(always)]
     pub fn write_function_dst_rgb(&self,function:&mut BlendingFunction){
         unsafe{
-            GetIntegerv(BLEND_DST_RGB,transmute(function));
+            GCore.get_integer_v(BLEND_DST_RGB,transmute(function))
         }
     }
 
@@ -322,7 +346,7 @@ impl Blending{
     pub fn get_function_dst_alpha(&self)->BlendingFunction{
         unsafe{
             let mut function=BlendingFunction::Zero;
-            GetIntegerv(BLEND_DST_ALPHA,transmute(&mut function));
+            GCore.get_integer_v(BLEND_DST_ALPHA,transmute(&mut function));
             function
         }
     }
@@ -331,7 +355,7 @@ impl Blending{
     #[inline(always)]
     pub fn write_function_dst_alpha(&self,function:&mut BlendingFunction){
         unsafe{
-            GetIntegerv(BLEND_DST_ALPHA,transmute(function));
+            GCore.get_integer_v(BLEND_DST_ALPHA,transmute(function))
         }
     }
 }
@@ -341,7 +365,7 @@ impl Blending{
     #[inline(always)]
     pub fn set_equation(&self,equation:BlendingEquation){
         unsafe{
-            BlendEquation(equation as u32)
+            transmute::<usize,fn(BlendingEquation)>(self.glBlendEquation)(equation)
         }
     }
 
@@ -353,7 +377,7 @@ impl Blending{
         equation_alpha:BlendingEquation
     ){
         unsafe{
-            BlendEquationSeparate(equation_rgb as u32,equation_alpha as u32)
+            transmute::<usize,fn(BlendingEquation,BlendingEquation)>(self.glBlendEquationSeparate)(equation_rgb,equation_alpha)
         }
     }
 
@@ -362,7 +386,7 @@ impl Blending{
     pub fn get_equation_rbg(&self)->BlendingEquation{
         unsafe{
             let mut equation=BlendingEquation::Addition;
-            GetIntegerv(BLEND_EQUATION_RGB,transmute(&mut equation));
+            GCore.get_integer_v(BLEND_EQUATION_RGB,transmute(&mut equation));
             equation
         }
     }
@@ -371,7 +395,7 @@ impl Blending{
     #[inline(always)]
     pub fn write_equation_rbg(&self,equation:&mut BlendingEquation){
         unsafe{
-            GetIntegerv(BLEND_EQUATION_RGB,transmute(equation));
+            GCore.get_integer_v(BLEND_EQUATION_RGB,transmute(equation))
         }
     }
 
@@ -380,7 +404,7 @@ impl Blending{
     pub fn get_equation_alpha(&self)->BlendingEquation{
         unsafe{
             let mut equation=BlendingEquation::Addition;
-            GetIntegerv(BLEND_EQUATION_ALPHA,transmute(&mut equation));
+            GCore.get_integer_v(BLEND_EQUATION_ALPHA,transmute(&mut equation));
             equation
         }
     }
@@ -389,7 +413,7 @@ impl Blending{
     #[inline(always)]
     pub fn write_equation_alpha(&self,equation:&mut BlendingEquation){
         unsafe{
-            GetIntegerv(BLEND_EQUATION_ALPHA,transmute(equation));
+            GCore.get_integer_v(BLEND_EQUATION_ALPHA,transmute(equation));
         }
     }
 }

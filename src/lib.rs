@@ -22,7 +22,7 @@ pub mod texture;
 #[cfg(feature="text_graphics")]
 pub mod text;
 
-pub use image;
+pub use cat_engine_basement::image;
 
 #[cfg(feature="simple_graphics")]
 pub mod shapes;

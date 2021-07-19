@@ -1,4 +1,7 @@
-use crate::windows::WinError;
+use crate::windows::{
+    Window,
+    WinError,
+};
 
 use winapi::{
     shared::windef::{
@@ -39,7 +42,7 @@ pub struct OpenGLRenderContext{
 
 impl OpenGLRenderContext{
     pub fn new(
-        window_context:HDC,
+        window:&Window,
         attributes:OpenGLRenderContextAttributes
     )->Result<OpenGLRenderContext,WinError>{
         unsafe{
@@ -71,6 +74,8 @@ impl OpenGLRenderContext{
                 dwVisibleMask:0,
                 dwDamageMask:0,
             };
+
+            let window_context=window.get_context();
 
             let pixel_format=ChoosePixelFormat(window_context,&pixel_format_descriptor);
             if pixel_format==0{

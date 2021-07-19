@@ -1,6 +1,13 @@
-pub use super::level1::{
-    VertexShader,
-    FragmentShader,
+pub use crate::graphics::{
+    GCore,
+    core::program::{
+        INVALID_INDEX,
+        ProgramParameter
+    },
+    level1::{
+        VertexShader,
+        FragmentShader,
+    }
 };
 
 use super::{
@@ -13,24 +20,6 @@ use std::{
     mem::MaybeUninit
 };
 
-use gl::{
-    // constants
-    LINK_STATUS,
-    INVALID_INDEX,
-    MAX_UNIFORM_BUFFER_BINDINGS,
-    // functions
-    CreateProgram,
-    AttachShader,
-    LinkProgram,
-    GetProgramiv,
-    GetProgramInfoLog,
-    GetUniformLocation,
-    GetUniformBlockIndex,
-    UniformBlockBinding,
-    UseProgram,
-    DeleteProgram,
-};
-
 pub struct Program{
     id:u32,
 }
@@ -38,20 +27,22 @@ pub struct Program{
 impl Program{
     pub fn new(vertex_shader:&VertexShader,fragment_shader:&FragmentShader)->Result<Program,String>{
         unsafe{
-            let id=CreateProgram();
+            let id=GCore.program.create();
 
-            AttachShader(id,vertex_shader.id());
-            AttachShader(id,fragment_shader.id());
+            GCore.program.attach_shader(id,vertex_shader.id());
+            GCore.program.attach_shader(id,fragment_shader.id());
 
-            LinkProgram(id);
+            GCore.program.link(id);
+
             let mut result:i32=MaybeUninit::uninit().assume_init();
-            GetProgramiv(id,LINK_STATUS,&mut result as *mut i32);
+            GCore.program.get_parameter(id,ProgramParameter::LinkStatus,&mut result);
 
             if result==0{
-                let mut log=String::with_capacity(512);
-                let log_ref=log.as_ptr() as *mut i8;
-                let mut len=0i32;
-                GetProgramInfoLog(id,512,&mut len as *mut i32,log_ref);
+                let mut len:i32=MaybeUninit::uninit().assume_init();
+                GCore.program.get_parameter(id,ProgramParameter::InfoLogLength,&mut len);
+                let mut log=String::with_capacity(len as usize);
+
+                GCore.program.get_info_log(id,&mut log);
 
                 log.as_mut_vec().set_len(len as usize);
 
@@ -70,14 +61,14 @@ impl Program{
 
     pub fn bind(&self){
         unsafe{
-            UseProgram(self.id);
+            GCore.program.bind(self.id);
         }
     }
 
     pub fn get_uniform_location(&self,name:&str)->Option<i32>{
         unsafe{
             if let Ok(name)=CString::new(name){
-                let id=GetUniformLocation(self.id,name.as_ptr());
+                let id=GCore.program.get_uniform_location(self.id,name.as_c_str().to_str().unwrap());
 
                 if id==-1{
                     None
@@ -109,7 +100,7 @@ impl Program{
     pub fn get_uniform_block_index(&self,name:&str)->Option<u32>{
         unsafe{
             if let Ok(name)=CString::new(name){
-                let id=GetUniformBlockIndex(self.id,name.as_ptr());
+                let id=GCore.program.get_uniform_block_index(self.id,name.as_c_str().to_str().unwrap());
 
                 if id==INVALID_INDEX{
                     None
@@ -124,21 +115,16 @@ impl Program{
         }
     }
 
-    pub unsafe fn bind_uniform_block_raw(&self,uniform_block_index:u32,binding_index:u32){
-        UniformBlockBinding(self.id,uniform_block_index,binding_index);
-    }
+    // pub unsafe fn bind_uniform_block_raw(&self,uniform_block_index:u32,binding_index:u32){
+    //     UniformBlockBinding(self.id,uniform_block_index,binding_index);
+    // }
 
     pub fn bind_uniform_block(&self,name:&str,binding_index:u32)->bool{
-        if binding_index<MAX_UNIFORM_BUFFER_BINDINGS{
-            if let Some(index)=self.get_uniform_block_index(name){
-                unsafe{
-                    UniformBlockBinding(self.id,index,binding_index);
-                }
-                true
+        if let Some(index)=self.get_uniform_block_index(name){
+            unsafe{
+                GCore.program.set_uniform_block_binding(self.id,index,binding_index)
             }
-            else{
-                false
-            }
+            true
         }
         else{
             false
@@ -149,7 +135,7 @@ impl Program{
 impl Drop for Program{
     fn drop(&mut self){
         unsafe{
-            DeleteProgram(self.id);
+            GCore.program.delete(self.id);
         }
     }
 }

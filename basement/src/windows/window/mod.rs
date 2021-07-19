@@ -1,5 +1,4 @@
 use crate::event::{
-    Event,
     WindowEvent,
     MouseButton,
 };

@@ -6,16 +6,16 @@ use super::{
 };
 
 use cat_engine_basement::graphics::{
-    level0::{
-        TextureFilter,
-        TextureInternalFormat,
+    GCore,
+    core::UNPACK_ALIGNMENT,
+    core::texture::{
+        Texture2DInternalFormat,
         ImageDataFormat,
+        ImageDataType,
+        TextureMagFilter,
+        TextureMinFilter,
     },
     level1::Texture2D,
-    gl::{
-        PixelStorei,
-        UNPACK_ALIGNMENT,
-    },
 };
 
 use ttf_parser::{
@@ -144,18 +144,19 @@ fn build_glyph(id:GlyphId,scale:Scale,face:&Face,graphics:&Graphics2D)->Option<R
     ))=graphics.build_glyph_image(id,scale,face){
         let size=[width as u32,height as u32];
 
-        unsafe{PixelStorei(UNPACK_ALIGNMENT,1)}
+        unsafe{GCore.set_pixel_storage_modei(UNPACK_ALIGNMENT,1)}
 
         let texture_2d=Texture2D::new(
-            TextureInternalFormat::R_U8,
-            TextureFilter::Linear,
-            TextureFilter::Linear,
+            Texture2DInternalFormat::R8,
+            TextureMagFilter::Linear,
+            TextureMinFilter::Linear,
             size,
-            ImageDataFormat::R_U8,
+            ImageDataFormat::Red,
+            ImageDataType::U8,
             &image
         );
 
-        unsafe{PixelStorei(UNPACK_ALIGNMENT,4)}
+        unsafe{GCore.set_pixel_storage_modei(UNPACK_ALIGNMENT,4)}
 
         let advance_width=face.glyph_hor_advance(id).unwrap() as f32*scale.horizontal;
 

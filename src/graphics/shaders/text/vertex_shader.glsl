@@ -3,12 +3,10 @@
 layout (location = 0) in vec2 vertex_position;
 layout (location = 1) in vec2 texture_coords;
 
-layout (std140) uniform DrawParameters{
-    vec4 viewport;
-    uint draw_mode;
-    vec2 vertex_shift; // [dx, dy]
-    vec4 vertex_rotation; // [cos, sin, rotation_center]
-};
+uniform vec4 viewport;
+uniform uint draw_mode;
+uniform vec2 vertex_shift; // [dx, dy]
+uniform vec4 vertex_rotation; // [cos, sin, rotation_center]
 
 out vec2 glyph_texture_coords;
 

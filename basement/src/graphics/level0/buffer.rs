@@ -1,3 +1,13 @@
+use crate::graphics::{
+    GCore,
+    core::GLError,
+    core::buffer::{
+        BufferTarget,
+        BufferIndexedTarget,
+        BufferUsage,
+    },
+};
+
 use std::{
     marker::PhantomData,
     mem::{
@@ -6,204 +16,17 @@ use std::{
     },
 };
 
-use gl::{
-    // constants
-    // usages
-    STREAM_DRAW,
-    STREAM_READ,
-    STREAM_COPY,
-    STATIC_DRAW,
-    STATIC_READ,
-    STATIC_COPY,
-    DYNAMIC_DRAW,
-    DYNAMIC_READ,
-    DYNAMIC_COPY,
-    // targets
-    ARRAY_BUFFER,
-    ATOMIC_COUNTER_BUFFER,
-    COPY_READ_BUFFER,
-    COPY_WRITE_BUFFER,
-    DISPATCH_INDIRECT_BUFFER,
-    DRAW_INDIRECT_BUFFER,
-    ELEMENT_ARRAY_BUFFER,
-    PIXEL_PACK_BUFFER,
-    PIXEL_UNPACK_BUFFER,
-    QUERY_BUFFER,
-    SHADER_STORAGE_BUFFER,
-    TEXTURE_BUFFER,
-    TRANSFORM_FEEDBACK_BUFFER,
-    UNIFORM_BUFFER,
-    // functions
-    GenBuffers,
-    BindBuffer,
-    BindBufferBase,
-    BindBufferRange,
-    BufferData as glBufferData,
-    BufferSubData,
-    DeleteBuffers,
-    CopyBufferSubData,
-};
-
-use std::mem::transmute;
-
-/// Specifies the expected usage pattern of the data store.
-#[repr(u32)]
-#[derive(Clone,Copy,Debug)]
-pub enum BufferUsage{
-    /// The data store contents will be modified once and used at most a few times.
-    /// The data store contents are modified by the application,
-    /// and used as the source for GL drawing and image specification commands.
-    StreamDraw=STREAM_DRAW,
-
-    /// The data store contents will be modified once and used at most a few times.
-    /// The data store contents are modified by reading data from the GL,
-    /// and used to return that data when queried by the application.
-    StreamRead=STREAM_READ,
-
-    /// The data store contents will be modified once and used at most a few times.
-    /// The data store contents are modified by reading data from the GL,
-    /// and used as the source for GL drawing and image specification commands.
-    StreamCopy=STREAM_COPY,
-
-    /// The data store contents will be modified once and used many times.
-    /// The data store contents are modified by the application,
-    /// and used as the source for GL drawing and image specification commands.
-    StaticDraw=STATIC_DRAW,
-
-    /// The data store contents will be modified once and used many times.
-    /// The data store contents are modified by reading data from the GL,
-    /// and used to return that data when queried by the application.
-    StaticRead=STATIC_READ,
-
-    /// The data store contents will be modified once and used many times.
-    /// The data store contents are modified by reading data from the GL,
-    /// and used as the source for GL drawing and image specification commands.
-    StaticCopy=STATIC_COPY,
-
-    /// The data store contents will be modified repeatedly and used many times.
-    /// The data store contents are modified by the application,
-    /// and used as the source for GL drawing and image specification commands.
-    DynamicDraw=DYNAMIC_DRAW,
-
-    /// The data store contents will be modified repeatedly and used many times.
-    /// The data store contents are modified by reading data from the GL,
-    /// and used to return that data when queried by the application.
-    DynamicRead=DYNAMIC_READ,
-
-    /// The data store contents will be modified repeatedly and used many times.
-    /// The data store contents are modified by reading data from the GL,
-    /// and used as the source for GL drawing and image specification commands.
-    DynamicCopy=DYNAMIC_COPY,
-}
-
-#[repr(u32)]
-#[derive(Clone,Copy,Debug)]
-pub enum BufferTarget{
-    /// Vertex attributes.
-    ArrayBuffer=ARRAY_BUFFER,
-    /// Atomic counter storage.
-    /// 
-    /// Since OpenGL 4.2.
-    AtomicCounterBuffer=ATOMIC_COUNTER_BUFFER,
-    /// Buffer copy source.
-    /// 
-    /// Since OpenGL 3.1.
-    CopyReadBuffer=COPY_READ_BUFFER,
-    /// Buffer copy destination.
-    /// 
-    /// Since OpenGL 3.1.
-    CopyWriteBuffer=COPY_WRITE_BUFFER,
-    /// Indirect compute dispatch commands.
-    /// 
-    /// Since OpenGL 4.3.
-    DispatchIndirectBuffer=DISPATCH_INDIRECT_BUFFER,
-    /// Indirect command arguments.
-    DrawIndirectBuffer=DRAW_INDIRECT_BUFFER,
-    /// Vertex array indices.
-    ElementArrayBuffer=ELEMENT_ARRAY_BUFFER,
-    /// Pixel read target.
-    PixelPackBuffer=PIXEL_PACK_BUFFER,
-    /// Texture data source.
-    PixelUnpackBuffer=PIXEL_UNPACK_BUFFER,
-    /// Query result buffer.
-    /// 
-    /// Since OpenGL 4.4.
-    QueryBuffer=QUERY_BUFFER,
-    /// Read-write storage for shaders.
-    /// 
-    /// Since OpenGL 4.3.
-    ShaderStorageBuffer=SHADER_STORAGE_BUFFER,
-    /// Texture data buffer.
-    /// 
-    /// Since OpenGL 3.1.
-    TextureBuffer=TEXTURE_BUFFER,
-    /// Transform feedback buffer.
-    TransformFeedbackBuffer=TRANSFORM_FEEDBACK_BUFFER,
-    /// Uniform block storage.
-    /// 
-    /// Since OpenGL 3.1.
-    UniformBuffer=UNIFORM_BUFFER,
-}
-
-pub trait BufferData:Clone+Copy{
-    /// Returns the whole size of data.
-    fn size(self)->isize;
-    /// Returns a pointer to data.
-    fn ptr(self)->*const core::ffi::c_void;
-    /// Returns an offset of `items` elements.
-    /// 
-    /// `Result = items * element_size`
-    fn offset(self,items:isize)->isize;
-}
-
-impl<I:Sized> BufferData for &'_ I{
-    fn size(self)->isize{
-        size_of::<I>() as isize
-    }
-
-    fn ptr(self)->*const core::ffi::c_void{
-        unsafe{
-            transmute(self)
-        }
-    }
-
-    fn offset(self,items:isize)->isize{
-        size_of::<I>() as isize*items
-    }
-}
-
-impl<I:Sized> BufferData for &'_ [I]{
-    fn size(self)->isize{
-        (self.len()*size_of::<I>()) as isize
-    }
-
-    fn ptr(self)->*const core::ffi::c_void{
-        unsafe{
-            transmute(&self[0])
-        }
-    }
-
-    fn offset(self,items:isize)->isize{
-        size_of::<I>() as isize*items
-    }
-}
-
-/// A low-level buffer.
-/// 
-/// All the errors are ignored.
-/// If you want to check whether any error accured,
-/// use the `GLError::get_error()` function.
 pub struct Buffer<I:Sized>{
     id:u32,
-    marker:PhantomData<I>,
+    marker:PhantomData<*const I>,
 }
 
 impl<I:Sized> Buffer<I>{
     /// Creates a buffer without memory allocation.
-    pub fn initialize()->Buffer<I>{
+    pub fn initiate()->Buffer<I>{
         unsafe{
             let mut id:u32=MaybeUninit::uninit().assume_init();
-            GenBuffers(1,&mut id);
+            GCore.buffer.generate_one(&mut id);
 
             Self{
                 id,
@@ -215,23 +38,23 @@ impl<I:Sized> Buffer<I>{
     /// Creates a buffer with `size` capacity and writes data to it.
     /// 
     /// The size is in bytes.
-    pub unsafe fn raw(target:BufferTarget,data:*const I,size:isize,usage:BufferUsage)->Buffer<I>{
-        let buffer=Buffer::initialize();
-        buffer.bind(target).rewrite_raw(data,size,usage);
+    pub unsafe fn new_raw(target:BufferTarget,size:isize,data:*const I,usage:BufferUsage)->Buffer<I>{
+        let buffer=Buffer::initiate();
+        buffer.rewrite_raw(target,size,data,usage).unwrap();
         buffer
     }
 
     /// Creates a buffer with capacity equal to the data size and writes data to it.
-    pub unsafe fn new<Data:BufferData>(target:BufferTarget,data:Data,usage:BufferUsage)->Buffer<I>{
-        let buffer=Buffer::initialize();
-        buffer.bind(target).rewrite(data,usage);
+    pub unsafe fn new(target:BufferTarget,data:&[I],usage:BufferUsage)->Buffer<I>{
+        let buffer=Buffer::initiate();
+        buffer.rewrite(target,data,usage).unwrap();
         buffer
     }
 
-    /// Creates a buffer with `size * size_of::<I>()` capacity in bytes.
+    /// Creates a buffer with `size * size_of::<I>()` capacity.
     pub unsafe fn empty(target:BufferTarget,size:isize,usage:BufferUsage)->Buffer<I>{
-        let buffer=Buffer::initialize();
-        buffer.bind(target).rewrite_empty(size,usage);
+        let buffer=Buffer::initiate();
+        buffer.rewrite_empty(target,size,usage).unwrap();
         buffer
     }
 
@@ -244,105 +67,155 @@ impl<I:Sized> Buffer<I>{
 
 impl<I:Sized> Buffer<I>{
     /// Binds a buffer to the specified target.
-    pub unsafe fn bind<'a>(&'a self,target:BufferTarget)->BoundBuffer<'a,I>{
-        BindBuffer(target as u32,self.id);
-        BoundBuffer{
-            target:target as u32,
-            marker:PhantomData,
+    /// 
+    /// Returns `GLError::NoError` if no error accured.
+    /// 
+    /// Returns `GLError::InvalidValue` is generated
+    /// if `buffer` is not a name previously returned from a call to `Buffer::generate()`.
+    pub fn bind(&self,target:BufferTarget)->GLError{
+        unsafe{
+            GCore.buffer.bind(target,self.id);
+            GCore.get_error()
+        }
+    }
+
+    /// Binds the zero-named buffer object.
+    #[inline(always)]
+    pub fn unbind(&self,target:BufferTarget){
+        unsafe{
+            GCore.buffer.bind(target,0)
         }
     }
 
     /// Binds a buffer to the specified binding with the specified target.
     /// 
-    /// Only these targets are available:
-    /// - `BufferTarget::AtomicCounterBuffer`,
-    /// - `BufferTarget::ShaderStorageBuffer`,
-    /// - `BufferTarget::TransformFeedbackBuffer`,
-    /// - `BufferTarget::UniformBuffer`.
+    /// Returns `GLError::NoError` if no error accured.
+    /// 
+    /// `GLError::InvalidValue` is generated
+    /// if `buffer` is not a name previously returned from a call to `Buffer::generate()`,
+    /// if `index` is greater than or equal to the number of target-specific indexed binding points,
+    /// if buffer does not have an associated data store, or if the size of that store is zero.
     #[inline(always)]
-    pub unsafe fn bind_base(&self,target:BufferTarget,binding_index:u32){
-        BindBufferBase(target as u32,binding_index,self.id)
+    pub fn bind_base(&self,target:BufferIndexedTarget,index:u32)->GLError{
+        unsafe{
+            GCore.buffer.bind_base(target,index,self.id);
+            GCore.get_error()
+        }
     }
 
     /// Binds a buffer to the specified binding with the specified target and buffer range.
     /// 
-    /// The offset and size are in bytes.
-    /// 
-    /// Only these targets are available:
-    /// - `BufferTarget::AtomicCounterBuffer`,
-    /// - `BufferTarget::ShaderStorageBuffer`,
-    /// - `BufferTarget::TransformFeedbackBuffer`,
-    /// - `BufferTarget::UniformBuffer`.
+    /// Returns `GLError::NoError` if no error accured.
     #[inline(always)]
-    pub unsafe fn bind_range(&self,target:BufferTarget,binding_index:u32,offset:isize,size:isize){
-        BindBufferRange(target as u32,binding_index,self.id,offset,size)
+    pub fn bind_range(&self,target:BufferIndexedTarget,index:u32,start:isize,count:isize)->GLError{
+        unsafe{
+            GCore.buffer.bind_range(target,index,self.id,start,count);
+            GCore.get_error()
+        }
+    }
+}
+
+impl<I:Sized> Buffer<I>{
+    /// Updates a subset of a buffer object's data store.
+    /// 
+    /// `GLError::InvalidValue` is generated
+    /// if `offset` or `size` is negative,
+    /// or if together they define a region of memory
+    /// that extends beyond the buffer object's allocated data store.
+    /// 
+    /// `GLError::InvalidOperation` is generated
+    /// if the reserved buffer object name 0 is bound to `target`,
+    /// or if the buffer object being updated is mapped.
+    #[inline(always)]
+    pub fn write_raw(&self,target:BufferTarget,offset:isize,size:isize,data:*const I)->GLError{
+        unsafe{
+            self.bind(target).unwrap();
+            GCore.buffer.write(target,offset,size,data);
+            self.unbind(target);
+            GCore.get_error()
+        }
+    }
+
+    /// Updates a subset of a buffer object's data store.
+    /// 
+    /// `GLError::InvalidValue` is generated
+    /// if `offset` is negative,
+    /// or if `offset` and the size of data define a region of memory
+    /// that extends beyond the buffer object's allocated data store.
+    /// 
+    /// `GLError::InvalidOperation` is generated
+    /// if the reserved buffer object name 0 is bound to `target`,
+    /// or if the buffer object being updated is mapped.
+    /// 
+    /// Panics if `data` is empty.
+    pub fn write(&self,target:BufferTarget,offset:isize,data:&[I])->GLError{
+        unsafe{
+            self.bind(target).unwrap();
+            let offset=size_of::<I>() as isize*offset;
+            let size=size_of::<I>()*data.len();
+            GCore.buffer.write(target,offset,size as isize,&data[0]);
+            self.unbind(target);
+            GCore.get_error()
+        }
+    }
+
+    /// Creates and initializes a buffer object's data store.
+    /// 
+    /// Returns `GLError::InvalidValue` if `size` is negative.
+    /// 
+    /// Returns `GLError::InvalidOperation` if the reserved buffer object name 0 is bound to target.
+    /// 
+    /// Returns `GLError::OutOfMemory` if the GL is unable to create a data store with the specified size.
+    #[inline(always)]
+    pub fn rewrite_raw(&self,target:BufferTarget,size:isize,data:*const I,usage:BufferUsage)->GLError{
+        unsafe{
+            self.bind(target).unwrap();
+            GCore.buffer.rewrite(target,size,data,usage);
+            self.unbind(target);
+            GCore.get_error()
+        }
+    }
+
+    /// Creates and initializes a buffer object's data store.
+    /// 
+    /// Returns `GLError::InvalidOperation` if the reserved buffer object name 0 is bound to target.
+    /// 
+    /// Returns `GLError::OutOfMemory` if the GL is unable to create a data store with the specified size.
+    /// 
+    /// Panics if `data` is empty.
+    pub fn rewrite(&self,target:BufferTarget,data:&[I],usage:BufferUsage)->GLError{
+        unsafe{
+            self.bind(target).unwrap();
+            let size=size_of::<I>()*data.len();
+            GCore.buffer.rewrite(target,size as isize,&data[0],usage);
+            self.unbind(target);
+            GCore.get_error()
+        }
+    }
+
+    /// Creates an uninitialized buffer object's data store.
+    /// 
+    /// The store size is `size * size_of::<I>()`.
+    /// 
+    /// Returns `GLError::InvalidValue` if `size` is negative.
+    /// 
+    /// Returns `GLError::InvalidOperation` if the reserved buffer object name 0 is bound to target.
+    /// 
+    /// Returns `GLError::OutOfMemory` if the GL is unable to create a data store with the specified size.
+    pub fn rewrite_empty(&self,target:BufferTarget,size:isize,usage:BufferUsage)->GLError{
+        unsafe{
+            self.bind(target).unwrap();
+            GCore.buffer.rewrite::<I>(target,size*size_of::<I>() as isize,core::ptr::null(),usage);
+            self.unbind(target);
+            GCore.get_error()
+        }
     }
 }
 
 impl<I:Sized> Drop for Buffer<I>{
     fn drop(&mut self){
         unsafe{
-            DeleteBuffers(1,&self.id as *const u32);
+            GCore.buffer.delete_one(&self.id);
         }
-    }
-}
-
-/// A representation of a bound buffer.
-/// 
-/// Does not guarantee a buffer be bound all the time.
-/// 
-/// ```
-/// let b1 = buffer1.bind(BufferTarget::ArrayBuffer);
-/// 
-/// // `b1` bound
-/// b1.write(0,data);
-/// 
-/// let b2 = buffer2.bind(BufferTarget::ArrayBuffer);
-/// 
-/// // `b2` bound, but `b1` not bound
-/// b1.write(0,data); // this will do the same
-/// b2.write(0,data); // as this
-/// ```
-pub struct BoundBuffer<'a,I:Sized>{
-    target:u32,
-    marker:PhantomData<&'a Buffer<I>>,
-}
-
-impl<'a,I:Sized> BoundBuffer<'a,I>{
-    /// Writes data to a buffer.
-    /// 
-    /// The offset and size are in bytes.
-    #[inline(always)]
-    pub unsafe fn write_raw(&self,data:*const I,offset:isize,size:isize){
-        BufferSubData(self.target,offset,size,data as *const core::ffi::c_void)
-    }
-
-    /// Writes data to a buffer.
-    /// 
-    /// The offset is the amount of items.
-    pub unsafe fn write<Data:BufferData>(&self,offset:isize,data:Data){
-        BufferSubData(self.target,data.offset(offset),data.size(),data.ptr())
-    }
-
-    /// Reallocates and rewrites data of a buffer.
-    /// 
-    /// The new capacity is `size` in bytes.
-    #[inline(always)]
-    pub unsafe fn rewrite_raw(&self,data:*const I,size:isize,usage:BufferUsage){
-        glBufferData(self.target,size,data as *const core::ffi::c_void,usage as u32)
-    }
-
-    /// Reallocates and rewrites data of a buffer.
-    /// 
-    /// The new capacity is the data size.
-    pub unsafe fn rewrite<Data:BufferData>(&self,data:Data,usage:BufferUsage){
-        glBufferData(self.target,data.size(),data.ptr(),usage as u32);
-    }
-
-    /// Reallocates data of a buffer.
-    /// 
-    /// The new capacity is `size * size_of::<I>()` in bytes.
-    pub unsafe fn rewrite_empty(&self,size:isize,usage:BufferUsage){
-        glBufferData(self.target,size*size_of::<I>() as isize,core::ptr::null(),usage as u32);
     }
 }

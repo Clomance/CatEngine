@@ -1,4 +1,4 @@
-use crate::event::Event;
+use crate::event::ProcessEvent;
 
 use winapi::um::{
     winuser::{
@@ -119,7 +119,7 @@ impl EventLoop{
     /// Runs an event loop.
     /// 
     /// Запускает цикл событий.
-    pub fn run<F:FnMut(Event,&mut LoopControl)>(&mut self,mut f:F){
+    pub fn run<F:FnMut(ProcessEvent,&mut LoopControl)>(&mut self,mut f:F){
         unsafe{
             let mut message:MSG=zeroed();
 
@@ -132,14 +132,17 @@ impl EventLoop{
             // let mut last_redraw=last_update;
 
             // Начальное событие
-            f(Event::EventLoopStart,&mut loop_control);
+            f(ProcessEvent::EventLoopStart,&mut loop_control);
 
             loop{
                 match loop_control{
                     LoopControl::Run=>{
                         if PeekMessageW(&mut message,null_mut(),0,0,PM_REMOVE)==1{
                             match message.message{
-                                WM_QUIT=>break,
+                                WM_QUIT=>{
+                                    f(ProcessEvent::Quit,&mut loop_control);
+                                    break
+                                },
                                 _=>{
                                     TranslateMessage(&message);
                                     DispatchMessageW(&message);
@@ -160,14 +163,17 @@ impl EventLoop{
                                 last_update=current_ticks;
                             }
 
-                            f(Event::Update(Ticks(ticks_passed as u64)),&mut loop_control);
+                            f(ProcessEvent::Update(Ticks(ticks_passed as u64)),&mut loop_control);
                         }
                     },
 
                     LoopControl::Lazy=>{
                         match GetMessageW(&mut message,null_mut(),0,0){
                             -1=>break,
-                            0=>break,
+                            0=>{
+                                f(ProcessEvent::Quit,&mut loop_control);
+                                break
+                            },
 
                             _=>match message.message{
                                 _=>{
@@ -198,7 +204,7 @@ impl EventLoop{
                 // }
             }
 
-            f(Event::EventLoopBreak,&mut loop_control);
+            f(ProcessEvent::EventLoopBreak,&mut loop_control);
         }
     }
 }

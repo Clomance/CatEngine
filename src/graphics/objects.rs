@@ -5,14 +5,11 @@ use crate::{
 use super::PrimitiveType;
 
 use cat_engine_basement::graphics::{
+    GCore,
+    core::vertex_array::DataType,
     level0::{
         Vertex,
         VertexArray,
-    },
-    gl::{
-        FLOAT,FALSE,
-        VertexAttribPointer,
-        EnableVertexAttribArray,
     },
 };
 
@@ -34,17 +31,14 @@ impl SimpleVertex2D{
 }
 
 impl Vertex for SimpleVertex2D{
-    fn bind_for_vertex_array(vertex_array:&VertexArray<Self>){
-        vertex_array.bind();
-
+    fn bind_for_vertex_array(_vertex_array:&VertexArray<Self>){
         unsafe{
             // layout = 0 - position
-            VertexAttribPointer(0,2,FLOAT,FALSE,size_of::<SimpleVertex2D>() as i32,core::ptr::null());
-            EnableVertexAttribArray(0);
+            GCore.vertex_array.attribute_pointer(0,0,2,size_of::<SimpleVertex2D>() as i32,DataType::F32,false);
+            GCore.vertex_array.enable_attribute(0);
             // layout = 1 - colour
-            let offset=2*4;
-            VertexAttribPointer(1,4,FLOAT,FALSE,size_of::<SimpleVertex2D>() as i32,offset as *const _);
-            EnableVertexAttribArray(1);
+            GCore.vertex_array.attribute_pointer(1,8,4,size_of::<SimpleVertex2D>() as i32,DataType::F32,false);
+            GCore.vertex_array.enable_attribute(1);
         }
     }
 }
@@ -67,20 +61,17 @@ impl TexturedVertex2D{
 }
 
 impl Vertex for TexturedVertex2D{
-    fn bind_for_vertex_array(vertex_array:&VertexArray<Self>){
-        vertex_array.bind();
+    fn bind_for_vertex_array(_vertex_array:&VertexArray<Self>){
         unsafe{
             // layout = 0 - position
-            VertexAttribPointer(0,2,FLOAT,FALSE,size_of::<TexturedVertex2D>() as i32,core::ptr::null());
-            EnableVertexAttribArray(0);
+            GCore.vertex_array.attribute_pointer(0,0,2,size_of::<TexturedVertex2D>() as i32,DataType::F32,false);
+            GCore.vertex_array.enable_attribute(0);
             // layout = 1 - texture_coords
-            let offset=2*4;
-            VertexAttribPointer(1,2,FLOAT,FALSE,size_of::<TexturedVertex2D>() as i32,offset as *const _);
-            EnableVertexAttribArray(1);
+            GCore.vertex_array.attribute_pointer(1,8,2,size_of::<TexturedVertex2D>() as i32,DataType::F32,false);
+            GCore.vertex_array.enable_attribute(1);
             // layout = 2 - colour_filter
-            let offset=4*4;
-            VertexAttribPointer(2,4,FLOAT,FALSE,size_of::<TexturedVertex2D>() as i32,offset as *const _);
-            EnableVertexAttribArray(2);
+            GCore.vertex_array.attribute_pointer(2,16,4,size_of::<TexturedVertex2D>() as i32,DataType::F32,false);
+            GCore.vertex_array.enable_attribute(2);
         }
     }
 }
@@ -105,12 +96,11 @@ impl Vertex for TextVertex2D{
     fn bind_for_vertex_array(_vertex_array:&VertexArray<Self>){
         unsafe{
             // layout = 0 - position
-            VertexAttribPointer(0,2,FLOAT,FALSE,size_of::<TextVertex2D>() as i32,core::ptr::null());
-            EnableVertexAttribArray(0);
+            GCore.vertex_array.attribute_pointer(0,0,2,size_of::<TextVertex2D>() as i32,DataType::F32,false);
+            GCore.vertex_array.enable_attribute(0);
             // layout = 1 - texture_coords
-            let offset=2*4;
-            VertexAttribPointer(1,2,FLOAT,FALSE,size_of::<TextVertex2D>() as i32,offset as *const _);
-            EnableVertexAttribArray(1);
+            GCore.vertex_array.attribute_pointer(1,8,2,size_of::<TextVertex2D>() as i32,DataType::F32,false);
+            GCore.vertex_array.enable_attribute(1);
         }
     }
 }

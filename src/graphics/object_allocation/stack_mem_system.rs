@@ -7,7 +7,7 @@ use crate::{
 };
 
 use cat_engine_basement::graphics::{
-    PrimitiveType,
+    core::drawing::PrimitiveType,
     level0::Vertex,
     level1::{
         VertexBuffer,
@@ -141,12 +141,12 @@ impl<V:Vertex> StackSystem<V>{
                 }
             ).collect();
             // Запись индексов
-            index_buffer.bind().write(self.index_buffer_ptr as usize,&offset_indices);
+            index_buffer.write(self.index_buffer_ptr as isize,&offset_indices);
             self.index_buffer_ptr+=index_count;
         }
 
         // Запись вершин
-        vertex_buffer.bind().write(self.vertex_buffer_ptr as usize,vertices);
+        vertex_buffer.write(self.vertex_buffer_ptr as isize,vertices);
         self.vertex_buffer_ptr+=vertex_count;
 
         self.objects.push(object);
@@ -190,8 +190,8 @@ impl<V:Vertex> StackSystem<V>{
         vertices:&[V]
     ){
         if let Some(object)=self.get_object(id){
-            if object.vertex_count as usize>=vertices.len(){
-                vertex_buffer.bind().write(object.vertex_start as usize,vertices)
+            if object.vertex_count as usize==vertices.len(){
+                vertex_buffer.write(object.vertex_start as isize,vertices)
             }
         }
     }
@@ -203,8 +203,8 @@ impl<V:Vertex> StackSystem<V>{
         indices:&[ElementIndexType]
     ){
         if let Some(object)=self.get_object(id){
-            if object.index_count as usize>=indices.len(){
-                index_buffer.bind().write(object.vertex_start as usize,indices)
+            if object.index_count as usize==indices.len(){
+                index_buffer.write(object.vertex_start as isize,indices)
             }
         }
     }

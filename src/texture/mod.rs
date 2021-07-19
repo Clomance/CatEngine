@@ -1,16 +1,16 @@
 use cat_engine_basement::graphics::{
-    gl::BindFramebuffer,
-    level0::{
-        FrameBufferTarget,
-        Texture2DTarget,
-        TextureFilter,
-        TextureInternalFormat,
+    GCore,
+    core::texture::{
+        TextureBindTarget,
+        Texture2DRewriteTarget,
+        Texture2DWriteTarget,
+        TextureMagFilter,
+        TextureMinFilter,
+        Texture2DInternalFormat,
         ImageDataFormat,
+        ImageDataType,
     },
-    level1::{
-        Texture2D,
-        BoundTexture2D,
-    },
+    level1::Texture2D,
 };
 
 mod image_base;
@@ -19,7 +19,7 @@ pub use image_base::ImageBase;
 mod image_object;
 pub use image_object::ImageObject;
 
-use image::{
+use cat_engine_basement::image::{
     GenericImageView,
     RgbaImage,
 };
@@ -34,16 +34,17 @@ pub struct Texture{
 
 impl Texture{
     pub fn new(size:[u32;2],data:&[u8])->Option<Texture>{
-        if data.len()!=(size[0]*size[1]) as usize{
+        if data.len()!=(size[0]*size[1]*4) as usize{
             return None
         }
 
         let texture=Texture2D::new(
-            TextureInternalFormat::RGBA8,
-            TextureFilter::Linear,
-            TextureFilter::Linear,
+            Texture2DInternalFormat::RGBA8,
+            TextureMagFilter::Linear,
+            TextureMinFilter::Linear,
             size,
-            ImageDataFormat::RGBA_U8,
+            ImageDataFormat::RGBA,
+            ImageDataType::U8,
             data
         );
 
@@ -56,9 +57,9 @@ impl Texture{
 
     pub fn empty(size:[u32;2])->Texture{
         let texture=Texture2D::empty(
-            TextureInternalFormat::RGBA8,
-            TextureFilter::Linear,
-            TextureFilter::Linear,
+            Texture2DInternalFormat::RGBA8,
+            TextureMagFilter::Linear,
+            TextureMinFilter::Linear,
             size,
         );
 
@@ -69,22 +70,10 @@ impl Texture{
 
     /// Flips verticaly.
     pub fn from_path<P:AsRef<Path>>(path:P)->Option<Texture>{
-        if let Ok(image)=image::open(path){
+        if let Ok(image)=cat_engine_basement::image::open(path){
+            let image=image.flipv().to_rgba8();
             let (w,h)=image.dimensions();
-            let texture=Texture2D::new(
-                TextureInternalFormat::RGBA8,
-                TextureFilter::Linear,
-                TextureFilter::Linear,
-                [w,h],
-                ImageDataFormat::RGBA_U8,
-                &image.flipv().to_rgba8()
-            );
-
-            Some(
-                Self{
-                    texture,
-                }
-            )
+            Self::new([w,h],image.as_ref())
         }
         else{
             None
@@ -93,18 +82,7 @@ impl Texture{
 
     pub fn from_image(image:&RgbaImage)->Texture{
         let (w,h)=image.dimensions();
-        let texture=Texture2D::new(
-            TextureInternalFormat::RGBA8,
-            TextureFilter::Linear,
-            TextureFilter::Linear,
-            [w,h],
-            ImageDataFormat::RGBA_U8,
-            image.as_ref()
-        );
-
-        Self{
-            texture,
-        }
+        Self::new([w,h],image.as_ref()).unwrap()
     }
 
     pub fn texture_2d(&self)->&Texture2D{
@@ -117,31 +95,49 @@ impl Texture{
 }
 
 impl Texture{
-    pub fn write(&self,offset:[u32;2],image_data_format:ImageDataFormat,size:[u32;2],data:&[u8]){
-        self.texture.bind().write_image(offset,size,image_data_format,data)
+    pub fn write(&self,[x,y,width,height]:[i32;4],image_data_format:ImageDataFormat,image_data_type:ImageDataType,data:&[u8]){
+        self.texture.bind();
+        unsafe{
+            GCore.texture.write_image_2d(Texture2DWriteTarget::Texture2D,0,[x,y,width,height],image_data_format,image_data_type,&data[0])
+        }
     }
 
-    pub fn write_rbga(&self,offset:[u32;2],image:&RgbaImage){
+    pub fn write_rbga(&self,[x,y]:[i32;2],image:&RgbaImage){
         let (w,h)=image.dimensions();
-        self.texture.bind().write_image(offset,[w,h],ImageDataFormat::RGBA_U8,image)
+        let frame=[
+            x,
+            y,
+            w as i32,
+            h as i32,
+        ];
+        self.texture.bind();
+        unsafe{
+            GCore.texture.write_image_2d(Texture2DWriteTarget::Texture2D,0,frame,ImageDataFormat::RGBA,ImageDataType::U8,image)
+        }
     }
 
     pub fn write_image(&self,image:&RgbaImage){
         let (w,h)=image.dimensions();
-        self.texture.bind().write_image([0;2],[w,h],ImageDataFormat::RGBA_U8,image)
+        self.texture.bind();
+        unsafe{
+            GCore.texture.write_image_2d(Texture2DWriteTarget::Texture2D,0,[0,0,w as i32,h as i32],ImageDataFormat::RGBA,ImageDataType::U8,image)
+        }
     }
 
-    pub fn write_screen_buffer(&self,screen_offset:[u32;2],texture_offset:[u32;2],size:[u32;2]){
-        unsafe{BindFramebuffer(FrameBufferTarget::Read as u32,0)}
-        self.texture.texture().bind(Texture2DTarget::Texture2D as u32).write_read_framebuffer(
-            screen_offset,
-            texture_offset,
-            size,
-        );
-    }
+    // pub fn write_screen_buffer(&self,screen_offset:[u32;2],texture_offset:[u32;2],size:[u32;2]){
+    //     unsafe{BindFramebuffer(FrameBufferTarget::Read as u32,0)}
+    //     self.texture.texture().bind(Texture2DTarget::Texture2D as u32).write_read_framebuffer(
+    //         screen_offset,
+    //         texture_offset,
+    //         size,
+    //     );
+    // }
 
-    pub fn rewrite_image(&self,texture_internal_format:TextureInternalFormat,image:&RgbaImage){
+    pub fn rewrite_image(&self,texture_internal_format:Texture2DInternalFormat,image:&RgbaImage){
         let (w,h)=image.dimensions();
-        self.texture.bind().rewrite_image(texture_internal_format,[w,h],ImageDataFormat::RGBA_U8,image)
+        self.texture.bind();
+        unsafe{
+            GCore.texture.rewrite_image_2d(Texture2DRewriteTarget::Texture2D,0,texture_internal_format,[w as i32,h as i32],ImageDataFormat::RGBA,ImageDataType::U8,image)
+        }
     }
 }

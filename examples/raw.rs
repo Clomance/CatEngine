@@ -13,7 +13,7 @@ use cat_engine_basement::{
         OpenGLRenderContextAttributes,
         quit,
     },
-    event::{WindowEvent,Event},
+    event::{WindowEvent,ProcessEvent},
 };
 
 use cat_engine::{
@@ -40,15 +40,24 @@ impl WindowProcedure<WindowGraphics> for Handler1{
     fn handle(window:&Window,args:&mut WindowGraphics,event:WindowEvent){
         match event{
             WindowEvent::Redraw=>{
+                // use it when you have more than one window
                 args.context.make_current(true).unwrap_or_else(|_|{quit()});
+
+                // set viewport if a window may change it's size
+                // or if you have more than one window
+                // otherwise set it after creating the window
                 let [width,height]=window.client_size();
-                args.graphics.core().viewport().set([0,0,width as i32,height as i32]);
-                args.graphics.draw_parameters().change_viewport([0f32,0f32,width as f32,height as f32]);
-                args.graphics.clear_colour();
+                unsafe{
+                    args.graphics.core().viewport.set([0,0,width as i32,height as i32]);
+                }
+                args.graphics.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
+
+                args.graphics.clear_colour([1f32;4]);
                 args.graphics.draw_stack_textured_object(0,args.texture.texture_2d());
 
-                unsafe{cat_engine_basement::graphics::gl::Finish()};
+                args.graphics.core().finish();
                 args.context.swap_buffers().unwrap_or_else(|_|{quit()});
+                window.redraw();
             }
 
             WindowEvent::CloseRequest=>window.destroy(),
@@ -84,7 +93,7 @@ fn main(){
     let window=Window::new::<Handler0,WindowGraphics>(&wc,wa,&mut wg).unwrap();
 
     let ca=OpenGLRenderContextAttributes::new();
-    let context=OpenGLRenderContext::new(window.get_context(),ca).unwrap();
+    let context=OpenGLRenderContext::new(&window,ca).unwrap();
 
     let library=OpenGraphicsLibrary::new();
     library.load_functions(); // only after render context creation
@@ -114,9 +123,9 @@ fn main(){
 
     event_loop.run(|event,control|{
         match event{
-            Event::EventLoopStart=>*control=LoopControl::Run,
+            ProcessEvent::EventLoopStart=>*control=LoopControl::Run,
             
-            Event::Update(_)=>{
+            ProcessEvent::Update(_)=>{
                 updates+=1;
                 if updates==400{
                     *control=LoopControl::Break

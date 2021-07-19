@@ -1,15 +1,10 @@
-use gl::{
-    // constants
-    VERTEX_SHADER,
-    FRAGMENT_SHADER,
-    COMPILE_STATUS,
-    // functions
-    CreateShader,
-    ShaderSource,
-    CompileShader,
-    GetShaderiv,
-    GetShaderInfoLog,
-    DeleteShader,
+use crate::graphics::{
+    GCore,
+    core::GLError,
+    core::shader::{
+        ShaderType,
+        ShaderParameter,
+    }
 };
 
 use std::{
@@ -17,38 +12,33 @@ use std::{
     mem::MaybeUninit,
 };
 
-#[repr(u32)]
-#[derive(Clone,Copy,Debug)]
-pub enum ShaderType{
-    FragmentShader=FRAGMENT_SHADER,
-    VertexShader=VERTEX_SHADER,
-}
 
 pub struct Shader{
     id:u32,
 }
 
 impl Shader{
+    pub fn initiate(shader_type:ShaderType)->Shader{
+        unsafe{
+            Self{
+                id:GCore.shader.create(shader_type),
+            }
+        }
+    }
+
     /// Creates and compiles a shader without checking the result.
     /// 
     /// Создаёт и компилирует шейдер без проверки результата.
-    pub fn new_unchecked(source:&str,shader_type:ShaderType)->Shader{
-        unsafe{
-            // Создание шейдера
-            let id=CreateShader(shader_type as u32);
+    pub unsafe fn new_unchecked(source:&str,shader_type:ShaderType)->Shader{
+        // Создание шейдера
+        let id=GCore.shader.create(shader_type);
+        // Загрузка кода
+        GCore.shader.source(id,source);
+        // Компиляция
+        GCore.shader.compile(id);
 
-            let string=CString::new(source).expect("NullByte");
-
-            // Загрузка данных
-            let string_ptr=string.as_ptr() as *const i8;
-            //let length=source.len() as i32;
-            ShaderSource(id,1,&string_ptr as *const *const i8,core::ptr::null());
-            // Компиляция
-            CompileShader(id);
-
-            Self{
-                id,
-            }
+        Self{
+            id,
         }
     }
 
@@ -61,16 +51,15 @@ impl Shader{
 
             // Проверка компиляции
             let mut result:i32=MaybeUninit::uninit().assume_init();
-            GetShaderiv(shader.id(),COMPILE_STATUS,&mut result as *mut _);
+            GCore.shader.get_parameter(shader.id(),ShaderParameter::CompileStatus,&mut result);
 
             if result==0{
-                let mut log=String::with_capacity(512);
-                let log_ref=log.as_ptr() as *mut i8;
-                let mut len=0i32;
+                let mut length=MaybeUninit::uninit().assume_init();
+                GCore.shader.get_parameter(shader.id(),ShaderParameter::InfoLogLength,&mut length);
 
-                GetShaderInfoLog(shader.id(),512,&mut len as *mut i32,log_ref);
+                let mut log=String::with_capacity(length as usize);
 
-                log.as_mut_vec().set_len(len as usize);
+                GCore.shader.get_info_log(shader.id(),&mut log);
 
                 return Err(log);
             }
@@ -85,10 +74,33 @@ impl Shader{
     }
 }
 
+impl Shader{
+    pub fn compile(&self)->GLError{
+        unsafe{
+            GCore.shader.compile(self.id);
+            GCore.get_error()
+        }
+    }
+
+    pub fn get_parameter(&self,parameter:ShaderParameter,value:&mut i32)->GLError{
+        unsafe{
+            GCore.shader.get_parameter(self.id,parameter,value);
+            GCore.get_error()
+        }
+    }
+
+    pub fn get_info_log(&self,log:&mut String)->GLError{
+        unsafe{
+            GCore.shader.get_info_log(self.id,log);
+            GCore.get_error()
+        }
+    }
+}
+
 impl Drop for Shader{
     fn drop(&mut self){
         unsafe{
-            DeleteShader(self.id);
+            GCore.shader.delete(self.id);
         }
     }
 }
