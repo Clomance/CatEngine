@@ -35,10 +35,6 @@ features = [
     "default",
     # AUDIO
     "extended_audio",
-    # WINDOW
-    # "fps_counter",
-    # "ups_counter",
-    # "file_drop"
 ]
 
 [features]
@@ -54,7 +50,6 @@ audio = ["cat_audio"]
 extended_audio = ["cat_audio/extended"]
 raw_audio = ["cat_audio/raw"]
 
-
 ### GRAPHICS
 # plain objects
 simple_graphics = []
@@ -63,23 +58,16 @@ texture_graphics = []
 # text
 text_graphics = ["ttf-parser","ab_glyph_rasterizer"]
 
-### WINDOW
-# fps_counter = []
-# ups_counter = []
-# file_drop = ["cat_engine_basement/file_drop"]
-
-### APPLICATION
-# multi_windowing = []
-
-
 # audio
 [dependencies.cat_audio]
 path = "cat_audio"
+version = "0.0.4"
 optional = true
 
 
 [dependencies.cat_engine_basement]
 path = "basement"
+version = "0.0.0-alpha0"
 
 
 [dependencies]
