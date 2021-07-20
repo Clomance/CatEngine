@@ -2,7 +2,7 @@
 
 # CatAudio [![Crate badge]][crates.io] [![Doc badge]][doc.rs]
 
-[Crate badge]:http://meritbadge.herokuapp.com/cat_audio
+[Crate badge]:https://img.shields.io/crates/v/cat_audio.svg
 [crates.io]:https://crates.io/crates/cat_audio
 
 [Doc badge]:https://img.shields.io/badge/documentation-doc.rs-green

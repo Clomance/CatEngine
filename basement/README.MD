@@ -1,4 +1,4 @@
-# ![logo](https://github.com/Clomance/CatEngine/basement/raw/master/logo_400x400.png)
+# ![logo](https://github.com/Clomance/CatEngine/raw/master/basement/logo_400x400.png)
 
 # CatEngineBasement [![Crate badge]][crates.io] [![Doc badge]][doc.rs]
 

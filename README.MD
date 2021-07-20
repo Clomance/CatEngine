@@ -13,14 +13,8 @@ A 2D graphics engine with audio support for Windows.
 
 Compatible with OpenGL 3.3 and greater.
 
-#### Features
-
-<!-- You can disable some unnecessary modules with Rust features (see [list of features](book/EN/features.md)). -->
-
-
 #### Dependencies
- - Base - [winapi](https://github.com/retep998/winapi-rs)
- - Graphics - [gl](https://github.com/brendanzab/gl-rs/)
+ - Base - [cat_engine_basement](https://github.com/Clomance/CatEngine/tree/master/basement)
  - Images - [image](https://github.com/image-rs/image)
  - Fonts - [ttf-parser](https://github.com/RazrFalcon/ttf-parser) and [ab_glyph_rasterizer](https://github.com/alexheretic/ab-glyph)
  - Audio - [cat_audio](https://github.com/Clomance/CatEngine/tree/master/cat_audio)
