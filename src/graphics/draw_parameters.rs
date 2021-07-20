@@ -1,9 +1,3 @@
-use cat_engine_basement::graphics::{
-    GCore,
-    core::buffer::{BufferUsage,BufferTarget},
-    level1::UniformBuffer,
-};
-
 #[derive(Clone,Copy,Debug,PartialEq,Eq)]
 #[repr(u32)]
 pub enum DrawMode{

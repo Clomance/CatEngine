@@ -36,7 +36,7 @@ pub use event_loop::{
     Ticks,
     EventLoop,
     LoopControl,
-    UpdateInterval,
+    EventInterval,
     EventLoopAttributes,
 };
 

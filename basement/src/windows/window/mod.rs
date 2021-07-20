@@ -8,9 +8,6 @@ use super::{
     Monitor,
     Bitmap,
     Icon,
-    // enums
-    LoopControl,
-    VirtualKeyCode,
 };
 
 mod window_procedure;
@@ -40,7 +37,7 @@ pub use window::{
 
 /// Defines window's behavior.
 pub trait WindowProcedure<A:Sized>{
-    fn handle(window:&Window,args:&mut A,event:WindowEvent);
+    fn handle(event:WindowEvent,window:&Window,args:&mut A);
 }
 
 /// Indicates to the event loop that it's thread has made a request to close.

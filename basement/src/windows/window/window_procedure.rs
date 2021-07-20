@@ -1,7 +1,3 @@
-use crate::windows::{
-    Ticks,
-};
-
 use super::{
     // structs
     Window,
@@ -347,18 +343,18 @@ pub unsafe extern "system" fn window_procedure<W:WindowProcedure<A>,A>(
         if message==WM_PAINT{
             let mut paint=std::mem::zeroed();
             let _=BeginPaint(handle,&mut paint);
-    
-            W::handle(window,args,WindowEvent::Redraw);
-    
-            // EndPaint releases the display device context that BeginPaint retrieved.
+
+            W::handle(WindowEvent::Redraw,window,args);
+
+            // EndPaint releases the display device context that BeginPaint retrieved
             EndPaint(handle,&paint);
             return 0
         }
-    
+
         match wrap_event(window,message,w_param,l_param){
             EventWrapResult::None(lresult)=>lresult,
             EventWrapResult::Event(window_event,lresult)=>{
-                W::handle(window,args,window_event);
+                W::handle(window_event,window,args);
                 lresult
             }
         }

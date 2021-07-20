@@ -1,4 +1,9 @@
 use cat_engine_basement::{
+    graphics::{
+        GCore,
+        core::ClearMask,
+        Colour,
+    },
     windows::{
         EventLoop,
         LoopControl,
@@ -16,28 +21,17 @@ use cat_engine_basement::{
     event::{WindowEvent,ProcessEvent},
 };
 
-use cat_engine::{
-    texture::{
-        Texture,
-        ImageBase,
-    },
-    graphics::{
-        Graphics,
-        Graphics2DAttributes,
-    },
-};
-
 /// An empty struct for an empty window procedure.
-struct Handler0;
+struct EmptyHandler;
 
-impl WindowProcedure<WindowGraphics> for Handler0{
-    fn handle(_:WindowEvent,_:&Window,_:&mut WindowGraphics){}
+impl WindowProcedure<RenderData> for EmptyHandler{
+    fn handle(_:WindowEvent,_:&Window,_:&mut RenderData){}
 }
 
-struct Handler1;
+struct Handler;
 
-impl WindowProcedure<WindowGraphics> for Handler1{
-    fn handle(event:WindowEvent,window:&Window,args:&mut WindowGraphics){
+impl WindowProcedure<RenderData> for Handler{
+    fn handle(event:WindowEvent,window:&Window,args:&mut RenderData){
         match event{
             WindowEvent::Redraw=>{
                 // use it when you have more than one window
@@ -47,15 +41,19 @@ impl WindowProcedure<WindowGraphics> for Handler1{
                 // or if you have more than one window
                 // otherwise set it after creating the window
                 let [width,height]=window.client_size();
+
                 unsafe{
-                    args.graphics.core().viewport.set([0,0,width as i32,height as i32]);
+                    GCore.viewport.set([0,0,width as i32,height as i32]);
+
+                    args.colour[0]+=0.01;
+                    if args.colour[0]>=1f32{
+                        args.colour[0]=0f32;
+                    }
+
+                    GCore.set_clear_colour(args.colour);
+                    GCore.clear(ClearMask::Colour);
                 }
-                args.graphics.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
 
-                args.graphics.clear_colour([1f32;4]);
-                args.graphics.draw_stack_textured_object(0,args.texture.texture_2d());
-
-                args.graphics.core().finish();
                 args.context.swap_buffers().unwrap_or_else(|_|{quit()});
                 window.redraw();
             }
@@ -68,29 +66,28 @@ impl WindowProcedure<WindowGraphics> for Handler1{
     }
 }
 
-struct WindowGraphics{
+struct RenderData{
     context:OpenGLRenderContext,
-    graphics:Graphics,
-    texture:Texture,
+    colour:Colour,
 }
 
 fn main(){
     let ea=EventLoopAttributes::new();
     let mut event_loop=EventLoop::new(ea);
 
-    let wca=WindowClassAttributes::new("CatEngineWindowClass");
+    let wca=WindowClassAttributes::new("CatEngineBasementWindowClass");
     let wc=WindowClass::new(wca).unwrap();
 
     // We need a reference to an unmovable structure for the window procedure,
-    // so do not move `wg` any where.
+    // so do not move `render_data` any where.
     // Allocating a zeroed structure
     // because we can't create a texture without our window's context.
     let zero=std::mem::MaybeUninit::zeroed();
-    let mut wg=unsafe{zero.assume_init()};
+    let mut render_data=unsafe{zero.assume_init()};
 
-    let wa=WindowAttributes::new("CatEngineWindow");
+    let wa=WindowAttributes::new("CatEngineBesementWindow");
     // Creating a window with empty handler to avoid using a zeroed argument in the window procedure.
-    let window=Window::new::<Handler0,WindowGraphics>(&wc,wa,&mut wg).unwrap();
+    let window=Window::new::<EmptyHandler,RenderData>(&wc,wa,&mut render_data).unwrap();
 
     let ca=OpenGLRenderContextAttributes::new();
     let context=OpenGLRenderContext::new(&window,ca).unwrap();
@@ -98,25 +95,13 @@ fn main(){
     let library=OpenGraphicsLibrary::new();
     library.load_functions(); // only after render context creation
 
-    let ga=Graphics2DAttributes::new();
-    let mut graphics=Graphics::new(ga);
-
-    // Now we can create a texture.
-    let texture=Texture::from_path("logo_400x400.png").unwrap();
-
-    let image_base=ImageBase::new(
-        [0f32,0f32,400f32,400f32], // position and size
-        [1.0;4] // colour filter
-    );
-
-    graphics.push_textured_object(&image_base);
 
     unsafe{ // not to drop the allocated zero-context and zero-texture (line 75)
-        (&mut wg as *mut WindowGraphics).write(WindowGraphics{context,graphics,texture})
+        (&mut render_data as *mut RenderData).write(RenderData{context,colour:[0f32;4]})
     }
 
     unsafe{ // Setting out handler.
-        window.set_window_handle::<Handler1,WindowGraphics>()
+        window.set_window_handle::<Handler,RenderData>()
     }
 
     let mut updates=0;

@@ -24,7 +24,7 @@ pub use cat_engine_basement::{
         LoopControl,
         EventLoopAttributes,
         OpenGLRenderContextAttributes,
-        UpdateInterval,
+        EventInterval,
 
         WindowProcedure,
         quit,
@@ -40,7 +40,7 @@ use std::mem::MaybeUninit;
 pub struct EmptyHandler;
 
 impl<S> WindowProcedure<WindowInner<S>> for EmptyHandler{
-    fn handle(_:&Window,_:&mut WindowInner<S>,_:WindowEvent){}
+    fn handle(_:WindowEvent,_:&Window,_:&mut WindowInner<S>){}
 }
 
 pub struct WindowInner<S>{

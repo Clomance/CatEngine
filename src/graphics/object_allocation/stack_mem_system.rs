@@ -15,11 +15,7 @@ use cat_engine_basement::graphics::{
     },
 };
 
-use std::{
-    mem::size_of,
-    ffi::c_void,
-    marker::PhantomData,
-};
+use std::marker::PhantomData;
 
 pub struct StackObject{
     pub vertex_start:i32,

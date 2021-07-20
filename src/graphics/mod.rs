@@ -11,14 +11,10 @@ use crate::text::{
 
 mod object_allocation;
 use object_allocation::{
-    HeapSystem,
     HeapDrawType,
     HeapObject,
-    HeapDrawableObject,
-    StackSystem,
     StackObject,
     StackDrawType,
-    StackDrawableObject,
     ObjectAllocation,
 };
 

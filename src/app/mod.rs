@@ -17,7 +17,7 @@ pub use mono_windowing::windows::{
     VirtualKeyCode,
     EventLoopAttributes,
     OpenGLRenderContextAttributes,
-    UpdateInterval,
+    EventInterval,
     WinError,
     WindowProcedure,
     EmptyHandler,

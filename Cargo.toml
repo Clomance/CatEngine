@@ -3,6 +3,7 @@ name = "cat_engine"
 version = "1.0.0-alpha0"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
+
 homepage = "https://github.com/Clomance/CatEngine"
 repository = "https://github.com/Clomance/CatEngine"
 description = "A 2D graphics engine with audio output support"

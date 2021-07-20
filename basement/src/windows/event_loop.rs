@@ -31,6 +31,7 @@ pub enum LoopControl{
     /// The loop is running with the defeault settings.
     Run,
 
+    /// Updates are disabled.
     Lazy,
 
     /// The loop will be closed.
@@ -40,9 +41,9 @@ pub enum LoopControl{
 unsafe impl Sync for LoopControl{}
 unsafe impl Send for LoopControl{}
 
-pub enum UpdateInterval{
+pub enum EventInterval{
     Ticks(u32),
-    UpdatesPerSecond(u32),
+    EventsPerSecond(u32),
     NanoSeconds(u32),
 }
 
@@ -91,11 +92,11 @@ impl EventLoop{
         }
 
         let update_interval=match attributes.update_interval{
-            UpdateInterval::Ticks(ticks)=>ticks as i64,
-            UpdateInterval::UpdatesPerSecond(updates)=>{
+            EventInterval::Ticks(ticks)=>ticks as i64,
+            EventInterval::EventsPerSecond(updates)=>{
                 frequency/updates as i64
             }
-            UpdateInterval::NanoSeconds(nanoseconds)=>{
+            EventInterval::NanoSeconds(nanoseconds)=>{
                 (nanoseconds as i64*frequency)/1_000_000_000i64
             }
         };
@@ -212,7 +213,7 @@ impl EventLoop{
 
 pub struct EventLoopAttributes{
     /// The default is `UpdateInteval::UpdatesPerSecond(50u32)`.
-    pub update_interval:UpdateInterval,
+    pub update_interval:EventInterval,
 
     // pub redraw_interval:UpdateInterval,
 }
@@ -220,7 +221,7 @@ pub struct EventLoopAttributes{
 impl EventLoopAttributes{
     pub fn new()->EventLoopAttributes{
         Self{
-            update_interval:UpdateInterval::UpdatesPerSecond(50u32),
+            update_interval:EventInterval::EventsPerSecond(50u32),
             // redraw_interval:UpdateInterval::UpdatesPerSecond(30u32),
         }
     }

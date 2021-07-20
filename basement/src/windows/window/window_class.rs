@@ -25,7 +25,6 @@ use winapi::{
             RegisterClassExW,
             UnregisterClassW,
             WNDCLASSEXW,
-            DefWindowProcW,
             LoadCursorW,
             // window class styles
             CS_HREDRAW,

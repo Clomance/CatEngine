@@ -23,7 +23,7 @@ use cat_engine::{
 struct WindowHandle;
 
 impl WindowProcedure<WindowInner<Option<Texture>>> for WindowHandle{
-    fn handle(window:&Window,window_inner:&mut WindowInner<Option<Texture>>,event:WindowEvent){
+    fn handle(event:WindowEvent,window:&Window,window_inner:&mut WindowInner<Option<Texture>>){
         match event{
             WindowEvent::Redraw=>{
                 window_inner.draw(window,|_window,graphics,texture|{
