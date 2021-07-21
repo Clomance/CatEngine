@@ -55,10 +55,9 @@ impl WindowProcedure<RenderData> for Handler{
                 }
 
                 args.context.swap_buffers().unwrap_or_else(|_|{quit()});
-                window.redraw();
             }
 
-            WindowEvent::CloseRequest=>window.destroy(),
+            WindowEvent::CloseRequest=>window.destroy().unwrap(),
 
             WindowEvent::Destroy=>quit(),
             _=>{}
@@ -112,7 +111,7 @@ fn main(){
             
             ProcessEvent::Update(_)=>{
                 updates+=1;
-                if updates==400{
+                if updates==800{
                     *control=LoopControl::Break
                 }
             },

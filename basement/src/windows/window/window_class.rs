@@ -1,4 +1,7 @@
-use crate::windows::WinError;
+use crate::windows::{
+    WinCore,
+    WinError,
+};
 
 use super::{
     Icon,
@@ -152,7 +155,7 @@ impl WindowClass{
             style,
             lpfnWndProc:Some(default_window_procedure),
             cbClsExtra:0,
-            cbWndExtra:0,
+            cbWndExtra:64,
             hInstance:null_mut(),
             hIcon:window_icon,
             hCursor:cursor,

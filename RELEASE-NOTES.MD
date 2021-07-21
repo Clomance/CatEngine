@@ -1,15 +1,75 @@
+# 1.0.0 - alpha1
+
+## CatEngineBasement
+
+### Added
+ - `WindowsCore`. It wraps nessesary WindowsAPI functions
+ - an `opengl` feature. It enables using wrapped GL functions and context
+ - `Window::set_fullscreen` and `Window::show_cursor` functions
+ - a `vsync` field for `OpenGLRenderContextAttributes`, but other fields are removed
+ - an `auto_redraw` flag that defines whether a new redraw event is requested directly after processing the last one. To set the flag use `Window::set_auto_redraw`
+ - a fps lock, `EventLoop` controls frame rate, but you need to disable `auto_redraw` and vsync (`OpenGLRenderContext::set_vsync`)
+ - an ability to disable update and redraw events and without changing the `LoopControl` flag. Just set an event rate to zero: `EventInterval::EventsPerSecond(0)`, `EventInterval::Ticks(0)` or `EventInterval::NanoSeconds(0)`
+
+### Changed
+ - `WindowInner::storage` -> `WindowInner::storage_ref`, `WindowInner::storage` now returns mutable reference
+
+### Fixed
+ - target module mistakes
+
+### Events optimizations
+
+#### The highest optimization.
+If you don't need updates and high performance:
+ - disable V-Sync,
+ - set the `auto_redraw` flag to `false`,
+ - set the maximum of frame rate (30 fps is enough),
+ - set the 'lazy' mode for `EventLoop`
+```rust
+    render_context_attributes.vsync=false;
+    window_attributes.auto_redraw=false;
+    event_loop_attributes.redraw_request_interval=EventInterval::EventsPerSecond(30);
+    event_control=EventControl::Lazy;
+```
+
+#### The highest performance
+If you need updates and the lowest response time:
+ - disable V-Sync,
+ - set the `auto_redraw` flag to `false`,
+ - set the needed frame rate,
+ - set the default mode for `EventLoop`
+```rust
+    render_context_attributes.vsync=false;
+    window_attributes.auto_redraw=false;
+    event_loop_attributes.redraw_request_interval=EventInterval::EventsPerSecond(30);
+    event_control=EventControl::Run;
+```
+
+#### The smoothest image
+If you need updates and the lowest response time:
+ - enable V-Sync,
+ - set the `auto_redraw` flag to `true`,
+ - set the frame rate lock to zero,
+ - set the needed mode for `EventLoop`
+```rust
+    render_context_attributes.vsync=true;
+    window_attributes.auto_redraw=true;
+    event_loop_attributes.redraw_request_interval=EventInterval::EventsPerSecond(0);
+    event_control=EventControl::Run;
+```
+
 # 1.0.0 - pre-alpha
 
 ### Whole engine redesign.
- - Raw OpenGL functions.
- - Raw wrappers.
- - New object allocation systems: heap- and stack-type.
- - A new windowing system.
- - A new app working system.
- - A basement with secrets and cats.
- - More unaccomplished features.
+ - Raw OpenGL functions
+ - Raw wrappers
+ - New object allocation systems: heap- and stack-type
+ - A new windowing system
+ - A new app working system
+ - A basement with secrets and cats
+ - More unaccomplished features
  - More language mistakes :)
- - Less comments and docs.
+ - Less comments and docs
 
 
 # 0.6.5
@@ -17,6 +77,7 @@
 ### CatAudio
 
 Uncreased the stack size up to 1 MiB (1024 * 1024 bytes) due to problems on some versions of Linux.
+
 
 # 0.6.4
 
@@ -47,6 +108,7 @@ Fixed setting the index buffer size of the simple graphics.
 
 Added some functions to work with graphic objects and some was renamed.
 
+
 # 0.6.2
 
 ### CatAudio
@@ -61,6 +123,7 @@ Added an update per second counter.
 Fixed an update rate for closures.
 
 Updated the `ttf-parser` crate to `0.9.0` and the `ab_glyph_rasterizer` to `0.1.4`.
+
 
 # 0.6.0
 
@@ -103,9 +166,11 @@ Updated the `glium` crate to `0.29.0`.
 
 Added `DrawDarameters` to `Graphics`.
 
+
 # 0.5.5
 
 Fixed `cat_audio`'s features.
+
 
 # 0.5.4
 
@@ -113,11 +178,13 @@ Audio is now a separate crate and added as a default feature.
 
 Fixed the bug of multichannel playing.
 
+
 # 0.5.3
 
 Added `ImageObject`.
 
 Removed `DefaultWindow`.
+
 
 # 0.5.2
 
@@ -126,9 +193,11 @@ Updated the `image` crate to `0.23.12`.
 Fixed the bug of starting playing an audio output stream after changing a panicked device on some platforms.
 Now it saves the last stream's state.
 
+
 # 0.5.1
 
 Enabled new audio features: `extended_audio`,`raw_audio`.
+
 
 # 0.5.0
 
@@ -158,6 +227,7 @@ wrapper.play_track("test").unwrap();
 wrapper.audio.pause_track(0).unwrap();
 ```
 
+
 # 0.5.0-alpha
 
 ### A new text rendering system
@@ -177,6 +247,7 @@ Now saved objects support only `CachedFont`.
 
 Fully-rebuilded, too.
 
+
 # 0.4.5
 
 If an audio output device gets unavailable (for example, it has been unplugged),
@@ -195,17 +266,20 @@ The audio engine converts all sound tracks to the 24-bit format.
 
 Removed `NoStream` from the `AudioCommandResult` enumeration.
 
+
 # 0.4.4
 
 Now you can create an empty texture.
 
 Fixed the text rendering problem.
 
+
 # 0.4.3
 
 Updated crates: `minimp3` - 0.5.0; `image` - 0.23.9.
 
 Now image rendering functions are generalized for all textured objects.
+
 
 # 0.4.2
 
@@ -227,9 +301,11 @@ The `draw_all_textured_objects` function.
 
 Glyph rendering.
 
+
 # 0.4.1
 
 Added output for the `DynamicWindow`.
+
 
 # 0.4.0
 
@@ -249,6 +325,7 @@ Text rendering fully has been remade. Now it works faster.
 
 The `image` crate has been replaced from `crate::texture` to `crate`.
 
+
 # 0.3.3
 
 The `MouseCursor` is now public.
@@ -259,6 +336,7 @@ and textured objects must be implemented for this new trait.
 The `image` mod has been renamed to `texture`.
 
 The `image` crate version has been changed to `0.23.8`.
+
 
 # 0.3.2
 
@@ -272,7 +350,7 @@ window.graphics().rewrite_simple_object_vertices(0,&[100f32;4])
 
 ### Removed
 
-The `draw_raw()` function of all the windows.
+The `draw_raw` function of all the windows.
 
 ### Fixed
 
@@ -287,6 +365,7 @@ All the field of the `Graphics` are now public.
 
 Window drawing function takes `&mut self` instead of `&self`.
 
+
 # 0.3.1
 
 ### Fixed
@@ -296,6 +375,7 @@ Feature errors.
 ### Other
 
 The graphics engine is now divided into 2D and 3D (3D is not implemented yet).
+
 
 # 0.3.0
 
@@ -322,7 +402,7 @@ Changes in the `WindowSettings` fields.
 
 The `WindowEvent::Draw` event has been renamed to `WindowEvent::RedrawRequested`.
 The `WindowEvent::Exit` event has been renamed to `WindowEvent::CloseRequested`.
-The `WindowPage::on_close_requested()` function has been renamed to `WindowPage::on_window_close_requested()`.
+The `WindowPage::on_close_requested` function has been renamed to `WindowPage::on_window_close_requested`.
 
 The range system for simple objects has been replaced with an object one.
 Now you can add an object to the array and then quickly draw it or the whole array.
@@ -330,6 +410,7 @@ Now you can add an object to the array and then quickly draw it or the whole arr
 Some changes in the `SimpleObject` trait.
 
 All the geometric shapes (`cat_engine::graphics::*;`) has been moved to `cat_engine::shapes::*`.
+
 
 # Version 0.2.1
 
@@ -339,7 +420,7 @@ Update events. You can configure update frequency in the `WindowSettings` (`Gene
 
 `WindowEvent::EventLoopClosed` and `WindowEvent::Update` events.
 
-A `type Output` field and new functions (`on_update_requested()`, `on_event_loop_closed()->Output`) for the `WindowPage` trait. The function `run_page()` of the `PagedWindow` now return the `Output`.
+A `type Output` field and new functions (`on_update_requested`, `on_event_loop_closed->Output`) for the `WindowPage` trait. The `PagedWindow::run_page` function now returns the `Output`.
 
 A type defenition `PageRef<'a>` for `WindowPage` trait objects.
 
@@ -365,6 +446,7 @@ The `initial_colour` field has been moved to the `GeneralSettings`.
 
 Now all the windows are compatible.
 You can convert one into another, except `DynamicWindow` - you can only convert into it.
+
 
 # Version 0.1.5
 
@@ -401,6 +483,7 @@ The window of the default window format is now named `DefaultWindow`.
 
 The `WindowPage` trait got the `type Window` field and a life parameter.
 
+
 # Version 0.1.4
 
 ### Fixed
@@ -415,6 +498,7 @@ For the `auto_hide` feature:
 ### Features
 
 Alpha smoothing functions are now able only with the `alpha_smoothing` feature.
+
 
 # Version 0.1.3
 

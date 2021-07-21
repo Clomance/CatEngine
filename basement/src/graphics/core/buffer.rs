@@ -1,3 +1,4 @@
+#[cfg(target_os="windows")]
 use crate::windows::OpenGraphicsLibrary;
 
 use core::mem::transmute;
@@ -144,6 +145,7 @@ impl Buffer{
         }
     }
 
+    #[cfg(target_os="windows")]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             self.glGenBuffers=transmute(library.get_proc_address("glGenBuffers\0"));
@@ -206,7 +208,7 @@ impl Buffer{
 
     /// Binds a range within a buffer object to an indexed buffer target.
     /// 
-    /// `GLError::InvalidValue` is generated if `buffer` is not a name previously returned from a call to `Buffer::generate()`,
+    /// `GLError::InvalidValue` is generated if `buffer` is not a name previously returned from a call to `Buffer::generate`,
     /// if `index` is greater than or equal to the number of target-specific indexed binding points,
     /// if buffer does not have an associated data store, or if the size of that store is zero.
     #[inline(always)]
@@ -216,7 +218,7 @@ impl Buffer{
 
     /// Binds a range within a buffer object to an indexed buffer target.
     /// 
-    /// `GLError::InvalidValue` is generated if `buffer` is not a name previously returned from a call to `generate`,
+    /// `GLError::InvalidValue` is generated if `buffer` is not a name previously returned from a call to `Buffer::generate`,
     /// if `index` is greater than or equal to the number of target-specific indexed binding points,
     /// if `size` is less than or equal to zero, or if `offset + size` is greater than the value of GL_BUFFER_SIZE.
     /// 

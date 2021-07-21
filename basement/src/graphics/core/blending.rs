@@ -4,8 +4,10 @@ use crate::{
         GCore,
         core::GLCapability,
     },
-    windows::OpenGraphicsLibrary,
 };
+
+#[cfg(target_os="windows")]
+use crate::windows::OpenGraphicsLibrary;
 
 use core::mem::transmute;
 
@@ -194,6 +196,7 @@ impl Blending{
         }
     }
 
+    #[cfg(target_os="windows")]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             self.glBlendColor=transmute(library.get_proc_address("glBlendColor\0"));

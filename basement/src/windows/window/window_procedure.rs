@@ -32,6 +32,7 @@ use winapi::{
             BeginPaint,
             EndPaint,
             SetWindowLongPtrW,
+            GetWindowLongPtrW,
             PostQuitMessage,
             // constants
             MAPVK_VSC_TO_VK,
@@ -298,6 +299,14 @@ use std::{
     mem::transmute,
 };
 
+/// The auto draw flag index.
+/// Defines whether a new redraw event is requested directly after processing the last one.
+/// Mostly needed for enabling/disabling vsync.
+/// 
+/// Флаг для флаг авто отрисовки.
+/// Определяет, нужно запрашивать новое событие перерисовки сразу после обработки предыдущего.
+/// Нужно в основном для включения/отключения вертикальной синхронизации.
+pub const window_settings_auto_redraw:i32=8;
 
 pub unsafe extern "system" fn default_window_procedure(
     handle:HWND,
@@ -309,12 +318,15 @@ pub unsafe extern "system" fn default_window_procedure(
         // Sent prior to the WM_CREATE message when a window is first created.
         // wParam - This parameter is not used.
         // lParam - A pointer to the CREATESTRUCT structure.
-        // If an application processes this message, it should return TRUE to continue creation of the window.
+        // If an application processes this message, it should return `TRUE` to continue creation of the window.
         // If the application returns FALSE, the CreateWindow or CreateWindowEx function will return a NULL handle.
         WM_NCCREATE=>{
             let create_struct:&mut CREATESTRUCTW=transmute(l_param);
 
             let create_parameters:&mut CreateParameters<u8>=transmute(create_struct.lpCreateParams);
+
+            // Установка доп настроек
+            SetWindowLongPtrW(handle,window_settings_auto_redraw,create_parameters.auto_redraw as isize);
 
             // Установка аргуметов для подфункции окна
             SetWindowLongPtrW(handle,GWLP_USERDATA,create_parameters.window_procedure_args as isize);
@@ -348,6 +360,13 @@ pub unsafe extern "system" fn window_procedure<W:WindowProcedure<A>,A>(
 
             // EndPaint releases the display device context that BeginPaint retrieved
             EndPaint(handle,&paint);
+
+            let auto_draw_flag=unsafe{GetWindowLongPtrW(handle,window_settings_auto_redraw)};
+
+            if auto_draw_flag==1{
+                window.redraw()
+            }
+
             return 0
         }
 

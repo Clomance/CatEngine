@@ -1,4 +1,7 @@
-use crate::event::ProcessEvent;
+use crate::{
+    windows::Window,
+    event::ProcessEvent
+};
 
 use winapi::um::{
     winuser::{
@@ -47,6 +50,30 @@ pub enum EventInterval{
     NanoSeconds(u32),
 }
 
+impl EventInterval{
+    pub fn into_ticks(self)->i64{
+        let mut frequency=0i64;
+        unsafe{
+            QueryPerformanceFrequency(transmute(&mut frequency));
+        }
+
+        match self{
+            EventInterval::Ticks(ticks)=>ticks as i64,
+            EventInterval::EventsPerSecond(updates)=>{
+                if updates==0{
+                    0i64
+                }
+                else{
+                    frequency/updates as i64
+                }
+            }
+            EventInterval::NanoSeconds(nanoseconds)=>{
+                (nanoseconds as i64*frequency)/1_000_000_000i64
+            }
+        }
+    }
+}
+
 #[derive(Debug,Clone,Copy)]
 pub struct Ticks(pub u64);
 
@@ -80,40 +107,19 @@ impl Ticks{
 pub struct EventLoop{
     // в тактах
     update_interval:i64,
-    // redraw_interval:i64,
+    redraw_request_interval:i64,
 }
 
 impl EventLoop{
     pub fn new(attributes:EventLoopAttributes)->EventLoop{
 
-        let mut frequency=0i64;
-        unsafe{
-            QueryPerformanceFrequency(transmute(&mut frequency));
-        }
+        let update_interval=attributes.update_interval.into_ticks();
 
-        let update_interval=match attributes.update_interval{
-            EventInterval::Ticks(ticks)=>ticks as i64,
-            EventInterval::EventsPerSecond(updates)=>{
-                frequency/updates as i64
-            }
-            EventInterval::NanoSeconds(nanoseconds)=>{
-                (nanoseconds as i64*frequency)/1_000_000_000i64
-            }
-        };
-
-        // let redraw_interval=match attributes.redraw_interval{
-        //     UpdateInterval::Ticks(ticks)=>ticks as i64,
-        //     UpdateInterval::UpdatesPerSecond(redraws)=>{
-        //         frequency/redraws as i64
-        //     }
-        //     UpdateInterval::NanoSeconds(nanoseconds)=>{
-        //         (nanoseconds as i64*frequency)/1_000_000_000i64
-        //     }
-        // };
+        let redraw_request_interval=attributes.redraw_request_interval.into_ticks();
 
         Self{
             update_interval,
-            // redraw_interval,
+            redraw_request_interval,
         }
     }
 
@@ -129,8 +135,9 @@ impl EventLoop{
 
             // Время последнего события обновления в тактах
             let mut last_update=0i64;
+            let mut current_ticks=0i64;
             QueryPerformanceCounter(transmute(&mut last_update));
-            // let mut last_redraw=last_update;
+            let mut last_redraw_request=last_update;
 
             // Начальное событие
             f(ProcessEvent::EventLoopStart,&mut loop_control);
@@ -151,20 +158,22 @@ impl EventLoop{
                             }
                         }
 
-                        // Текущее время в тактах
-                        let mut current_ticks=0i64;
-                        QueryPerformanceCounter(transmute(&mut current_ticks));
-                        // проверка события обновления
-                        let ticks_passed=current_ticks-last_update;
-                        if ticks_passed>=self.update_interval{
-                            if ticks_passed<self.update_interval<<1{
-                                last_update+=self.update_interval;
-                            }
-                            else{
-                                last_update=current_ticks;
-                            }
+                        // если интервал не нулевой (событие включёно)
+                        if self.update_interval!=0{
+                            // Текущее время в тактах
+                            QueryPerformanceCounter(transmute(&mut current_ticks));
+                            // проверка интервала события обновления
+                            let ticks_passed=current_ticks-last_update;
+                            if ticks_passed>=self.update_interval{
+                                if ticks_passed<self.update_interval<<1{
+                                    last_update+=self.update_interval;
+                                }
+                                else{
+                                    last_update=current_ticks;
+                                }
 
-                            f(ProcessEvent::Update(Ticks(ticks_passed as u64)),&mut loop_control);
+                                f(ProcessEvent::Update(Ticks(ticks_passed as u64)),&mut loop_control);
+                            }
                         }
                     },
 
@@ -188,41 +197,59 @@ impl EventLoop{
                     LoopControl::Break=>break,
                 }
 
-                // Текущее время в тактах
-                // let mut current_ticks=0i64;
-                // QueryPerformanceCounter(transmute(&mut current_ticks));
-                // // проверка события отрисовки
-                // let ticks_passed=current_ticks-last_redraw;
-                // if ticks_passed>=self.redraw_interval{
-                //     if ticks_passed<self.redraw_interval<<1{
-                //         last_redraw+=self.redraw_interval;
-                //     }
-                //     else{
-                //         last_redraw=current_ticks;
-                //     }
+                if !message.hwnd.is_null(){
+                    // если интервал не нулевой (событие включёно)
+                    if self.redraw_request_interval!=0{
+                        // текущее время в тактах
+                        QueryPerformanceCounter(transmute(&mut current_ticks));
+                        // проверка интервала события отрисовки
+                        let ticks_passed=current_ticks-last_redraw_request;
+                        if ticks_passed>=self.redraw_request_interval{
+                            if ticks_passed<self.redraw_request_interval<<1{
+                                last_redraw_request+=self.redraw_request_interval;
+                            }
+                            else{
+                                last_redraw_request=current_ticks;
+                            }
 
-                //     f(Event::Redraw,&mut loop_control);
-                // }
+                            let window:&Window=transmute(&message.hwnd);
+                            window.redraw();
+                        }
+                    }
+                }
             }
 
+            // Завершение цикла
             f(ProcessEvent::EventLoopBreak,&mut loop_control);
         }
     }
 }
 
+impl EventLoop{
+    pub fn set_update_interval(&mut self,interval:EventInterval){
+        self.update_interval=interval.into_ticks()
+    }
+
+    pub fn set_redraw_request_interval(&mut self,interval:EventInterval){
+        self.redraw_request_interval=interval.into_ticks()
+    }
+}
+
 
 pub struct EventLoopAttributes{
-    /// The default is `UpdateInteval::UpdatesPerSecond(50u32)`.
+    /// The default is `EventInteval::UpdatesPerSecond(50u32)`.
     pub update_interval:EventInterval,
 
-    // pub redraw_interval:UpdateInterval,
+    /// The default is `EventInteval::UpdatesPerSecond(0u32)`
+    /// (disabled).
+    pub redraw_request_interval:EventInterval,
 }
 
 impl EventLoopAttributes{
     pub fn new()->EventLoopAttributes{
         Self{
             update_interval:EventInterval::EventsPerSecond(50u32),
-            // redraw_interval:UpdateInterval::UpdatesPerSecond(30u32),
+            redraw_request_interval:EventInterval::EventsPerSecond(0u32),
         }
     }
 }

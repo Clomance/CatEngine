@@ -1,3 +1,6 @@
+pub mod core;
+use self::core::WindowsCore;
+
 mod error;
 pub use error::WinError;
 
@@ -7,7 +10,9 @@ pub use images::{
     Icon,
 };
 
+#[cfg(feature="opengl")]
 mod opengl;
+#[cfg(feature="opengl")]
 pub use opengl::{
     OpenGraphicsLibrary,
     OpenGLRenderContext,
@@ -471,3 +476,5 @@ pub enum VirtualKeyCode{
     /// Clear key
     VK_OEM_CLEAR,
 }
+
+pub static mut WinCore:WindowsCore=WindowsCore::new();

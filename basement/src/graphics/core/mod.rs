@@ -1,3 +1,4 @@
+#[cfg(target_os="windows")]
 use crate::windows::OpenGraphicsLibrary;
 
 pub mod blending;

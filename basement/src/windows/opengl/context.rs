@@ -1,5 +1,6 @@
 use crate::windows::{
     Window,
+    WinCore,
     WinError,
 };
 
@@ -38,6 +39,7 @@ use std::{
 pub struct OpenGLRenderContext{
     window_context:HDC,
     render_context:HGLRC,
+    wglSwapIntervalEXT:wglSwapIntervalEXT_t,
 }
 
 impl OpenGLRenderContext{
@@ -51,7 +53,7 @@ impl OpenGLRenderContext{
                 nVersion:1,
                 dwFlags:PFD_DRAW_TO_WINDOW|PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER,    // Flags
                 iPixelType:PFD_TYPE_RGBA,        // The kind of framebuffer. RGBA or palette.
-                cColorBits:attributes.colour_bits,                   // Colordepth of the framebuffer.
+                cColorBits:32,                   // Colordepth of the framebuffer.
                 cRedBits:0,
                 cRedShift:0,
                 cGreenBits:0,
@@ -65,7 +67,7 @@ impl OpenGLRenderContext{
                 cAccumGreenBits:0,
                 cAccumBlueBits:0,
                 cAccumAlphaBits:0,
-                cDepthBits:attributes.depth_bits, // Number of bits for the depthbuffer
+                cDepthBits:0, // Number of bits for the depthbuffer
                 cStencilBits:0, // Number of bits for the stencilbuffer
                 cAuxBuffers:0, // Number of Aux buffers in the framebuffer.
                 iLayerType:PFD_MAIN_PLANE,
@@ -147,11 +149,12 @@ impl OpenGLRenderContext{
             // }
 
             // vsync
-            wglSwapIntervalEXT.expect("wglSwapIntervalEXT is not loaded")(1);
+            wglSwapIntervalEXT.expect("wglSwapIntervalEXT is not loaded")(attributes.vsync as i32);
 
             Ok(Self{
                 window_context,
                 render_context,
+                wglSwapIntervalEXT,
             })
         }
     }
@@ -197,6 +200,17 @@ impl OpenGLRenderContext{
             }
         }
     }
+
+    pub fn set_vsync(&self,enabled:bool)->Result<(),WinError>{
+        unsafe{
+            if self.wglSwapIntervalEXT.expect("wglSwapIntervalEXT is not loaded")(enabled as i32)==1{
+                Ok(())
+            }
+            else{
+                Err(WinError::get_last_error())
+            }
+        }
+    }
 }
 
 impl Drop for OpenGLRenderContext{
@@ -209,18 +223,13 @@ impl Drop for OpenGLRenderContext{
 }
 
 pub struct OpenGLRenderContextAttributes{
-    /// The default is 32.
-    pub colour_bits:u8,
-
-    /// The default is 0.
-    pub depth_bits:u8,
+    pub vsync:bool,
 }
 
 impl OpenGLRenderContextAttributes{
     pub fn new()->OpenGLRenderContextAttributes{
         Self{
-            colour_bits:32u8,
-            depth_bits:0u8,
+            vsync:true,
         }
     }
 }

@@ -25,6 +25,9 @@ impl WindowProcedure<WindowInner<Option<(Texture,f32)>>> for WindowHandle{
     fn handle(event:WindowEvent,window:&Window,window_inner:&mut WindowInner<Option<(Texture,f32)>>){
         match event{
             WindowEvent::Redraw=>{
+                if let Some((_,angle))=window_inner.storage(){
+                    *angle+=0.01
+                }
                 window_inner.draw(window,|window,graphics,texture|{
                     graphics.clear_colour([1f32;4]);
 
@@ -42,7 +45,6 @@ impl WindowProcedure<WindowInner<Option<(Texture,f32)>>> for WindowHandle{
                         graphics.draw_parameters().switch(DrawMode::Rotation);
                     }
                 }).unwrap_or_else(|_|{quit()});
-                window.redraw();
             }
 
             WindowEvent::CloseRequest=>quit(),

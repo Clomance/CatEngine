@@ -1,7 +1,7 @@
-use crate::{
-    windows::OpenGraphicsLibrary,
-    graphics::GCore,
-};
+use crate::graphics::GCore;
+
+#[cfg(target_os="windows")]
+use crate::windows::OpenGraphicsLibrary;
 
 use core::mem::transmute;
 
@@ -19,6 +19,7 @@ impl Viewport{
         }
     }
 
+    #[cfg(target_os="windows")]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             self.glViewport=transmute(library.get_proc_address("glViewport\0"))

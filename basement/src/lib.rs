@@ -11,6 +11,7 @@
 
 pub mod support;
 
+#[cfg(feature="opengl")]
 pub mod graphics;
 
 #[cfg(target_os="windows")]

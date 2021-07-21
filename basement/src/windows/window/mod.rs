@@ -13,7 +13,8 @@ use super::{
 mod window_procedure;
 use window_procedure::{
     default_window_procedure,
-    window_procedure
+    window_procedure,
+    window_settings_auto_redraw,
 };
 
 mod window_class;
@@ -31,7 +32,6 @@ pub use window::{
     Window,
     CreateParameters,
     WindowAttributes,
-    WindowStyles,
 };
 
 

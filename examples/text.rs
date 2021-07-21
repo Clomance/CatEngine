@@ -35,7 +35,6 @@ impl WindowProcedure<WindowInner<Option<CachedFont>>> for WindowHandle{
 
                     }
                 }).unwrap_or_else(|_|{quit()});
-                window.redraw();
             }
 
             WindowEvent::CloseRequest=>quit(),

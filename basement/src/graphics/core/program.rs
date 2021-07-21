@@ -1,3 +1,4 @@
+#[cfg(target_os="windows")]
 use crate::windows::OpenGraphicsLibrary;
 
 use core::mem::{
@@ -73,6 +74,7 @@ impl Program{
         }
     }
 
+    #[cfg(target_os="windows")]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             self.glCreateProgram=transmute(library.get_proc_address("glCreateProgram\0"));

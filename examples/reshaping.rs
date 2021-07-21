@@ -35,7 +35,7 @@ impl WindowProcedure<WindowInner<Option<Texture>>> for WindowHandle{
                 }
                 window_inner.graphics().draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
 
-                if let Some(texture)=window_inner.storage().as_ref(){
+                if let Some(texture)=window_inner.storage_ref().as_ref(){
                     window_inner.graphics_ref().clear_colour([1f32;4]);
                     window_inner.graphics_ref().draw_stack_textured_object(0,texture.texture_2d());
                     window_inner.graphics_ref().draw_stack_textured_object(1,texture.texture_2d());
@@ -44,7 +44,6 @@ impl WindowProcedure<WindowInner<Option<Texture>>> for WindowHandle{
                     window_inner.graphics_ref().core().finish();
                     window_inner.context().swap_buffers().unwrap_or_else(|_|{quit()});
                 }
-                window.redraw();
             }
 
             WindowEvent::KeyPress(VirtualKeyCode::A)=>{

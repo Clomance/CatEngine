@@ -1,3 +1,5 @@
+use super::WinCore;
+
 use winapi::{
     shared::ntdef::{
         MAKELANGID,
@@ -24,9 +26,10 @@ pub struct WinError{
 
 impl WinError{
     pub fn get_last_error()->WinError{
-        let code=unsafe{GetLastError()};
-        WinError{
-            code,
+        unsafe{
+            WinError{
+                code:WinCore.get_last_error(),
+            }
         }
     }
 

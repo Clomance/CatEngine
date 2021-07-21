@@ -38,7 +38,6 @@ impl WindowProcedure<WindowInner<Option<(Texture,f32)>>> for WindowHandle{
                         graphics.draw_parameters().switch(DrawMode::Shift);
                     }
                 }).unwrap_or_else(|_|{quit()});
-                window.redraw();
             }
 
             WindowEvent::CloseRequest=>quit(),

@@ -57,10 +57,9 @@ impl WindowProcedure<WindowGraphics> for Handler1{
 
                 args.graphics.core().finish();
                 args.context.swap_buffers().unwrap_or_else(|_|{quit()});
-                window.redraw();
             }
 
-            WindowEvent::CloseRequest=>window.destroy(),
+            WindowEvent::CloseRequest=>window.destroy().unwrap(),
 
             WindowEvent::Destroy=>quit(),
             _=>{}

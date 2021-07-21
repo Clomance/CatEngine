@@ -12,7 +12,6 @@ use cat_engine_basement::windows::{
 pub use cat_engine_basement::{
     windows::{
         Window,
-        WinError,
         CursorIcon,
         Background,
         Fullscreen,
@@ -25,7 +24,7 @@ pub use cat_engine_basement::{
         EventLoopAttributes,
         OpenGLRenderContextAttributes,
         EventInterval,
-
+        WinError,
         WindowProcedure,
         quit,
     },
@@ -62,7 +61,13 @@ impl<S> WindowInner<S>{
         &self.context
     }
 
-    pub fn storage(&self)->&S{
+    pub fn storage(&mut self)->&mut S{
+        unsafe{
+            &mut *self.storage
+        }
+    }
+
+    pub fn storage_ref(&self)->&S{
         unsafe{
             &*self.storage
         }
@@ -85,6 +90,9 @@ impl<S> WindowInner<S>{
     }
 }
 
+/// A structure to easily create a windowed application.
+/// 
+/// Loads everything needed for drawing.
 pub struct App<S:Sized+'static>{
     event_loop:EventLoop,
     window_class:WindowClass,
@@ -94,6 +102,15 @@ pub struct App<S:Sized+'static>{
 }
 
 impl<S:Sized+'static> App<S>{
+    /// Creates an application with the given attributes.
+    /// 
+    /// `W` is the type
+    /// that implements the `WindowProcedure` trait
+    /// that defines window's behavior.
+    /// 
+    /// `WindowInner` stores graphics and context structures and `S`.
+    /// 
+    /// `S` is user defined type for anything (e.g. for storing objects for rendering).
     pub fn new<W:WindowProcedure<WindowInner<S>>>(attributes:AppAttributes,storage:S)->App<S>{
         let event_loop=EventLoop::new(attributes.event_loop);
 
@@ -140,6 +157,7 @@ impl<S:Sized+'static> App<S>{
         }
     }
 
+    /// Replaces the window procedure with functions defined by `W`.
     pub fn set_window_handle<W:WindowProcedure<WindowInner<S>>>(&self){
         unsafe{
             self.window.set_window_handle::<W,WindowInner<S>>()
@@ -174,6 +192,7 @@ impl<S:Sized+'static> App<S>{
 }
 
 impl<S:Sized+'static> App<S>{
+    /// Runs an event loop.
     pub fn run<F:FnMut(ProcessEvent,&mut AppControl<S>)>(&mut self,mut event_handler:F){
         let event_loop:&'static mut EventLoop=unsafe{std::mem::transmute(&mut self.event_loop)};
 

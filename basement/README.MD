@@ -14,7 +14,7 @@ The CatEngine's basement for Windows.
 Compatible with OpenGL 3.3 and greater.
 
 #### Dependencies
- - Base - [winapi](https://github.com/retep998/winapi-rs)
+ - WindowsAPI - [winapi](https://github.com/retep998/winapi-rs)
  - Images - [image](https://github.com/image-rs/image)
 
 

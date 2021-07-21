@@ -8,6 +8,7 @@ use cat_engine::{
         Fullscreen,
         Monitor,
         WindowProcedure,
+        VirtualKeyCode,
         quit,
     },
     graphics::{
@@ -36,7 +37,14 @@ impl WindowProcedure<WindowInner<Option<Texture>>> for WindowHandle{
                         graphics.draw_stack_textured_object(0,texture.texture_2d());
                     }
                 }).unwrap_or_else(|_|{quit()});
-                window.redraw();
+            }
+
+            WindowEvent::KeyPress(VirtualKeyCode::A)=>{
+                window.set_fullscreen(Fullscreen::Monitor(Monitor::get_primary_monitor()))
+            }
+
+            WindowEvent::KeyPress(VirtualKeyCode::S)=>{
+                window.set_fullscreen(Fullscreen::None)
             }
 
             WindowEvent::CloseRequest=>quit(),
