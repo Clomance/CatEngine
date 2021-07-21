@@ -35,6 +35,7 @@ features = [
     # AUDIO
     "extended_audio",
 ]
+default-target = "x86_64-pc-windows-msvc"
 
 [features]
 default = [

@@ -23,6 +23,7 @@ opengl = []
 
 [package.metadata.docs.rs]
 features = ["default"]
+default-target = "x86_64-pc-windows-msvc"
 
 [target.'cfg(windows)'.dependencies.winapi]
 version = "0.3.9"
