@@ -68,7 +68,7 @@ impl<I:Sized> Buffer<I>{
 impl<I:Sized> Buffer<I>{
     /// Binds a buffer to the specified target.
     /// 
-    /// Returns `GLError::NoError` if no error accured.
+    /// Returns `GLError::NoError` if no error has accured.
     /// 
     /// Returns `GLError::InvalidValue` is generated
     /// if `buffer` is not a name previously returned from a call to `Buffer::generate()`.
@@ -89,7 +89,7 @@ impl<I:Sized> Buffer<I>{
 
     /// Binds a buffer to the specified binding with the specified target.
     /// 
-    /// Returns `GLError::NoError` if no error accured.
+    /// Returns `GLError::NoError` if no error has accured.
     /// 
     /// `GLError::InvalidValue` is generated
     /// if `buffer` is not a name previously returned from a call to `Buffer::generate()`,
@@ -105,7 +105,7 @@ impl<I:Sized> Buffer<I>{
 
     /// Binds a buffer to the specified binding with the specified target and buffer range.
     /// 
-    /// Returns `GLError::NoError` if no error accured.
+    /// Returns `GLError::NoError` if no error has accured.
     #[inline(always)]
     pub fn bind_range(&self,target:BufferIndexedTarget,index:u32,start:isize,count:isize)->GLError{
         unsafe{
@@ -161,6 +161,8 @@ impl<I:Sized> Buffer<I>{
 
     /// Creates and initializes a buffer object's data store.
     /// 
+    /// Returns `GLError::NoError` if no error has accured.
+    /// 
     /// Returns `GLError::InvalidValue` if `size` is negative.
     /// 
     /// Returns `GLError::InvalidOperation` if the reserved buffer object name 0 is bound to target.
@@ -177,6 +179,8 @@ impl<I:Sized> Buffer<I>{
     }
 
     /// Creates and initializes a buffer object's data store.
+    /// 
+    /// Returns `GLError::NoError` if no error has accured.
     /// 
     /// Returns `GLError::InvalidOperation` if the reserved buffer object name 0 is bound to target.
     /// 
@@ -196,6 +200,8 @@ impl<I:Sized> Buffer<I>{
     /// Creates an uninitialized buffer object's data store.
     /// 
     /// The store size is `size * size_of::<I>()`.
+    /// 
+    /// Returns `GLError::NoError` if no error has accured.
     /// 
     /// Returns `GLError::InvalidValue` if `size` is negative.
     /// 

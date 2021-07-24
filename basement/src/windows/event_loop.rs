@@ -12,7 +12,6 @@ use winapi::um::{
         DispatchMessageW,
 
         PM_REMOVE,
-
         WM_QUIT,
     },
     profileapi::{
@@ -44,10 +43,15 @@ pub enum LoopControl{
 unsafe impl Sync for LoopControl{}
 unsafe impl Send for LoopControl{}
 
+/// Represents interval between events or an event rate.
+/// 
+/// An interval or rate equal to `0` disables the event.
+#[derive(Clone,Copy,Debug)]
 pub enum EventInterval{
     Ticks(u32),
     EventsPerSecond(u32),
     NanoSeconds(u32),
+    Seconds(u32),
 }
 
 impl EventInterval{
@@ -69,6 +73,9 @@ impl EventInterval{
             }
             EventInterval::NanoSeconds(nanoseconds)=>{
                 (nanoseconds as i64*frequency)/1_000_000_000i64
+            }
+            EventInterval::Seconds(nanoseconds)=>{
+                nanoseconds as i64*frequency
             }
         }
     }
@@ -150,11 +157,12 @@ impl EventLoop{
                                 WM_QUIT=>{
                                     f(ProcessEvent::Quit,&mut loop_control);
                                     break
-                                },
+                                }
                                 _=>{
+                                    
                                     TranslateMessage(&message);
                                     DispatchMessageW(&message);
-                                },
+                                }
                             }
                         }
 
@@ -183,13 +191,13 @@ impl EventLoop{
                             0=>{
                                 f(ProcessEvent::Quit,&mut loop_control);
                                 break
-                            },
+                            }
 
                             _=>match message.message{
                                 _=>{
                                     TranslateMessage(&message);
                                     DispatchMessageW(&message);
-                                },
+                                }
                             }
                         }
                     }
@@ -235,7 +243,7 @@ impl EventLoop{
     }
 }
 
-
+#[derive(Clone,Debug)]
 pub struct EventLoopAttributes{
     /// The default is `EventInteval::UpdatesPerSecond(50u32)`.
     pub update_interval:EventInterval,

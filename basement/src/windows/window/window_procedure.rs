@@ -1,3 +1,8 @@
+use crate::windows::{
+    WinCore,
+    core::window::WindowData,
+};
+
 use super::{
     // structs
     Window,
@@ -31,8 +36,6 @@ use winapi::{
             MapVirtualKeyW,
             BeginPaint,
             EndPaint,
-            SetWindowLongPtrW,
-            GetWindowLongPtrW,
             PostQuitMessage,
             // constants
             MAPVK_VSC_TO_VK,
@@ -287,9 +290,6 @@ use winapi::{
             WM_PENWINLAST,
             WM_APP,
             WM_USER,
-
-            GWLP_WNDPROC,
-            GWLP_USERDATA,
         },
     }
 };
@@ -306,7 +306,7 @@ use std::{
 /// Флаг для флаг авто отрисовки.
 /// Определяет, нужно запрашивать новое событие перерисовки сразу после обработки предыдущего.
 /// Нужно в основном для включения/отключения вертикальной синхронизации.
-pub const window_settings_auto_redraw:i32=8;
+pub const window_settings_auto_redraw:WindowData=WindowData::User;
 
 pub unsafe extern "system" fn default_window_procedure(
     handle:HWND,
@@ -326,13 +326,13 @@ pub unsafe extern "system" fn default_window_procedure(
             let create_parameters:&mut CreateParameters<u8>=transmute(create_struct.lpCreateParams);
 
             // Установка доп настроек
-            SetWindowLongPtrW(handle,window_settings_auto_redraw,create_parameters.auto_redraw as isize);
+            WinCore.window.set_window_long_ptr(handle,window_settings_auto_redraw,create_parameters.auto_redraw as isize);
 
             // Установка аргуметов для подфункции окна
-            SetWindowLongPtrW(handle,GWLP_USERDATA,create_parameters.window_procedure_args as isize);
+            WinCore.window.set_window_long_ptr(handle,WindowData::UserData,create_parameters.window_procedure_args as isize);
 
             // Установка функции окна
-            SetWindowLongPtrW(handle,GWLP_WNDPROC,create_parameters.window_procedure as isize);
+            WinCore.window.set_window_long_ptr(handle,WindowData::WindowProcedure,create_parameters.window_procedure as isize);
 
             return 1;
         }
@@ -361,7 +361,7 @@ pub unsafe extern "system" fn window_procedure<W:WindowProcedure<A>,A>(
             // EndPaint releases the display device context that BeginPaint retrieved
             EndPaint(handle,&paint);
 
-            let auto_draw_flag=unsafe{GetWindowLongPtrW(handle,window_settings_auto_redraw)};
+            let auto_draw_flag=WinCore.window.get_window_long_ptr(handle,window_settings_auto_redraw);
 
             if auto_draw_flag==1{
                 window.redraw()

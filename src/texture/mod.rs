@@ -8,7 +8,6 @@ use cat_engine_basement::graphics::{
         TextureMinFilter,
         Texture2DInternalFormat,
         ImageDataFormat,
-        ImageDataType,
     },
     level1::Texture2D,
 };
@@ -43,8 +42,7 @@ impl Texture{
             TextureMagFilter::Linear,
             TextureMinFilter::Linear,
             size,
-            ImageDataFormat::RGBA,
-            ImageDataType::U8,
+            ImageDataFormat::RGBA_U8,
             data
         );
 
@@ -95,10 +93,21 @@ impl Texture{
 }
 
 impl Texture{
-    pub fn write(&self,[x,y,width,height]:[i32;4],image_data_format:ImageDataFormat,image_data_type:ImageDataType,data:&[u8]){
+    pub fn write(
+        &self,
+        [x,y,width,height]:[i32;4],
+        image_data_format:ImageDataFormat,
+        data:&[u8]
+    ){
         self.texture.bind();
         unsafe{
-            GCore.texture.write_image_2d(Texture2DWriteTarget::Texture2D,0,[x,y,width,height],image_data_format,image_data_type,&data[0])
+            GCore.texture.write_image_2d(
+                Texture2DWriteTarget::Texture2D,
+                0,
+                [x,y,width,height],
+                image_data_format,
+                &data[0]
+            )
         }
     }
 
@@ -112,7 +121,13 @@ impl Texture{
         ];
         self.texture.bind();
         unsafe{
-            GCore.texture.write_image_2d(Texture2DWriteTarget::Texture2D,0,frame,ImageDataFormat::RGBA,ImageDataType::U8,image)
+            GCore.texture.write_image_2d(
+                Texture2DWriteTarget::Texture2D,
+                0,
+                frame,
+                ImageDataFormat::RGBA_U8,
+                image
+            )
         }
     }
 
@@ -120,7 +135,13 @@ impl Texture{
         let (w,h)=image.dimensions();
         self.texture.bind();
         unsafe{
-            GCore.texture.write_image_2d(Texture2DWriteTarget::Texture2D,0,[0,0,w as i32,h as i32],ImageDataFormat::RGBA,ImageDataType::U8,image)
+            GCore.texture.write_image_2d(
+                Texture2DWriteTarget::Texture2D,
+                0,
+                [0,0,w as i32,h as i32],
+                ImageDataFormat::RGBA_U8,
+                image
+            )
         }
     }
 
@@ -137,7 +158,14 @@ impl Texture{
         let (w,h)=image.dimensions();
         self.texture.bind();
         unsafe{
-            GCore.texture.rewrite_image_2d(Texture2DRewriteTarget::Texture2D,0,texture_internal_format,[w as i32,h as i32],ImageDataFormat::RGBA,ImageDataType::U8,image)
+            GCore.texture.rewrite_image_2d(
+                Texture2DRewriteTarget::Texture2D,
+                0,
+                texture_internal_format,
+                [w as i32,h as i32],
+                ImageDataFormat::RGBA_U8,
+                image
+            )
         }
     }
 }

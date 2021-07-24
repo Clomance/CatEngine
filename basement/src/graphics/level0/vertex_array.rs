@@ -1,5 +1,6 @@
 use crate::graphics::{
     GCore,
+    core::GLError,
     core::buffer::BufferTarget,
 };
 
@@ -35,7 +36,7 @@ impl<V:Vertex> VertexArray<V>{
 
     pub fn new(vertex_buffer:&Buffer<V>)->VertexArray<V>{
         let vertex_array=VertexArray::initiate();
-        vertex_array.bind();
+        vertex_array.bind().unwrap();
         vertex_buffer.bind(BufferTarget::ArrayBuffer).unwrap();
         Vertex::bind_for_vertex_array(&vertex_array);
         vertex_array.unbind();
@@ -43,9 +44,10 @@ impl<V:Vertex> VertexArray<V>{
     }
 
     #[inline(always)]
-    pub fn bind(&self){
+    pub fn bind(&self)->GLError{
         unsafe{
-            GCore.vertex_array.bind(self.id)
+            GCore.vertex_array.bind(self.id);
+            GCore.get_error()
         }
     }
 
@@ -60,7 +62,7 @@ impl<V:Vertex> VertexArray<V>{
 impl<V:Vertex> Drop for VertexArray<V>{
     fn drop(&mut self){
         unsafe{
-            GCore.vertex_array.delete_one(&self.id)
+            GCore.vertex_array.delete_one(&self.id);
         }
     }
 }

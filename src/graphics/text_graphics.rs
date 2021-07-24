@@ -21,7 +21,6 @@ use cat_engine_basement::graphics::{
         TextureMagFilter,
         TextureMinFilter,
         ImageDataFormat,
-        ImageDataType
     },
     level0::{
         VertexArray,
@@ -103,7 +102,7 @@ impl TextGraphics{
 
     pub fn load_glyph_image(&self,size:[u32;2],image:&[u8]){
         unsafe{GCore.set_pixel_storage_modei(UNPACK_ALIGNMENT,1)}
-        self.texture.write_image([0,0,size[0] as i32,size[1] as i32],ImageDataFormat::Red,ImageDataType::U8,image);
+        self.texture.write_image([0,0,size[0] as i32,size[1] as i32],ImageDataFormat::R_U8,image);
         unsafe{GCore.set_pixel_storage_modei(UNPACK_ALIGNMENT,4)}
     }
 

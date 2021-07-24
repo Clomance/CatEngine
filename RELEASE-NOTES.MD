@@ -1,3 +1,19 @@
+# 1.0.0 - alpha2
+
+Updated the `ttf-parser` crate to `0.12.3` and the `minimp3` crate to `0.5.1`.
+
+## CatEngineBasement - 0.0.0-alpha2
+
+### Added
+- new formats for `Texture2DInternalFormat` and `ImageDataFormat`
+- `core::window::Window::get_window_long_ptr` and `-::set_window_long_ptr` functions and `WindowData` for them
+- `WindowClass` to `core`
+- a `VertexIntegerComponents` enum for the `core::vertex_array::VertexArray::attribute_pointer` function
+- a `core::vertex_array::VertexArray::attribute_pointer_integer` function and `VertexIntegerComponents` and `IntegerDataType` for it
+- a `Seconds` option for `EventInterval`
+
+`ImageDataFormat` and `ImageDataType` are merged into `ImageDataFormat`.
+
 # 1.0.0 - alpha1
 
 ## CatEngineBasement - 0.0.0-alpha1

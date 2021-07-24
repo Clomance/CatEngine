@@ -25,9 +25,6 @@ use winapi::{
 
     um::{
         winuser::{
-            RegisterClassExW,
-            UnregisterClassW,
-            WNDCLASSEXW,
             LoadCursorW,
             // window class styles
             CS_HREDRAW,
@@ -150,22 +147,21 @@ impl WindowClass{
             style|=CS_DBLCLKS
         }
 
-        let class_attributes=WNDCLASSEXW{
-            cbSize:std::mem::size_of::<WNDCLASSEXW>() as u32,
-            style,
-            lpfnWndProc:Some(default_window_procedure),
-            cbClsExtra:0,
-            cbWndExtra:64,
-            hInstance:null_mut(),
-            hIcon:window_icon,
-            hCursor:cursor,
-            hbrBackground:background,
-            lpszMenuName:null_mut(),
-            lpszClassName:class_name.as_ptr(),
-            hIconSm:null_mut(),
+        let class=unsafe{
+            WinCore.window_class.register(
+                class_name.as_ptr(),
+                style,
+                Some(default_window_procedure),
+                0,
+                64,
+                null_mut(),
+                window_icon,
+                null_mut(),
+                cursor,
+                background,
+                null_mut(),
+            )
         };
-
-        let class=unsafe{RegisterClassExW(&class_attributes)};
 
         if class==0{
             Err(WinError::get_last_error())
@@ -187,7 +183,7 @@ impl WindowClass{
 impl Drop for WindowClass{
     fn drop(&mut self){
         unsafe{
-            let _result=UnregisterClassW(self.name.as_ptr(),null_mut());
+            let _result=WinCore.window_class.unregister(self.name.as_ptr(),null_mut());
             // #[cfg(feature="window_background_image")]
             // if let Some(background_image)=self.background_image.take(){
             //     background_image.destroy()

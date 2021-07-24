@@ -1,6 +1,7 @@
 use crate::windows::{
     WinCore,
-    WinError
+    WinError,
+    core::window::WindowData,
 };
 
 use super::{
@@ -32,11 +33,8 @@ use winapi::{
             // SetFocus,
             // SetForegroundWindow,
             // SetCapture,
-            SendMessageW,
             GetDC,
             RedrawWindow,
-            SetWindowLongPtrW,
-            GetWindowLongPtrW,
             GetCursorPos,
             SetCursorPos,
             ShowCursor,
@@ -382,22 +380,20 @@ impl Window{
 
     /// Will not make effect until you call the `Window::set_window_position()`.
     pub unsafe fn set_extended_style(&self,style:u32){
-        WinCore.window.set_window_long_ptr(self.handle,GWL_EXSTYLE,style as isize);
+        WinCore.window.set_window_long_ptr(self.handle,WindowData::ExtendedStyle,style as isize);
     }
 
-    /// Will not make effect until you call the `Window::set_window_position()`.
     pub unsafe fn get_extended_style(&self)->u32{
-        GetWindowLongPtrW(self.handle,GWL_EXSTYLE) as u32
+        WinCore.window.get_window_long_ptr(self.handle,WindowData::ExtendedStyle) as u32
     }
 
     /// Will not make effect until you call the `Window::set_window_position()`.
     pub unsafe fn set_style(&self,style:u32){
-        WinCore.window.set_window_long_ptr(self.handle,GWL_STYLE,style as isize);
+        WinCore.window.set_window_long_ptr(self.handle,WindowData::Style,style as isize);
     }
 
-    /// Will not make effect until you call the `Window::set_window_position()`.
     pub unsafe fn get_style(&self)->u32{
-        GetWindowLongPtrW(self.handle,GWL_STYLE) as u32
+        WinCore.window.get_window_long_ptr(self.handle,WindowData::Style) as u32
     }
 
     pub unsafe fn set_window_position(&self,[x,y,width,height]:[i32;4]){
@@ -410,27 +406,26 @@ impl Window{
         WinCore.window.set_window_long_ptr(self.handle,window_settings_auto_redraw,enabled as isize);
     }
 
-
     pub (crate) unsafe fn set_user_data<D:Sized>(&self,data:&mut D){
-        WinCore.window.set_window_long_ptr(self.handle,GWLP_USERDATA,data as *const D as isize);
+        WinCore.window.set_window_long_ptr(self.handle,WindowData::UserData,data as *const D as isize);
     }
 
     pub (crate) unsafe fn get_user_data(&self)->isize{
-        GetWindowLongPtrW(self.handle,GWLP_USERDATA)
+        WinCore.window.get_window_long_ptr(self.handle,WindowData::UserData)
     }
 
     pub unsafe fn set_window_procedure(&self,procedure:unsafe extern "system" fn(HWND,u32,usize,isize)->isize){
-        WinCore.window.set_window_long_ptr(self.handle,GWLP_WNDPROC,procedure as isize);
+        WinCore.window.set_window_long_ptr(self.handle,WindowData::WindowProcedure,procedure as isize);
     }
 
     pub unsafe fn set_window_handle<W:WindowProcedure<A>,A>(&self){
-        WinCore.window.set_window_long_ptr(self.handle,GWLP_WNDPROC,window_procedure::<W,A> as isize);
+        WinCore.window.set_window_long_ptr(self.handle,WindowData::WindowProcedure,window_procedure::<W,A> as isize);
     }
 }
 
 /// Cursor functions.
 impl Window{
-    /// Returns the window's cursor position.
+    /// Returns window's cursor position.
     /// 
     /// Возвращает положение курсора окна.
     pub fn cursor_position(&self)->[i32;2]{
@@ -442,7 +437,7 @@ impl Window{
         }
     }
 
-    /// Sets the window's cursor position.
+    /// Sets window's cursor position.
     /// 
     /// Устанавливает положение курсора окна.
     pub fn set_cursor_position(&self,[x,y]:[i32;2]){

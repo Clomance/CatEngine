@@ -7,12 +7,8 @@ use crate::graphics::{
         TextureMinFilter,
         Texture2DInternalFormat,
         ImageDataFormat,
-        ImageDataType,
     },
-    level0::{
-        Texture,
-        // BoundTexture,
-    },
+    level0::Texture,
 };
 
 pub struct Texture2D{
@@ -33,7 +29,6 @@ impl Texture2D{
         min:TextureMinFilter,
         size:[u32;2],
         image_data_format:ImageDataFormat,
-        image_data_type:ImageDataType,
         data:&[u8]
     )->Texture2D{
         let texture=Texture::new_2d(
@@ -42,7 +37,6 @@ impl Texture2D{
             min,
             size,
             image_data_format,
-            image_data_type,
             data
         );
 
@@ -62,8 +56,7 @@ impl Texture2D{
             mag,
             min,
             size,
-            ImageDataFormat::Red,
-            ImageDataType::U8,
+            ImageDataFormat::R_U8,
             &[]
         );
 
@@ -83,7 +76,7 @@ impl Texture2D{
     }
 
     pub fn bind(&self){
-        self.texture.bind(TextureBindTarget::Texture2D)
+        self.texture.bind(TextureBindTarget::Texture2D).unwrap()
     }
 
     pub fn rewrite_image(
@@ -91,15 +84,13 @@ impl Texture2D{
         texture_internal_format:Texture2DInternalFormat,
         size:[u32;2],
         image_data_format:ImageDataFormat,
-        image_data_type:ImageDataType,
         data:&[u8]
     ){
         self.texture.rewrite_image_2d(
             Texture2DRewriteTarget::Texture2D,
             texture_internal_format,
-            size,
+            [size[0] as i32,size[1] as i32],
             image_data_format,
-            image_data_type,
             data
         )
     }
@@ -109,14 +100,12 @@ impl Texture2D{
         &self,
         [x,y,width,height]:[i32;4],
         image_data_format:ImageDataFormat,
-        image_data_type:ImageDataType,
         data:&[u8]
     ){
         self.texture.write_image_2d(
             Texture2DWriteTarget::Texture2D,
             [x,y,width,height],
             image_data_format,
-            image_data_type,
             data
         )
     }

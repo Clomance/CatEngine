@@ -11,7 +11,6 @@ use cat_engine_basement::graphics::{
     core::texture::{
         Texture2DInternalFormat,
         ImageDataFormat,
-        ImageDataType,
         TextureMagFilter,
         TextureMinFilter,
     },
@@ -151,8 +150,7 @@ fn build_glyph(id:GlyphId,scale:Scale,face:&Face,graphics:&Graphics2D)->Option<R
             TextureMagFilter::Linear,
             TextureMinFilter::Linear,
             size,
-            ImageDataFormat::Red,
-            ImageDataType::U8,
+            ImageDataFormat::R_U8,
             &image
         );
 

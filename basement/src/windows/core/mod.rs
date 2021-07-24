@@ -1,3 +1,6 @@
+pub mod window_class;
+use window_class::WindowClass;
+
 pub mod window;
 use window::Window;
 
@@ -22,12 +25,14 @@ use winapi::{
 };
 
 pub struct WindowsCore{
+    pub window_class:WindowClass,
     pub window:Window,
 }
 
 impl WindowsCore{
     pub const fn new()->WindowsCore{
         Self{
+            window_class:WindowClass::new(),
             window:Window::new(),
         }
     }

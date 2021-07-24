@@ -97,9 +97,38 @@ use winapi::{
             SWP_NOSIZE,
             SWP_NOMOVE,
             SWP_FRAMECHANGED,
+            GWLP_HINSTANCE,
+            GWLP_ID,
         },
     }
 };
+
+#[repr(i32)]
+#[derive(Clone,Copy,Debug)]
+pub enum WindowData{
+    /// Sets a new window style.
+    Style=GWL_STYLE,
+    /// Sets a new extended window style.
+    ExtendedStyle=GWL_EXSTYLE,
+    /// Sets a new application instance handle.
+    InstanceHandle=GWLP_HINSTANCE,
+    /// Sets a new identifier of the child window.
+    /// The window cannot be a top-level window.
+    ChildID=GWLP_ID,
+    /// Sets the user data associated with the window.
+    /// This data is intended for use by the application that created the window.
+    /// Its value is initially zero.
+    UserData=GWLP_USERDATA,
+    /// Sets a new address for the window procedure.
+    WindowProcedure=GWLP_WNDPROC,
+    ///Sets the return value of a message processed in the dialog box procedure.
+    MessageResult=0i32,
+    /// Sets the new pointer to the dialogue box procedure.
+    DialogueBoxProcedure=8i32,
+    /// Sets new extra information that is private to the application,
+    /// such as handles or pointers.
+    User=16i32,
+}
 
 pub struct Window;
 
@@ -259,9 +288,34 @@ impl Window{
 
     /// Changes an attribute of the specified window.
     /// The function also sets a value at the specified offset in the extra window memory.
+    /// 
+    /// If the function succeeds, the return value is the previous value of the specified offset.
+    /// If the function fails, the return value is zero.
+    /// To get extended error information, call `GetLastError`.
+    /// If the previous value is zero and the function succeeds,
+    /// the return value is zero,
+    /// but the function does not clear the last error information.
+    /// To determine success or failure,
+    /// clear the last error information by calling `SetLastError` with 0,
+    /// then call `Window::set_window_long_ptr`.
+    /// Function failure will be indicated
+    /// by a return value of zero and a `GetLastError` resultthat is nonzero.
     #[inline(always)]
-    pub unsafe fn set_window_long_ptr(&self,window:HWND,index:i32,ptr:isize)->isize{
-        SetWindowLongPtrW(window,index,ptr)
+    pub unsafe fn set_window_long_ptr(&self,window:HWND,index:WindowData,value:isize)->isize{
+        SetWindowLongPtrW(window,index as i32,value)
+    }
+
+    /// Retrieves information about the specified window.
+    /// The function also retrieves the value at a specified offset into the extra window memory.
+    /// 
+    /// If the function succeeds, the return value is the requested value.
+    /// If the function fails, the return value is zero.
+    /// To get extended error information, call `GetLastError`.
+    /// If `SetWindowLong` or `SetWindowLongPtr` has not been called previously,
+    /// `GetWindowLongPtr` returns zero for values in the extra window or class memory.
+    #[inline(always)]
+    pub unsafe fn get_window_long_ptr(&self,window:HWND,index:WindowData)->isize{
+        GetWindowLongPtrW(window,index as i32)
     }
 }
 
