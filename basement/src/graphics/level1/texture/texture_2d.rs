@@ -86,6 +86,7 @@ impl Texture2D{
         image_data_format:ImageDataFormat,
         data:&[u8]
     ){
+        self.bind();
         self.texture.rewrite_image_2d(
             Texture2DRewriteTarget::Texture2D,
             texture_internal_format,
@@ -102,6 +103,7 @@ impl Texture2D{
         image_data_format:ImageDataFormat,
         data:&[u8]
     ){
+        self.bind();
         self.texture.write_image_2d(
             Texture2DWriteTarget::Texture2D,
             [x,y,width,height],

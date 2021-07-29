@@ -1,5 +1,7 @@
 use crate::windows::{
     WinCore,
+    WindowEvent,
+    MouseButton,
     core::window::WindowData,
 };
 
@@ -7,9 +9,6 @@ use super::{
     // structs
     Window,
     CreateParameters,
-    // enums
-    WindowEvent,
-    MouseButton,
     // traits
     WindowProcedure,
 };
@@ -403,9 +402,7 @@ unsafe fn wrap_event(window:&Window,message:UINT,w_param:WPARAM,l_param:LPARAM)-
         // lParam - A pointer to the CREATESTRUCT structure.
         // If an application processes this message, it should return zero to continue creation of the window.
         // If the application returns –1, the window is destroyed and the CreateWindowEx or CreateWindow function returns a NULL handle.
-        WM_CREATE=>{
-            return EventWrapResult::None(0);
-        }
+        WM_CREATE=>return EventWrapResult::None(0),
 
         // Запрос на закрытие окна
         WM_CLOSE=>EventWrapResult::Event

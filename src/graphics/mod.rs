@@ -26,6 +26,9 @@ pub use objects::{
     ShapeObject,
 };
 
+mod glyph_image_builder;
+use glyph_image_builder::GlyphImageBuilder;
+
 #[cfg(feature="simple_graphics")]
 mod simple_graphics;
 #[cfg(feature="simple_graphics")]
@@ -122,7 +125,7 @@ impl Graphics{
         character:char,
         colour:Colour,
         position:[f32;2],
-        horisontal_advance:&mut f32,
+        horisontal_advance:Option<&mut f32>,
         scale:Scale,
         font:&CachedFont
     ){

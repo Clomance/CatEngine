@@ -19,6 +19,14 @@ pub use opengl::{
     OpenGLRenderContextAttributes,
 };
 
+mod event;
+pub use event::{
+    Event,
+    ProcessEvent,
+    WindowEvent,
+    MouseButton,
+};
+
 mod monitor;
 pub use monitor::Monitor;
 

@@ -19,6 +19,7 @@ exclude = [
 
 [package.metadata.docs.rs]
 features = ["extended"]
+rustdoc-args = ["--no-deps"]
 
 [features]
 extended = []

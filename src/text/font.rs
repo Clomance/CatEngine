@@ -1,42 +1,46 @@
 use crate::graphics::Graphics2D;
 
 use super::{
-    OutlineCurveBuilder,
-    RawGlyph,
+    TexturedGlyph,
     Scale,
-    OutlineCurve,
     GlyphCache,
 };
-
-use cat_engine_basement::graphics::level1::Texture2D;
 
 use ttf_parser::{
     Face,
     GlyphId,
+    FaceParsingError
 };
 
 use std::{
     path::Path,
     fs::read,
+    io::Error,
 };
 
-/// Хранит данные шрифта.
-/// Должен быть несдвигаемым в памяти,
-/// чтобы не сломать ссылку.
+#[derive(Debug)]
+pub enum FontError{
+    IOError(Error),
+    ParseError(FaceParsingError)
+}
+
+/// A font owner.
 /// 
-/// Contains the font data.
-struct OwnedFont{
-    // Данные
+/// Contains font's data.
+pub struct FontOwner{
+    /// Данные
     data:Vec<u8>,
-    // Ссылка на данные, которая предоставляет методы для работы с ними
+    /// Ссылка на данные,
+    /// которая предоставляет методы для работы с ними
     face:Face<'static>,
 }
 
-impl OwnedFont{
-    fn load<P:AsRef<Path>>(path:P)->Option<OwnedFont>{
+impl FontOwner{
+    /// Loads data from the path and then parses it.
+    pub fn load<P:AsRef<Path>>(path:P)->Result<FontOwner,FontError>{
         let data=match read(path){
             Ok(data)=>data,
-            Err(_)=>return None,
+            Err(e)=>return Err(FontError::IOError(e)),
         };
 
         let slice:&'static [u8]=unsafe{
@@ -45,52 +49,74 @@ impl OwnedFont{
 
         let face=match Face::from_slice(slice,0){
             Ok(face)=>face,
-            Err(_)=>return None,
+            Err(e)=>return Err(FontError::ParseError(e)),
         };
 
-        Some(Self{
+        Ok(Self{
             data,
             face,
         })
     }
-}
 
+    /// Takes data and then parses it.
+    pub fn parse(data:Vec<u8>)->Result<FontOwner,FaceParsingError>{
+        let slice:&'static [u8]=unsafe{
+            std::slice::from_raw_parts(data.as_ptr(),data.len())
+        };
 
+        let face=match Face::from_slice(slice,0){
+            Ok(face)=>face,
+            Err(e)=>return Err(e),
+        };
 
-
-
-/// Хранилище для шрифта.
-/// A font owner.
-pub struct FontOwner{
-    font:Box<OwnedFont>,
-}
-
-impl FontOwner{
-    pub fn load<P:AsRef<Path>>(path:P)->Option<FontOwner>{
-        let font=OwnedFont::load(path)?;
-
-        Some(Self{
-            font:Box::new(font),
+        Ok(Self{
+            data,
+            face,
         })
     }
 
+    /// Copies data and then parses it.
+    pub fn parse_copy(data:&Vec<u8>)->Result<FontOwner,FaceParsingError>{
+        let data_copy=data.clone();
+
+        let slice:&'static [u8]=unsafe{
+            std::slice::from_raw_parts(data_copy.as_ptr(),data_copy.len())
+        };
+
+        let face=match Face::from_slice(slice,0){
+            Ok(face)=>face,
+            Err(e)=>return Err(e),
+        };
+
+        Ok(Self{
+            data:data_copy,
+            face,
+        })
+    }
+
+    /// Checks wheather data is correct.
+    pub fn parse_check(data:&Vec<u8>)->Result<(),FaceParsingError>{
+        match Face::from_slice(data,0){
+            Ok(_)=>Ok(()),
+            Err(e)=>return Err(e),
+        }
+    }
+
     pub fn face(&self)->&Face{
-        &self.font.as_ref().face
+        &self.face
     }
 
     pub fn face_wrapper<'a>(&'a self)->FaceWrapper<'a>{
-        FaceWrapper(self.font.as_ref().face.clone())
+        FaceWrapper(self.face.clone())
     }
 }
 
 
 
-
-
-// Ссылка на данные шрифта
 // /ᐠ｡ꞈ｡ᐟ\
-/// Обёртка, позволяющая работать со шрифтом.
 /// A wrapper that provides methods to work with fonts.
+/// 
+/// Обёртка, позволяющая работать со шрифтом.
 pub struct FaceWrapper<'a>(pub Face<'a>);
 
 impl<'a> FaceWrapper<'a>{
@@ -102,43 +128,12 @@ impl<'a> FaceWrapper<'a>{
         let k=height/self.0.global_bounding_box().height() as f32;
         Scale::new(k,k)
     }
-
-    pub fn build_raw_glyph(&self,glyph_id:GlyphId)->Option<RawGlyph<Vec<OutlineCurve>>>{
-        // Поиск глифа
-        let mut outline_builder=OutlineCurveBuilder::new();
-        // Получение точек для построения глифа
-        if let Some(bounding_box)=self.0.outline_glyph(glyph_id,&mut outline_builder){
-            let glyph_size=[
-                bounding_box.width() as f32,
-                bounding_box.height() as f32,
-            ];
-
-            let glyph_offset=[
-                bounding_box.x_min as f32,
-                bounding_box.y_min as f32,
-            ];
-
-            // Горизонтальное расстояние до следующего символа
-            let advance_width=self.0.glyph_hor_advance(glyph_id).unwrap() as f32;
-
-            let glyph=RawGlyph::<Vec<OutlineCurve>>::raw(
-                outline_builder.outline_curves(),
-                glyph_size,
-                glyph_offset,
-                advance_width,
-            );
-
-            Some(glyph)
-        }
-        else{
-            None
-        }
-    }
 }
 
 
-/// Шрифт с хранилищем глифов.
 /// A font with a glyph cache.
+/// 
+/// Шрифт с хранилищем глифов.
 pub struct CachedFont{
     font:FontOwner,
     cache:GlyphCache,
@@ -185,8 +180,8 @@ impl CachedFont{
 
                 text_width+=width;
             }
-            else if let Some(glyph)=self.build_glyph(glyph_id){
-                let width=glyph.width(scale.horizontal);
+            else if let Some(bounding_box)=self.font.face.glyph_bounding_box(glyph_id){
+                let width=bounding_box.width() as f32*scale.horizontal;
 
                 text_width+=width;
             }
@@ -214,9 +209,10 @@ impl CachedFont{
                     size[1]=height
                 }
             }
-            else if let Some(glyph)=self.build_glyph(glyph_id){
-                let width=glyph.width(scale.horizontal);
-                let height=glyph.height(scale.vertical);
+            else if let Some(bounding_box)=self.font.face.glyph_bounding_box(glyph_id){
+                let width=bounding_box.width() as f32*scale.horizontal;
+
+                let height=bounding_box.height() as f32*scale.vertical;
 
                 size[0]+=width;
                 if height>size[1]{
@@ -234,17 +230,11 @@ impl CachedFont{
         &self.font
     }
 
-    pub fn build_glyph<'a>(&'a self,glyph_id:GlyphId)->Option<RawGlyph<Vec<OutlineCurve>>>{
-        self.font.face_wrapper().build_raw_glyph(glyph_id)
-    }
-}
-
-impl CachedFont{
     pub fn glyph_cache(&self)->&GlyphCache{
         &self.cache
     }
 
-    pub fn cached_glyph(&self,id:GlyphId)->Option<&RawGlyph<Texture2D>>{
+    pub fn cached_glyph(&self,id:GlyphId)->Option<&TexturedGlyph>{
         self.cache.glyph(id)
     }
 }

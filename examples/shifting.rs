@@ -3,6 +3,7 @@ use cat_engine::{
         App,
         AppAttributes,
         Window,
+        Event,
         ProcessEvent,
         WindowEvent,
         WindowProcedure,
@@ -71,9 +72,10 @@ fn main(){
 
     app.run(|event,app_control|{
         match event{
-            ProcessEvent::Update(_)=>if let Some((_,shift))=app_control.app_storage_mut(){
-                *shift+=1f32
-            }
+            Event::Process(ProcessEvent::Update(_))=>
+                if let Some((_,shift))=app_control.app_storage_mut(){
+                    *shift+=1f32
+                }
 
             _=>{}
         }

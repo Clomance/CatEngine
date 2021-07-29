@@ -172,7 +172,7 @@ impl Graphics2D{
         character:char,
         colour:Colour,
         position:[f32;2],
-        horisontal_advance:&mut f32,
+        horisontal_advance:Option<&mut f32>,
         scale:Scale,
         font:&CachedFont
     ){
@@ -184,31 +184,36 @@ impl Graphics2D{
         };
 
         if let Some(glyph)=font.cached_glyph(glyph_id){
+            let Scale{horizontal,vertical}=font.glyph_cache().scale();
+            let glyph_scale=Scale{
+                horizontal:scale.horizontal/horizontal,
+                vertical:scale.vertical/vertical,
+            };
             let texture=glyph.texture();
-            let advance_width=glyph.advance_width(scale.horizontal);
+            let advance_width=glyph.advance_width(glyph_scale.horizontal);
 
-            if !(horisontal_advance as *mut f32).is_null(){
+            if let Some(horisontal_advance)=horisontal_advance{
                 *horisontal_advance=advance_width
             }
 
-            let [offset_x,offset_y,width,height]=glyph.bounding_box(scale);
+            let [offset_x,offset_y,width,height]=glyph.bounding_box(glyph_scale);
 
             let position=[
                 position[0]+offset_x,
-                position[1]+offset_y,
+                position[1]-offset_y-height,
             ];
 
             self.text.draw_glyph(texture,colour,position,[width,height],&self.draw_parameters);
         }
         else{
-            if let Some([offset_x,offset_y,_,_])=self.text.load_glyph(glyph_id,scale,font.font().face()){
-                if !(horisontal_advance as *mut f32).is_null(){
+            if let Some([offset_x,offset_y,_,height])=self.text.load_glyph(glyph_id,scale,font.font().face()){
+                if let Some(horisontal_advance)=horisontal_advance{
                     *horisontal_advance=font.font().face().glyph_hor_advance(glyph_id).unwrap() as f32*scale.horizontal;
                 }
 
                 let position=[
                     position[0]+offset_x,
-                    position[1]+offset_y,
+                    position[1]-offset_y-height,
                 ];
 
                 self.text.draw_loaded_glyph(colour,position,&self.draw_parameters);

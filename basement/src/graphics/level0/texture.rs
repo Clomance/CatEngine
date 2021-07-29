@@ -74,7 +74,6 @@ impl Texture{
                 internal_format,
                 [size[0] as i32,size[1] as i32],
                 image_data_format,
-                // image_data_type,
                 data
             );
 

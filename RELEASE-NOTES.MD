@@ -1,3 +1,27 @@
+# 1.0.0 - alpha3
+
+Fixed the `Texture::write_image` and `Texture::rewrite_image` functions.
+
+Added `FontError` for the `FontOwner::load` function.
+
+Renamed and removed some glyphs structures. Removed unnecessary functions.
+
+Now the `Graphics::draw_char` function scale characters relative to the original size.
+Later scaling was relative to glyph's current size,
+so dynamically build and textured glyphs had different initial sizes.
+
+## CatEngineBasement - 0.0.0-alpha3
+
+Removed all the events to the `windows` module.
+
+Now some posted to the thread messages are also handled with `EventLoop`.
+The messages:
+ - `WindowEvent::KeyPress`, `WindowEvent::KeyRelease`
+ - `WindowEvent::CharacterInput`
+ - `WindowEvent::MouseMove`, `WindowEvent::MousePress`, `WindowEvent::MouseRelease`, `WindowEvent::MouseScroll`
+
+Added `core::texture::Texture::wrap_s`, `-::wrap_t` and `-::wrap_r` functions.
+
 # 1.0.0 - alpha2
 
 Updated the `ttf-parser` crate to `0.12.3` and the `minimp3` crate to `0.5.1`.
@@ -13,6 +37,7 @@ Updated the `ttf-parser` crate to `0.12.3` and the `minimp3` crate to `0.5.1`.
 - a `Seconds` option for `EventInterval`
 
 `ImageDataFormat` and `ImageDataType` are merged into `ImageDataFormat`.
+
 
 # 1.0.0 - alpha1
 

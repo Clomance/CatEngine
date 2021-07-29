@@ -96,7 +96,6 @@ fn main(){
 
     app.run(|event,_app_control|{
         match event{
-            
 
             _=>{}
         }

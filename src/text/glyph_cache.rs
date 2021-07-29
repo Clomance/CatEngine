@@ -1,7 +1,7 @@
 use crate::graphics::Graphics2D;
 
 use super::{
-    RawGlyph,
+    TexturedGlyph,
     Scale,
 };
 
@@ -28,25 +28,26 @@ use std::{
 };
 
 // ᶠᵉᵉᵈ ᵐᵉ /ᐠ-ⱉ-ᐟ\ﾉ
-/// Хранилище глифов.
 /// A glyph cache.
+/// Хранилище глифов.
 pub struct GlyphCache{
     // Глифы
-    glyphs:HashMap<u16,RawGlyph<Texture2D>>,
+    glyphs:HashMap<u16,TexturedGlyph>,
+    scale:Scale,
 }
 
 impl GlyphCache{
-    /// Создаёт новое хранилище глифов для данной области номеров символов.
-    /// 
-    /// Игнорирует неопределённые символы.
-    /// 
-    /// range = `None` - использует все символы шрифта.
-    /// 
     /// Creates a new glyph cache with the given range of characters ids.
     /// 
-    /// Ignores undefined characters.
+    /// Ignores characters that is not contained by the font.
     /// 
-    /// range = `None` - takes all characters of the font.
+    /// If `range` is `None`, takes all the characters of the font.
+    /// 
+    /// Создаёт новое хранилище глифов для данной области номеров символов.
+    /// 
+    /// Игнорирует символы, которых нет в шрифте.
+    /// 
+    /// Если `range` равно `None`, то используются все символы шрифта.
     pub fn new(font:&Face,range:Option<Range<u16>>,scale:Scale,graphics:&Graphics2D)->GlyphCache{
         let range=if let Some(range)=range{
             range
@@ -56,33 +57,35 @@ impl GlyphCache{
         };
 
         let mut cache=Self{
-            glyphs:HashMap::with_capacity(range.len())
+            glyphs:HashMap::with_capacity(range.len()),
+            scale
         };
 
         for g in range{
             let id=GlyphId(g);
 
-            cache.insert_glyph(id,scale,font,graphics)
+            cache.insert_glyph(id,font,graphics)
         }
 
         cache
     }
 
-    /// Создаёт новое хранилище глифов для данного алфавита.
-    /// 
-    /// Игнорирует неопределённые символы.
-    /// 
     /// Creates a new glyph cache for the given alphabet.
     /// 
     /// Ignors undefined characters.
+    /// 
+    /// Создаёт новое хранилище глифов для данного алфавита.
+    /// 
+    /// Игнорирует неопределённые символы.
     pub fn new_alphabet(font:&Face,alphabet:&str,scale:Scale,graphics:&Graphics2D)->GlyphCache{
         let mut cache=Self{
-            glyphs:HashMap::with_capacity(alphabet.len())
+            glyphs:HashMap::with_capacity(alphabet.len()),
+            scale,
         };
 
         for character in alphabet.chars(){
             if let Some(id)=font.glyph_index(character){
-                cache.insert_glyph(id,scale,font,graphics)
+                cache.insert_glyph(id,font,graphics)
             }
         }
 
@@ -98,15 +101,15 @@ impl GlyphCache{
     /// 
     /// Ignors undefined characters.
     /// Replaces the old glyph for this character if there is one.
-    pub fn insert_glyph(&mut self,id:GlyphId,scale:Scale,font:&Face,graphics:&Graphics2D){
-        if let Some(glyph)=build_glyph(id,scale,font,graphics){
+    pub fn insert_glyph(&mut self,id:GlyphId,font:&Face,graphics:&Graphics2D){
+        if let Some(glyph)=build_glyph(id,self.scale,font,graphics){
             self.glyphs.insert(id.0,glyph);
         }
     }
 
-    pub fn insert_char(&mut self,character:char,scale:Scale,font:&Face,graphics:&Graphics2D){
+    pub fn insert_char(&mut self,character:char,font:&Face,graphics:&Graphics2D){
         if let Some(id)=font.glyph_index(character){
-            self.insert_glyph(id,scale,font,graphics)
+            self.insert_glyph(id,font,graphics)
         }
     }
 
@@ -119,19 +122,23 @@ impl GlyphCache{
     ///     self.insert_char(character,font,scale);
     /// }
     /// ```
-    pub fn insert_str(&mut self,font:&Face,alphabet:&str,scale:Scale,graphics:&Graphics2D){
+    pub fn insert_str(&mut self,font:&Face,alphabet:&str,graphics:&Graphics2D){
         for character in alphabet.chars(){
-            self.insert_char(character,scale,font,graphics);
+            self.insert_char(character,font,graphics);
         }
     }
 
-    pub fn glyph(&self,id:GlyphId)->Option<&RawGlyph<Texture2D>>{
+    pub fn scale(&self)->Scale{
+        self.scale
+    }
+
+    pub fn glyph(&self,id:GlyphId)->Option<&TexturedGlyph>{
         self.glyphs.get(&id.0)
     }
 }
 
 
-fn build_glyph(id:GlyphId,scale:Scale,face:&Face,graphics:&Graphics2D)->Option<RawGlyph<Texture2D>>{
+fn build_glyph(id:GlyphId,scale:Scale,face:&Face,graphics:&Graphics2D)->Option<TexturedGlyph>{
     if let Some((
         [
             offset_x,
@@ -158,7 +165,7 @@ fn build_glyph(id:GlyphId,scale:Scale,face:&Face,graphics:&Graphics2D)->Option<R
 
         let advance_width=face.glyph_hor_advance(id).unwrap() as f32*scale.horizontal;
 
-        let glyph=RawGlyph::<Texture2D>::raw(
+        let glyph=TexturedGlyph::raw(
             texture_2d,
             [width,height],
             [offset_x,offset_y],

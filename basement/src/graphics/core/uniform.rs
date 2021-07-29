@@ -66,10 +66,11 @@ impl Uniform{
             glUniform3ui:0,
             glUniform4ui:0,
 
-            // glUniform1fv:usize,
-            // glUniform2fv:usize,
-            // glUniform3fv:usize,
-            // glUniform4fv:usize,
+            // glUniform1fv:0,
+            // glUniform2fv:0,
+            // glUniform3fv:0,
+            // glUniform4fv:0,
+
             // glUniform1iv:usize,
             // glUniform2iv:usize,
             // glUniform3iv:usize,
@@ -108,10 +109,11 @@ impl Uniform{
             self.glUniform3ui=transmute(library.get_proc_address("glUniform3ui\0"));
             self.glUniform4ui=transmute(library.get_proc_address("glUniform4ui\0"));
 
-            // glUniform1fv:usize,
-            // glUniform2fv:usize,
-            // glUniform3fv:usize,
-            // glUniform4fv:usize,
+            // self.glUniform1fv=transmute(library.get_proc_address("glUniform1fv\0"));
+            // self.glUniform2fv=transmute(library.get_proc_address("glUniform2fv\0"));
+            // self.glUniform3fv=transmute(library.get_proc_address("glUniform3fv\0"));
+            // self.glUniform4fv=transmute(library.get_proc_address("glUniform4fv\0"));
+
             // glUniform1iv:usize,
             // glUniform2iv:usize,
             // glUniform3iv:usize,
@@ -181,4 +183,20 @@ impl Uniform{
     pub unsafe fn set_u32_4(&self,location:i32,[v1,v2,v3,v4]:[u32;4]){
         transmute::<usize,fn(i32,u32,u32,u32,u32)>(self.glUniform4ui)(location,v1,v2,v3,v4)
     }
+
+    // pub unsafe fn set_f32_1(&self,location:i32,value:f32){
+    //     transmute::<usize,fn(i32,f32)>(self.glUniform1fv)(location,value)
+    // }
+
+    // pub unsafe fn set_f32_2(&self,location:i32,[v1,v2]:[f32;2]){
+    //     transmute::<usize,fn(i32,f32,f32)>(self.glUniform2fv)(location,v1,v2)
+    // }
+
+    // pub unsafe fn set_f32_3(&self,location:i32,[v1,v2,v3]:[f32;3]){
+    //     transmute::<usize,fn(i32,f32,f32,f32)>(self.glUniform3fv)(location,v1,v2,v3)
+    // }
+
+    // pub unsafe fn set_f32_4(&self,location:i32,[v1,v2,v3,v4]:[f32;4]){
+    //     transmute::<usize,fn(i32,f32,f32,f32,f32)>(self.glUniform4fv)(location,v1,v2,v3,v4)
+    // }
 }

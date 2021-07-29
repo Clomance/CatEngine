@@ -17,6 +17,4 @@ pub mod graphics;
 #[cfg(target_os="windows")]
 pub mod windows;
 
-pub mod event;
-
 pub use image;

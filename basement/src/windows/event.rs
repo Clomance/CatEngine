@@ -4,6 +4,11 @@ use crate::windows::{
     VirtualKeyCode,
 };
 
+pub enum Event{
+    Process(ProcessEvent),
+    Window(WindowEvent),
+}
+
 #[derive(Debug)]
 pub enum ProcessEvent{
     EventLoopStart,

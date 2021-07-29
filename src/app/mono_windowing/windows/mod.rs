@@ -26,11 +26,10 @@ pub use cat_engine_basement::{
         EventInterval,
         WinError,
         WindowProcedure,
-        quit,
-    },
-    event::{
         ProcessEvent,
+        Event,
         WindowEvent,
+        quit,
     },
 };
 
@@ -193,7 +192,7 @@ impl<S:Sized+'static> App<S>{
 
 impl<S:Sized+'static> App<S>{
     /// Runs an event loop.
-    pub fn run<F:FnMut(ProcessEvent,&mut AppControl<S>)>(&mut self,mut event_handler:F){
+    pub fn run<F:FnMut(Event,&mut AppControl<S>)>(&mut self,mut event_handler:F){
         let event_loop:&'static mut EventLoop=unsafe{std::mem::transmute(&mut self.event_loop)};
 
         event_loop.run(|event,loop_control|{

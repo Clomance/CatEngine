@@ -27,12 +27,21 @@ impl WindowProcedure<WindowInner<Option<CachedFont>>> for WindowHandle{
                 window_inner.draw(window,|_,graphics,font|{
                     graphics.clear_colour([0f32,0f32,0f32,1f32]);
 
-                    // read here (line 83)
                     if let Some(font)=font.as_ref(){
-                        graphics.draw_char('a',[1f32;4],[100f32;2],&mut 0f32,Scale::new(1f32,1f32),font);
-                        graphics.draw_char('Р',[1f32;4],[150f32,250f32],&mut 0f32,Scale::new(0.1f32,0.1f32),font);
-                        graphics.draw_char('B',[1f32;4],[350f32,250f32],&mut 0f32,Scale::new(1f32,1f32),font);
+                        let mut position=[120f32,240f32];
+                        let mut horizontal_advance=0f32;
+                        for character in "Hello, world!!!".chars(){
+                            graphics.draw_char(
+                                character,
+                                [1f32;4],
+                                position,
+                                Some(&mut horizontal_advance),
+                                Scale::new(0.1f32,0.1f32),
+                                font,
+                            );
 
+                            position[0]+=horizontal_advance;
+                        }
                     }
                 }).unwrap_or_else(|_|{quit()});
             }
@@ -60,7 +69,8 @@ fn main(){
 
     let font_owner=FontOwner::load("resources/font1").unwrap();
     *app.app_storage_mut()=Some(
-        CachedFont::new_alphabet(font_owner,"aAbBcCwW",Scale::new(0.1f32,0.1f32),graphics.graphics_2d())
+        // Cached only two characters, the others will be built dynamically.
+        CachedFont::new_alphabet(font_owner,"He",Scale::new(0.1f32,0.1f32),graphics.graphics_2d())
     );
 
     app.run(|event,_app_control|{

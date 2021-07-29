@@ -1,21 +1,3 @@
-use cat_engine_basement::{
-    windows::{
-        EventLoop,
-        LoopControl,
-        EventLoopAttributes,
-        Window,
-        WindowAttributes,
-        WindowClass,
-        WindowClassAttributes,
-        WindowProcedure,
-        OpenGraphicsLibrary,
-        OpenGLRenderContext,
-        OpenGLRenderContextAttributes,
-        quit,
-    },
-    event::{WindowEvent,ProcessEvent},
-};
-
 use cat_engine::{
     texture::{
         Texture,
@@ -25,6 +7,25 @@ use cat_engine::{
         Graphics,
         Graphics2DAttributes,
     },
+    basement::{
+        windows::{
+            EventLoop,
+            LoopControl,
+            EventLoopAttributes,
+            Window,
+            WindowAttributes,
+            WindowClass,
+            WindowClassAttributes,
+            WindowProcedure,
+            OpenGraphicsLibrary,
+            OpenGLRenderContext,
+            OpenGLRenderContextAttributes,
+            Event,
+            WindowEvent,
+            ProcessEvent,
+            quit,
+        },
+    }
 };
 
 /// An empty struct for an empty window procedure.
@@ -122,9 +123,9 @@ fn main(){
 
     event_loop.run(|event,control|{
         match event{
-            ProcessEvent::EventLoopStart=>*control=LoopControl::Run,
+            Event::Process(ProcessEvent::EventLoopStart)=>*control=LoopControl::Run,
             
-            ProcessEvent::Update(_)=>{
+            Event::Process(ProcessEvent::Update(_))=>{
                 updates+=1;
                 if updates==400{
                     *control=LoopControl::Break

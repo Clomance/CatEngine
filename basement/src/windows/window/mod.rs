@@ -1,13 +1,10 @@
-use crate::event::{
-    WindowEvent,
-    MouseButton,
-};
-
 use super::{
     // structs
     Monitor,
     Bitmap,
     Icon,
+    // enums
+    WindowEvent,
 };
 
 mod window_procedure;

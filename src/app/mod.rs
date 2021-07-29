@@ -12,6 +12,7 @@ pub use mono_windowing::windows::{
     WindowAttributes,
     WindowClassAttributes,
     WindowInner,
+    Event,
     ProcessEvent,
     WindowEvent,
     VirtualKeyCode,

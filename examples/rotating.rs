@@ -3,6 +3,7 @@ use cat_engine::{
         App,
         AppAttributes,
         Window,
+        Event,
         ProcessEvent,
         WindowEvent,
         WindowProcedure,
@@ -79,9 +80,10 @@ fn main(){
     app.run(|event,app_control|{
         match event{
             // Written here (line 31)
-            ProcessEvent::Update(_)=>if let Some((_,angle))=app_control.app_storage_mut(){
-                *angle+=0.01
-            }
+            Event::Process(ProcessEvent::Update(_))=>
+                if let Some((_,angle))=app_control.app_storage_mut(){
+                    *angle+=0.01
+                }
             _=>{}
         }
     });

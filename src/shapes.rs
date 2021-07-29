@@ -8,9 +8,6 @@ use super::{
     },
 };
 
-#[cfg(feature="colour_filter")]
-use super::graphics::ColourFilter;
-
 #[derive(Clone)]
 pub struct Quadrilateral{
     pub vertices:[SimpleVertex2D;4],

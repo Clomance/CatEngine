@@ -1,14 +1,12 @@
 use crate::{
     Colour,
-    text::{
-        Scale,
-        GlyphImageBuilder,
-    },
+    text::Scale,
 };
 
 use super::{
     TextVertex2D,
     DrawParameters,
+    GlyphImageBuilder,
 };
 
 use cat_engine_basement::graphics::{
@@ -128,11 +126,11 @@ impl TextGraphics{
             let width=bounding_box[2];
             let height=bounding_box[3];
 
-            if width>self.texture_size[0] || height>self.texture_size[0]{
+            if width>self.texture_size[0] || height>self.texture_size[1]{
                 panic!("Invalid glyph size")
             }
 
-            self.load_glyph_image([width.ceil() as u32,height.ceil() as u32],image);
+            self.load_glyph_image([width as u32,height as u32],image);
 
             Some(bounding_box)
         }

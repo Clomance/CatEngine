@@ -122,6 +122,9 @@ const TEXTURE_MIN_FILTER:u32=0x2801;
 const TEXTURE_BASE_LEVEL:u32=0x813C;
 const TEXTURE_COMPARE_MODE:u32=0x884C;
 const TEXTURE_COMPARE_FUNC:u32=0x884D;
+const TEXTURE_WRAP_R:u32=0x8072;
+const TEXTURE_WRAP_S:u32=0x2802;
+const TEXTURE_WRAP_T:u32=0x2803;
 
 // Compare functions
 const NEVER:u32=0x0200;
@@ -144,6 +147,12 @@ const NEAREST_MIPMAP_NEAREST:u32=0x2700;
 const LINEAR:u32=0x2601;
 const LINEAR_MIPMAP_LINEAR:u32=0x2703;
 const LINEAR_MIPMAP_NEAREST:u32=0x2701;
+
+// Texture wrap
+const REPEAT:u32=0x2901;
+const MIRRORED_REPEAT:u32=0x8370;
+const CLAMP_TO_EDGE:u32=0x812F;
+const CLAMP_TO_BORDER:u32=0x812D;
 
 #[repr(u32)]
 #[derive(Clone,Copy,Debug)]
@@ -434,14 +443,14 @@ pub enum TextureMinFilter{
     LinearMipmapLinear=LINEAR_MIPMAP_LINEAR,
 }
 
-// #[repr(u32)]
-// #[derive(Clone,Copy,Debug)]
-// pub enum TextureWrap{
-//     Repeat=REPEAT,
-//     MirroredRepeat=MIRRORED_REPEAT,
-//     ClampToEdge=CLAMP_TO_EDGE,
-//     ClampToBorder=CLAMP_TO_BORDER,
-// }
+#[repr(u32)]
+#[derive(Clone,Copy,Debug)]
+pub enum TextureWrap{
+    Repeat=REPEAT,
+    MirroredRepeat=MIRRORED_REPEAT,
+    ClampToEdge=CLAMP_TO_EDGE,
+    ClampToBorder=CLAMP_TO_BORDER,
+}
 
 
 pub struct Texture{
@@ -592,6 +601,30 @@ impl Texture{
     #[inline(always)]
     pub unsafe fn set_min_filter(&self,target:TextureParameterTarget,value:TextureMinFilter){
         transmute::<usize,fn(TextureParameterTarget,u32,TextureMinFilter)>(self.glTexParameteri)(target,TEXTURE_MIN_FILTER,value)
+    }
+
+    /// Sets the wrap parameter for texture coordinate `s`.
+    /// 
+    /// Initially, it is set to `TextureWrap::Repeat`.
+    #[inline(always)]
+    pub unsafe fn set_wrap_s(&self,target:TextureParameterTarget,value:TextureWrap){
+        transmute::<usize,fn(TextureParameterTarget,u32,TextureWrap)>(self.glTexParameteri)(target,TEXTURE_WRAP_S,value)
+    }
+
+    /// Sets the wrap parameter for texture coordinate `t`.
+    /// 
+    /// Initially, it is set to `TextureWrap::Repeat`.
+    #[inline(always)]
+    pub unsafe fn set_wrap_t(&self,target:TextureParameterTarget,value:TextureWrap){
+        transmute::<usize,fn(TextureParameterTarget,u32,TextureWrap)>(self.glTexParameteri)(target,TEXTURE_WRAP_T,value)
+    }
+
+    /// Sets the wrap parameter for texture coordinate `r`.
+    /// 
+    /// Initially, it is set to `TextureWrap::Repeat`.
+    #[inline(always)]
+    pub unsafe fn set_wrap_r(&self,target:TextureParameterTarget,value:TextureWrap){
+        transmute::<usize,fn(TextureParameterTarget,u32,TextureWrap)>(self.glTexParameteri)(target,TEXTURE_WRAP_R,value)
     }
 }
 
