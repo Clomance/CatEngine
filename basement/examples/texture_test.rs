@@ -23,8 +23,10 @@ use cat_engine_basement::{
         OpenGLRenderContext,
         OpenGLRenderContextAttributes,
         quit,
+        WindowEvent,
+        ProcessEvent,
+        Event,
     },
-    event::{WindowEvent,ProcessEvent},
 };
 
 const texture_2d_internal_formats:&[Texture2DInternalFormat]=&[
@@ -142,7 +144,7 @@ struct RenderData{
 
 fn main(){
     let ea=EventLoopAttributes::new();
-    let mut event_loop=EventLoop::new(ea);
+    let event_loop=EventLoop::new(ea);
 
     let wca=WindowClassAttributes::new("CatEngineBasementWindowClass");
     let wc=WindowClass::new(wca).unwrap();
@@ -200,9 +202,9 @@ fn main(){
 
     event_loop.run(|event,control|{
         match event{
-            ProcessEvent::EventLoopStart=>*control=LoopControl::Run,
+            Event::Process(ProcessEvent::EventLoopStart)=>*control=LoopControl::Run,
             
-            ProcessEvent::Update(_)=>{
+            Event::Process(ProcessEvent::Update(_))=>{
                 updates+=1;
                 if updates==800{
                     *control=LoopControl::Break

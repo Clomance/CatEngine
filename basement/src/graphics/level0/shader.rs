@@ -18,7 +18,7 @@ pub struct Shader{
 }
 
 impl Shader{
-    pub fn initiate(shader_type:ShaderType)->Shader{
+    pub fn generate(shader_type:ShaderType)->Shader{
         unsafe{
             Self{
                 id:GCore.shader.create(shader_type),

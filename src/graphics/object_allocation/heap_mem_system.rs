@@ -208,7 +208,7 @@ impl<V:Vertex> HeapSystem<V>{
                         object.vertex_frames.push(vertex_frame_id);
                         // Запись в буфер вершин
                         let offset=vertex_frame_id as usize*frame_size;
-                        vertex_buffer.write(offset as isize,&vertices[c*frame_size..(c+1)*frame_size])
+                        vertex_buffer.write(offset as isize,&vertices[c*frame_size..(c+1)*frame_size]).unwrap();
                     }
                     { // Последний блок вершин
                         let vertex_frame_id=self.free_vertex_frames.pop().unwrap();
@@ -216,7 +216,7 @@ impl<V:Vertex> HeapSystem<V>{
                         // Запись в буфер вершин
                         let offset=vertex_frame_id as usize*frame_size;
                         let c=vertex_frames-1;
-                        vertex_buffer.write(offset as isize,&vertices[c*frame_size..])
+                        vertex_buffer.write(offset as isize,&vertices[c*frame_size..]).unwrap();
                     }
                 }
 
@@ -250,7 +250,7 @@ impl<V:Vertex> HeapSystem<V>{
                         }
                         // Запись в буфер вершин
                         let offset=index_frame_id as usize*frame_size;
-                        index_buffer.write(offset as isize,&new_indices)
+                        index_buffer.write(offset as isize,&new_indices).unwrap();
                     }
                     // Последний блок индексов
                     let c=index_frames-1;
@@ -277,7 +277,7 @@ impl<V:Vertex> HeapSystem<V>{
                     }
                     // Запись в буфер вершин
                     let offset=index_frame_id as usize*frame_size;
-                    index_buffer.write(offset as isize,&new_indices)
+                    index_buffer.write(offset as isize,&new_indices).unwrap();
                 }
 
                 Some(object_id)
@@ -346,7 +346,7 @@ impl<V:Vertex> HeapSystem<V>{
                 let offset=object.vertex_frames[c] as usize*frame_size;
                 let vertices_slice=&vertices[c*frame_size..(c+1)*frame_size];
 
-                vertex_buffer.write(offset as isize,vertices_slice)
+                vertex_buffer.write(offset as isize,vertices_slice).unwrap();
             }
         }
     }
@@ -375,7 +375,7 @@ impl<V:Vertex> HeapSystem<V>{
                 let offset=object.index_frames[c] as usize*frame_size;
                 let indices_slice=&indices[c*frame_size..(c+1)*frame_size];
 
-                index_buffer.write(offset as isize,indices_slice)
+                index_buffer.write(offset as isize,indices_slice).unwrap();
             }
         }
     }

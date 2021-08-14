@@ -1,6 +1,6 @@
 [package]
 name = "cat_engine"
-version = "1.0.0-alpha3"
+version = "1.0.0-alpha4"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
 
@@ -32,14 +32,11 @@ exclude = [
 [package.metadata.docs.rs]
 features = [
     "default",
-    # AUDIO
-    "extended_audio",
 ]
 default-target = "x86_64-pc-windows-msvc"
 
 [features]
 default = [
-    "audio",
     "simple_graphics",
     "texture_graphics",
     "text_graphics",
@@ -67,7 +64,7 @@ optional = true
 
 [dependencies.cat_engine_basement]
 path = "basement"
-version = "0.0.0-alpha1"
+version = "0.0.0-alpha4"
 features = ["opengl"]
 
 

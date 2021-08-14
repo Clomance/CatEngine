@@ -65,9 +65,9 @@ impl TextureGraphics{
         let vertex_buffer_size=heap_vertex_buffer_size+stack_vertices;
         let index_buffer_size=heap_index_buffer_size+stack_indices as ElementIndexType;
 
-        let vertex_buffer=VertexBuffer::empty(vertex_buffer_size as isize,BufferUsage::DynamicDraw);
-        let index_buffer=IndexBuffer::empty(index_buffer_size as isize,BufferUsage::DynamicDraw);
-        let vertex_array=VertexArray::new(vertex_buffer.raw());
+        let vertex_buffer=VertexBuffer::empty(vertex_buffer_size as isize,BufferUsage::DynamicDraw).unwrap();
+        let index_buffer=IndexBuffer::empty(index_buffer_size as isize,BufferUsage::DynamicDraw).unwrap();
+        let vertex_array=VertexArray::new(vertex_buffer.as_raw());
 
         Self{
             vertex_buffer,

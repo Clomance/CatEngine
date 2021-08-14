@@ -35,7 +35,6 @@ pub use font::{
 
 // re-export
 pub use ttf_parser;
-pub use ab_glyph_rasterizer;
 
 #[derive(Clone,Copy,Debug)]
 pub struct Scale{
@@ -48,6 +47,26 @@ impl Scale{
         Self{
             horizontal:h,
             vertical:v
+        }
+    }
+}
+
+impl std::ops::Div for Scale{
+    type Output=Scale;
+    fn div(self,rhs:Scale)->Scale{
+        Self{
+            horizontal:self.horizontal/rhs.horizontal,
+            vertical:self.vertical/rhs.vertical,
+        }
+    }
+}
+
+impl std::ops::Mul for Scale{
+    type Output=Scale;
+    fn mul(self,rhs:Scale)->Scale{
+        Self{
+            horizontal:self.horizontal*rhs.horizontal,
+            vertical:self.vertical*rhs.vertical,
         }
     }
 }

@@ -28,6 +28,9 @@ raw = ["extended"]
 
 [dependencies.cat_engine_basement]
 path = "../basement"
+version = "0.0.0-alpha4"
+features = ["support"]
+default-features = false
 
 [dependencies]
 cpal = "0.11.0"

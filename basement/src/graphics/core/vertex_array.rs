@@ -3,10 +3,7 @@ use crate::windows::OpenGraphicsLibrary;
 
 use core::mem::transmute;
 
-use std::{
-    ffi::CStr,
-    mem::MaybeUninit,
-};
+use std::ffi::CStr;
 
 // Data types
 const BYTE:u32=0x1400;

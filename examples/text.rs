@@ -56,9 +56,9 @@ fn main(){
     let font:Option<CachedFont>=None;
 
     let app_attributes=AppAttributes::new();
-    let mut app=App::new::<WindowHandle>(app_attributes,font);
+    let app=App::new::<WindowHandle>(app_attributes,font);
 
-    let graphics=app.window_graphics_mut();
+    let graphics=app.graphics();
 
     // Setting blending
     graphics.core().blending.enable();
@@ -68,12 +68,12 @@ fn main(){
     );
 
     let font_owner=FontOwner::load("resources/font1").unwrap();
-    *app.app_storage_mut()=Some(
+    *app.storage()=Some(
         // Cached only two characters, the others will be built dynamically.
         CachedFont::new_alphabet(font_owner,"He",Scale::new(0.1f32,0.1f32),graphics.graphics_2d())
     );
 
-    app.run(|event,_app_control|{
+    app.event_loop.run(|event,_app_control|{
         match event{
 
             _=>{}

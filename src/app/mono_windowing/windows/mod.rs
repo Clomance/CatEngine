@@ -5,17 +5,18 @@ use crate::graphics::{
 
 use cat_engine_basement::windows::{
     WindowClass,
-    EventLoop,
     OpenGraphicsLibrary,
 };
 
 pub use cat_engine_basement::{
     windows::{
+        EventLoop,
         Window,
         CursorIcon,
         Background,
         Fullscreen,
         Monitor,
+        MouseButton,
         OpenGLRenderContext,
         WindowAttributes,
         WindowClassAttributes,
@@ -33,7 +34,10 @@ pub use cat_engine_basement::{
     },
 };
 
-use std::mem::MaybeUninit;
+use std::{
+    cell::UnsafeCell,
+    mem::MaybeUninit
+};
 
 pub struct EmptyHandler;
 
@@ -93,11 +97,11 @@ impl<S> WindowInner<S>{
 /// 
 /// Loads everything needed for drawing.
 pub struct App<S:Sized+'static>{
-    event_loop:EventLoop,
+    pub event_loop:EventLoop,
     window_class:WindowClass,
-    window:Window,
-    window_inner:Box<WindowInner<S>>,
-    app_storage:Box<S>,
+    pub window:Window,
+    window_inner:UnsafeCell<Box<WindowInner<S>>>,
+    storage:UnsafeCell<Box<S>>,
 }
 
 impl<S:Sized+'static> App<S>{
@@ -151,8 +155,8 @@ impl<S:Sized+'static> App<S>{
             event_loop,
             window_class:class,
             window,
-            window_inner,
-            app_storage,
+            window_inner:UnsafeCell::new(window_inner),
+            storage:UnsafeCell::new(app_storage),
         }
     }
 
@@ -165,40 +169,24 @@ impl<S:Sized+'static> App<S>{
 }
 
 impl<S:Sized+'static> App<S>{
-    pub fn window(&self)->&Window{
-        &self.window
+    pub fn window_inner(&self)->&mut WindowInner<S>{
+        unsafe{
+            (&mut*self.window_inner.get()).as_mut()
+        }
     }
 
-    pub fn window_graphics(&self)->&Graphics{
-        &self.window_inner.as_ref().graphics
+    pub fn graphics(&self)->&mut Graphics{
+        &mut self.window_inner().graphics
     }
 
-    pub fn window_graphics_mut(&mut self)->&mut Graphics{
-        &mut self.window_inner.as_mut().graphics
+    pub fn context(&self)->&OpenGLRenderContext{
+        &self.window_inner().context
     }
 
-    pub fn window_context(&self)->&OpenGLRenderContext{
-        &self.window_inner.as_ref().context
-    }
-
-    pub fn app_storage(&self)->&S{
-        self.app_storage.as_ref()
-    }
-
-    pub fn app_storage_mut(&mut self)->&mut S{
-        self.app_storage.as_mut()
-    }
-}
-
-impl<S:Sized+'static> App<S>{
-    /// Runs an event loop.
-    pub fn run<F:FnMut(Event,&mut AppControl<S>)>(&mut self,mut event_handler:F){
-        let event_loop:&'static mut EventLoop=unsafe{std::mem::transmute(&mut self.event_loop)};
-
-        event_loop.run(|event,loop_control|{
-            let mut app_control=AppControl::new(self,loop_control);
-            event_handler(event,&mut app_control);
-        });
+    pub fn storage(&self)->&mut S{
+        unsafe{
+            (&mut*self.storage.get()).as_mut()
+        }
     }
 }
 
@@ -219,58 +207,5 @@ impl AppAttributes{
             render_context:OpenGLRenderContextAttributes::new(),
             graphics:Graphics2DAttributes::new(),
         }
-    }
-}
-
-pub struct AppControl<S:Sized+'static>{
-    app:&'static mut App<S>,
-    loop_control:&'static mut LoopControl,
-}
-
-impl<S:Sized+'static> AppControl<S>{
-    pub fn new(app:&mut App<S>,loop_control:&mut LoopControl)->AppControl<S>{
-        unsafe{
-            Self{
-                app:std::mem::transmute(app),
-                loop_control:std::mem::transmute(loop_control)
-            }
-        }
-    }
-
-    /// Break app's event loop.
-    pub fn break_loop(&mut self){
-        *self.loop_control=LoopControl::Break;
-    }
-
-    /// Sets the 'lazy' mode flag.
-    pub fn lazy(&mut self,lazy:bool){
-        if lazy{
-            *self.loop_control=LoopControl::Lazy;
-        }
-        else{
-            *self.loop_control=LoopControl::Run;
-        }
-    }
-}
-
-impl<S:Sized+'static> AppControl<S>{
-    pub fn window(&self)->&Window{
-        self.app.window()
-    }
-
-    pub fn window_graphics(&self)->&Graphics{
-        self.app.window_graphics()
-    }
-
-    pub fn window_graphics_mut(&mut self)->&mut Graphics{
-        self.app.window_graphics_mut()
-    }
-
-    pub fn app_storage(&self)->&S{
-        self.app.app_storage.as_ref()
-    }
-
-    pub fn app_storage_mut(&mut self)->&mut S{
-        self.app.app_storage.as_mut()
     }
 }

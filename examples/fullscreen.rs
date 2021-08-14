@@ -59,9 +59,9 @@ fn main(){
     app_attributes.window.fullscreen=Fullscreen::Monitor(Monitor::get_primary_monitor());
 
     let texture:Option<Texture>=None;
-    let mut app=App::new::<WindowHandle>(app_attributes,texture);
+    let app=App::new::<WindowHandle>(app_attributes,texture);
 
-    let graphics=app.window_graphics_mut();
+    let graphics=app.graphics();
 
     graphics.draw_parameters().enable(DrawMode::Shift);
 
@@ -78,9 +78,9 @@ fn main(){
     );
     let _image=graphics.push_textured_object(&image_base).unwrap();
 
-    *app.app_storage_mut()=Some(Texture::from_path("logo_400x400.png").unwrap());
+    *app.storage()=Some(Texture::from_path("logo_400x400.png").unwrap());
 
-    app.run(|event,_app_control|{
+    app.event_loop.run(|event,_control|{
         match event{
             
 

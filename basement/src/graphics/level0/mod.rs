@@ -1,6 +1,9 @@
 mod buffer;
 pub use buffer::Buffer;
 
+mod drawing;
+pub use drawing::Drawing;
+
 // mod frame_buffer;
 // pub use frame_buffer::{
 //     FrameBuffer,

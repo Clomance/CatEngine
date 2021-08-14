@@ -159,7 +159,7 @@ fn build_glyph(id:GlyphId,scale:Scale,face:&Face,graphics:&Graphics2D)->Option<T
             size,
             ImageDataFormat::R_U8,
             &image
-        );
+        ).unwrap();
 
         unsafe{GCore.set_pixel_storage_modei(UNPACK_ALIGNMENT,4)}
 

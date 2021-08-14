@@ -179,12 +179,15 @@ impl Shader{
     pub unsafe fn get_info_log(&self,shader:u32,log:&mut String){
         let buffer=log.as_mut_vec();
         let mut length:i32=MaybeUninit::uninit().assume_init();
-        transmute::<usize,fn(u32,i32,&mut i32,&mut u8)>(self.glGetShaderInfoLog)(
+        transmute::<usize,fn(u32,i32,&mut i32,*mut u8)>(self.glGetShaderInfoLog)(
             shader,
             buffer.capacity() as i32,
             &mut length,
-            &mut buffer[0]
+            buffer.as_mut_ptr()
         );
-        buffer.set_len(length as usize-1);
+        if length!=0{
+            length-=1;
+        }
+        buffer.set_len(length as usize);
     }
 }

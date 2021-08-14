@@ -59,17 +59,16 @@ impl TextGraphics{
         let fragment_shader=FragmentShader::new(&include_str!("shaders/text/fragment_shader.glsl")).unwrap();
 
         let program=Program::new(&vertex_shader,&fragment_shader).unwrap();
-        program.bind_uniform_block("DrawParameters",0u32);
 
-        let vertex_buffer=VertexBuffer::<TextVertex2D>::empty(4,BufferUsage::DynamicDraw);
-        let vertex_array=VertexArray::<TextVertex2D>::new(vertex_buffer.raw());
+        let vertex_buffer=VertexBuffer::<TextVertex2D>::empty(4,BufferUsage::DynamicDraw).unwrap();
+        let vertex_array=VertexArray::<TextVertex2D>::new(vertex_buffer.as_raw());
 
         let texture=Texture2D::empty(
             Texture2DInternalFormat::R8,
             TextureMagFilter::Linear,
             TextureMinFilter::Linear,
             glyph_texture_size
-        );
+        ).unwrap();
 
         Self{
             vertex_buffer,
@@ -100,7 +99,7 @@ impl TextGraphics{
 
     pub fn load_glyph_image(&self,size:[u32;2],image:&[u8]){
         unsafe{GCore.set_pixel_storage_modei(UNPACK_ALIGNMENT,1)}
-        self.texture.write_image([0,0,size[0] as i32,size[1] as i32],ImageDataFormat::R_U8,image);
+        self.texture.write_image([0,0,size[0],size[1]],ImageDataFormat::R_U8,image);
         unsafe{GCore.set_pixel_storage_modei(UNPACK_ALIGNMENT,4)}
     }
 

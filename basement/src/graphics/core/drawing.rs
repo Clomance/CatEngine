@@ -130,6 +130,7 @@ impl Drawing{
     /// and the buffer object's data store is currently mapped,
     /// or if a geometry shader is active and mode is incompatible
     /// with the input primitive type of the geometry shader in the currently installed program object.
+    #[inline]
     pub unsafe fn draw_elements(&self,start:i32,count:i32,index_type:IndexType,mode:PrimitiveType){
         let offset=match index_type{
             IndexType::U8=>u8::offset(start as isize),
@@ -148,6 +149,7 @@ impl Drawing{
     /// and the buffer object's data store is currently mapped,
     /// or if a geometry shader is active and mode is incompatible
     /// with the input primitive type of the geometry shader in the currently installed program object.
+    #[inline]
     pub unsafe fn draw_elements_typed<T:AvailableIndexType>(&self,start:i32,count:i32,mode:PrimitiveType){
         let offset=T::offset(start as isize);
         let gl_enum=T::gl_enum();
@@ -191,6 +193,7 @@ impl Drawing{
     /// `GLError::InvalidOperation` is generated
     /// if a non-zero buffer object name is bound to an enabled array or the element array
     /// and the buffer object's data store is currently mapped.
+    #[inline]
     pub unsafe fn multi_draw_elements_typed<T:AvailableIndexType>(
         &self,
         start:&[isize],

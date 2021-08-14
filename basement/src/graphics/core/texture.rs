@@ -428,18 +428,48 @@ pub enum TextureCompareMode{
 #[repr(u32)]
 #[derive(Clone,Copy,Debug)]
 pub enum TextureMagFilter{
+    /// Returns the value of the texture element
+    /// that is nearest (in Manhattan distance) to the specified texture coordinates.
     Nearest=NEAREST,
+
+    /// Returns the weighted average of the four texture elements that are closest to the specified texture coordinates.
+    /// These can include items wrapped or repeated from other parts of a texture,
+    /// depending on the values of `GL_TEXTURE_WRAP_S` and `GL_TEXTURE_WRAP_T`,and on the exact mapping.
     Linear=LINEAR,
 }
 
 #[repr(u32)]
 #[derive(Clone,Copy,Debug)]
 pub enum TextureMinFilter{
+    /// Returns the value of the texture element
+    /// that is nearest (in Manhattan distance) to the specified texture coordinates.
     Nearest=NEAREST,
+
+    /// Returns the weighted average of the four texture elements that are closest to the specified texture coordinates.
+    /// These can include items wrapped or repeated from other parts of a texture,
+    /// depending on the values of `GL_TEXTURE_WRAP_S` and `GL_TEXTURE_WRAP_T`,and on the exact mapping.
     Linear=LINEAR,
+
+    /// Chooses the mipmap that most closely matches the size of the pixel being textured
+    /// and uses the `GL_NEAREST` criterion (the texture element closest to the specified texture coordinates)
+    /// to produce a texture value.
     NearestMipmapNearest=NEAREST_MIPMAP_NEAREST,
+
+    /// Chooses the mipmap that most closely matches the size of the pixel being textured
+    /// and uses the `GL_LINEAR` criterion (a weighted average of the four texture elements that are closest to the specified texture coordinates)
+    /// to produce a texture value.
     LinearMipmapNearest=LINEAR_MIPMAP_NEAREST,
+
+    /// Chooses the two mipmaps that most closely match the size of the pixel being textured
+    /// and uses the GL_NEAREST criterion (the texture element closest to the specified texture coordinates )
+    /// to produce a texture value from each mipmap.
+    /// The final texture value is a weighted average of those two values.
     NearestMipmapLinear=NEAREST_MIPMAP_LINEAR,
+
+    /// Chooses the two mipmaps that most closely match the size of the pixel being textured
+    /// and uses the GL_LINEAR criterion (a weighted average of the texture elements that are closest to the specified texture coordinates)
+    /// to produce a texture value from each mipmap.
+    /// The final texture value is a weighted average of those two values.
     LinearMipmapLinear=LINEAR_MIPMAP_LINEAR,
 }
 
@@ -567,9 +597,6 @@ impl Texture{
     // TEXTURE_SWIZZLE_G,
     // TEXTURE_SWIZZLE_B,
     // TEXTURE_SWIZZLE_A,
-    // TEXTURE_WRAP_S,
-    // TEXTURE_WRAP_T,
-    // TEXTURE_WRAP_R
 
 /// Texture parameters.
 impl Texture{
@@ -577,54 +604,84 @@ impl Texture{
     /// 
     /// The initial value is 0.
     #[inline(always)]
-    pub unsafe fn set_base_level(&self,target:TextureParameterTarget,value:i32){
-        transmute::<usize,fn(TextureParameterTarget,u32,i32)>(self.glTexParameteri)(target,TEXTURE_BASE_LEVEL,value)
+    pub fn set_base_level(&self,target:TextureParameterTarget,level:i32){
+        unsafe{
+            transmute::<usize,fn(TextureParameterTarget,u32,i32)>(self.glTexParameteri)(target,TEXTURE_BASE_LEVEL,level)
+        }
     }
 
-    /// Specifies the comparison operator used when TEXTURE_COMPARE_MODE is set to COMPARE_REF_TO_TEXTURE.
+    /// Specifies the comparison operator.
+    /// 
+    /// The comparison operator is used when `TextureCompareMode::CompareRefToTexture` is set (see `Texture::set_compare_mode`).
     #[inline(always)]
-    pub unsafe fn set_compare_function(&self,target:TextureParameterTarget,value:TextureCompareFunction){
-        transmute::<usize,fn(TextureParameterTarget,u32,TextureCompareFunction)>(self.glTexParameteri)(target,TEXTURE_COMPARE_FUNC,value)
+    pub fn set_compare_function(&self,target:TextureParameterTarget,function:TextureCompareFunction){
+        unsafe{
+            transmute::<usize,fn(TextureParameterTarget,u32,TextureCompareFunction)>(self.glTexParameteri)(target,TEXTURE_COMPARE_FUNC,function)
+        }
     }
 
-    /// Specifies the texture comparison mode for currently bound depth textures (iternal format = DEPTH_COMPONENT).
+    /// Specifies the texture comparison mode for currently bound depth textures (the iternal format = `DEPTH_COMPONENT`).
     #[inline(always)]
-    pub unsafe fn set_compare_mode(&self,target:TextureParameterTarget,value:TextureCompareMode){
-        transmute::<usize,fn(TextureParameterTarget,u32,TextureCompareMode)>(self.glTexParameteri)(target,TEXTURE_COMPARE_MODE,value)
+    pub fn set_compare_mode(&self,target:TextureParameterTarget,mode:TextureCompareMode){
+        unsafe{
+            transmute::<usize,fn(TextureParameterTarget,u32,TextureCompareMode)>(self.glTexParameteri)(target,TEXTURE_COMPARE_MODE,mode)
+        }
     }
 
+    /// Specifies the texture magnification function.
+    /// 
+    /// The texture magnification function is used whenever the level-of-detail function used
+    /// when sampling from the texture determines that the texture should be magified.
+    /// 
+    /// Initially, it is set to `TextureMagFilter::Linear`.
     #[inline(always)]
-    pub unsafe fn set_mag_filter(&self,target:TextureParameterTarget,value:TextureMagFilter){
-        transmute::<usize,fn(TextureParameterTarget,u32,TextureMagFilter)>(self.glTexParameteri)(target,TEXTURE_MAG_FILTER,value)
+    pub fn set_mag_filter(&self,target:TextureParameterTarget,filter:TextureMagFilter){
+        unsafe{
+            transmute::<usize,fn(TextureParameterTarget,u32,TextureMagFilter)>(self.glTexParameteri)(target,TEXTURE_MAG_FILTER,filter)
+        }
     }
 
+    /// Specifies the texture minifying function.
+    /// 
+    /// The texture minifying function is used whenever the level-of-detail function used
+    /// when sampling from the texture determines that the texture should be minified.
+    /// 
+    /// Initially, it is set to `TextureMinFilter::LinearMipmapLinear`.
     #[inline(always)]
-    pub unsafe fn set_min_filter(&self,target:TextureParameterTarget,value:TextureMinFilter){
-        transmute::<usize,fn(TextureParameterTarget,u32,TextureMinFilter)>(self.glTexParameteri)(target,TEXTURE_MIN_FILTER,value)
+    pub fn set_min_filter(&self,target:TextureParameterTarget,filter:TextureMinFilter){
+        unsafe{
+            transmute::<usize,fn(TextureParameterTarget,u32,TextureMinFilter)>(self.glTexParameteri)(target,TEXTURE_MIN_FILTER,filter)
+        }
     }
 
     /// Sets the wrap parameter for texture coordinate `s`.
     /// 
     /// Initially, it is set to `TextureWrap::Repeat`.
     #[inline(always)]
-    pub unsafe fn set_wrap_s(&self,target:TextureParameterTarget,value:TextureWrap){
-        transmute::<usize,fn(TextureParameterTarget,u32,TextureWrap)>(self.glTexParameteri)(target,TEXTURE_WRAP_S,value)
+    pub fn set_wrap_s(&self,target:TextureParameterTarget,value:TextureWrap){
+        unsafe{
+            transmute::<usize,fn(TextureParameterTarget,u32,TextureWrap)>(self.glTexParameteri)(target,TEXTURE_WRAP_S,value)
+        }
     }
 
     /// Sets the wrap parameter for texture coordinate `t`.
     /// 
     /// Initially, it is set to `TextureWrap::Repeat`.
     #[inline(always)]
-    pub unsafe fn set_wrap_t(&self,target:TextureParameterTarget,value:TextureWrap){
-        transmute::<usize,fn(TextureParameterTarget,u32,TextureWrap)>(self.glTexParameteri)(target,TEXTURE_WRAP_T,value)
+    pub fn set_wrap_t(&self,target:TextureParameterTarget,value:TextureWrap){
+        unsafe{
+            transmute::<usize,fn(TextureParameterTarget,u32,TextureWrap)>(self.glTexParameteri)(target,TEXTURE_WRAP_T,value)
+        }
     }
 
     /// Sets the wrap parameter for texture coordinate `r`.
     /// 
     /// Initially, it is set to `TextureWrap::Repeat`.
     #[inline(always)]
-    pub unsafe fn set_wrap_r(&self,target:TextureParameterTarget,value:TextureWrap){
-        transmute::<usize,fn(TextureParameterTarget,u32,TextureWrap)>(self.glTexParameteri)(target,TEXTURE_WRAP_R,value)
+    pub fn set_wrap_r(&self,target:TextureParameterTarget,value:TextureWrap){
+        unsafe{
+            transmute::<usize,fn(TextureParameterTarget,u32,TextureWrap)>(self.glTexParameteri)(target,TEXTURE_WRAP_R,value)
+        }
     }
 }
 
@@ -662,14 +719,14 @@ impl Texture{
     /// and the width and height parameters are not equal.
     /// 
     /// `GLError::InvalidValue` is generated
-    /// if `widt`h is less than `0` or greater than `GL_MAX_TEXTURE_SIZE`,
+    /// if `width` is less than `0` or greater than `GL_MAX_TEXTURE_SIZE`,
     /// if `target` is not `GL_TEXTURE_1D_ARRAY` or `GL_PROXY_TEXTURE_1D_ARRAY`
     /// and `height` is less than `0` or greater than `GL_MAX_TEXTURE_SIZE`,
     /// if `target` is `GL_TEXTURE_1D_ARRAY` or `GL_PROXY_TEXTURE_1D_ARRAY`
     /// and `height` is less than `0` or greater than `GL_MAX_ARRAY_TEXTURE_LAYERS`,
     /// if `mipmap_level` is less than 0,
     /// if `mipmap_level` is greater than log2(max),
-    /// where max is the returned value of `GL_MAX_TEXTURE_SIZE`,
+    /// where `max` is the returned value of `GL_MAX_TEXTURE_SIZE`,
     /// if `width` or `height` is less than 0 or greater than `GL_MAX_TEXTURE_SIZE,
     /// if non-power-of-two textures are not supported
     /// and the width or height cannot be represented

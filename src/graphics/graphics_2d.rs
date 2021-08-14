@@ -184,11 +184,8 @@ impl Graphics2D{
         };
 
         if let Some(glyph)=font.cached_glyph(glyph_id){
-            let Scale{horizontal,vertical}=font.glyph_cache().scale();
-            let glyph_scale=Scale{
-                horizontal:scale.horizontal/horizontal,
-                vertical:scale.vertical/vertical,
-            };
+            let glyph_scale=scale/font.glyph_cache().scale();
+
             let texture=glyph.texture();
             let advance_width=glyph.advance_width(glyph_scale.horizontal);
 
@@ -207,16 +204,20 @@ impl Graphics2D{
         }
         else{
             if let Some([offset_x,offset_y,_,height])=self.text.load_glyph(glyph_id,scale,font.font().face()){
-                if let Some(horisontal_advance)=horisontal_advance{
-                    *horisontal_advance=font.font().face().glyph_hor_advance(glyph_id).unwrap() as f32*scale.horizontal;
-                }
-
                 let position=[
                     position[0]+offset_x,
                     position[1]-offset_y-height,
                 ];
 
                 self.text.draw_loaded_glyph(colour,position,&self.draw_parameters);
+            }
+            if let Some(horisontal_advance)=horisontal_advance{
+                if let Some(glyph_advance)=font.font().face().glyph_hor_advance(glyph_id){
+                    *horisontal_advance=glyph_advance as f32*scale.horizontal;
+                }
+                else{
+                    *horisontal_advance=0f32;
+                }
             }
         }
     }

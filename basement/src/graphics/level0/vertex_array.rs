@@ -23,7 +23,7 @@ pub struct VertexArray<V:Vertex>{
 }
 
 impl<V:Vertex> VertexArray<V>{
-    pub fn initiate()->VertexArray<V>{
+    pub fn generate()->VertexArray<V>{
         unsafe{
             let mut id=MaybeUninit::uninit().assume_init();
             GCore.vertex_array.generate_one(&mut id);
@@ -35,7 +35,7 @@ impl<V:Vertex> VertexArray<V>{
     }
 
     pub fn new(vertex_buffer:&Buffer<V>)->VertexArray<V>{
-        let vertex_array=VertexArray::initiate();
+        let vertex_array=VertexArray::generate();
         vertex_array.bind().unwrap();
         vertex_buffer.bind(BufferTarget::ArrayBuffer).unwrap();
         Vertex::bind_for_vertex_array(&vertex_array);

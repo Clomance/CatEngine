@@ -1,3 +1,26 @@
+# 1.0.0 - alpha4
+
+Fixed `CachedFont::text_size` and `CachedFont::text_width` functions.
+
+Now `Graphics::draw_char` set a horisontal advance of any given character.
+
+All the `App` functions takes it as a reference, removed some, renamed the rest.
+
+All the texture functions except `basement::graphics::core` ones now returns `GLError`.
+
+Removed `CatAudio` from the default features.
+
+## CatEngineBasement - 0.0.0-alpha4
+
+Added wrappers for drawing functions (`graphics::level0`).
+
+`Texture` and `Buffer` write functions from `graphics::level0` are now just wrappers.
+
+All the buffer functions except `basement::graphics::core` ones returns `GLError`.
+
+Added new features - `support` (enables the support module) and `windowing` (enables).
+
+
 # 1.0.0 - alpha3
 
 Fixed the `Texture::write_image` and `Texture::rewrite_image` functions.
@@ -21,6 +44,7 @@ The messages:
  - `WindowEvent::MouseMove`, `WindowEvent::MousePress`, `WindowEvent::MouseRelease`, `WindowEvent::MouseScroll`
 
 Added `core::texture::Texture::wrap_s`, `-::wrap_t` and `-::wrap_r` functions.
+
 
 # 1.0.0 - alpha2
 

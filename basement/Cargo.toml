@@ -1,6 +1,6 @@
 [package]
 name = "cat_engine_basement"
-version = "0.0.0-alpha3"
+version = "0.0.0-alpha4"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
 
@@ -18,8 +18,10 @@ exclude = [
 ]
 
 [features]
-default = ["opengl"]
-opengl = []
+default = ["opengl","support","windowing"]
+support = []
+opengl = ["image"]
+windowing = ["image","winapi"]
 
 [package.metadata.docs.rs]
 features = ["default"]
@@ -37,6 +39,7 @@ features = [
     "profileapi",
     "winbase",
 ]
+optional = true
 
 [dependencies]
-image = "0.23.13"
+image = { version="0.23.13", optional = true}

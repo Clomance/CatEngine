@@ -64,9 +64,9 @@ fn main(){
     let app_attributes=AppAttributes::new();
 
     let texture:Option<Texture>=None;
-    let mut app=App::new::<WindowHandle>(app_attributes,texture);
+    let app=App::new::<WindowHandle>(app_attributes,texture);
 
-    let graphics=app.window_graphics_mut();
+    let graphics=app.graphics();
 
     // Setting blending
     graphics.core().blending.enable();
@@ -109,9 +109,9 @@ fn main(){
     );
     let _image3=graphics.push_textured_object(&image_base).unwrap();
 
-    *app.app_storage_mut()=Some(Texture::from_path("logo_400x400.png").unwrap());
+    *app.storage()=Some(Texture::from_path("logo_400x400.png").unwrap());
 
-    app.run(|event,_app_control|{
+    app.event_loop.run(|event,_app_control|{
         match event{
             
 

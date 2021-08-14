@@ -1,5 +1,6 @@
 use cat_engine_basement::graphics::{
     GCore,
+    core::GLError,
     core::texture::{
         Texture2DRewriteTarget,
         Texture2DWriteTarget,
@@ -17,11 +18,19 @@ pub use image_base::ImageBase;
 mod image_object;
 pub use image_object::ImageObject;
 
-use cat_engine_basement::image::RgbaImage;
-
-use std::{
-    path::Path,
+use cat_engine_basement::image::{
+    RgbaImage,
+    ImageError,
+    open,
 };
+
+use std::path::Path;
+
+#[derive(Debug)]
+pub enum TexureCreationError{
+    GLError(GLError),
+    ImageError(ImageError),
+}
 
 /// A 8-bit RGBA 2D texture.
 pub struct Texture{
@@ -30,54 +39,54 @@ pub struct Texture{
 
 impl Texture{
     /// Creates a texture.
-    /// 
-    /// If the size of `data` is not equal to `size`,
-    /// returns None.
-    pub fn new(size:[u32;2],data:&[u8])->Option<Texture>{
-        if data.len()!=(size[0]*size[1]*4) as usize{
-            return None
-        }
-
-        let texture=Texture2D::new(
+    pub fn new(size:[u32;2],data:&[u8])->Result<Texture,GLError>{
+        match Texture2D::new(
             Texture2DInternalFormat::RGBA8,
             TextureMagFilter::Linear,
             TextureMinFilter::Linear,
             size,
             ImageDataFormat::RGBA_U8,
             data
-        );
-
-        Some(
-            Self{
-                texture,
-            }
-        )
+        ){
+            Ok(texture)=>Ok(
+                Self{
+                    texture,
+                }
+            ),
+            Err(e)=>Err(e),
+        }
     }
 
     /// Creates a texture with no data loaded.
-    pub fn empty(size:[u32;2])->Texture{
-        let texture=Texture2D::empty(
+    pub fn empty(size:[u32;2])->Result<Texture,GLError>{
+        match Texture2D::empty(
             Texture2DInternalFormat::RGBA8,
             TextureMagFilter::Linear,
             TextureMinFilter::Linear,
             size,
-        );
-
-        Self{
-            texture,
+        ){
+            Ok(texture)=>Ok(
+                Self{
+                    texture,
+                }
+            ),
+            Err(e)=>Err(e),
         }
     }
 
     /// Loads an image from the path, flips it verticaly,
     /// converts to 8-bit RGBA and creates a texture.
-    pub fn from_path<P:AsRef<Path>>(path:P)->Option<Texture>{
-        if let Ok(image)=cat_engine_basement::image::open(path){
-            let image=image.flipv().to_rgba8();
-            let (w,h)=image.dimensions();
-            Self::new([w,h],image.as_ref())
-        }
-        else{
-            None
+    pub fn from_path<P:AsRef<Path>>(path:P)->Result<Texture,TexureCreationError>{
+        match open(path){
+            Ok(image)=>{
+                let image=image.flipv().to_rgba8();
+                let (w,h)=image.dimensions();
+                match Self::new([w,h],image.as_ref()){
+                    Ok(texture)=>Ok(texture),
+                    Err(e)=>Err(TexureCreationError::GLError(e)),
+                }
+            }
+            Err(e)=>Err(TexureCreationError::ImageError(e)),
         }
     }
 
@@ -99,11 +108,10 @@ impl Texture{
 impl Texture{
     pub fn write(
         &self,
-        [x,y,width,height]:[i32;4],
+        [x,y,width,height]:[u32;4],
         image_data_format:ImageDataFormat,
         data:&[u8]
-    ){
-        self.texture.bind();
+    )->GLError{
         self.texture.write_image(
             [x,y,width,height],
             image_data_format,
@@ -111,47 +119,37 @@ impl Texture{
         )
     }
 
-    pub fn write_rbga(&self,[x,y]:[i32;2],image:&RgbaImage){
+    pub fn write_rbga(&self,[x,y]:[u32;2],image:&RgbaImage)->GLError{
         let (w,h)=image.dimensions();
-        let frame=[
-            x,
-            y,
-            w as i32,
-            h as i32,
-        ];
-        self.texture.bind();
-        unsafe{
-            GCore.texture.write_image_2d(
-                Texture2DWriteTarget::Texture2D,
-                0,
-                frame,
-                ImageDataFormat::RGBA_U8,
-                image
-            )
-        }
+        let frame=[x,y,w,h];
+        self.texture.write_image(
+            frame,
+            ImageDataFormat::RGBA_U8,
+            image
+        )
     }
 
-    pub fn write_image(&self,image:&RgbaImage){
+    pub fn write_image(&self,image:&RgbaImage)->GLError{
         let (w,h)=image.dimensions();
         self.write(
-            [0,0,w as i32,h as i32],
+            [0,0,w,h],
             ImageDataFormat::RGBA_U8,
             image.as_ref()
-        );
+        )
     }
 
-    pub fn rewrite_image(&self,texture_internal_format:Texture2DInternalFormat,image:&RgbaImage){
+    pub fn rewrite_image(
+        &self,
+        texture_internal_format:Texture2DInternalFormat,
+        image:&RgbaImage
+    )->GLError{
         let (w,h)=image.dimensions();
         self.texture.bind();
-        unsafe{
-            GCore.texture.rewrite_image_2d(
-                Texture2DRewriteTarget::Texture2D,
-                0,
-                texture_internal_format,
-                [w as i32,h as i32],
-                ImageDataFormat::RGBA_U8,
-                image.as_ref() as *const [u8] as *const u8
-            )
-        }
+        self.texture.rewrite_image(
+            texture_internal_format,
+            [w,h],
+            ImageDataFormat::RGBA_U8,
+            image.as_ref()
+        )
     }
 }

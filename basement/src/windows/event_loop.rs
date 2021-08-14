@@ -387,7 +387,7 @@ impl EventLoop{
     /// Runs an event loop.
     /// 
     /// Запускает цикл событий.
-    pub fn run<F:FnMut(Event,&mut LoopControl)>(&mut self,mut f:F){
+    pub fn run<F:FnMut(Event,&mut LoopControl)>(&self,mut f:F){
         unsafe{
             let mut message:MSG=zeroed();
 

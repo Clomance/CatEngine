@@ -55,7 +55,6 @@ impl SimpleGraphics{
         let fragment_shader=FragmentShader::new(&include_str!("shaders/simple/fragment_shader.glsl")).unwrap();
 
         let program=Program::new(&vertex_shader,&fragment_shader).unwrap();
-        program.bind_uniform_block("DrawParameters",0u32);
 
         let heap_vertex_buffer_size=heap_vertex_frames as ElementIndexType*frame_size as ElementIndexType;
 
@@ -64,9 +63,9 @@ impl SimpleGraphics{
         let vertex_buffer_size=heap_vertex_buffer_size+stack_vertices;
         let index_buffer_size=heap_index_buffer_size+stack_indices as ElementIndexType;
 
-        let vertex_buffer=VertexBuffer::empty(vertex_buffer_size as isize,BufferUsage::DynamicDraw);
-        let index_buffer=IndexBuffer::empty(index_buffer_size as isize,BufferUsage::DynamicDraw);
-        let vertex_array=VertexArray::new(vertex_buffer.raw());
+        let vertex_buffer=VertexBuffer::empty(vertex_buffer_size as isize,BufferUsage::DynamicDraw).unwrap();
+        let index_buffer=IndexBuffer::empty(index_buffer_size as isize,BufferUsage::DynamicDraw).unwrap();
+        let vertex_array=VertexArray::new(vertex_buffer.as_raw());
 
         Self{
             vertex_buffer,

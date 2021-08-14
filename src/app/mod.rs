@@ -1,10 +1,10 @@
 mod mono_windowing;
-#[cfg(target_os="windows")]
+
+#[cfg(any(target_os="windows"))]
 pub use mono_windowing::windows::{
     App,
     AppAttributes,
     Window,
-    AppControl,
     CursorIcon,
     Background,
     Fullscreen,
@@ -13,6 +13,9 @@ pub use mono_windowing::windows::{
     WindowClassAttributes,
     WindowInner,
     Event,
+    EventLoop,
+    LoopControl,
+    MouseButton,
     ProcessEvent,
     WindowEvent,
     VirtualKeyCode,

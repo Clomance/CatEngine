@@ -167,6 +167,8 @@ impl CachedFont{
 
     pub fn text_width(&self,text:&str,scale:Scale)->f32{
         let mut text_width=0f32;
+        let glyph_cache_scale=scale/self.glyph_cache().scale();
+
         for character in text.chars(){
             let glyph_id=if let Some(glyph_id)=self.glyph_id(character){
                 glyph_id
@@ -176,14 +178,12 @@ impl CachedFont{
             };
 
             if let Some(cached_glyph)=self.cached_glyph(glyph_id){
-                let width=cached_glyph.width(scale.horizontal);
+                let width=cached_glyph.advance_width(glyph_cache_scale.horizontal);
 
                 text_width+=width;
             }
-            else if let Some(bounding_box)=self.font.face.glyph_bounding_box(glyph_id){
-                let width=bounding_box.width() as f32*scale.horizontal;
-
-                text_width+=width;
+            else if let Some(advance_width)=self.font.face.glyph_hor_advance(glyph_id){
+                text_width+=advance_width as f32*scale.horizontal
             }
         }
 
@@ -192,6 +192,8 @@ impl CachedFont{
 
     pub fn text_size(&self,text:&str,scale:Scale)->[f32;2]{
         let mut size=[0f32;2];
+        let glyph_cache_scale=scale/self.glyph_cache().scale();
+
         for character in text.chars(){
             let glyph_id=if let Some(glyph_id)=self.glyph_id(character){
                 glyph_id
@@ -201,8 +203,8 @@ impl CachedFont{
             };
 
             if let Some(cached_glyph)=self.cached_glyph(glyph_id){
-                let width=cached_glyph.width(scale.horizontal);
-                let height=cached_glyph.height(scale.vertical);
+                let width=cached_glyph.advance_width(glyph_cache_scale.horizontal);
+                let height=cached_glyph.height(glyph_cache_scale.vertical);
 
                 size[0]+=width;
                 if height>size[1]{
@@ -210,7 +212,7 @@ impl CachedFont{
                 }
             }
             else if let Some(bounding_box)=self.font.face.glyph_bounding_box(glyph_id){
-                let width=bounding_box.width() as f32*scale.horizontal;
+                let width=self.font.face.glyph_hor_advance(glyph_id).unwrap() as f32*scale.horizontal;
 
                 let height=bounding_box.height() as f32*scale.vertical;
 
@@ -218,6 +220,9 @@ impl CachedFont{
                 if height>size[1]{
                     size[1]=height
                 }
+            }
+            else if let Some(advance_width)=self.font.face.glyph_hor_advance(glyph_id){
+                size[0]+=advance_width as f32*scale.horizontal
             }
         }
 

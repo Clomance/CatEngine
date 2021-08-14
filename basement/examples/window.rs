@@ -17,8 +17,10 @@ use cat_engine_basement::{
         OpenGLRenderContext,
         OpenGLRenderContextAttributes,
         quit,
+        WindowEvent,
+        ProcessEvent,
+        Event,
     },
-    event::{WindowEvent,ProcessEvent},
 };
 
 /// An empty struct for an empty window procedure.
@@ -72,7 +74,7 @@ struct RenderData{
 
 fn main(){
     let ea=EventLoopAttributes::new();
-    let mut event_loop=EventLoop::new(ea);
+    let event_loop=EventLoop::new(ea);
 
     let wca=WindowClassAttributes::new("CatEngineBasementWindowClass");
     let wc=WindowClass::new(wca).unwrap();
@@ -107,9 +109,9 @@ fn main(){
 
     event_loop.run(|event,control|{
         match event{
-            ProcessEvent::EventLoopStart=>*control=LoopControl::Run,
-            
-            ProcessEvent::Update(_)=>{
+            Event::Process(ProcessEvent::EventLoopStart)=>*control=LoopControl::Run,
+
+            Event::Process(ProcessEvent::Update(_))=>{
                 updates+=1;
                 if updates==800{
                     *control=LoopControl::Break

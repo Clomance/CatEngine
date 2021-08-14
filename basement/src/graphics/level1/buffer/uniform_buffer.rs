@@ -1,4 +1,5 @@
 use crate::graphics::{
+    core::GLError,
     core::buffer::{
         BufferTarget,
         BufferIndexedTarget,
@@ -15,32 +16,43 @@ pub struct UniformBuffer<U:Sized>{
 
 impl<U:Sized> UniformBuffer<U>{
     #[inline(always)]
-    pub fn initiate()->UniformBuffer<U>{
+    pub fn generate()->UniformBuffer<U>{
         Self{
-            buffer:Buffer::initiate(),
+            buffer:Buffer::generate(),
         }
     }
 
     #[inline(always)]
-    pub fn new(uniform:&U,usage:BufferUsage)->UniformBuffer<U>{
-        unsafe{
-            Self{
-                buffer:Buffer::new_raw(BufferTarget::UniformBuffer,size_of::<U>() as isize,uniform,usage),
-            }
+    pub unsafe fn raw(buffer:Buffer<U>)->UniformBuffer<U>{
+        Self{
+            buffer,
+        }
+    }
+
+    pub fn new(uniform:&U,usage:BufferUsage)->Result<UniformBuffer<U>,GLError>{
+        let buffer=UniformBuffer::generate();
+        let result=buffer.rewrite(uniform,usage);
+        if result.is_error(){
+            Err(result)
+        }
+        else{
+            Ok(buffer)
+        }
+    }
+
+    pub fn empty(usage:BufferUsage)->Result<UniformBuffer<U>,GLError>{
+        let buffer=UniformBuffer::generate();
+        let result=buffer.rewrite_empty(usage);
+        if result.is_error(){
+            Err(result)
+        }
+        else{
+            Ok(buffer)
         }
     }
 
     #[inline(always)]
-    pub fn empty(usage:BufferUsage)->UniformBuffer<U>{
-        unsafe{
-            Self{
-                buffer:Buffer::empty(BufferTarget::UniformBuffer,1,usage),
-            }
-        }
-    }
-
-    #[inline(always)]
-    pub fn raw(&self)->&Buffer<U>{
+    pub fn as_raw(&self)->&Buffer<U>{
         &self.buffer
     }
 
@@ -50,28 +62,48 @@ impl<U:Sized> UniformBuffer<U>{
     }
 
     #[inline(always)]
-    pub fn bind(&self){
-        self.buffer.bind(BufferTarget::UniformBuffer).unwrap()
+    pub fn bind(&self)->GLError{
+        self.buffer.bind(BufferTarget::UniformBuffer)
     }
 
     #[inline(always)]
-    pub fn bind_base(&self,binding_index:u32){
-        self.buffer.bind_base(BufferIndexedTarget::UniformBuffer,binding_index).unwrap()
+    pub fn bind_base(&self,binding_index:u32)->GLError{
+        self.buffer.bind_base(BufferIndexedTarget::UniformBuffer,binding_index)
     }
 
     #[inline(always)]
-    pub fn bind_range(&self,binding_index:u32,offset:isize,size:isize){
-        self.buffer.bind_range(BufferIndexedTarget::UniformBuffer,binding_index,offset,size).unwrap()
+    pub fn bind_range(&self,binding_index:u32,offset:isize,size:isize)->GLError{
+        self.buffer.bind_range(BufferIndexedTarget::UniformBuffer,binding_index,offset,size)
     }
 
-    #[inline(always)]
-    pub fn write(&self,uniform:&U){
-        self.buffer.write_raw(BufferTarget::UniformBuffer,0,size_of::<U>() as isize,uniform).unwrap()
+    pub fn write(&self,uniform:&U)->GLError{
+        let result=self.bind();
+        if result.is_error(){
+            result
+        }
+        else{
+            Buffer::write_raw(BufferTarget::UniformBuffer,0,size_of::<U>() as isize,uniform)
+        }
     }
 
-    #[inline(always)]
-    pub fn rewrite(&self,uniform:&U,usage:BufferUsage){
-        self.buffer.rewrite_raw(BufferTarget::UniformBuffer,size_of::<U>() as isize,uniform,usage).unwrap()
+    pub fn rewrite(&self,uniform:&U,usage:BufferUsage)->GLError{
+        let result=self.bind();
+        if result.is_error(){
+            result
+        }
+        else{
+            Buffer::rewrite_raw(BufferTarget::UniformBuffer,size_of::<U>() as isize,uniform,usage)
+        }
+    }
+
+    pub fn rewrite_empty(&self,usage:BufferUsage)->GLError{
+        let result=self.bind();
+        if result.is_error(){
+            result
+        }
+        else{
+            Buffer::<U>::rewrite_empty(BufferTarget::UniformBuffer,1,usage)
+        }
     }
 }
 

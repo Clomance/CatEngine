@@ -9,12 +9,15 @@
     dead_code
 )]
 
+/// Some useful structs and functions.
+#[cfg(feature="support")]
 pub mod support;
 
-#[cfg(feature="opengl")]
+#[cfg(any(feature="opengl"))]
 pub mod graphics;
 
-#[cfg(target_os="windows")]
+#[cfg(all(target_os="windows",feature="windowing"))]
 pub mod windows;
 
+#[cfg(any(feature="opengl",feature="windowing"))]
 pub use image;

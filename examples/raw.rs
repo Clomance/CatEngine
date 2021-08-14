@@ -76,7 +76,7 @@ struct WindowGraphics{
 
 fn main(){
     let ea=EventLoopAttributes::new();
-    let mut event_loop=EventLoop::new(ea);
+    let event_loop=EventLoop::new(ea);
 
     let wca=WindowClassAttributes::new("CatEngineWindowClass");
     let wc=WindowClass::new(wca).unwrap();
@@ -111,7 +111,7 @@ fn main(){
 
     graphics.push_textured_object(&image_base);
 
-    unsafe{ // not to drop the allocated zero-context and zero-texture (line 75)
+    unsafe{ // not to drop the zero-context and zero-texture (line 89)
         (&mut wg as *mut WindowGraphics).write(WindowGraphics{context,graphics,texture})
     }
 

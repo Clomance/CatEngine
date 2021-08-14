@@ -187,7 +187,7 @@ impl<V:Vertex> StackSystem<V>{
     ){
         if let Some(object)=self.get_object(id){
             if object.vertex_count as usize==vertices.len(){
-                vertex_buffer.write(object.vertex_start as isize,vertices)
+                vertex_buffer.write(object.vertex_start as isize,vertices).unwrap();
             }
         }
     }
@@ -200,7 +200,7 @@ impl<V:Vertex> StackSystem<V>{
     ){
         if let Some(object)=self.get_object(id){
             if object.index_count as usize==indices.len(){
-                index_buffer.write(object.vertex_start as isize,indices)
+                index_buffer.write(object.vertex_start as isize,indices).unwrap();
             }
         }
     }

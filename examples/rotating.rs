@@ -58,9 +58,9 @@ fn main(){
     let texture:Option<(Texture,f32)>=None;
 
     let app_attributes=AppAttributes::new();
-    let mut app=App::new::<WindowHandle>(app_attributes,texture);
+    let app=App::new::<WindowHandle>(app_attributes,texture);
 
-    let graphics=app.window_graphics_mut();
+    let graphics=app.graphics();
 
     // Setting blending
     graphics.core().blending.enable();
@@ -75,13 +75,13 @@ fn main(){
     );
     let _image=graphics.push_textured_object(&image_base).unwrap();
 
-    *app.app_storage_mut()=Some((Texture::from_path("logo_400x400.png").unwrap(),0f32));
+    *app.storage()=Some((Texture::from_path("logo_400x400.png").unwrap(),0f32));
 
-    app.run(|event,app_control|{
+    app.event_loop.run(|event,_control|{
         match event{
             // Written here (line 31)
             Event::Process(ProcessEvent::Update(_))=>
-                if let Some((_,angle))=app_control.app_storage_mut(){
+                if let Some((_,angle))=app.storage(){
                     *angle+=0.01
                 }
             _=>{}

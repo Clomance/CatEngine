@@ -1,4 +1,5 @@
 use crate::graphics::{
+    core::GLError,
     core::buffer::{
         BufferTarget,
         BufferIndexedTarget,
@@ -15,32 +16,43 @@ pub struct IndexBuffer<I:Sized>{
 
 impl<I:Sized> IndexBuffer<I>{
     #[inline(always)]
-    pub fn initiate()->IndexBuffer<I>{
+    pub fn generate()->IndexBuffer<I>{
         Self{
-            buffer:Buffer::initiate(),
+            buffer:Buffer::generate(),
         }
     }
 
     #[inline(always)]
-    pub fn new(indices:&[I],usage:BufferUsage)->IndexBuffer<I>{
-        unsafe{
-            Self{
-                buffer:Buffer::new(BufferTarget::ElementArrayBuffer,indices,usage),
-            }
+    pub unsafe fn raw(buffer:Buffer<I>)->IndexBuffer<I>{
+        Self{
+            buffer,
+        }
+    }
+
+    pub fn new(indices:&[I],usage:BufferUsage)->Result<IndexBuffer<I>,GLError>{
+        let buffer=IndexBuffer::generate();
+        let result=buffer.rewrite(indices,usage);
+        if result.is_error(){
+            Err(result)
+        }
+        else{
+            Ok(buffer)
+        }
+    }
+
+    pub fn empty(size:isize,usage:BufferUsage)->Result<IndexBuffer<I>,GLError>{
+        let buffer=IndexBuffer::generate();
+        let result=buffer.rewrite_empty(size,usage);
+        if result.is_error(){
+            Err(result)
+        }
+        else{
+            Ok(buffer)
         }
     }
 
     #[inline(always)]
-    pub fn empty(size:isize,usage:BufferUsage)->IndexBuffer<I>{
-        unsafe{
-            Self{
-                buffer:Buffer::empty(BufferTarget::ElementArrayBuffer,size,usage),
-            }
-        }
-    }
-
-    #[inline(always)]
-    pub fn raw(&self)->&Buffer<I>{
+    pub fn as_raw(&self)->&Buffer<I>{
         &self.buffer
     }
 
@@ -50,17 +62,37 @@ impl<I:Sized> IndexBuffer<I>{
     }
 
     #[inline(always)]
-    pub fn bind(&self){
-        self.buffer.bind(BufferTarget::ElementArrayBuffer).unwrap()
+    pub fn bind(&self)->GLError{
+        self.buffer.bind(BufferTarget::ElementArrayBuffer)
     }
 
-    #[inline(always)]
-    pub fn write(&self,offset:isize,indices:&[I]){
-        self.buffer.write(BufferTarget::ElementArrayBuffer,offset,indices).unwrap()
+    pub fn write(&self,offset:isize,indices:&[I])->GLError{
+        let result=self.bind();
+        if result.is_error(){
+            result
+        }
+        else{
+            Buffer::write(BufferTarget::ElementArrayBuffer,offset,indices)
+        }
     }
 
-    #[inline(always)]
-    pub fn rewrite(&self,indices:&[I],usage:BufferUsage){
-        self.buffer.rewrite(BufferTarget::ElementArrayBuffer,indices,usage).unwrap()
+    pub fn rewrite(&self,indices:&[I],usage:BufferUsage)->GLError{
+        let result=self.bind();
+        if result.is_error(){
+            result
+        }
+        else{
+            Buffer::rewrite(BufferTarget::ElementArrayBuffer,indices,usage)
+        }
+    }
+
+    pub fn rewrite_empty(&self,size:isize,usage:BufferUsage)->GLError{
+        let result=self.bind();
+        if result.is_error(){
+            result
+        }
+        else{
+            Buffer::<I>::rewrite_empty(BufferTarget::ElementArrayBuffer,size,usage)
+        }
     }
 }

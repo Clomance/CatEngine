@@ -1,10 +1,7 @@
 #[cfg(target_os="windows")]
 use crate::windows::OpenGraphicsLibrary;
 
-use core::mem::{
-    MaybeUninit,
-    transmute
-};
+use core::mem::transmute;
 
 pub struct Uniform{
     glUniform1f:usize,
