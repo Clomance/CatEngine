@@ -1,6 +1,6 @@
 [package]
 name = "cat_engine"
-version = "1.0.0-alpha4"
+version = "1.0.0-alpha5"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
 
@@ -64,7 +64,7 @@ optional = true
 
 [dependencies.cat_engine_basement]
 path = "basement"
-version = "0.0.0-alpha4"
+version = "0.0.0-alpha5"
 features = ["opengl"]
 
 

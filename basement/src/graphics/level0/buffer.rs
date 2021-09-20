@@ -100,6 +100,8 @@ impl<I:Sized> Buffer<I>{
 impl<I:Sized> Buffer<I>{
     /// Updates a subset of a buffer object's data store.
     /// 
+    /// `size` is the number of bytes.
+    /// 
     /// `GLError::InvalidValue` is generated
     /// if `offset` or `size` is negative,
     /// or if together they define a region of memory
@@ -108,7 +110,7 @@ impl<I:Sized> Buffer<I>{
     /// `GLError::InvalidOperation` is generated
     /// if the reserved buffer object name 0 is bound to `target`,
     /// or if the buffer object being updated is mapped.
-    pub fn write_raw(target:BufferTarget,offset:isize,size:isize,data:*const I)->GLError{
+    pub fn write_raw(target:BufferTarget,offset:isize,size:isize,data:&I)->GLError{
         unsafe{
             GCore.buffer.write(target,offset,size,data);
             GCore.get_error()
@@ -125,18 +127,19 @@ impl<I:Sized> Buffer<I>{
     /// `GLError::InvalidOperation` is generated
     /// if the reserved buffer object name 0 is bound to `target`,
     /// or if the buffer object being updated is mapped.
-    /// 
-    /// Panics if `data` is empty.
     pub fn write(target:BufferTarget,offset:isize,data:&[I])->GLError{
         unsafe{
             let offset=size_of::<I>() as isize*offset;
             let size=size_of::<I>()*data.len();
-            GCore.buffer.write(target,offset,size as isize,&data[0]);
+            let data=&*data.as_ptr();
+            GCore.buffer.write::<I>(target,offset,size as isize,data);
             GCore.get_error()
         }
     }
 
     /// Creates and initializes a buffer object's data store.
+    /// 
+    /// `size` is the number of bytes.
     /// 
     /// Returns `GLError::NoError` if no error has accured.
     /// 
@@ -145,7 +148,7 @@ impl<I:Sized> Buffer<I>{
     /// Returns `GLError::InvalidOperation` if the reserved buffer object name 0 is bound to target.
     /// 
     /// Returns `GLError::OutOfMemory` if the GL is unable to create a data store with the specified size.
-    pub fn rewrite_raw(target:BufferTarget,size:isize,data:*const I,usage:BufferUsage)->GLError{
+    pub fn rewrite_raw(target:BufferTarget,size:isize,data:Option<&I>,usage:BufferUsage)->GLError{
         unsafe{
             GCore.buffer.rewrite(target,size,data,usage);
             GCore.get_error()
@@ -159,19 +162,18 @@ impl<I:Sized> Buffer<I>{
     /// Returns `GLError::InvalidOperation` if the reserved buffer object name 0 is bound to target.
     /// 
     /// Returns `GLError::OutOfMemory` if the GL is unable to create a data store with the specified size.
-    /// 
-    /// Panics if `data` is empty.
     pub fn rewrite(target:BufferTarget,data:&[I],usage:BufferUsage)->GLError{
         unsafe{
             let size=size_of::<I>()*data.len();
-            GCore.buffer.rewrite(target,size as isize,&data[0],usage);
+            let data=&*data.as_ptr();
+            GCore.buffer.rewrite::<I>(target,size as isize,Some(data),usage);
             GCore.get_error()
         }
     }
 
     /// Creates an uninitialized buffer object's data store.
     /// 
-    /// The store size is `size * size_of::<I>()`.
+    /// `size` is the number of items.
     /// 
     /// Returns `GLError::NoError` if no error has accured.
     /// 
@@ -182,7 +184,7 @@ impl<I:Sized> Buffer<I>{
     /// Returns `GLError::OutOfMemory` if the GL is unable to create a data store with the specified size.
     pub fn rewrite_empty(target:BufferTarget,size:isize,usage:BufferUsage)->GLError{
         unsafe{
-            GCore.buffer.rewrite::<I>(target,size*size_of::<I>() as isize,core::ptr::null(),usage);
+            GCore.buffer.rewrite::<I>(target,size*size_of::<I>() as isize,None,usage);
             GCore.get_error()
         }
     }

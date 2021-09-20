@@ -2,7 +2,10 @@ use crate::windows::{
     WinCore,
     WindowEvent,
     MouseButton,
-    core::window::WindowData,
+    core::window::{
+        WindowData,
+        WindowHandle
+    },
 };
 
 use super::{
@@ -13,19 +16,9 @@ use super::{
     WindowProcedure,
 };
 
-use winapi::{
-    shared::{
-        minwindef::{
-            LPARAM,
-            UINT,
-            WPARAM,
-            LRESULT,
-        },
-        windef::{
-            HWND,
-        }
-    },
+use core::mem::transmute;
 
+use winapi::{
     um::{
         winuser::{
             // structs
@@ -293,58 +286,53 @@ use winapi::{
     }
 };
 
-use std::{
-    ptr::null_mut,
-    mem::transmute,
-};
-
 /// The auto draw flag index.
-/// Defines whether a new redraw event is requested directly after processing the last one.
+/// Defines whether a new redraw event is requested directly after processing the previous one.
 /// Mostly needed for enabling/disabling vsync.
 /// 
 /// Флаг для флаг авто отрисовки.
-/// Определяет, нужно запрашивать новое событие перерисовки сразу после обработки предыдущего.
+/// Определяет, нужно ли запрашивать новое событие отрисовки сразу после обработки предыдущего.
 /// Нужно в основном для включения/отключения вертикальной синхронизации.
 pub const window_settings_auto_redraw:WindowData=WindowData::User;
 
 pub unsafe extern "system" fn default_window_procedure(
-    handle:HWND,
-    message:UINT,
-    w_param:WPARAM,
-    l_param:LPARAM,
-)->LRESULT{
+    window_handle:WindowHandle,
+    message:u32,
+    w_param:usize,
+    l_param:isize,
+)->isize{
     match message{
         // Sent prior to the WM_CREATE message when a window is first created.
         // wParam - This parameter is not used.
-        // lParam - A pointer to the CREATESTRUCT structure.
+        // lParam - A pointer to the `CREATESTRUCT` structure.
         // If an application processes this message, it should return `TRUE` to continue creation of the window.
-        // If the application returns FALSE, the CreateWindow or CreateWindowEx function will return a NULL handle.
+        // If the application returns `FALSE`, the `CreateWindow` or `CreateWindowEx` function will return a NULL handle.
         WM_NCCREATE=>{
             let create_struct:&mut CREATESTRUCTW=transmute(l_param);
 
             let create_parameters:&mut CreateParameters<u8>=transmute(create_struct.lpCreateParams);
 
             // Установка доп настроек
-            WinCore.window.set_window_long_ptr(handle,window_settings_auto_redraw,create_parameters.auto_redraw as isize);
+            WinCore.window.set_window_long_ptr(window_handle,window_settings_auto_redraw,create_parameters.auto_redraw as isize);
 
             // Установка аргуметов для подфункции окна
-            WinCore.window.set_window_long_ptr(handle,WindowData::UserData,create_parameters.window_procedure_args as isize);
+            WinCore.window.set_window_long_ptr(window_handle,WindowData::UserData,create_parameters.window_procedure_args as isize);
 
             // Установка функции окна
-            WinCore.window.set_window_long_ptr(handle,WindowData::WindowProcedure,create_parameters.window_procedure as isize);
+            WinCore.window.set_window_long_ptr(window_handle,WindowData::WindowProcedure,create_parameters.window_procedure as isize);
 
             return 1;
         }
-        _=>DefWindowProcW(handle,message,w_param,l_param)
+        _=>DefWindowProcW(window_handle.as_raw(),message,w_param,l_param)
     }
 }
 
 pub unsafe extern "system" fn window_procedure<W:WindowProcedure<A>,A>(
-    handle:HWND,
-    message:UINT,
-    w_param:WPARAM,
-    l_param:LPARAM,
-)->LRESULT{
+    handle:WindowHandle,
+    message:u32,
+    w_param:usize,
+    l_param:isize,
+)->isize{
     let window:&Window=transmute(&handle);
 
     let result=std::panic::catch_unwind(||{
@@ -353,14 +341,14 @@ pub unsafe extern "system" fn window_procedure<W:WindowProcedure<A>,A>(
         // Запрос на перерисовку содержимого окна
         if message==WM_PAINT{
             let mut paint=std::mem::zeroed();
-            let _=BeginPaint(handle,&mut paint);
+            let _=BeginPaint(handle.as_raw(),&mut paint);
 
-            W::handle(WindowEvent::Redraw,window,args);
+            W::render(window,args);
 
             // EndPaint releases the display device context that BeginPaint retrieved
-            EndPaint(handle,&paint);
+            EndPaint(handle.as_raw(),&paint);
 
-            let auto_draw_flag=WinCore.window.get_window_long_ptr(handle,window_settings_auto_redraw);
+            let auto_draw_flag=WinCore.window.get_window_long_ptr(window.handle(),window_settings_auto_redraw);
 
             if auto_draw_flag==1{
                 window.redraw()
@@ -383,7 +371,7 @@ pub unsafe extern "system" fn window_procedure<W:WindowProcedure<A>,A>(
         Err(e)=>{
             println!("{:?}",e);
             PostQuitMessage(0);
-            DefWindowProcW(handle,message,w_param,l_param)
+            DefWindowProcW(handle.as_raw(),message,w_param,l_param)
         }
     }
 }
@@ -394,7 +382,7 @@ enum EventWrapResult{
 }
 
 
-unsafe fn wrap_event(window:&Window,message:UINT,w_param:WPARAM,l_param:LPARAM)->EventWrapResult{
+unsafe fn wrap_event(window:&Window,message:u32,w_param:usize,l_param:isize)->EventWrapResult{
     match message{
         // The window procedure of the new window receives this message after the window is created,
         // but before the window becomes visible.
@@ -597,6 +585,6 @@ unsafe fn wrap_event(window:&Window,message:UINT,w_param:WPARAM,l_param:LPARAM)-
             )
         }
 
-        _=>EventWrapResult::None(DefWindowProcW(window.handle,message,w_param,l_param))
+        _=>EventWrapResult::None(DefWindowProcW(window.handle.as_raw(),message,w_param,l_param))
     }
 }

@@ -32,34 +32,35 @@ use cat_engine::{
 struct Handler0;
 
 impl WindowProcedure<WindowGraphics> for Handler0{
+    fn render(_:&Window,_:&mut WindowGraphics){}
     fn handle(_:WindowEvent,_:&Window,_:&mut WindowGraphics){}
 }
 
 struct Handler1;
 
 impl WindowProcedure<WindowGraphics> for Handler1{
-    fn handle(event:WindowEvent,window:&Window,args:&mut WindowGraphics){
+    fn render(window:&Window,args:&mut WindowGraphics){
+        // use it when you have more than one window
+        args.context.make_current(true).unwrap_or_else(|_|{quit()});
+
+        // set viewport if a window may change it's size
+        // or if you have more than one window
+        // otherwise set it after creating the window
+        let [width,height]=window.client_size();
+        unsafe{
+            args.graphics.core().viewport.set([0,0,width as i32,height as i32]);
+        }
+        args.graphics.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
+
+        args.graphics.clear_colour([1f32;4]);
+        args.graphics.draw_stack_textured_object(0,args.texture.texture_2d());
+
+        args.graphics.core().finish();
+        args.context.swap_buffers().unwrap_or_else(|_|{quit()});
+    }
+
+    fn handle(event:WindowEvent,window:&Window,_args:&mut WindowGraphics){
         match event{
-            WindowEvent::Redraw=>{
-                // use it when you have more than one window
-                args.context.make_current(true).unwrap_or_else(|_|{quit()});
-
-                // set viewport if a window may change it's size
-                // or if you have more than one window
-                // otherwise set it after creating the window
-                let [width,height]=window.client_size();
-                unsafe{
-                    args.graphics.core().viewport.set([0,0,width as i32,height as i32]);
-                }
-                args.graphics.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
-
-                args.graphics.clear_colour([1f32;4]);
-                args.graphics.draw_stack_textured_object(0,args.texture.texture_2d());
-
-                args.graphics.core().finish();
-                args.context.swap_buffers().unwrap_or_else(|_|{quit()});
-            }
-
             WindowEvent::CloseRequest=>window.destroy().unwrap(),
 
             WindowEvent::Destroy=>quit(),

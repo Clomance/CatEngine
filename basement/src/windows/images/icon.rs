@@ -1,3 +1,7 @@
+use crate::windows::{
+    WinCore,
+};
+
 use winapi::{
     shared::{
         windef::{
@@ -10,10 +14,6 @@ use winapi::{
             CreateIconIndirect,
             DestroyIcon,
             ICONINFO,
-        },
-
-        wingdi::{
-            CreateBitmap,
         },
     }
 };
@@ -49,8 +49,18 @@ impl Icon{
                 fIcon:if icon{1i32}else{0i32},
                 xHotspot:position[0],
                 yHotspot:position[1],
-                hbmMask:CreateBitmap(width as i32,height as i32,1,4,and_mask.as_ptr() as *mut _),
-                hbmColor:CreateBitmap(width as i32,height as i32,1,32,image.as_ptr() as *mut _),
+                hbmMask:WinCore.bitmap.create(
+                    [width as i32,height as i32],
+                    1,
+                    4,
+                    Some(&*and_mask.as_ptr())
+                ).unwrap().as_raw(),
+                hbmColor:WinCore.bitmap.create(
+                    [width as i32,height as i32],
+                    1,
+                    32,
+                    Some(&*image.as_ptr())
+                ).unwrap().as_raw(),
             };
 
             Self{

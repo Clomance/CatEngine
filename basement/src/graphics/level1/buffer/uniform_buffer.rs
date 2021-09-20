@@ -92,7 +92,7 @@ impl<U:Sized> UniformBuffer<U>{
             result
         }
         else{
-            Buffer::rewrite_raw(BufferTarget::UniformBuffer,size_of::<U>() as isize,uniform,usage)
+            Buffer::rewrite_raw(BufferTarget::UniformBuffer,size_of::<U>() as isize,Some(uniform),usage)
         }
     }
 

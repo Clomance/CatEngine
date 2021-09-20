@@ -23,24 +23,24 @@ use cat_engine::{
 struct WindowHandle;
 
 impl WindowProcedure<WindowInner<Option<(Texture,f32)>>> for WindowHandle{
-    fn handle(event:WindowEvent,window:&Window,window_inner:&mut WindowInner<Option<(Texture,f32)>>){
-        match event{
-            WindowEvent::Redraw=>{
-                window_inner.draw(window,|_,graphics,texture|{
-                    graphics.clear_colour([1f32;4]);
+    fn render(window:&Window,window_inner:&mut WindowInner<Option<(Texture,f32)>>){
+        window_inner.draw(window,|_,graphics,texture|{
+            graphics.clear_colour([1f32;4]);
 
-                    // read here (line 83)
-                    if let Some((texture,shift))=texture.as_ref(){
-                        graphics.draw_parameters().switch(DrawMode::Shift);
-                        graphics.draw_parameters().set_shift([*shift;2]);
+            // read here (line 83)
+            if let Some((texture,shift))=texture.as_ref(){
+                graphics.draw_parameters().switch(DrawMode::Shift);
+                graphics.draw_parameters().set_shift([*shift;2]);
 
-                        graphics.draw_stack_textured_object(0,texture.texture_2d());
+                graphics.draw_stack_textured_object(0,texture.texture_2d());
 
-                        graphics.draw_parameters().switch(DrawMode::Shift);
-                    }
-                }).unwrap_or_else(|_|{quit()});
+                graphics.draw_parameters().switch(DrawMode::Shift);
             }
+        }).unwrap_or_else(|_|{quit()});
+    }
 
+    fn handle(event:WindowEvent,_window:&Window,_window_inner:&mut WindowInner<Option<(Texture,f32)>>){
+        match event{
             WindowEvent::CloseRequest=>quit(),
             _=>{}
         }

@@ -9,7 +9,7 @@
     dead_code
 )]
 
-/// Some useful structs and functions.
+/// Some useful structures and functions.
 #[cfg(feature="support")]
 pub mod support;
 

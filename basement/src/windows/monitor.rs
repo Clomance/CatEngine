@@ -34,7 +34,7 @@ impl Monitor{
     pub fn get_monitor_from_window(window:&Window)->Monitor{
         unsafe{
             Self{
-                handle:MonitorFromWindow(window.handle(),MONITOR_DEFAULTTONEAREST)
+                handle:MonitorFromWindow(window.handle.as_raw(),MONITOR_DEFAULTTONEAREST)
             }
         }
     }

@@ -16,10 +16,7 @@ use crate::graphics::{
     },
 };
 
-use core::{
-    ptr::null,
-    mem::MaybeUninit
-};
+use core::mem::MaybeUninit;
 
 pub struct Texture{
     id:u32,

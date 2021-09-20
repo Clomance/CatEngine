@@ -2,7 +2,6 @@ use crate::graphics::{
     core::GLError,
     core::buffer::{
         BufferTarget,
-        BufferIndexedTarget,
         BufferUsage,
     },
     level0::Buffer,

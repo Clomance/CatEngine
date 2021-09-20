@@ -2,13 +2,10 @@ use crate::graphics::{
     core::GLError,
     core::buffer::{
         BufferTarget,
-        BufferIndexedTarget,
         BufferUsage,
     },
     level0::Buffer,
 };
-
-use std::marker::PhantomData;
 
 pub struct IndexBuffer<I:Sized>{
     buffer:Buffer<I>,

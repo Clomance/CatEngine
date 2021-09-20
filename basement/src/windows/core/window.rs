@@ -1,37 +1,43 @@
-use core::mem::transmute;
+use crate::implement_handle_wrapper;
+
+use super::{
+    window_class::ClassIdentifier,
+    device_context::DeviceContextHandle,
+};
+
+use core::{
+    mem::{
+        transmute,
+        transmute_copy,
+    },
+    ptr::NonNull,
+};
 
 use winapi::{
     shared::{
-        ntdef::LPCWSTR,
         windef::{
-            HWND,
-            HDC,
-            RECT,
-            POINT,
             HMENU,
+            HWND,
         },
         minwindef::HINSTANCE,
     },
 
     um::{
         winuser::{
-            // ShowWindow,
+            ShowWindow,
             // SetFocus,
             // SetForegroundWindow,
             // SetCapture,
             CreateWindowExW,
             DestroyWindow,
-            SendMessageW,
+            // SendMessageW,
             GetDC,
             GetWindowRect,
             GetClientRect,
-            RedrawWindow,
+            // RedrawWindow,
             SetWindowPos,
             SetWindowLongPtrW,
             GetWindowLongPtrW,
-            GetCursorPos,
-            SetCursorPos,
-            ShowCursor,
             ClientToScreen,
             ScreenToClient,
             // window styles
@@ -84,6 +90,19 @@ use winapi::{
             WS_EX_TOPMOST,
             WS_EX_TRANSPARENT,
             WS_EX_WINDOWEDGE,
+            // show command
+            SW_HIDE,
+            SW_SHOWNORMAL,
+            SW_SHOWMINIMIZED,
+            SW_SHOWMAXIMIZED,
+            SW_SHOWNOACTIVATE,
+            SW_SHOW,
+            SW_MINIMIZE,
+            SW_SHOWMINNOACTIVE,
+            SW_SHOWNA,
+            SW_RESTORE,
+            SW_SHOWDEFAULT,
+            SW_FORCEMINIMIZE,
             // other
             GWL_EXSTYLE,
             GWL_STYLE,
@@ -103,225 +122,10 @@ use winapi::{
     }
 };
 
-#[repr(i32)]
-#[derive(Clone,Copy,Debug)]
-pub enum WindowData{
-    /// Sets a new window style.
-    Style=GWL_STYLE,
-    /// Sets a new extended window style.
-    ExtendedStyle=GWL_EXSTYLE,
-    /// Sets a new application instance handle.
-    InstanceHandle=GWLP_HINSTANCE,
-    /// Sets a new identifier of the child window.
-    /// The window cannot be a top-level window.
-    ChildID=GWLP_ID,
-    /// Sets the user data associated with the window.
-    /// This data is intended for use by the application that created the window.
-    /// Its value is initially zero.
-    UserData=GWLP_USERDATA,
-    /// Sets a new address for the window procedure.
-    WindowProcedure=GWLP_WNDPROC,
-    ///Sets the return value of a message processed in the dialog box procedure.
-    MessageResult=0i32,
-    /// Sets the new pointer to the dialogue box procedure.
-    DialogueBoxProcedure=8i32,
-    /// Sets new extra information that is private to the application,
-    /// such as handles or pointers.
-    User=16i32,
-}
-
-pub struct Window;
-
-impl Window{
-    pub const fn new()->Window{
-        Self
-    }
-}
-
-impl Window{
-    #[inline(always)]
-    pub unsafe fn create<P>(
-        &self,
-        class_name:*const u16,
-        window_name:*const u16,
-        style:u32,
-        extended_style:u32,
-        [x,y,width,height]:[i32;4],
-        parent_window:HWND,
-        menu:HMENU,
-        instance:HINSTANCE,
-        create_parameters:*mut P,
-    )->HWND{
-        CreateWindowExW(
-            extended_style,
-            class_name,
-            window_name,
-            style,
-            x,y,width,height,
-            parent_window,
-            menu,
-            instance,
-            create_parameters as *mut _,
-        )
-    }
-
-    /// Destroys the specified window.
-    /// 
-    /// The function sends `WM_DESTROY` and `WM_NCDESTROY` messages
-    /// to the window to deactivate it and remove the keyboard focus from it.
-    /// The function also destroys the window's menu,
-    /// flushes the thread message queue,
-    /// destroys timers, removes clipboard ownership,
-    /// and breaks the clipboard viewer chain (if the window is at the top of the viewer chain).
-    /// 
-    /// If the specified window is a parent or owner window,
-    /// `Window::destroy` automatically destroys the associated child or owned windows
-    /// when it destroys the parent or owner window.
-    /// The function first destroys child or owned windows,
-    /// and then it destroys the parent or owner window.
-    /// 
-    /// `Window::destroy` also destroys modeless dialog boxes created by the `CreateDialog` function.
-    /// 
-    /// If the function succeeds, the return value is nonzero.
-    /// If the function fails, the return value is zero.
-    /// To get extended error information, call `GetLastError`.
-    /// 
-    /// A thread cannot use `Window::destroy` to destroy a window created by a different thread.
-    /// 
-    /// If the window being destroyed is a child window that does not have the `WS_EX_NOPARENTNOTIFY` style, a `WM_PARENTNOTIFY` message is sent to the parent.
-    #[inline(always)]
-    pub unsafe fn destroy(&self,window:HWND)->bool{
-        DestroyWindow(window)!=0
-    }
-
-    /// Retrieves the dimensions of the bounding rectangle of the specified window.
-    /// The dimensions are given in screen coordinates that are relative to the upper-left corner of the screen.
-    /// 
-    /// If the function succeeds, the return value is nonzero.
-    /// If the function fails, the return value is zero.
-    /// To get extended error information, call `GetLastError`.
-    /// 
-    /// In conformance with conventions for the `RECT` structure,
-    /// the bottom-right coordinates of the returned rectangle are exclusive.
-    /// In other words, the pixel at (right, bottom) lies immediately outside the rectangle.
-    /// 
-    /// `Window::get_window_rectangle` is virtualized for DPI.
-    /// 
-    /// In Windows Vista and later, the Window Rect now includes the area occupied by the drop shadow.
-    /// 
-    /// Calling `Window::get_window_rectangle` will have different behavior depending on
-    /// whether the window has ever been shown or not.
-    /// If the window has not been shown before,
-    /// `Window::get_window_rectangle` will not include the area of the drop shadow.
-    /// 
-    /// To get the window bounds excluding the drop shadow,
-    /// use DwmGetWindowAttribute, specifying `DWMWA_EXTENDED_FRAME_BOUNDS`.
-    /// Note that unlike the Window Rect,
-    /// the DWM Extended Frame Bounds are not adjusted for DPI.
-    /// Getting the extended frame bounds can only be done after the window has been shown at least once.
-    #[inline(always)]
-    pub unsafe fn get_window_rectangle(&self,window:HWND,rectangle:&mut [i32;4])->bool{
-        GetWindowRect(window,transmute(rectangle))!=0
-    }
-
-    /// Retrieves the coordinates of a window's client area.
-    /// The client coordinates specify the upper-left and lower-right corners of the client area.
-    /// Because client coordinates are relative to the upper-left corner of a window's client area,
-    /// the coordinates of the upper-left corner are (0,0).
-    /// 
-    /// If the function succeeds, the return value is nonzero.
-    /// 
-    /// If the function fails, the return value is zero.
-    /// To get extended error information, call `GetLastError`.
-    /// 
-    /// In conformance with conventions for the `RECT` structure,
-    /// the bottom-right coordinates of the returned rectangle are exclusive.
-    /// In other words, the pixel at (right, bottom) lies immediately outside the rectangle.
-    #[inline(always)]
-    pub unsafe fn get_client_rectangle(&self,window:HWND,rectangle:&mut [i32;4])->bool{
-        GetClientRect(window,transmute(rectangle))!=0
-    }
-
-    /// Changes the size, position, and Z order of a child, pop-up, or top-level window.
-    /// These windows are ordered according to their appearance on the screen.
-    /// The topmost window receives the highest rank and is the first window in the Z order.
-    /// 
-    /// If the function succeeds, the return value is nonzero.
-    /// If the function fails, the return value is zero.
-    /// To get extended error information, call `GetLastError`.
-    /// 
-    /// If you have changed certain window data using SetWindowLong,
-    /// you must call SetWindowPos for the changes to take effect.
-    /// Use the following combination for uFlags: `SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED`.
-    /// 
-    /// A window can be made a topmost window either by setting
-    /// the hWndInsertAfter parameter to HWND_TOPMOST and ensuring that the `SWP_NOZORDER` flag is not set,
-    /// or by setting a window's position in the Z order
-    /// so that it is above any existing topmost windows.
-    /// When a non-topmost window is made topmost,
-    /// its owned windows are also made topmost.
-    /// Its owners, however, are not changed.
-    /// 
-    /// If neither the SWP_NOACTIVATE nor SWP_NOZORDER flag is specified
-    /// (that is, when the application requests that a window be simultaneously activated and its position in the Z order changed),
-    /// the value specified in hWndInsertAfter is used only in the following circumstances.
-    /// 
-    /// Neither the HWND_TOPMOST nor HWND_NOTOPMOST flag is specified in hWndInsertAfter.
-    /// The window identified by hWnd is not the active window.
-    /// An application cannot activate an inactive window without also bringing it to the top of the Z order. Applications can change an activated window's position in the Z order without restrictions, or it can activate a window and then move it to the top of the topmost or non-topmost windows.
-    /// If a topmost window is repositioned to the bottom (HWND_BOTTOM) of the Z order or after any non-topmost window, it is no longer topmost.
-    /// When a topmost window is made non-topmost, its owners and its owned windows are also made non-topmost windows.
-    /// 
-    /// A non-topmost window can own a topmost window, but the reverse cannot occur.
-    /// Any window (for example, a dialog box) owned by a topmost window is itself made a topmost window,
-    /// to ensure that all owned windows stay above their owner.
-    /// 
-    /// If an application is not in the foreground, and should be in the foreground,
-    /// it must call the SetForegroundWindow function.
-    /// 
-    /// To use SetWindowPos to bring a window to the top,
-    /// the process that owns the window must have SetForegroundWindow permission.
-    #[inline(always)]
-    pub unsafe fn set_window_position(&self,window:HWND,insert_after:HWND,[x,y,width,height]:[i32;4],flag:u32)->bool{
-        SetWindowPos(window,insert_after,x,y,width,height,flag)!=0
-    }
-
-    /// Changes an attribute of the specified window.
-    /// The function also sets a value at the specified offset in the extra window memory.
-    /// 
-    /// If the function succeeds, the return value is the previous value of the specified offset.
-    /// If the function fails, the return value is zero.
-    /// To get extended error information, call `GetLastError`.
-    /// If the previous value is zero and the function succeeds,
-    /// the return value is zero,
-    /// but the function does not clear the last error information.
-    /// To determine success or failure,
-    /// clear the last error information by calling `SetLastError` with 0,
-    /// then call `Window::set_window_long_ptr`.
-    /// Function failure will be indicated
-    /// by a return value of zero and a `GetLastError` resultthat is nonzero.
-    #[inline(always)]
-    pub unsafe fn set_window_long_ptr(&self,window:HWND,index:WindowData,value:isize)->isize{
-        SetWindowLongPtrW(window,index as i32,value)
-    }
-
-    /// Retrieves information about the specified window.
-    /// The function also retrieves the value at a specified offset into the extra window memory.
-    /// 
-    /// If the function succeeds, the return value is the requested value.
-    /// If the function fails, the return value is zero.
-    /// To get extended error information, call `GetLastError`.
-    /// If `SetWindowLong` or `SetWindowLongPtr` has not been called previously,
-    /// `GetWindowLongPtr` returns zero for values in the extra window or class memory.
-    #[inline(always)]
-    pub unsafe fn get_window_long_ptr(&self,window:HWND,index:WindowData)->isize{
-        GetWindowLongPtrW(window,index as i32)
-    }
-}
-
+/// Represents a window style.
 #[repr(u32)]
 #[derive(Clone,Copy,Debug)]
-pub enum WindowStyles{
+pub enum WindowStyle{
     /// The window has a thin-line border.
     /// 
     /// 0x00800000
@@ -443,9 +247,10 @@ pub enum WindowStyles{
     Disabled=WS_DISABLED,
 }
 
+/// Represents an extended window style.
 #[repr(u32)]
 #[derive(Clone,Copy,Debug)]
-pub enum ExtendedWindowStyles{
+pub enum ExtendedWindowStyle{
     /// The window accepts drag-drop files.
     /// 
     /// 0x00000010
@@ -609,4 +414,474 @@ pub enum ExtendedWindowStyles{
     /// 
     /// 0x00000100
     WindowEdge=WS_EX_WINDOWEDGE,
+}
+
+#[repr(i32)]
+#[derive(Clone,Copy,Debug)]
+pub enum WindowData{
+    /// Sets a new window style.
+    Style=GWL_STYLE,
+
+    /// Sets a new extended window style.
+    ExtendedStyle=GWL_EXSTYLE,
+
+    /// Sets a new application instance handle.
+    InstanceHandle=GWLP_HINSTANCE,
+
+    /// Sets a new identifier of the child window.
+    /// The window cannot be a top-level window.
+    ChildID=GWLP_ID,
+
+    /// Sets the user data associated with the window.
+    /// This data is intended for use by the application that created the window.
+    /// Its value is initially zero.
+    UserData=GWLP_USERDATA,
+
+    /// Sets a new address for the window procedure.
+    WindowProcedure=GWLP_WNDPROC,
+
+    ///Sets the return value of a message processed in the dialog box procedure.
+    MessageResult=0i32,
+
+    /// Sets the new pointer to the dialogue box procedure.
+    DialogueBoxProcedure=8i32,
+
+    /// Sets new extra information that is private to the application,
+    /// such as handles or pointers.
+    User=16i32,
+}
+
+/// Controls how the window is to be shown.
+#[repr(i32)]
+pub enum ShowCommand{
+    /// Hides the window and activates another window.
+    Hide=SW_HIDE,
+
+    /// Activates and displays a window.
+    /// If the window is minimized or maximized,
+    /// the system restores it to its original size and position.
+    /// An application should specify this flag
+    /// when displaying the window for the first time.
+    ShowNormal=SW_SHOWNORMAL,
+
+    /// Activates the window and displays it as a minimized window.
+    ShowMinimized=SW_SHOWMINIMIZED,
+
+    /// Activates the window and displays it as a maximized window.
+    ShowMaximized=SW_SHOWMAXIMIZED,
+
+    /// Displays a window in its most recent size and position.
+    /// This value is similar to `ShowCommand::ShowNormal`,
+    /// except that the window is not activated.
+    ShowNoActivate=SW_SHOWNOACTIVATE,
+
+    /// Activates the window and displays it in its current size and position.
+    Show=SW_SHOW,
+
+    /// Minimizes the specified window and activates the next top-level window in the Z order.
+    Minimize=SW_MINIMIZE,
+
+    /// Displays the window as a minimized window.
+    /// This value is similar to `ShowCommand::ShowMinimized`,
+    /// except the window is not activated.
+    ShowMinimizedNoActivate=SW_SHOWMINNOACTIVE,
+
+    /// Displays the window in its current size and position.
+    /// This value is similar to `ShowCommand::Show`,
+    /// except that the window is not activated.
+    ShowNoActivate2=SW_SHOWNA,
+
+    /// Activates and displays the window.
+    /// If the window is minimized or maximized,
+    /// the system restores it to its original size and position.
+    /// An application should specify this flag when restoring a minimized window.
+    Restore=SW_RESTORE,
+
+    /// Sets the show state based on the `ShowCommand` value
+    /// specifiedin the `STARTUPINFO` structure passed to the CreateProcess function
+    /// by the program that started the application.
+    ShowDefault=SW_SHOWDEFAULT,
+
+    /// Minimizes a window, even if the thread that owns the window is not responding.
+    /// This flag should only be used when minimizing windows from a different thread.
+    ForceMinimized=SW_FORCEMINIMIZE,
+}
+
+/// Represents window styles.
+pub struct WindowStyles{
+    pub flag:u32
+}
+
+impl WindowStyles{
+    /// Creates a flag with the given styles.
+    pub const fn raw(flag:u32)->WindowStyles{
+        Self{
+            flag,
+        }
+    }
+
+    /// Creates a flag with no styles set.
+    pub const fn new()->WindowStyles{
+        Self{
+            flag:0u32,
+        }
+    }
+
+    /// Sets a style.
+    pub const fn set(mut self,style:WindowStyle)->WindowStyles{
+        self.flag|=style as u32;
+        self
+    }
+
+    /// Removes a style.
+    pub const fn remove(mut self,style:WindowStyle)->WindowStyles{
+        self.flag&=!(style as u32);
+        self
+    }
+}
+
+/// Represents extended window styles.
+pub struct ExtendedWindowStyles{
+    pub flag:u32
+}
+
+impl ExtendedWindowStyles{
+    /// Creates a flag with the given styles.
+    pub const fn raw(flag:u32)->ExtendedWindowStyles{
+        Self{
+            flag,
+        }
+    }
+
+    /// Creates a flag with no styles set.
+    pub const fn new()->ExtendedWindowStyles{
+        Self{
+            flag:0u32,
+        }
+    }
+
+    /// Sets a style.
+    pub const fn set(mut self,style:ExtendedWindowStyle)->ExtendedWindowStyles{
+        self.flag|=style as u32;
+        self
+    }
+
+    /// Removes a style.
+    pub const fn remove(mut self,style:ExtendedWindowStyle)->ExtendedWindowStyles{
+        self.flag&=!(style as u32);
+        self
+    }
+}
+
+/// The replacement for `HWND`.
+/// Can be wraped with `Option` with null pointer optimization.
+#[derive(Clone,Copy)]
+#[repr(transparent)]
+pub struct WindowHandle{
+    inner:NonNull<HWND>,
+}
+
+implement_handle_wrapper!(WindowHandle,HWND);
+
+pub struct Window;
+
+impl Window{
+    pub const fn new()->Window{
+        Self
+    }
+}
+
+impl Window{
+    /// Creates a window.
+    /// 
+    /// The class can be any name registered with `WindowClass::register`,
+    /// provided that the module that registers the class is also the module that creates the window.
+    /// The class can also be any of the predefined system class names.
+    #[inline(always)]
+    pub unsafe fn create<P>(
+        &self,
+        class:ClassIdentifier,
+        window_name:*const u16,
+        style:WindowStyles,
+        extended_style:ExtendedWindowStyles,
+        [x,y,width,height]:[i32;4],
+        parent_window:Option<WindowHandle>,
+        menu:HMENU,
+        instance:HINSTANCE,
+        create_parameters:*mut P,
+    )->Option<WindowHandle>{
+        WindowHandle::from_raw(
+            CreateWindowExW(
+                extended_style.flag,
+                class.as_ptr(),
+                window_name,
+                style.flag,
+                x,y,width,height,
+                WindowHandle::to_raw(parent_window),
+                menu,
+                instance,
+                create_parameters as *mut _,
+            )
+        )
+    }
+
+    /// Destroys the specified window.
+    /// 
+    /// The function sends `WM_DESTROY` and `WM_NCDESTROY` messages
+    /// to the window to deactivate it and remove the keyboard focus from it.
+    /// The function also destroys the window's menu,
+    /// flushes the thread message queue,
+    /// destroys timers, removes clipboard ownership,
+    /// and breaks the clipboard viewer chain (if the window is at the top of the viewer chain).
+    /// 
+    /// If the specified window is a parent or owner window,
+    /// `Window::destroy` automatically destroys the associated child or owned windows
+    /// when it destroys the parent or owner window.
+    /// The function first destroys child or owned windows,
+    /// and then it destroys the parent or owner window.
+    /// 
+    /// `Window::destroy` also destroys modeless dialog boxes created by the `CreateDialog` function.
+    /// 
+    /// If the function succeeds, returns `true`.
+    /// If the function fails, returns `false`.
+    /// To get extended error information, call `WinCore::get_last_error`.
+    /// 
+    /// A thread cannot use `Window::destroy` to destroy a window created by a different thread.
+    /// 
+    /// If the window being destroyed is a child window that does not have the `WS_EX_NOPARENTNOTIFY` style, a `WM_PARENTNOTIFY` message is sent to the parent.
+    #[inline(always)]
+    pub unsafe fn destroy(&self,window:WindowHandle)->bool{
+        DestroyWindow(window.as_raw())!=0
+    }
+
+    /// Retrieves a handle to a device context (DC) for the client area of a specified window or for the entire screen.
+    /// You can use the returned handle in subsequent GDI functions to draw in the DC.
+    /// The device context is an opaque data structure, whose values are used internally by GDI.
+    /// 
+    /// `window` is a handle to the window whose DC is to be retrieved;
+    /// if this value is NULL, `Window::get_device_context` retrieves the DC for the entire screen.
+    /// 
+    /// Note that the handle to the DC can only be used by a single thread at any one time.
+    /// After painting with a common DC,
+    /// the `Window::release_device_context` function must be called to release the DC.
+    /// Class and private DCs do not have to be released.
+    /// `Window::release_device_context` must be called from the same thread that called `Window::get_device_context`.
+    /// The number of DCs is limited only by available memory.
+    /// 
+    /// If the function succeeds,
+    /// the return value is a handle to the DC for the specified window's client area.
+    /// If the function fails, the return value is `NULL`.
+    #[inline(always)]
+    pub fn get_device_context(&self,window:Option<WindowHandle>)->Option<DeviceContextHandle>{
+        unsafe{
+            DeviceContextHandle::from_raw(GetDC(WindowHandle::to_raw(window)))
+        }
+    }
+
+    #[inline(always)]
+    pub unsafe fn get_device_context_unchecked(&self,window:Option<WindowHandle>)->DeviceContextHandle{
+        DeviceContextHandle::from_raw_unchecked(GetDC(WindowHandle::to_raw(window)))
+    }
+
+    /// Retrieves the dimensions of the bounding rectangle of the specified window.
+    /// The dimensions are given in screen coordinates that are relative to the upper-left corner of the screen.
+    /// 
+    /// If the function succeeds, the return value is nonzero.
+    /// If the function fails, the return value is zero.
+    /// To get extended error information, call `WinCore::get_last_error`.
+    /// 
+    /// In conformance with conventions for the `RECT` structure,
+    /// the bottom-right coordinates of the returned rectangle are exclusive.
+    /// In other words, the pixel at (right, bottom) lies immediately outside the rectangle.
+    /// 
+    /// `Window::get_window_rectangle` is virtualized for DPI.
+    /// 
+    /// In Windows Vista and later, the Window Rect now includes the area occupied by the drop shadow.
+    /// 
+    /// Calling `Window::get_window_rectangle` will have different behavior depending on
+    /// whether the window has ever been shown or not.
+    /// If the window has not been shown before,
+    /// `Window::get_window_rectangle` will not include the area of the drop shadow.
+    /// 
+    /// To get the window bounds excluding the drop shadow,
+    /// use DwmGetWindowAttribute, specifying `DWMWA_EXTENDED_FRAME_BOUNDS`.
+    /// Note that unlike the Window Rect,
+    /// the DWM Extended Frame Bounds are not adjusted for DPI.
+    /// Getting the extended frame bounds can only be done after the window has been shown at least once.
+    #[inline(always)]
+    pub unsafe fn get_window_rectangle(&self,window:WindowHandle,rectangle:&mut [i32;4])->bool{
+        GetWindowRect(window.as_raw(),transmute(rectangle))!=0
+    }
+
+    /// Retrieves the coordinates of a window's client area.
+    /// The client coordinates specify the upper-left and lower-right corners of the client area.
+    /// Because client coordinates are relative to the upper-left corner of a window's client area,
+    /// the coordinates of the upper-left corner are (0,0).
+    /// 
+    /// If the function succeeds, the return value is nonzero.
+    /// 
+    /// If the function fails, the return value is zero.
+    /// To get extended error information, call `WinCore::get_last_error`.
+    /// 
+    /// In conformance with conventions for the `RECT` structure,
+    /// the bottom-right coordinates of the returned rectangle are exclusive.
+    /// In other words, the pixel at (right, bottom) lies immediately outside the rectangle.
+    #[inline(always)]
+    pub unsafe fn get_client_rectangle(&self,window:WindowHandle,rectangle:&mut [i32;4])->bool{
+        GetClientRect(window.as_raw(),transmute(rectangle))!=0
+    }
+
+    /// Changes the size, position, and Z order of a child, pop-up, or top-level window.
+    /// These windows are ordered according to their appearance on the screen.
+    /// The topmost window receives the highest rank and is the first window in the Z order.
+    /// 
+    /// If the function succeeds, the return value is nonzero.
+    /// If the function fails, the return value is zero.
+    /// To get extended error information, call `WinCore::get_last_error`.
+    /// 
+    /// If you have changed certain window data using SetWindowLong,
+    /// you must call SetWindowPos for the changes to take effect.
+    /// Use the following combination for `flag`: `SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED`.
+    /// 
+    /// A window can be made a topmost window either by setting
+    /// the `insert_after` parameter to `WindowHandle_TOPMOST` and ensuring that the `SWP_NOZORDER` flag is not set,
+    /// or by setting a window's position in the Z order
+    /// so that it is above any existing topmost windows.
+    /// When a non-topmost window is made topmost,
+    /// its owned windows are also made topmost.
+    /// Its owners, however, are not changed.
+    /// 
+    /// If neither the `SWP_NOACTIVATE` nor `SWP_NOZORDER` flag is specified
+    /// (that is, when the application requests that a window be simultaneously activated and its position in the Z order changed),
+    /// the value specified in `insert_after` is used only in the following circumstances.
+    /// 
+    /// Neither the `WindowHandle_TOPMOST` nor `WindowHandle_NOTOPMOST` flag is specified in `insert_after`.
+    /// The window identified by `window` is not the active window.
+    /// An application cannot activate an inactive window without also bringing it to the top of the Z order.
+    /// Applications can change an activated window's position in the Z order without restrictions,
+    /// or it can activate a window and then move it to the top of the topmost or non-topmost windows.
+    /// If a topmost window is repositioned to the bottom (`WindowHandle_BOTTOM`) of the Z order or after any non-topmost window,
+    /// it is no longer topmost.
+    /// When a topmost window is made non-topmost,
+    /// its owners and its owned windows are also made non-topmost windows.
+    /// 
+    /// A non-topmost window can own a topmost window, but the reverse cannot occur.
+    /// Any window (for example, a dialog box) owned by a topmost window is itself made a topmost window,
+    /// to ensure that all owned windows stay above their owner.
+    /// 
+    /// If an application is not in the foreground, and should be in the foreground,
+    /// it must call the `SetForegroundWindow` function.
+    /// 
+    /// To use `Window::set_window_position` to bring a window to the top,
+    /// the process that owns the window must have `SetForegroundWindow` permission.
+    #[inline(always)]
+    pub unsafe fn set_window_position(&self,window:WindowHandle,insert_after:Option<WindowHandle>,[x,y,width,height]:[i32;4],flag:u32)->bool{
+        SetWindowPos(window.as_raw(),WindowHandle::to_raw(insert_after),x,y,width,height,flag)!=0
+    }
+
+    /// Changes an attribute of the specified window.
+    /// The function also sets a value at the specified offset in the extra window memory.
+    /// 
+    /// If the function succeeds, the return value is the previous value of the specified offset.
+    /// If the function fails, the return value is zero.
+    /// To get extended error information, call `WinCore::get_last_error`.
+    /// If the previous value is zero and the function succeeds,
+    /// the return value is zero,
+    /// but the function does not clear the last error information.
+    /// To determine success or failure,
+    /// clear the last error information by calling `SetLastError` with 0,
+    /// then call `Window::set_window_long_ptr`.
+    /// Function failure will be indicated
+    /// by a return value of zero and a `WinCore::get_last_error` result that is nonzero.
+    #[inline(always)]
+    pub unsafe fn set_window_long_ptr(&self,window:WindowHandle,index:WindowData,value:isize)->isize{
+        SetWindowLongPtrW(window.as_raw(),index as i32,value)
+    }
+
+    /// Retrieves information about the specified window.
+    /// The function also retrieves the value at a specified offset into the extra window memory.
+    /// 
+    /// If the function succeeds, the return value is the requested value.
+    /// If the function fails, the return value is zero.
+    /// To get extended error information, call `WinCore::get_last_error`.
+    /// If `Window::set_window_long_ptr` has not been called previously,
+    /// `Window::get_window_long_ptr` returns zero for values in the extra window or class memory.
+    #[inline(always)]
+    pub unsafe fn get_window_long_ptr(&self,window:WindowHandle,index:WindowData)->isize{
+        GetWindowLongPtrW(window.as_raw(),index as i32)
+    }
+
+    /// Sets the specified window's show state.
+    /// 
+    /// The `command` parameter is ignored the first time an application calls `ShowCommand::Show`,
+    /// if the program that launched the application provides a `STARTUPINFO` structure.
+    /// Otherwise, the first time `Window::show_window` is called,
+    /// the value should be the value obtained by the `WinMain` function in its `command` parameter.
+    /// 
+    /// To perform certain special effects when showing or hiding a window, use `AnimateWindow`.
+    /// The first time an application calls `Window::show_window`,
+    /// it should use the `WinMain` function's `command` parameter as its `command` parameter.
+    /// Subsequent calls to `Window::show_window` must use one of the values in the given list,
+    /// instead of the one specified by the `WinMain` function's `command` parameter.
+    /// As noted in the discussion of the `command` parameter,
+    /// the `command` value is ignored in the first call to `Window::show_window`
+    /// if the program that launched the application specifies startup information in the structure.
+    /// In this case, `Window::show_window` uses the information specified in the `STARTUPINFO` structure to show the window.
+    /// On subsequent calls, the application must call `Window::show_window` with `command` set to `ShowCommand::ShowDefault`
+    /// to use the startup information provided by the program that launched the application.
+    /// This behavior is designed for the following situations:
+    /// - Applications create their main window by calling `CreateWindow` with the `WS_VISIBLE` flag set.
+    /// - Applications create their main window by calling `CreateWindow` with the `WS_VISIBLE` flag cleared,
+    /// and later call `Window::show_window` with the `ShowCommand::Show` flag set to make it visible.
+    /// 
+    /// If the window was previously visible, returns `true`.
+    /// If the window was previously hidden, returns `false`.
+    #[inline(always)]
+    pub unsafe fn show_window(&self,window:WindowHandle,command:ShowCommand)->bool{
+        ShowWindow(window.as_raw(),command as i32)!=0
+    }
+
+    /// Converts the client-area coordinates of a specified point to screen coordinates.
+    /// 
+    /// `point` contains the client coordinates to be converted.
+    /// The new screen coordinates are copied into this structure if the function succeeds.
+    /// 
+    /// The function replaces the client-area coordinates in `point` with the screen coordinates.
+    /// The screen coordinates are relative to the upper-left corner of the screen.
+    /// Note, a screen-coordinate point that is above the window's client area has a negative y-coordinate.
+    /// Similarly, a screen coordinate to the left of a client area has a negative x-coordinate.
+    /// 
+    /// All coordinates are device coordinates.
+    /// 
+    /// If the function succeeds, returns `true`.
+    /// If the function fails, return `false`.
+    #[inline(always)]
+    pub unsafe fn client_to_screen(&self,window:WindowHandle,point:&mut [i32;2])->bool{
+        ClientToScreen(window.as_raw(),transmute(point))!=0
+    }
+
+    /// Converts the screen coordinates of a specified point on the screen to client-area coordinates.
+    /// 
+    /// `point` contains the client coordinates to be converted.
+    /// 
+    /// The function uses the window identified by the `window` parameter
+    /// and the screen coordinates given in `point` to compute client coordinates.
+    /// It then replaces the screen coordinates with the client coordinates.
+    /// The new coordinates are relative to the upper-left corner of the specified window's client area.
+    /// 
+    /// The `Window::screen_to_client` function assumes the specified point is in screen coordinates.
+    /// 
+    /// All coordinates are in device units.
+    /// 
+    /// Do not use `Window::screen_to_client` when in a mirroring situation, that is,
+    /// when changing from left-to-right layout to right-to-left layout.
+    /// Instead, use `MapWindowPoints`.
+    /// For more information, see "Window Layout and Mirroring" in Window Features.
+    /// 
+    /// If the function succeeds, returns `true`.
+    /// If the function fails, return `false`.
+    #[inline(always)]
+    pub unsafe fn screen_to_client(&self,window:WindowHandle,point:&mut [i32;2])->bool{
+        ScreenToClient(window.as_raw(),transmute(point))!=0
+    }
 }

@@ -10,6 +10,9 @@ use buffer::Buffer;
 pub mod drawing;
 use drawing::Drawing;
 
+pub mod framebuffer;
+use framebuffer::Framebuffer;
+
 pub mod program;
 use program::Program;
 
@@ -65,6 +68,18 @@ const OUT_OF_MEMORY:u32=0x0505;
 
 // Pixel storage parameters
 pub const UNPACK_ALIGNMENT:u32=0x0CF5;
+
+// Draw buffer modes
+const NONE:u32=0;
+const FRONT_LEFT:u32=0x0400;
+const FRONT_RIGHT:u32=0x0401;
+const BACK_LEFT:u32=0x0402;
+const BACK_RIGHT:u32=0x0403;
+const FRONT:u32=0x0404;
+const BACK:u32=0x0405;
+const LEFT:u32=0x0406;
+const RIGHT:u32=0x0407;
+const FRONT_AND_BACK:u32=0x0408;
 
 #[repr(u32)]
 #[derive(Clone,Copy,Debug,PartialEq,Eq)]
@@ -240,10 +255,52 @@ impl GLError{
     }
 }
 
+#[repr(u32)]
+#[derive(Clone,Copy,Debug)]
+pub enum DrawBufferMode{
+    /// No color buffers are written.
+    None=NONE,
+
+    /// Only the front left color buffer is written.
+    FrontLeft=FRONT_LEFT,
+
+    /// Only the front right color buffer is written.
+    FrontRight=FRONT_RIGHT,
+
+    /// Only the back left color buffer is written.
+    BackLeft=BACK_LEFT,
+
+    /// Only the back right color buffer is written.
+    BackRight=BACK_RIGHT,
+
+    /// Only the front left and front right color buffers are written.
+    /// If there is no front right color buffer, only the front left color buffer is written.
+    Front=FRONT,
+
+    /// Only the back left and back right color buffers are written.
+    /// If there is no back right color buffer, only the back left color buffer is written.
+    Back=BACK,
+
+    /// Only the front left and back left color buffers are written.
+    /// If there is no back left color buffer, only the front left color buffer is written.
+    Left=LEFT,
+
+    /// Only the front right and back right color buffers are written.
+    /// If there is no back right color buffer, only the front right color buffer is written.
+    Right=RIGHT,
+
+    /// All the front and back color buffers (front left, front right, back left, back right) are written.
+    /// If there are no back color buffers, only the front left and front right color buffers are written.
+    /// If there are no right color buffers, only the front left and back left color buffers are written.
+    /// If there are no right or back color buffers, only the front left color buffer is written.
+    FrontBack=FRONT_AND_BACK
+}
+
 pub struct GraphicsCore{
     pub blending:Blending,
     pub buffer:Buffer,
     pub drawing:Drawing,
+    pub framebuffer:Framebuffer,
     pub program:Program,
     pub shader:Shader,
     pub texture:Texture,
@@ -267,6 +324,8 @@ pub struct GraphicsCore{
     glPixelStoref:usize,
     glPixelStorei:usize,
 
+    glDrawBuffer:usize,
+
     glFinish:usize,
 }
 
@@ -276,6 +335,7 @@ impl GraphicsCore{
             blending:Blending::new(),
             buffer:Buffer::new(),
             drawing:Drawing::new(),
+            framebuffer:Framebuffer::new(),
             program:Program::new(),
             shader:Shader::new(),
             texture:Texture::new(),
@@ -299,6 +359,8 @@ impl GraphicsCore{
             glPixelStoref:0,
             glPixelStorei:0,
 
+            glDrawBuffer:0,
+
             glFinish:0,
         }
     }
@@ -308,6 +370,7 @@ impl GraphicsCore{
         self.blending.load(library);
         self.buffer.load(library);
         self.drawing.load(library);
+        self.framebuffer.load(library);
         self.program.load(library);
         self.shader.load(library);
         self.texture.load(library);
@@ -331,6 +394,8 @@ impl GraphicsCore{
 
             self.glPixelStoref=transmute(library.get_proc_address("glPixelStoref\0"));
             self.glPixelStorei=transmute(library.get_proc_address("glPixelStorei\0"));
+
+            self.glDrawBuffer=transmute(library.get_proc_address("glDrawBuffer\0"));
 
             self.glFinish=transmute(library.get_proc_address("glFinish\0"));
         }
@@ -384,6 +449,33 @@ impl GraphicsCore{
         }
     }
 
+    /// Specify which color buffers are to be drawn into.
+    /// 
+    /// When colors are written to the frame buffer,
+    /// they are written into the color buffers specified by `GraphicsCore::draw_buffer`.
+    /// 
+    /// If more than one color buffer is selected for drawing,
+    /// then blending or logical operations are computed
+    /// and applied independently for each color bufferand can produce different results in each buffer.
+    /// 
+    /// Monoscopic contexts include only left buffers,
+    /// and stereoscopic contexts include both left and right buffers.
+    /// Likewise, single-buffered contexts include only front buffers,
+    /// and double-buffered contexts include both front and back buffers.
+    /// The context is selected at GL initialization.
+    /// 
+    /// The initial value is `DrawBufferMode::Front` for single-buffered contexts,
+    /// and GL_BACK for double-buffered contexts.
+    /// 
+    /// `GLError::InvalidOperation` is generated
+    /// if none of the buffers indicated by `mode` exists.
+    #[inline(always)]
+    pub fn draw_buffer(&self,mode:DrawBufferMode){
+        unsafe{
+            transmute::<usize,fn(DrawBufferMode)>(self.glDrawBuffer)(mode)
+        }
+    }
+
     /// Blocks the current thread until all GL execution is complete.
     #[inline(always)]
     pub fn finish(&self){
@@ -417,6 +509,7 @@ impl GraphicsCore{
     }
 
     // GL_VENDOR, GL_RENDERER, GL_VERSION, or GL_SHADING_LANGUAGE_VERSION,
+    #[inline(always)]
     pub unsafe fn get_string(&self,connection:u32)->&CStr{
         CStr::from_ptr(transmute::<usize,fn(u32)->*const i8>(self.glGetString)(connection))
     }

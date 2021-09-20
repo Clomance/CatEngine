@@ -25,8 +25,12 @@ pub use window_class::{
 
 mod window;
 pub use window::{
-    Fullscreen,
     Window,
+    WindowStyle,
+    WindowStyles,
+    ExtendedWindowStyle,
+    ExtendedWindowStyles,
+    Fullscreen,
     CreateParameters,
     WindowAttributes,
 };
@@ -34,6 +38,8 @@ pub use window::{
 
 /// Defines window's behavior.
 pub trait WindowProcedure<A:Sized>{
+    fn render(window:&Window,args:&mut A);
+
     fn handle(event:WindowEvent,window:&Window,args:&mut A);
 }
 

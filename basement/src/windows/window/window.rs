@@ -1,15 +1,24 @@
 use crate::windows::{
     WinCore,
     WinError,
-    core::window::WindowData,
+    core::window::{
+        WindowData,
+        WindowHandle
+    },
+    core::device_context::DeviceContextHandle,
+};
+
+pub use crate::windows::core::window::{
+    WindowStyle,
+    WindowStyles,
+    ExtendedWindowStyle,
+    ExtendedWindowStyles,
 };
 
 use super::{
     // structures
     WindowClass,
     Monitor,
-    // enums
-    WindowEvent,
     // trait
     WindowProcedure,
     // functions
@@ -19,87 +28,13 @@ use super::{
 };
 
 use winapi::{
-    shared::{
-        windef::{
-            HWND,
-            HDC,
-            POINT,
-        }
-    },
-
     um::{
         winuser::{
-            // ShowWindow,
-            // SetFocus,
-            // SetForegroundWindow,
-            // SetCapture,
-            GetDC,
             RedrawWindow,
-            GetCursorPos,
-            SetCursorPos,
-            ShowCursor,
-            ClientToScreen,
-            ScreenToClient,
-            // window styles
-            WS_BORDER,
-            WS_CAPTION,
-            WS_CHILD,
-            WS_CHILDWINDOW,
-            WS_CLIPCHILDREN,
-            WS_CLIPSIBLINGS,
-            WS_DISABLED,
-            WS_DLGFRAME,
-            WS_GROUP,
-            WS_HSCROLL,
-            WS_ICONIC,
-            WS_MAXIMIZE,
-            WS_MAXIMIZEBOX,
-            WS_MINIMIZE,
-            WS_MINIMIZEBOX,
-            WS_OVERLAPPED,
-            WS_POPUP,
-            WS_SIZEBOX,
-            WS_SYSMENU,
-            WS_TABSTOP,
-            WS_THICKFRAME,
-            WS_VISIBLE,
-            WS_VSCROLL,
-            // extended window styles
-            WS_EX_ACCEPTFILES,
-            WS_EX_APPWINDOW,
-            WS_EX_CLIENTEDGE,
-            WS_EX_COMPOSITED,
-            WS_EX_CONTEXTHELP,
-            WS_EX_CONTROLPARENT,
-            WS_EX_DLGMODALFRAME,
-            WS_EX_LAYERED,
-            WS_EX_LAYOUTRTL,
-            WS_EX_LEFT,
-            WS_EX_LEFTSCROLLBAR,
-            WS_EX_LTRREADING,
-            WS_EX_MDICHILD,
-            WS_EX_NOACTIVATE,
-            WS_EX_NOINHERITLAYOUT,
-            WS_EX_NOPARENTNOTIFY,
-            WS_EX_NOREDIRECTIONBITMAP,
-            WS_EX_RIGHT,
-            WS_EX_RIGHTSCROLLBAR,
-            WS_EX_RTLREADING,
-            WS_EX_STATICEDGE,
-            WS_EX_TOOLWINDOW,
-            WS_EX_TOPMOST,
-            WS_EX_TRANSPARENT,
-            WS_EX_WINDOWEDGE,
             // other
-            GWL_EXSTYLE,
-            GWL_STYLE,
-            GWLP_USERDATA,
-            GWLP_WNDPROC,
             CW_USEDEFAULT,
-            RDW_INTERNALPAINT,
             RDW_INVALIDATE,
             SWP_SHOWWINDOW,
-            SWP_NOREPOSITION,
             SWP_NOSIZE,
             SWP_NOMOVE,
             SWP_FRAMECHANGED,
@@ -113,7 +48,6 @@ use std::{
         OsString,
     },
     os::windows::ffi::OsStrExt,
-    mem::transmute,
 };
 
 
@@ -124,7 +58,7 @@ pub enum Fullscreen{
 
 pub struct CreateParameters<A>{
     pub window_procedure:unsafe extern "system" fn(
-        handle:HWND,
+        handle:WindowHandle,
         message:u32,
         w_param:usize,
         l_param:isize,
@@ -142,9 +76,9 @@ pub struct CreateParameters<A>{
 /// when it terminates.
 /// So there no need to do it when the application closes,
 /// but it makes sense when you create-destroy windows and register-unregister classes at the run time.
-#[derive(Clone)]
+#[repr(transparent)]
 pub struct Window{
-    pub (crate) handle:HWND,
+    pub (crate) handle:WindowHandle,
 }
 
 impl Window{
@@ -158,8 +92,11 @@ impl Window{
             .chain(Some(0).into_iter())
             .collect();
 
-        let mut style=WS_SYSMENU|WS_BORDER;
-        let mut extended_style=0;
+        let mut style=WindowStyles::new()
+            .set(WindowStyle::SystemMenu)
+            .set(WindowStyle::Caption);
+
+        let mut extended_style=ExtendedWindowStyles::new();
 
         // Enabling file dropping
         #[cfg(feature="file_drop")]{
@@ -167,11 +104,11 @@ impl Window{
         }
 
         if attributes.visible{
-            style|=WS_VISIBLE;
+            style=style.set(WindowStyle::Visible);
         }
 
         if attributes.topmost{
-            extended_style|=WS_EX_TOPMOST;
+            extended_style=extended_style.set(ExtendedWindowStyle::TopMost);
         }
 
         // Размер, установленный пользователем
@@ -191,14 +128,19 @@ impl Window{
 
         match attributes.fullscreen{
             Fullscreen::None=>{
-                style|=WS_SIZEBOX|WS_CAPTION|WS_MAXIMIZEBOX|WS_MINIMIZEBOX;
+                style=style.set(WindowStyle::SizeBox)
+                    .set(WindowStyle::MaximizeBox)
+                    .set(WindowStyle::MaximizeBox);
             }
             Fullscreen::Monitor(monitor)=>{
                 if let Some(info)=monitor.get_monitor_info(){
-                    style|=WS_POPUP;
-                    style&=!(WS_SIZEBOX|WS_CAPTION|WS_MAXIMIZEBOX|WS_MINIMIZEBOX);
+                    style=style.set(WindowStyle::PopUp);
+                    style=style.remove(WindowStyle::SizeBox)
+                        .remove(WindowStyle::Caption)
+                        .remove(WindowStyle::MaximizeBox)
+                        .remove(WindowStyle::MaximizeBox);
 
-                    extended_style|=WS_EX_APPWINDOW;
+                    extended_style=extended_style.set(ExtendedWindowStyle::AppWwindow);
 
                     x=info.rcMonitor.left;
                     y=info.rcMonitor.top;
@@ -215,37 +157,39 @@ impl Window{
                 auto_redraw:attributes.auto_redraw,
             };
 
-            let window_handle=WinCore.window.create(
-                class.as_ptr(),
+            if let Some(window_handle)=WinCore.window.create(
+                class.identifier(),
                 window_name.as_ptr(),
                 style,
                 extended_style,
                 [x,y,width,height],
-                null_mut(),
+                None,
                 null_mut(),
                 null_mut(),
                 &mut create_parameters,
-            );
-
-            if window_handle.is_null(){
-                Err(WinError::get_last_error())
-            }
-            else{
+            ){
                 Ok(Self{
                     handle:window_handle,
                 })
             }
+            else{
+                Err(WinError::get_last_error())
+            }
         }
     }
 
-    pub fn handle(&self)->HWND{
+    pub fn handle(&self)->WindowHandle{
         self.handle
     }
 
-    pub fn get_context(&self)->HDC{
+    pub fn get_context(&self)->Option<DeviceContextHandle>{
         unsafe{
-            GetDC(self.handle)
+            WinCore.window.get_device_context(Some(self.handle))
         }
+    }
+
+    pub unsafe fn get_context_unchecked(&self)->DeviceContextHandle{
+        WinCore.window.get_device_context_unchecked(Some(self.handle))
     }
 }
 
@@ -253,7 +197,7 @@ impl Window{
 impl Window{
     pub fn redraw(&self){
         unsafe{
-            RedrawWindow(self.handle,null_mut(),null_mut(),RDW_INVALIDATE);
+            RedrawWindow(self.handle.as_raw(),null_mut(),null_mut(),RDW_INVALIDATE);
         }
     }
 
@@ -346,23 +290,31 @@ impl Window{
 
             match fullscreen{
                 Fullscreen::None=>{
-                    style&=!WS_POPUP;
-                    style|=WS_SIZEBOX|WS_CAPTION|WS_MAXIMIZEBOX|WS_MINIMIZEBOX;
-                    extended_style&=!WS_EX_APPWINDOW;
+                    style=style.set(WindowStyle::SizeBox)
+                    .set(WindowStyle::Caption)
+                    .set(WindowStyle::MaximizeBox)
+                    .set(WindowStyle::MaximizeBox)
+                    .remove(WindowStyle::PopUp);
+
+                    extended_style=extended_style.remove(ExtendedWindowStyle::AppWwindow);
 
                     self.set_style(style);
                     self.set_extended_style(extended_style);
                     WinCore.window.set_window_position(
-                        self.handle,null_mut(),
+                        self.handle,
+                        None,
                         [0,0,0,0],
                         SWP_SHOWWINDOW|SWP_NOMOVE|SWP_NOSIZE|SWP_FRAMECHANGED
                     );
                 }
                 Fullscreen::Monitor(monitor)=>{
                     if let Some(info)=monitor.get_monitor_info(){
-                        style&=!(WS_SIZEBOX|WS_CAPTION|WS_MAXIMIZEBOX|WS_MINIMIZEBOX);
+                        style=style.remove(WindowStyle::SizeBox)
+                        .remove(WindowStyle::Caption)
+                        .remove(WindowStyle::MaximizeBox)
+                        .remove(WindowStyle::MaximizeBox);
 
-                        extended_style|=WS_EX_APPWINDOW;
+                        extended_style=extended_style.set(ExtendedWindowStyle::AppWwindow);
 
                         let x=info.rcMonitor.left;
                         let y=info.rcMonitor.top;
@@ -379,31 +331,34 @@ impl Window{
     }
 
     /// Will not make effect until you call the `Window::set_window_position()`.
-    pub unsafe fn set_extended_style(&self,style:u32){
-        WinCore.window.set_window_long_ptr(self.handle,WindowData::ExtendedStyle,style as isize);
+    pub unsafe fn set_extended_style(&self,style:ExtendedWindowStyles){
+        WinCore.window.set_window_long_ptr(self.handle,WindowData::ExtendedStyle,style.flag as isize);
     }
 
-    pub unsafe fn get_extended_style(&self)->u32{
-        WinCore.window.get_window_long_ptr(self.handle,WindowData::ExtendedStyle) as u32
+    pub unsafe fn get_extended_style(&self)->ExtendedWindowStyles{
+        ExtendedWindowStyles::raw(WinCore.window.get_window_long_ptr(self.handle,WindowData::ExtendedStyle) as u32)
     }
 
     /// Will not make effect until you call the `Window::set_window_position()`.
-    pub unsafe fn set_style(&self,style:u32){
-        WinCore.window.set_window_long_ptr(self.handle,WindowData::Style,style as isize);
+    pub unsafe fn set_style(&self,style:WindowStyles){
+        WinCore.window.set_window_long_ptr(self.handle,WindowData::Style,style.flag as isize);
     }
 
-    pub unsafe fn get_style(&self)->u32{
-        WinCore.window.get_window_long_ptr(self.handle,WindowData::Style) as u32
+    pub unsafe fn get_style(&self)->WindowStyles{
+        WindowStyles::raw(WinCore.window.get_window_long_ptr(self.handle,WindowData::Style) as u32)
     }
 
     pub unsafe fn set_window_position(&self,[x,y,width,height]:[i32;4]){
-        WinCore.window.set_window_position(self.handle,null_mut(),[x,y,width,height],SWP_SHOWWINDOW);
+        WinCore.window.set_window_position(self.handle,None,[x,y,width,height],SWP_SHOWWINDOW);
     }
 }
 
+/// Special functions.
 impl Window{
-    pub unsafe fn set_auto_redraw(&self,enabled:bool){
-        WinCore.window.set_window_long_ptr(self.handle,window_settings_auto_redraw,enabled as isize);
+    pub fn set_auto_redraw(&self,enabled:bool){
+        unsafe{
+            WinCore.window.set_window_long_ptr(self.handle,window_settings_auto_redraw,enabled as isize);
+        }
     }
 
     pub (crate) unsafe fn set_user_data<D:Sized>(&self,data:&mut D){
@@ -414,7 +369,7 @@ impl Window{
         WinCore.window.get_window_long_ptr(self.handle,WindowData::UserData)
     }
 
-    pub unsafe fn set_window_procedure(&self,procedure:unsafe extern "system" fn(HWND,u32,usize,isize)->isize){
+    pub unsafe fn set_window_procedure(&self,procedure:unsafe extern "system" fn(WindowHandle,u32,usize,isize)->isize){
         WinCore.window.set_window_long_ptr(self.handle,WindowData::WindowProcedure,procedure as isize);
     }
 
@@ -430,21 +385,22 @@ impl Window{
     /// Возвращает положение курсора окна.
     pub fn cursor_position(&self)->[i32;2]{
         unsafe{
-            let mut point:POINT=std::mem::zeroed();
-            GetCursorPos(&mut point);
-            ScreenToClient(self.handle,&mut point);
-            transmute(point)
+            let mut point=[0i32;2];
+
+            WinCore.cursor.get_position(&mut point);
+            WinCore.window.screen_to_client(self.handle,&mut point);
+
+            point
         }
     }
 
     /// Sets window's cursor position.
     /// 
     /// Устанавливает положение курсора окна.
-    pub fn set_cursor_position(&self,[x,y]:[i32;2]){
+    pub fn set_cursor_position(&self,mut point:[i32;2]){
         unsafe{
-            let mut point=POINT{x,y};
-            ClientToScreen(self.handle,&mut point);
-            SetCursorPos(point.x,point.y);
+            WinCore.window.client_to_screen(self.handle,&mut point);
+            WinCore.cursor.set_position(point);
         }
     }
 
@@ -455,16 +411,16 @@ impl Window{
         // If a mouse is installed, the initial display count is 0.
         // If no mouse is installed, the display count is –1.
         unsafe{
-            let counter=ShowCursor(show as i32);
+            let counter=WinCore.cursor.show(show);
 
             if show{
                 if counter>0{
-                    ShowCursor(false as i32);
+                    WinCore.cursor.show(false);
                 }
             }
             else{
                 if counter<(-1){
-                    ShowCursor(true as i32);
+                    WinCore.cursor.show(true);
                 }
             }
         }
@@ -473,7 +429,7 @@ impl Window{
 
 impl Drop for Window{
     fn drop(&mut self){
-        self.destroy();
+        let _=self.destroy();
     }
 }
 

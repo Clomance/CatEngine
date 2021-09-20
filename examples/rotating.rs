@@ -23,31 +23,31 @@ use cat_engine::{
 struct WindowHandle;
 
 impl WindowProcedure<WindowInner<Option<(Texture,f32)>>> for WindowHandle{
-    fn handle(event:WindowEvent,window:&Window,window_inner:&mut WindowInner<Option<(Texture,f32)>>){
-        match event{
-            WindowEvent::Redraw=>{
-                if let Some((_,angle))=window_inner.storage(){
-                    *angle+=0.01
-                }
-                window_inner.draw(window,|window,graphics,texture|{
-                    graphics.clear_colour([1f32;4]);
+    fn render(window:&Window,window_inner:&mut WindowInner<Option<(Texture,f32)>>){
+        if let Some((_,angle))=window_inner.storage(){
+            *angle+=0.01
+        }
+        window_inner.draw(window,|window,graphics,texture|{
+            graphics.clear_colour([1f32;4]);
 
-                    // read here (line 83)
-                    if let Some((texture,angle))=texture.as_ref(){
-                        let [width,height]=window.client_size();
+            // read here (line 83)
+            if let Some((texture,angle))=texture.as_ref(){
+                let [width,height]=window.client_size();
 
-                        graphics.draw_parameters().switch(DrawMode::Rotation);
-                        graphics.draw_parameters().set_rotation(
-                            [angle.cos(),angle.sin(),width as f32/2f32,height as f32/2f32]
-                        );
+                graphics.draw_parameters().switch(DrawMode::Rotation);
+                graphics.draw_parameters().set_rotation(
+                    [angle.cos(),angle.sin(),width as f32/2f32,height as f32/2f32]
+                );
 
-                        graphics.draw_stack_textured_object(0,texture.texture_2d());
+                graphics.draw_stack_textured_object(0,texture.texture_2d());
 
-                        graphics.draw_parameters().switch(DrawMode::Rotation);
-                    }
-                }).unwrap_or_else(|_|{quit()});
+                graphics.draw_parameters().switch(DrawMode::Rotation);
             }
+        }).unwrap_or_else(|_|{quit()});
+    }
 
+    fn handle(event:WindowEvent,_window:&Window,_window_inner:&mut WindowInner<Option<(Texture,f32)>>){
+        match event{
             WindowEvent::CloseRequest=>quit(),
             _=>{}
         }

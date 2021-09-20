@@ -7,7 +7,6 @@ use winapi::{
         SUBLANG_DEFAULT,
     },
     um::{
-        errhandlingapi::GetLastError,
         winbase::{
             FORMAT_MESSAGE_FROM_SYSTEM,
             FORMAT_MESSAGE_IGNORE_INSERTS,

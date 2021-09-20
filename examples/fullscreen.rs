@@ -24,20 +24,21 @@ use cat_engine::{
 struct WindowHandle;
 
 impl WindowProcedure<WindowInner<Option<Texture>>> for WindowHandle{
-    fn handle(event:WindowEvent,window:&Window,window_inner:&mut WindowInner<Option<Texture>>){
-        match event{
-            WindowEvent::Redraw=>{
-                window_inner.draw(window,|window,graphics,texture|{
-                    graphics.clear_colour([1f32;4]);
+    fn render(window:&Window,window_inner:&mut WindowInner<Option<Texture>>){
+        window_inner.draw(window,|window,graphics,texture|{
+            graphics.clear_colour([1f32;4]);
 
-                    if let Some(texture)=texture.as_ref(){
-                        let [width,height]=window.client_size();
+            if let Some(texture)=texture.as_ref(){
+                let [width,height]=window.client_size();
 
-                        graphics.draw_parameters().set_shift([(width/2) as f32-200f32,(height/2) as f32-200f32]);
-                        graphics.draw_stack_textured_object(0,texture.texture_2d());
-                    }
-                }).unwrap_or_else(|_|{quit()});
+                graphics.draw_parameters().set_shift([(width/2) as f32-200f32,(height/2) as f32-200f32]);
+                graphics.draw_stack_textured_object(0,texture.texture_2d());
             }
+        }).unwrap_or_else(|_|{quit()});
+    }
+
+    fn handle(event:WindowEvent,window:&Window,_window_inner:&mut WindowInner<Option<Texture>>){
+        match event{
 
             WindowEvent::KeyPress(VirtualKeyCode::A)=>{
                 window.set_fullscreen(Fullscreen::Monitor(Monitor::get_primary_monitor()))

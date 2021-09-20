@@ -97,38 +97,39 @@ const image_formats:&[ImageDataFormat]=&[
 struct EmptyHandler;
 
 impl WindowProcedure<RenderData> for EmptyHandler{
+    fn render(_:&Window,_:&mut RenderData){}
     fn handle(_:WindowEvent,_:&Window,_:&mut RenderData){}
 }
 
 struct Handler;
 
 impl WindowProcedure<RenderData> for Handler{
-    fn handle(event:WindowEvent,window:&Window,args:&mut RenderData){
-        match event{
-            WindowEvent::Redraw=>{
-                // use it when you have more than one window
-                args.context.make_current(true).unwrap_or_else(|_|{quit()});
+    fn render(window:&Window,args:&mut RenderData){
+        // use it when you have more than one window
+        args.context.make_current(true).unwrap_or_else(|_|{quit()});
 
-                // set viewport if a window may change it's size
-                // or if you have more than one window
-                // otherwise set it after creating the window
-                let [width,height]=window.client_size();
+        // set viewport if a window may change it's size
+        // or if you have more than one window
+        // otherwise set it after creating the window
+        let [width,height]=window.client_size();
 
-                unsafe{
-                    GCore.viewport.set([0,0,width as i32,height as i32]);
+        unsafe{
+            GCore.viewport.set([0,0,width as i32,height as i32]);
 
-                    args.colour[0]+=0.01;
-                    if args.colour[0]>=1f32{
-                        args.colour[0]=0f32;
-                    }
-
-                    GCore.set_clear_colour(args.colour);
-                    GCore.clear(ClearMask::Colour);
-                }
-
-                args.context.swap_buffers().unwrap_or_else(|_|{quit()});
+            args.colour[0]+=0.01;
+            if args.colour[0]>=1f32{
+                args.colour[0]=0f32;
             }
 
+            GCore.set_clear_colour(args.colour);
+            GCore.clear(ClearMask::Colour);
+        }
+
+        args.context.swap_buffers().unwrap_or_else(|_|{quit()});
+    }
+
+    fn handle(event:WindowEvent,window:&Window,args:&mut RenderData){
+        match event{
             WindowEvent::CloseRequest=>window.destroy().unwrap(),
 
             WindowEvent::Destroy=>quit(),

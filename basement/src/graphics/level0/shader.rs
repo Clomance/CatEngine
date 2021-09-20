@@ -7,11 +7,7 @@ use crate::graphics::{
     }
 };
 
-use std::{
-    ffi::CString,
-    mem::MaybeUninit,
-};
-
+use core::mem::MaybeUninit;
 
 pub struct Shader{
     id:u32,

@@ -3,71 +3,42 @@ use crate::windows::{
     WinError,
 };
 
+pub use crate::windows::core::window_class::{
+    ClassIdentifier,
+    ClassAtom,
+    WindowClassStyle,
+    WindowClassStyles,
+};
+
 use super::{
     Icon,
-    Bitmap,
     default_window_procedure,
 };
 
 use winapi::{
-    shared::{
-        minwindef::{
-            LPARAM,
-            UINT,
-            WPARAM,
-            LRESULT,
-        },
-        windef::{
-            HWND,
-            HBITMAP,
-        }
-    },
-
     um::{
         winuser::{
             LoadCursorW,
-            // window class styles
-            CS_HREDRAW,
-            CS_VREDRAW,
-            CS_DBLCLKS,
-            CS_OWNDC,
-            CS_CLASSDC,
-            CS_PARENTDC,
-            CS_NOCLOSE,
-            CS_SAVEBITS,
-            CS_BYTEALIGNCLIENT,
-            CS_BYTEALIGNWINDOW,
-            CS_GLOBALCLASS,
-            CS_DROPSHADOW,
             // Cursors
             IDC_ARROW,
         },
 
         wingdi::{
             CreateSolidBrush,
-            CreatePatternBrush,
             RGB,
-            DeleteObject,
         },
     }
 };
 
 use image::{
-    RgbaImage,
-    RgbImage,
     ImageBuffer,
     Bgra
 };
 
-
 use std::{
     ptr::{null_mut},
-    ffi::{
-        CString,
-        OsString,
-    },
+    ffi::OsString,
     os::windows::ffi::OsStrExt,
-    mem::transmute,
 };
 
 pub enum CursorIcon{
@@ -78,19 +49,14 @@ pub enum CursorIcon{
     }
 }
 
-
 pub enum Background{
     None,
     Colour([u8;3]),
-    // #[cfg(feature="window_background_image")]
-    // BGRA8Image(ImageBuffer<Bgra<u8>,Vec<u8>>),
 }
 
-
+/// A window class.
 pub struct WindowClass{
-    name:Vec<u16>,
-    // #[cfg(feature="window_background_image")]
-    // background_image:Option<Bitmap>,
+    identifier:ClassAtom, // a class atom
 }
 
 impl WindowClass{
@@ -115,39 +81,29 @@ impl WindowClass{
             }=>Icon::from_bgra(false,position,&image).handle()
         };
 
-
-        // #[cfg(feature="window_background_image")]
-        // let mut background_image=None;
-
         let background=match attributes.background{
             Background::None=>null_mut(),
             Background::Colour([red,green,blue])=>unsafe{
                 CreateSolidBrush(RGB(red,green,blue))
             }
-            // #[cfg(feature="window_background_image")]
-            // Background::BGRA8Image(image)=>unsafe{
-            //     let bitmap=Bitmap::from_bgra(&image);
-            //     let brush=CreatePatternBrush(bitmap.handle());
-            //     background_image=Some(bitmap);
-            //     brush
-            // }
         };
 
-        // to create opengl context
-        let mut style=CS_OWNDC;
+
+        let mut style=WindowClassStyles::new()
+            // to create opengl context
+            .set(WindowClassStyle::OwnDeviceContext);
 
         if attributes.no_close{
-            style|=CS_NOCLOSE
+            style=style.set(WindowClassStyle::NoClose)
         }
         if attributes.drop_shadow{
-            style|=CS_DROPSHADOW
+            style=style.set(WindowClassStyle::DropShadow)
         }
-
         if attributes.double_clicks{
-            style|=CS_DBLCLKS
+            style=style.set(WindowClassStyle::DoubleClicks)
         }
 
-        let class=unsafe{
+        if let Some(class)=unsafe{
             WinCore.window_class.register(
                 class_name.as_ptr(),
                 style,
@@ -161,33 +117,30 @@ impl WindowClass{
                 background,
                 null_mut(),
             )
-        };
-
-        if class==0{
-            Err(WinError::get_last_error())
+        }{
+            Ok(Self{
+                identifier:class,
+            })
         }
         else{
-            Ok(Self{
-                name:class_name,
-                // #[cfg(feature="window_background_image")]
-                // background_image,
-            })
+            Err(WinError::get_last_error())
         }
     }
 
-    pub fn as_ptr(&self)->*const u16{
-        self.name.as_ptr()
+    pub const fn atom(&self)->ClassAtom{
+        self.identifier
+    }
+
+    #[inline(always)]
+    pub fn identifier(&self)->ClassIdentifier{
+        ClassIdentifier::atom(self.identifier)
     }
 }
 
 impl Drop for WindowClass{
     fn drop(&mut self){
         unsafe{
-            let _result=WinCore.window_class.unregister(self.name.as_ptr(),null_mut());
-            // #[cfg(feature="window_background_image")]
-            // if let Some(background_image)=self.background_image.take(){
-            //     background_image.destroy()
-            // }
+            let _result=WinCore.window_class.unregister(self.identifier(),null_mut());
         }
     }
 }
@@ -254,93 +207,4 @@ impl WindowClassAttributes{
             double_clicks:false,
         }
     }
-}
-
-#[repr(u32)]
-#[derive(Copy,Clone,Debug)]
-pub enum WindowClassStyle{
-    /// Redraws the entire window
-    /// if a movement or size adjustment changes the height of the client area.
-    /// 
-    /// 0x0001
-    VerticalRedraw=CS_VREDRAW,
-
-    /// Redraws the entire window
-    /// if a movement or size adjustment changes the width of the client area.
-    /// 
-    /// 0x0002
-    HorizontalRedraw=CS_HREDRAW,
-
-    /// Sends a double-click message to the window procedure
-    /// when the user double-clicks the mouse while the cursor is within a window belonging to the class.
-    /// 
-    /// 0x0008
-    DoubleClicks=CS_DBLCLKS,
-
-    /// Allocates a unique device context for each window in the class.
-    /// 
-    /// 0x0020
-    OwnDeviceContext=CS_OWNDC,
-
-    /// Allocates one device context to be shared by all windows in the class.
-    /// Because window classes are process specific,
-    /// it is possible for multiple threads of an application to create a window of the same class.
-    /// It is also possible for the threads to attempt to use the device context simultaneously.
-    /// When this happens, the system allows only one thread to successfully finish its drawing operation.
-    /// 
-    /// 0x0040
-    ClassDeviceContext=CS_CLASSDC,
-
-    /// Sets the clipping rectangle of the child window to that of the parent window so that the child can draw on the parent.
-    /// A window with the CS_PARENTDC style bit receives a regular device context from the system's cache of device contexts.
-    /// It does not give the child the parent's device context or device context settings.
-    /// Specifying CS_PARENTDC enhances an application's performance.
-    /// 
-    /// 0x0080
-    ParentDeviceContext=CS_PARENTDC,
-
-    /// Disables Close on the window menu.
-    /// 
-    /// 0x0200
-    NoClose=CS_NOCLOSE,
-
-    /// Saves, as a bitmap, the portion of the screen image obscured by a window of this class.
-    /// When the window is removed, the system uses the saved bitmap to restore the screen image,
-    /// including other windows that were obscured.
-    /// Therefore, the system does not send WM_PAINT messages to windows that were obscured
-    /// if the memory used by the bitmap has not been discarded and if other screen actions have not invalidated the stored image.
-    /// This style is useful for small windows (for example, menus or dialog boxes)
-    /// that are displayed briefly and then removed before other screen activity takes place.
-    /// This style increases the time required to display the window, because the system must first allocate memory to store the bitmap.
-    /// 
-    /// 0x0800
-    SaveBits=CS_SAVEBITS,
-
-    /// Aligns the window's client area on a byte boundary (in the x direction).
-    /// This style affects the width of the window and its horizontal placement on the display.
-    /// 
-    /// 0x1000
-    ByteAlignClient=CS_BYTEALIGNCLIENT,
-
-    /// Aligns the window on a byte boundary (in the x direction).
-    /// This style affects the width of the window and its horizontal placement on the display.
-    /// 
-    /// 0x2000
-    ByteAlignWindow=CS_BYTEALIGNWINDOW,
-
-    /// Indicates that the window class is an application global class.
-    /// For more information, see the "Application Global Classes" section of About Window Classes.
-    /// 
-    /// 0x4000
-    GlobalClass=CS_GLOBALCLASS,
-
-    /// Enables the drop shadow effect on a window.
-    /// The effect is turned on and off through SPI_SETDROPSHADOW.
-    /// Typically, this is enabled for small,
-    /// short-lived windows such as menus to emphasize their Z-order relationship to other windows.
-    /// Windows created from a class with this style must be top-level windows;
-    /// they may not be child windows.
-    /// 
-    /// 0x00020000
-    DropShadow=CS_DROPSHADOW,
 }

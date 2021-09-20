@@ -42,8 +42,6 @@ pub enum WindowEvent{
     KeyRelease(VirtualKeyCode),
     CharacterInput(char),
 
-    Redraw,
-
     Resize([u16;2]),
 
     Move([i16;2]),

@@ -1,3 +1,12 @@
+use crate::windows::{
+    WinCore,
+    core::bitmap::BitmapHandle,
+};
+
+use std::{
+    mem::transmute,
+};
+
 use winapi::{
     shared::windef::HBITMAP,
 
@@ -12,20 +21,18 @@ use image::{
     Bgra,
 };
 
-use std::{
-    mem::transmute,
-};
+
 
 pub struct Bitmap{
-    handle:HBITMAP,
+    handle:BitmapHandle,
 }
 
 impl Bitmap{
     /// A BGRA8 image.
-    pub fn raw(width:i32,height:i32,data:&[u8])->Bitmap{
+    pub fn raw(size:[i32;2],data:&[u8])->Bitmap{
         unsafe{
             Self{
-                handle:CreateBitmap(width as i32,height as i32,1,32,data.as_ptr() as *mut _),
+                handle:WinCore.bitmap.create(size,1,32,Some(&data[0])).unwrap(),
             }
         }
     }
@@ -33,22 +40,23 @@ impl Bitmap{
     pub fn from_bgra(image:&ImageBuffer<Bgra<u8>,Vec<u8>>)->Bitmap{
         unsafe{
             let (width,height)=image.dimensions();
+            let data=&*image.as_ptr();
 
             Self{
-                handle:CreateBitmap(width as i32,height as i32,1,32,image.as_ptr() as *mut _),
+                handle:WinCore.bitmap.create([width as i32,height as i32],1,32,Some(data)).unwrap(),
             }
         }
     }
 
     #[inline(always)]
-    pub fn handle(&self)->HBITMAP{
+    pub fn handle(&self)->BitmapHandle{
         self.handle
     }
 
     #[inline(always)]
-    pub fn destroy(self){
+    pub fn destroy(self)->bool{
         unsafe{
-            let _=DeleteObject(transmute(self.handle));
+            WinCore.bitmap.destroy(self.handle)
         }
     }
 }

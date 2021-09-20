@@ -21,31 +21,31 @@ use cat_engine::{
 struct WindowHandle;
 
 impl WindowProcedure<WindowInner<Option<CachedFont>>> for WindowHandle{
-    fn handle(event:WindowEvent,window:&Window,window_inner:&mut WindowInner<Option<CachedFont>>){
-        match event{
-            WindowEvent::Redraw=>{
-                window_inner.draw(window,|_,graphics,font|{
-                    graphics.clear_colour([0f32,0f32,0f32,1f32]);
+    fn render(window:&Window,window_inner:&mut WindowInner<Option<CachedFont>>){
+        window_inner.draw(window,|_,graphics,font|{
+            graphics.clear_colour([0f32,0f32,0f32,1f32]);
 
-                    if let Some(font)=font.as_ref(){
-                        let mut position=[120f32,240f32];
-                        let mut horizontal_advance=0f32;
-                        for character in "Hello, world!!!".chars(){
-                            graphics.draw_char(
-                                character,
-                                [1f32;4],
-                                position,
-                                Some(&mut horizontal_advance),
-                                Scale::new(0.1f32,0.1f32),
-                                font,
-                            );
+            if let Some(font)=font.as_ref(){
+                let mut position=[120f32,240f32];
+                let mut horizontal_advance=0f32;
+                for character in "Hello, world!!!".chars(){
+                    graphics.draw_char(
+                        character,
+                        [1f32;4],
+                        position,
+                        Some(&mut horizontal_advance),
+                        Scale::new(0.1f32,0.1f32),
+                        font,
+                    );
 
-                            position[0]+=horizontal_advance;
-                        }
-                    }
-                }).unwrap_or_else(|_|{quit()});
+                    position[0]+=horizontal_advance;
+                }
             }
+        }).unwrap_or_else(|_|{quit()});
+    }
 
+    fn handle(event:WindowEvent,_window:&Window,_window_inner:&mut WindowInner<Option<CachedFont>>){
+        match event{
             WindowEvent::CloseRequest=>quit(),
             _=>{}
         }

@@ -1,6 +1,6 @@
 # ![logo](https://github.com/Clomance/CatEngine/raw/master/basement/logo_400x400.png)
 
-# CatEngineBasement [![Crate badge]][crates.io] [![Doc badge]][doc.rs]
+# OpenGL and Windows API wrappers. [![Crate badge]][crates.io] [![Doc badge]][doc.rs]
 
 [Crate badge]:https://img.shields.io/crates/v/cat_engine_basement.svg
 [crates.io]:https://crates.io/crates/cat_engine_basement
@@ -9,7 +9,33 @@
 [doc.rs]:https://docs.rs/cat_engine_basement/
 
 
-The CatEngine's basement for Windows.
+There is some levels of wrapping:
+ - core - just wrappers (`WinCore` and `GLCore`)
+```rust
+    let mut id:u32=MaybeUninit::uninit().assume_init();
+    GCore.buffer.generate_one(&mut id);
+
+    GCore.buffer.bind(BufferTarget::ArrayBuffer,id);
+
+    GCore.buffer.rewrite(BufferTarget::ArrayBuffer,1024,core::ptr::null(),BufferUsage::DynamicDraw);
+```
+
+ - level [ i ] - describes system objects and their relationships (only for `GLCore`), the higher level the more specific structures
+```rust
+    // level0
+    let buffer:Buffer<i32>=Buffer::generate();
+    buffer.bind(BufferTarget::ArrayBuffer).unwrap();
+    Buffer::rewrite(BufferTarget::ArrayBuffer,&[0u32;10],BufferUsage::DynamicDraw).unwrap();
+
+    // level1
+    let index_buffer=IndexBuffer::new(&[0u32;10],BufferUsage::DynamicDraw).unwrap();
+```
+ - high-level - this is high level interface (only for `windows` module)
+ ```rust
+    let class_attributes=WindowClassAttributes::new("WNDCLASS");
+    let window_class=WindowClass::new(class_attributes).unwrap();
+ ```
+
 
 Compatible with OpenGL 3.3 and greater.
 

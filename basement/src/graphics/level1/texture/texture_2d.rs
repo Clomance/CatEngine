@@ -13,8 +13,6 @@ use crate::graphics::{
     level0::Texture,
 };
 
-use core::ptr::null;
-
 pub struct Texture2D{
     texture:Texture,
 }

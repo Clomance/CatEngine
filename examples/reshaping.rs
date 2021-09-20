@@ -25,27 +25,27 @@ use cat_engine::{
 struct WindowHandle;
 
 impl WindowProcedure<WindowInner<Option<Texture>>> for WindowHandle{
-    fn handle(event:WindowEvent,window:&Window,window_inner:&mut WindowInner<Option<Texture>>){
+    fn render(window:&Window,window_inner:&mut WindowInner<Option<Texture>>){
+        window_inner.context().make_current(true).unwrap_or_else(|_|{quit()});
+        let [width,height]=window.client_size();
+        unsafe{
+            window_inner.graphics().core().viewport.set([0,0,width as i32,height as i32]);
+        }
+        window_inner.graphics().draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
+
+        if let Some(texture)=window_inner.storage_ref().as_ref(){
+            window_inner.graphics_ref().clear_colour([1f32;4]);
+            window_inner.graphics_ref().draw_stack_textured_object(0,texture.texture_2d());
+            window_inner.graphics_ref().draw_stack_textured_object(1,texture.texture_2d());
+            window_inner.graphics_ref().draw_stack_textured_object(2,texture.texture_2d());
+
+            window_inner.graphics_ref().core().finish();
+            window_inner.context().swap_buffers().unwrap_or_else(|_|{quit()});
+        }
+    }
+
+    fn handle(event:WindowEvent,_window:&Window,window_inner:&mut WindowInner<Option<Texture>>){
         match event{
-            WindowEvent::Redraw=>{
-                window_inner.context().make_current(true).unwrap_or_else(|_|{quit()});
-                let [width,height]=window.client_size();
-                unsafe{
-                    window_inner.graphics().core().viewport.set([0,0,width as i32,height as i32]);
-                }
-                window_inner.graphics().draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
-
-                if let Some(texture)=window_inner.storage_ref().as_ref(){
-                    window_inner.graphics_ref().clear_colour([1f32;4]);
-                    window_inner.graphics_ref().draw_stack_textured_object(0,texture.texture_2d());
-                    window_inner.graphics_ref().draw_stack_textured_object(1,texture.texture_2d());
-                    window_inner.graphics_ref().draw_stack_textured_object(2,texture.texture_2d());
-
-                    window_inner.graphics_ref().core().finish();
-                    window_inner.context().swap_buffers().unwrap_or_else(|_|{quit()});
-                }
-            }
-
             WindowEvent::KeyPress(VirtualKeyCode::A)=>{
                 let image_base=ImageBase::new(
                     [400f32,100f32,100f32,100f32], // position and size

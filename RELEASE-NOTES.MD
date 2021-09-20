@@ -1,3 +1,24 @@
+# 1.0.0 - alpha5
+
+## CatEngineBasement - 0.0.0-alpha4
+
+### Added
+ - `WindowHandle` as a replacment for `HWND`
+ - `DeviceContextHandle` as a replacment for `HDC` and `DeviceContext` to `WinCore`
+ - `Cursor` to `WinCore`
+ - `BitmapHandle` as a replacment for `HBITMAP` and `Bitmap` to `WinCore`
+ - `WindowClassStyles` for easily setting the class styles
+ - `WindowStyle`, `WindowStyles`, `ExtendedWindowStyle`, `ExtendedWindowStyles` for easily setting the window styles
+ - `Window::show_window` and `ShowCommand` to `WinCore`
+ - `Window::client_to_screen`, `Window::screen_to_client` to `WinCore`
+ - a `WindowProcedure::render` function
+ - all the GL `Buffer` functions that are available for OpenGL 3.3 to `GCore`
+
+### Removed
+ - `Redraw` from `WindowEvent`.
+ - the `VK` prefix from `VirtualKeyCode`.
+
+
 # 1.0.0 - alpha4
 
 Fixed `CachedFont::text_size` and `CachedFont::text_width` functions.
@@ -68,7 +89,7 @@ Updated the `ttf-parser` crate to `0.12.3` and the `minimp3` crate to `0.5.1`.
 ## CatEngineBasement - 0.0.0-alpha1
 
 ### Added
- - `WindowsCore`. It wraps nessesary WindowsAPI functions
+ - `WindowsCore`. It wraps nessesary Windows API functions
  - an `opengl` feature. It enables using wrapped GL functions and context
  - `Window::set_fullscreen` and `Window::show_cursor` functions
  - a `vsync` field for `OpenGLRenderContextAttributes`, but other fields are removed

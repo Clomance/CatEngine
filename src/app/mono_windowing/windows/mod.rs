@@ -42,6 +42,7 @@ use std::{
 pub struct EmptyHandler;
 
 impl<S> WindowProcedure<WindowInner<S>> for EmptyHandler{
+    fn render(_:&Window,_:&mut WindowInner<S>){}
     fn handle(_:WindowEvent,_:&Window,_:&mut WindowInner<S>){}
 }
 

@@ -2,43 +2,31 @@ use crate::windows::{
     Window,
     WinCore,
     WinError,
+    core::device_context::{
+        PixelType,
+        PixelFormat,
+        PixelBufferProperty,
+        PixelBufferProperties,
+        DeviceContextHandle,
+    },
+    core::window::WindowHandle,
+    core::render_context::RenderContextHandle,
 };
 
 use winapi::{
-    shared::windef::{
-        HGLRC,
-        HDC,
-    },
     um::{
         wingdi::{
-            // constants
-            PFD_DRAW_TO_WINDOW,
-            PFD_SUPPORT_OPENGL,
-            PFD_DOUBLEBUFFER,
-            PFD_TYPE_RGBA,
-            PFD_MAIN_PLANE,
             // functions
-            ChoosePixelFormat,
-            SetPixelFormat,
-            wglCreateContext,
-            wglMakeCurrent,
-            wglDeleteContext,
-            SwapBuffers,
             wglGetProcAddress,
-            // structs
-            PIXELFORMATDESCRIPTOR,
         },
     }
 };
 
-use std::{
-    ptr::null_mut,
-    mem::size_of,
-};
-
 pub struct OpenGLRenderContext{
-    window_context:HDC,
-    render_context:HGLRC,
+    window:WindowHandle,
+    window_context:DeviceContextHandle,
+    render_context:RenderContextHandle,
+    // vsync function (need to be replaced)
     wglSwapIntervalEXT:wglSwapIntervalEXT_t,
 }
 
@@ -47,56 +35,38 @@ impl OpenGLRenderContext{
         window:&Window,
         attributes:OpenGLRenderContextAttributes
     )->Result<OpenGLRenderContext,WinError>{
+        let pixel_format=PixelFormat::new()
+            .set_color_bits(32)
+            .set_flags(
+                PixelBufferProperties::new()
+                .set(PixelBufferProperty::DrawToWindow)
+                .set(PixelBufferProperty::SupportOpenGL)
+                .set(PixelBufferProperty::DoubleBuffer)
+            )
+            .set_pixel_type(PixelType::RGBA);
+
         unsafe{
-            let pixel_format_descriptor=PIXELFORMATDESCRIPTOR{
-                nSize:size_of::<PIXELFORMATDESCRIPTOR>() as u16,
-                nVersion:1,
-                dwFlags:PFD_DRAW_TO_WINDOW|PFD_SUPPORT_OPENGL|PFD_DOUBLEBUFFER,    // Flags
-                iPixelType:PFD_TYPE_RGBA,        // The kind of framebuffer. RGBA or palette.
-                cColorBits:32,                   // Colordepth of the framebuffer.
-                cRedBits:0,
-                cRedShift:0,
-                cGreenBits:0,
-                cGreenShift:0,
-                cBlueBits:0,
-                cBlueShift:0,
-                cAlphaBits:0,
-                cAlphaShift:0,
-                cAccumBits:0,
-                cAccumRedBits:0,
-                cAccumGreenBits:0,
-                cAccumBlueBits:0,
-                cAccumAlphaBits:0,
-                cDepthBits:0, // Number of bits for the depthbuffer
-                cStencilBits:0, // Number of bits for the stencilbuffer
-                cAuxBuffers:0, // Number of Aux buffers in the framebuffer.
-                iLayerType:PFD_MAIN_PLANE,
-                bReserved:0,
-                dwLayerMask:0,
-                dwVisibleMask:0,
-                dwDamageMask:0,
-            };
-
-            let window_context=window.get_context();
-
-            let pixel_format=ChoosePixelFormat(window_context,&pixel_format_descriptor);
-            if pixel_format==0{
+            let window_context=window.get_context_unchecked();
+    
+            let pixel_format_index=WinCore.device_context.choose_pixel_format(window_context,&pixel_format);
+            if pixel_format_index==0{
                 return Err(WinError::get_last_error())
             }
 
-            let result=SetPixelFormat(window_context,pixel_format,&pixel_format_descriptor);
-            if result==0{
+            if !WinCore.device_context.set_pixel_format(window_context,pixel_format_index,&pixel_format){
                 return Err(WinError::get_last_error())
             }
 
             // // Создание временного контектса для создания расширенного
             // Создание контектса
-            let render_context=wglCreateContext(window_context);
-            if render_context.is_null(){
-                return Err(WinError::get_last_error())
+            let render_context=if let Some(render_context)=WinCore.render_context.wgl_create_context(window_context){
+                render_context
             }
+            else{
+                return Err(WinError::get_last_error())
+            };
 
-            if wglMakeCurrent(window_context,render_context)==0{
+            if !WinCore.render_context.wgl_make_current(Some(window_context),Some(render_context)){
                 return Err(WinError::get_last_error())
             }
 
@@ -152,6 +122,7 @@ impl OpenGLRenderContext{
             wglSwapIntervalEXT.expect("wglSwapIntervalEXT is not loaded")(attributes.vsync as i32);
 
             Ok(Self{
+                window:window.handle,
                 window_context,
                 render_context,
                 wglSwapIntervalEXT,
@@ -159,29 +130,21 @@ impl OpenGLRenderContext{
         }
     }
 
-    pub fn render_context(&self)->HGLRC{
+    pub fn render_context(&self)->RenderContextHandle{
         self.render_context
     }
 
-    /// Makes given context current.
-    /// 
-    /// If there's several contexts (for example, for several windows),
-    /// they can be switched with this function.
-    /// 
-    /// Делает данный контекст текущим.
-    /// 
-    /// Если создано несколько контекстов (для нескольких окон, например),
-    /// то их можно переключать с помощью этой функции.
+    /// Makes a specified OpenGL rendering context the calling thread's current rendering context.
     pub fn make_current(&self,current:bool)->Result<(),WinError>{
         unsafe{
             let result=if current{
-                wglMakeCurrent(self.window_context,self.render_context)
+                WinCore.render_context.wgl_make_current(Some(self.window_context),Some(self.render_context))
             }
             else{
-                wglMakeCurrent(self.window_context,null_mut())
+                WinCore.render_context.wgl_make_current(None,None)
             };
 
-            if result==1{
+            if result{
                 Ok(())
             }
             else{
@@ -192,7 +155,7 @@ impl OpenGLRenderContext{
 
     pub fn swap_buffers(&self)->Result<(),WinError>{
         unsafe{
-            if SwapBuffers(self.window_context)==1{
+            if WinCore.device_context.swap_buffers(self.window_context){
                 Ok(())
             }
             else{
@@ -216,8 +179,9 @@ impl OpenGLRenderContext{
 impl Drop for OpenGLRenderContext{
     fn drop(&mut self){
         unsafe{
-            wglMakeCurrent(self.window_context,null_mut());
-            wglDeleteContext(self.render_context);
+            WinCore.render_context.wgl_make_current(None,None);
+            WinCore.render_context.wgl_delete_context(self.render_context);
+            WinCore.device_context.release(self.window,self.window_context);
         }
     }
 }
@@ -234,33 +198,33 @@ impl OpenGLRenderContextAttributes{
     }
 }
 
-/// from [rust-tutorials](https://rust-tutorials.github.io/triangle-from-scratch/loading_opengl/win32.html)
-/// Type for [wglChoosePixelFormatARB](https://www.khronos.org/registry/OpenGL/extensions/ARB/WGL_ARB_pixel_format.txt)
-pub type wglChoosePixelFormatARB_t=Option<
-    unsafe extern "system" fn(
-        hdc:HDC,
-        piAttribIList:*const i32,
-        pfAttribFList:*const f32,
-        nMaxFormats:u32,
-        piFormats:*mut i32,
-        nNumFormats:*mut u32
-    )->i32,
->;
-/// Type for [wglCreateContextAttribsARB](https://www.khronos.org/registry/OpenGL/extensions/ARB/WGL_ARB_create_context.txt)
-pub type wglCreateContextAttribsARB_t=Option<
-    unsafe extern "system" fn(
-        hDC:HDC,
-        hShareContext:HGLRC,
-        attribList:*const i32,
-    )->HGLRC,
->;
+// /// from [rust-tutorials](https://rust-tutorials.github.io/triangle-from-scratch/loading_opengl/win32.html)
+// /// Type for [wglChoosePixelFormatARB](https://www.khronos.org/registry/OpenGL/extensions/ARB/WGL_ARB_pixel_format.txt)
+// pub type wglChoosePixelFormatARB_t=Option<
+//     unsafe extern "system" fn(
+//         hdc:DeviceContextHandle,
+//         piAttribIList:*const i32,
+//         pfAttribFList:*const f32,
+//         nMaxFormats:u32,
+//         piFormats:*mut i32,
+//         nNumFormats:*mut u32
+//     )->i32,
+// >;
+// /// Type for [wglCreateContextAttribsARB](https://www.khronos.org/registry/OpenGL/extensions/ARB/WGL_ARB_create_context.txt)
+// pub type wglCreateContextAttribsARB_t=Option<
+//     unsafe extern "system" fn(
+//         hDC:DeviceContextHandle,
+//         hShareContext:HGLRC,
+//         attribList:*const i32,
+//     )->HGLRC,
+// >;
 /// Type for [wglSwapIntervalEXT](https://www.khronos.org/registry/OpenGL/extensions/EXT/WGL_EXT_swap_control.txt)
 pub type wglSwapIntervalEXT_t=Option<unsafe extern "system" fn(interval:i32)->i32>;
 
 
 
 // const WGL_NUMBER_PIXEL_FORMATS_ARB            0x2000
-const WGL_DRAW_TO_WINDOW_ARB:i32=0x2001;
+// const WGL_DRAW_TO_WINDOW_ARB:i32=0x2001;
 // const WGL_DRAW_TO_BITMAP_ARB                  0x2002
 // const WGL_ACCELERATION_ARB                    0x2003
 // const WGL_NEED_PALETTE_ARB                    0x2004
@@ -279,11 +243,11 @@ const WGL_DRAW_TO_WINDOW_ARB:i32=0x2001;
 // WGL_SHARE_STENCIL_ARB                   0x200D
 // WGL_SHARE_ACCUM_ARB                     0x200E
 // WGL_SUPPORT_GDI_ARB                     0x200F
-const WGL_SUPPORT_OPENGL_ARB:i32=0x2010;
-const WGL_DOUBLE_BUFFER_ARB:i32=0x2011;
+// const WGL_SUPPORT_OPENGL_ARB:i32=0x2010;
+// const WGL_DOUBLE_BUFFER_ARB:i32=0x2011;
 // WGL_STEREO_ARB                          0x2012
-const WGL_PIXEL_TYPE_ARB:i32=0x2013;
-const WGL_COLOR_BITS_ARB:i32=0x2014;
+// const WGL_PIXEL_TYPE_ARB:i32=0x2013;
+// const WGL_COLOR_BITS_ARB:i32=0x2014;
 // WGL_RED_BITS_ARB                        0x2015
 // WGL_RED_SHIFT_ARB                       0x2016
 // WGL_GREEN_BITS_ARB                      0x2017
@@ -297,8 +261,8 @@ const WGL_COLOR_BITS_ARB:i32=0x2014;
 // WGL_ACCUM_GREEN_BITS_ARB                0x201F
 // WGL_ACCUM_BLUE_BITS_ARB                 0x2020
 // WGL_ACCUM_ALPHA_BITS_ARB                0x2021
-const WGL_DEPTH_BITS_ARB:i32=0x2022;
-const WGL_STENCIL_BITS_ARB:i32=0x2023;
+// const WGL_DEPTH_BITS_ARB:i32=0x2022;
+// const WGL_STENCIL_BITS_ARB:i32=0x2023;
 // WGL_AUX_BUFFERS_ARB                     0x2024
 
 // WGL_NO_ACCELERATION_ARB                 0x2025
@@ -309,5 +273,5 @@ const WGL_STENCIL_BITS_ARB:i32=0x2023;
 // WGL_SWAP_COPY_ARB                       0x2029
 // WGL_SWAP_UNDEFINED_ARB                  0x202A
 
-const WGL_TYPE_RGBA_ARB:i32=0x202B;
+// const WGL_TYPE_RGBA_ARB:i32=0x202B;
 // WGL_TYPE_COLORINDEX_ARB                 0x202C

@@ -297,6 +297,12 @@ pub enum LoopControl{
 unsafe impl Sync for LoopControl{}
 unsafe impl Send for LoopControl{}
 
+pub struct Control{
+    state:LoopControl,
+    update_interval:i64,
+    redraw_request_interval:i64,
+}
+
 /// Represents interval between events or an event rate.
 /// 
 /// The event is disabled if an interval or rate is `0`.
