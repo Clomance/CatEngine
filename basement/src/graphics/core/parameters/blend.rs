@@ -1,17 +1,11 @@
-use crate::{
-    graphics::{
-        Colour,
-        GCore,
-        core::GLCapability,
-    },
-};
+use crate::graphics::Colour;
 
 #[cfg(target_os="windows")]
 use crate::windows::OpenGraphicsLibrary;
 
 use core::mem::transmute;
 
-// Blending functions
+// Blend functions
 const ZERO:u32=0;
 const ONE:u32=1;
 const SRC_COLOR:u32=0x0300;
@@ -32,14 +26,14 @@ const SRC1_COLOR:u32=0x88F9;
 const ONE_MINUS_SRC1_COLOR:u32=0x88FA;
 const ONE_MINUS_SRC1_ALPHA:u32=0x88FB;
 
-// Blending equation
+// Blend equation
 const FUNC_ADD:u32=0x8006;
 const FUNC_SUBTRACT:u32=0x800A;
 const FUNC_REVERSE_SUBTRACT:u32=0x800B;
 const MIN:u32=0x8007;
 const MAX:u32=0x8008;
 
-// Blending parameters
+// Blend parameters
 const BLEND_COLOR:u32=0x8005;
 const BLEND_DST_ALPHA:u32=0x80CA;
 const BLEND_DST_RGB:u32=0x80C8;
@@ -133,7 +127,7 @@ pub enum BlendingFunction{
     /// Result = Colour * (1 - DestinationAlpha).
     OneMinusDestinationAlpha=ONE_MINUS_DST_ALPHA,
 
-    /// Multiply the component by the corresponding value in the blending constant colour.
+    /// Multiply the component by the corresponding value in the blend constant colour.
     /// 
     /// Result = Colour * ConstantColour.
     ConstantColour=CONSTANT_COLOR,
@@ -143,7 +137,7 @@ pub enum BlendingFunction{
     /// Result = Colour * (1 - ConstantColour).
     OneMinusConstantColour=ONE_MINUS_CONSTANT_COLOR,
 
-    /// Multiply the component by the alpha value of the blending constant colour.
+    /// Multiply the component by the alpha value of the blend constant colour.
     /// 
     /// Result = Colour * ConstantAlpha.
     ConstantAlpha=CONSTANT_ALPHA,
@@ -156,19 +150,18 @@ pub enum BlendingFunction{
     /// Multiply the component by the smallest value of `SourceAlpha` and `1 - DestinationAlpha`.
     SourceAlphaSaturate=SRC_ALPHA_SATURATE,
 
-    // not supported
     // Source1Colour=SRC1_COLOR,
-    // 
+    
     // OneMinusSource1Colour=ONE_MINUS_SRC1_COLOR,
-    // 
+    
     // Source1Alpha=SRC1_ALPHA,
-    // 
+    
     // OneMinusSourse1Alpha=ONE_MINUS_SRC1_ALPHA,
 }
 
 /// A wrapper for blending functions.
 /// 
-/// Blending is disabled by default.
+/// Blend is disabled by default.
 /// 
 /// The default blending constant colour is `[0f32;4]`.
 /// 
@@ -177,7 +170,7 @@ pub enum BlendingFunction{
 /// The default blending functions for `Destination` are `BlendingFunction::Zero`.
 /// 
 /// The default blending equations are `BlendingEquation::Addition`.
-pub struct Blending{
+pub struct Blend{
     glBlendColor:usize,
     glBlendFunc:usize,
     glBlendFuncSeparate:usize,
@@ -185,8 +178,8 @@ pub struct Blending{
     glBlendEquationSeparate:usize,
 }
 
-impl Blending{
-    pub const fn new()->Blending{
+impl Blend{
+    pub const fn new()->Blend{
         Self{
             glBlendColor:0,
             glBlendFunc:0,
@@ -208,34 +201,12 @@ impl Blending{
     }
 }
 
-impl Blending{
-    /// Enables blending.
-    #[inline(always)]
-    pub fn enable(&self){
-        unsafe{
-            GCore.enable(GLCapability::Blend)
-        }
-    }
-
-    /// Disables blending.
-    #[inline(always)]
-    pub fn disable(&self){
-        unsafe{
-            GCore.disable(GLCapability::Blend)
-        }
-    }
-
-    /// Checks whether blending is enabled.
-    #[inline(always)]
-    pub fn is_enabled(&self)->bool{
-        unsafe{
-            GCore.is_enabled(GLCapability::Blend)
-        }
-    }
-}
-
-impl Blending{
-    /// Sets the blending constant colour.
+impl Blend{
+    /// Sets the blend constant colour.
+    /// 
+    /// The colour components are clamped to the range [0,1] before being stored.
+    /// 
+    /// Initially the colour is set to `[0f32;4]`.
     #[inline(always)]
     pub fn set_blending_colour(&self,[red,greed,blue,alpha]:Colour){
         unsafe{
@@ -243,31 +214,31 @@ impl Blending{
         }
     }
 
-    /// Returns the blending constant colour.
+    /// Specify pixel arithmetic.
+    /// 
+    /// Specifies how the red, green, blue, and alpha source blending factors are computed.
+    /// 
+    /// The initial value is `BlendingFunction::One`.
+    /// 
+    /// Pixels can be drawn using a function
+    /// that blends the incoming (source) RGBA values with the RGBA values
+    /// that are already in the frame buffer (the destination values).
+    /// Blending is initially disabled.
     #[inline(always)]
-    pub fn get_blending_colour(&self)->Colour{
+    pub fn set_function(
+        &self,
+        sourse_factor:BlendingFunction,
+        destination_factor:BlendingFunction
+    ){
         unsafe{
-            let mut colour=[0f32;4];
-            GCore.get_float_v(BLEND_COLOR,colour.get_unchecked_mut(0));
-            colour
-        }
-    }
-
-    /// Writes the blending constant colour to `colour`.
-    #[inline(always)]
-    pub fn write_blending_colour(&self,colour:&mut Colour){
-        unsafe{
-            GCore.get_float_v(BLEND_COLOR,colour.get_unchecked_mut(0))
-        }
-    }
-}
-
-impl Blending{
-    /// Sets the blending functions.
-    #[inline(always)]
-    pub fn set_function(&self,sourse_factor:BlendingFunction,destination_factor:BlendingFunction){
-        unsafe{
-            transmute::<usize,fn(BlendingFunction,BlendingFunction)>(self.glBlendFunc)(sourse_factor,destination_factor)
+            transmute::<usize,fn(
+                BlendingFunction,
+                BlendingFunction
+            )>(self.glBlendFunc)
+            (
+                sourse_factor,
+                destination_factor
+            )
         }
     }
 
@@ -281,7 +252,12 @@ impl Blending{
         destination_factor_alpha:BlendingFunction,
     ){
         unsafe{
-            transmute::<usize,fn(BlendingFunction,BlendingFunction,BlendingFunction,BlendingFunction)>(self.glBlendFuncSeparate)(
+            transmute::<usize,fn(
+                BlendingFunction,
+                BlendingFunction,
+                BlendingFunction,
+                BlendingFunction
+            )>(self.glBlendFuncSeparate)(
                 sourse_factor_rgb,
                 destination_factor_rgb,
                 sourse_factor_alpha,
@@ -290,80 +266,6 @@ impl Blending{
         }
     }
 
-    /// Returns the source blending function for the RBG colour components.
-    #[inline(always)]
-    pub fn get_function_src_rgb(&self)->BlendingFunction{
-        unsafe{
-            let mut function=BlendingFunction::One;
-            GCore.get_integer_v(BLEND_SRC_RGB,transmute(&mut function));
-            function
-        }
-    }
-
-    /// Writes the source blending function for the RBG colour components to `function`.
-    #[inline(always)]
-    pub fn write_function_src_rgb(&self,function:&mut BlendingFunction){
-        unsafe{
-            GCore.get_integer_v(BLEND_SRC_RGB,transmute(function))
-        }
-    }
-
-    /// Returns the source blending function for the Alpha colour component.
-    #[inline(always)]
-    pub fn get_function_src_alpha(&self)->BlendingFunction{
-        unsafe{
-            let mut function=BlendingFunction::One;
-            GCore.get_integer_v(BLEND_SRC_ALPHA,transmute(&mut function));
-            function
-        }
-    }
-
-    /// Writes the souse blending function for the Alpha colour component to the `function`.
-    #[inline(always)]
-    pub fn write_function_src_alpha(&self,function:&mut BlendingFunction){
-        unsafe{
-            GCore.get_integer_v(BLEND_SRC_ALPHA,transmute(function))
-        }
-    }
-
-    /// Returns the destination blending function for the RBG colour components.
-    #[inline(always)]
-    pub fn get_function_dst_rgb(&self)->BlendingFunction{
-        unsafe{
-            let mut function=BlendingFunction::Zero;
-            GCore.get_integer_v(BLEND_DST_RGB,transmute(&mut function));
-            function
-        }
-    }
-
-    /// Writes the destination blending function for the RBG colour components to `function`.
-    #[inline(always)]
-    pub fn write_function_dst_rgb(&self,function:&mut BlendingFunction){
-        unsafe{
-            GCore.get_integer_v(BLEND_DST_RGB,transmute(function))
-        }
-    }
-
-    /// Returns the destination blending function for the Alpha colour component.
-    #[inline(always)]
-    pub fn get_function_dst_alpha(&self)->BlendingFunction{
-        unsafe{
-            let mut function=BlendingFunction::Zero;
-            GCore.get_integer_v(BLEND_DST_ALPHA,transmute(&mut function));
-            function
-        }
-    }
-
-    /// Writes the blending function for the Alpha colour component to `function`.
-    #[inline(always)]
-    pub fn write_function_dst_alpha(&self,function:&mut BlendingFunction){
-        unsafe{
-            GCore.get_integer_v(BLEND_DST_ALPHA,transmute(function))
-        }
-    }
-}
-
-impl Blending{
     /// Sets the equation used for both the RGB blending equation and the Alpha blend equation.
     #[inline(always)]
     pub fn set_equation(&self,equation:BlendingEquation){
@@ -380,43 +282,13 @@ impl Blending{
         equation_alpha:BlendingEquation
     ){
         unsafe{
-            transmute::<usize,fn(BlendingEquation,BlendingEquation)>(self.glBlendEquationSeparate)(equation_rgb,equation_alpha)
-        }
-    }
-
-    /// Returns the RGB blending equation.
-    #[inline(always)]
-    pub fn get_equation_rbg(&self)->BlendingEquation{
-        unsafe{
-            let mut equation=BlendingEquation::Addition;
-            GCore.get_integer_v(BLEND_EQUATION_RGB,transmute(&mut equation));
-            equation
-        }
-    }
-
-    /// Writes the RGB blending equation to `equation`.
-    #[inline(always)]
-    pub fn write_equation_rbg(&self,equation:&mut BlendingEquation){
-        unsafe{
-            GCore.get_integer_v(BLEND_EQUATION_RGB,transmute(equation))
-        }
-    }
-
-    /// Returns the Alpha blending equation.
-    #[inline(always)]
-    pub fn get_equation_alpha(&self)->BlendingEquation{
-        unsafe{
-            let mut equation=BlendingEquation::Addition;
-            GCore.get_integer_v(BLEND_EQUATION_ALPHA,transmute(&mut equation));
-            equation
-        }
-    }
-
-    /// Writes the Alpha blending equation to `equation`.
-    #[inline(always)]
-    pub fn write_equation_alpha(&self,equation:&mut BlendingEquation){
-        unsafe{
-            GCore.get_integer_v(BLEND_EQUATION_ALPHA,transmute(equation));
+            transmute::<usize,fn(
+                BlendingEquation,
+                BlendingEquation
+            )>(self.glBlendEquationSeparate)(
+                equation_rgb,
+                equation_alpha
+            )
         }
     }
 }

@@ -1,5 +1,5 @@
 pub use crate::graphics::{
-    GCore,
+    GLCore,
     core::program::{
         INVALID_INDEX,
         ProgramParameter
@@ -27,22 +27,22 @@ pub struct Program{
 impl Program{
     pub fn new(vertex_shader:&VertexShader,fragment_shader:&FragmentShader)->Result<Program,String>{
         unsafe{
-            let id=GCore.program.create();
+            let id=GLCore.program.create();
 
-            GCore.program.attach_shader(id,vertex_shader.id());
-            GCore.program.attach_shader(id,fragment_shader.id());
+            GLCore.program.attach_shader(id,vertex_shader.id());
+            GLCore.program.attach_shader(id,fragment_shader.id());
 
-            GCore.program.link(id);
+            GLCore.program.link(id);
 
             let mut result:i32=MaybeUninit::uninit().assume_init();
-            GCore.program.get_parameter(id,ProgramParameter::LinkStatus,&mut result);
+            GLCore.program.get_parameter(id,ProgramParameter::LinkStatus,&mut result);
 
             if result==0{
                 let mut len:i32=MaybeUninit::uninit().assume_init();
-                GCore.program.get_parameter(id,ProgramParameter::InfoLogLength,&mut len);
+                GLCore.program.get_parameter(id,ProgramParameter::InfoLogLength,&mut len);
                 let mut log=String::with_capacity(len as usize);
 
-                GCore.program.get_info_log(id,&mut log);
+                GLCore.program.get_info_log(id,&mut log);
 
                 log.as_mut_vec().set_len(len as usize);
 
@@ -61,14 +61,14 @@ impl Program{
 
     pub fn bind(&self){
         unsafe{
-            GCore.program.bind(self.id);
+            GLCore.program.bind(self.id);
         }
     }
 
     pub fn get_uniform_location(&self,name:&str)->Option<i32>{
         unsafe{
             if let Ok(name)=CString::new(name){
-                let id=GCore.program.get_uniform_location(self.id,name.as_c_str().to_str().unwrap());
+                let id=GLCore.program.get_uniform_location(self.id,name.as_c_str().to_str().unwrap());
 
                 if id==-1{
                     None
@@ -100,7 +100,7 @@ impl Program{
     pub fn get_uniform_block_index(&self,name:&str)->Option<u32>{
         unsafe{
             if let Ok(name)=CString::new(name){
-                let id=GCore.program.get_uniform_block_index(self.id,name.as_c_str().to_str().unwrap());
+                let id=GLCore.program.get_uniform_block_index(self.id,name.as_c_str().to_str().unwrap());
 
                 if id==INVALID_INDEX{
                     None
@@ -122,7 +122,7 @@ impl Program{
     pub fn bind_uniform_block(&self,name:&str,binding_index:u32)->bool{
         if let Some(index)=self.get_uniform_block_index(name){
             unsafe{
-                GCore.program.set_uniform_block_binding(self.id,index,binding_index)
+                GLCore.program.set_uniform_block_binding(self.id,index,binding_index)
             }
             true
         }
@@ -135,7 +135,7 @@ impl Program{
 impl Drop for Program{
     fn drop(&mut self){
         unsafe{
-            GCore.program.delete(self.id);
+            GLCore.program.delete(self.id);
         }
     }
 }

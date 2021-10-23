@@ -6,8 +6,8 @@ use super::{
 };
 
 use cat_engine_basement::graphics::{
-    GCore,
-    core::UNPACK_ALIGNMENT,
+    GLCore,
+    core::parameters::UNPACK_ALIGNMENT,
     core::texture::{
         Texture2DInternalFormat,
         ImageDataFormat,
@@ -150,7 +150,7 @@ fn build_glyph(id:GlyphId,scale:Scale,face:&Face,graphics:&Graphics2D)->Option<T
     ))=graphics.build_glyph_image(id,scale,face){
         let size=[width as u32,height as u32];
 
-        unsafe{GCore.set_pixel_storage_modei(UNPACK_ALIGNMENT,1)}
+        unsafe{GLCore.parameters.set_pixel_storage_modei(UNPACK_ALIGNMENT,1)}
 
         let texture_2d=Texture2D::new(
             Texture2DInternalFormat::R8,
@@ -161,7 +161,7 @@ fn build_glyph(id:GlyphId,scale:Scale,face:&Face,graphics:&Graphics2D)->Option<T
             &image
         ).unwrap();
 
-        unsafe{GCore.set_pixel_storage_modei(UNPACK_ALIGNMENT,4)}
+        unsafe{GLCore.parameters.set_pixel_storage_modei(UNPACK_ALIGNMENT,4)}
 
         let advance_width=face.glyph_hor_advance(id).unwrap() as f32*scale.horizontal;
 

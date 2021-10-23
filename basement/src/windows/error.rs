@@ -38,12 +38,16 @@ impl WinError{
         }
     }
 
+    pub fn code(&self)->u32{
+        self.code
+    }
+
     pub fn to_string(&self)->String{
         unsafe{
             let mut buffer:*mut u16=null_mut();
 
             let size=FormatMessageW(
-                FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+                FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|FORMAT_MESSAGE_ALLOCATE_BUFFER,
                 null_mut(),
                 self.code,
                 MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT) as u32,

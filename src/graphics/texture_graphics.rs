@@ -17,7 +17,7 @@ use super::{
 };
 
 use cat_engine_basement::graphics::{
-    GCore,
+    GLCore,
     core::{
         drawing::PrimitiveType,
         buffer::BufferUsage,
@@ -153,11 +153,11 @@ impl TextureGraphics{
 
             match object.draw_type{
                 HeapDrawType::Vertices(first)=>unsafe{
-                    GCore.drawing.multi_draw_arrays(&first,&object.count,object.primitive_type)
+                    GLCore.drawing.multi_draw_arrays(&first,&object.count,object.primitive_type)
                 }
 
                 HeapDrawType::Indices(indices)=>unsafe{
-                   GCore.drawing.multi_draw_elements_typed::<ElementIndexType>(
+                   GLCore.drawing.multi_draw_elements_typed::<ElementIndexType>(
                         &indices,
                         &object.count,
                         object.primitive_type
@@ -237,11 +237,11 @@ impl TextureGraphics{
             let drawable=object.drawable();
             match drawable.draw_type{
                 StackDrawType::Vertices(first)=>unsafe{
-                    GCore.drawing.draw_arrays(first,drawable.count,object.primitive_type)
+                    GLCore.drawing.draw_arrays(first,drawable.count,object.primitive_type)
                 }
 
                 StackDrawType::Indices(first)=>unsafe{
-                    GCore.drawing.draw_elements_typed::<ElementIndexType>(
+                    GLCore.drawing.draw_elements_typed::<ElementIndexType>(
                         first,
                         drawable.count,
                         object.primitive_type

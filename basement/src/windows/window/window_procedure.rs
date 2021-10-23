@@ -14,6 +14,9 @@ use super::{
     CreateParameters,
     // traits
     WindowProcedure,
+    // enums
+    WindowMessage,
+    WindowResizeType,
 };
 
 use core::mem::transmute;
@@ -295,83 +298,156 @@ use winapi::{
 /// Нужно в основном для включения/отключения вертикальной синхронизации.
 pub const window_settings_auto_redraw:WindowData=WindowData::User;
 
+/// Стартовая функция для всех окон.
+/// 
+/// Устанавливает начальные параметры.
 pub unsafe extern "system" fn default_window_procedure(
     window_handle:WindowHandle,
     message:u32,
     w_param:usize,
     l_param:isize,
 )->isize{
+    let message:WindowMessage=transmute(message);
     match message{
-        // Sent prior to the WM_CREATE message when a window is first created.
-        // wParam - This parameter is not used.
-        // lParam - A pointer to the `CREATESTRUCT` structure.
-        // If an application processes this message, it should return `TRUE` to continue creation of the window.
-        // If the application returns `FALSE`, the `CreateWindow` or `CreateWindowEx` function will return a NULL handle.
-        WM_NCCREATE=>{
+        WindowMessage::NonClientCreate=>{
             let create_struct:&mut CREATESTRUCTW=transmute(l_param);
-
             let create_parameters:&mut CreateParameters<u8>=transmute(create_struct.lpCreateParams);
 
             // Установка доп настроек
             WinCore.window.set_window_long_ptr(window_handle,window_settings_auto_redraw,create_parameters.auto_redraw as isize);
 
-            // Установка аргуметов для подфункции окна
-            WinCore.window.set_window_long_ptr(window_handle,WindowData::UserData,create_parameters.window_procedure_args as isize);
-
-            // Установка функции окна
+            // Установка новой функции окна
             WinCore.window.set_window_long_ptr(window_handle,WindowData::WindowProcedure,create_parameters.window_procedure as isize);
 
-            return 1;
+            // Чтобы в `let data=*(window.get_user_data() as *mut W::Data);`
+            // не использовался нулевой указатель (в `wrap_window_procedure`)
+            WinCore.window.set_window_long_ptr(window_handle,WindowData::UserData,l_param);
+
+            1
         }
-        _=>DefWindowProcW(window_handle.as_raw(),message,w_param,l_param)
+
+        _=>DefWindowProcW(window_handle.as_raw(),message as u32,w_param,l_param)
     }
 }
 
-pub unsafe extern "system" fn window_procedure<W:WindowProcedure<A>,A>(
-    handle:WindowHandle,
+/// Процедура окна.
+pub unsafe extern "system" fn window_procedure<W:WindowProcedure>(
+    window_handle:WindowHandle,
     message:u32,
     w_param:usize,
     l_param:isize,
 )->isize{
-    let window:&Window=transmute(&handle);
+    let window:&Window=transmute(&window_handle);
 
-    let result=std::panic::catch_unwind(||{
-        let args=&mut *(window.get_user_data() as *mut A);
+    #[cfg(feature="wnd_proc_catch_panic")]{
+        let result=std::panic::catch_unwind(||wrap_window_procedure::<W>(window,message,w_param,l_param));
+
+        match result{
+            Ok(result)=>result,
+            Err(e)=>{
+                let data=*(window.get_user_data() as *mut W::Data);
+                W::catch_panic(window,data,e);
+                DefWindowProcW(window_handle.as_raw(),message as u32,w_param,l_param)
+            }
+        }
+    }
+
+    #[cfg(not(feature="wnd_proc_catch_panic"))]
+    wrap_window_procedure::<W>(window,message,w_param,l_param)
+}
+
+unsafe fn wrap_window_procedure<W:WindowProcedure>(window:&Window,message:u32,w_param:usize,l_param:isize)->isize{
+    let window_handle=window.handle();
+    let message:WindowMessage=transmute(message);
+    // Тут точно не нулевой указатель: в `default_window_procedure` сюда устанавливается
+    // ссылка на параметры окна. После, здесь этот указатель меняется.
+    let data=*(window.get_user_data() as *mut W::Data);
+
+    match message{
+        // 
+        WindowMessage::Create=>{
+            let create_struct:&mut CREATESTRUCTW=transmute(l_param);
+            let create_parameters:&mut CreateParameters<W::CreateParameters>=transmute(create_struct.lpCreateParams);
+
+            // Вызов функции пользователя
+            match W::create(window,transmute(create_parameters.create_parameters)){
+                Ok(data)=>{
+                    // Упаковка данных
+                    let boxed_data=Box::new(data);
+                    let data_ptr=Box::leak(boxed_data) as *mut W::Data;
+                    // Установка параметров
+                    WinCore.window.set_window_long_ptr(window_handle,WindowData::UserData,data_ptr as isize);
+                    0
+                }
+                Err(error)=>{
+                    // Возвращение ошибки обратно
+                    winapi::um::errhandlingapi::SetLastError(error.code());
+                    // Остановка создания окна
+                    -1
+                }
+            }
+        }
+
+        // 
+        WindowMessage::Close=>{
+            W::close_request(window,data);
+            0
+        }
+
+        // 
+        WindowMessage::Destroy=>{
+            W::destroy(window,data);
+            0
+        }
 
         // Запрос на перерисовку содержимого окна
-        if message==WM_PAINT{
+        WindowMessage::Paint=>{
             let mut paint=std::mem::zeroed();
-            let _=BeginPaint(handle.as_raw(),&mut paint);
+            let _=BeginPaint(window_handle.as_raw(),&mut paint);
 
-            W::render(window,args);
+            W::paint(window,data);
 
             // EndPaint releases the display device context that BeginPaint retrieved
-            EndPaint(handle.as_raw(),&paint);
+            EndPaint(window_handle.as_raw(),&paint);
 
-            let auto_draw_flag=WinCore.window.get_window_long_ptr(window.handle(),window_settings_auto_redraw);
+            let auto_draw_flag=WinCore.window.get_window_long_ptr(window_handle,window_settings_auto_redraw);
 
             if auto_draw_flag==1{
                 window.redraw()
             }
 
-            return 0
+            0
         }
 
-        match wrap_event(window,message,w_param,l_param){
-            EventWrapResult::None(lresult)=>lresult,
-            EventWrapResult::Event(window_event,lresult)=>{
-                W::handle(window_event,window,args);
-                lresult
+        #[cfg(feature="set_cursor_event")]
+        WindowMessage::SetCursor=>{
+            // A handle to the window that contains the cursor.
+            let window:&Window=transmute(&w_param);
+            W::set_cursor(window,data);
+            0
+        }
+
+        WindowMessage::Size=>{
+            let [client_width,client_height,_,_]:[u16;4]=transmute(l_param);
+            let resize_type:WindowResizeType=transmute(w_param);
+            W::resized([client_width,client_height],resize_type,window,data);
+            0
+        }
+
+        WindowMessage::Move=>{
+            let [x,y,_,_]:[i16;4]=transmute(l_param);
+            W::moved([x,y],window,data);
+            0
+        }
+
+        _=>{
+            match wrap_event(window,message as u32,w_param,l_param){
+                EventWrapResult::None(lresult)=>lresult,
+                EventWrapResult::Event(window_event,lresult)=>{
+                    W::handle(window_event,window,data);
+                    lresult
+                }
             }
-        }
-    });
-
-    match result{
-        Ok(result)=>result,
-        Err(e)=>{
-            println!("{:?}",e);
-            PostQuitMessage(0);
-            DefWindowProcW(handle.as_raw(),message,w_param,l_param)
         }
     }
 }
@@ -381,57 +457,8 @@ enum EventWrapResult{
     Event(WindowEvent,isize)
 }
 
-
 unsafe fn wrap_event(window:&Window,message:u32,w_param:usize,l_param:isize)->EventWrapResult{
     match message{
-        // The window procedure of the new window receives this message after the window is created,
-        // but before the window becomes visible.
-        // wParam - This parameter is not used.
-        // lParam - A pointer to the CREATESTRUCT structure.
-        // If an application processes this message, it should return zero to continue creation of the window.
-        // If the application returns –1, the window is destroyed and the CreateWindowEx or CreateWindow function returns a NULL handle.
-        WM_CREATE=>return EventWrapResult::None(0),
-
-        // Запрос на закрытие окна
-        WM_CLOSE=>EventWrapResult::Event
-            (
-                WindowEvent::CloseRequest,
-                0
-            ),
-
-        // Sent when a window is being destroyed.
-        // It is sent to the window procedure of the window being destroyed
-        // after the window is removed from the screen.
-        // This message is sent first to the window being destroyed
-        // and then to the child windows (if any) as they are destroyed.
-        // During the processing of the message, it can be assumed that all child windows still exist.
-        // A window receives this message through its WindowProc function.
-        // If the window being destroyed is part of the clipboard viewer chain (set by calling the SetClipboardViewer function),
-        // the window must remove itself from the chain by processing the ChangeClipboardChain function before returning from the WM_DESTROY message.
-        WM_DESTROY=>EventWrapResult::Event
-            (
-                WindowEvent::Destroy,
-                0
-            ),
-
-        // Изменение размера окна
-        WM_SIZE=>{
-            let [width,height,_,_]:[u16;4]=transmute(l_param);
-            EventWrapResult::Event(
-                WindowEvent::Resize([width,height]),
-                0
-            )
-        }
-
-        // Сдвиг окна
-        WM_MOVE=>{
-            let [x,y,_,_]:[i16;4]=transmute(l_param);
-            EventWrapResult::Event(
-                WindowEvent::Move([x,y]),
-                0
-            )
-        }
-
         // Mouse events
         // События мыши
         // Движение мыши

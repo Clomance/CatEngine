@@ -1,33 +1,24 @@
 use crate::windows::{
     WinCore,
     WinError,
+    WinColour,
+    core::window::WindowHandle,
+    // level0::brush::Brush,
 };
 
-pub use crate::windows::core::window_class::{
-    ClassIdentifier,
-    ClassAtom,
-    WindowClassStyle,
-    WindowClassStyles,
+pub use crate::windows::core::{
+    window_class::{
+        ClassIdentifier,
+        ClassAtom,
+        WindowClassStyle,
+        WindowClassStyles,
+    },
+    cursor::SystemCursor,
 };
 
 use super::{
     Icon,
     default_window_procedure,
-};
-
-use winapi::{
-    um::{
-        winuser::{
-            LoadCursorW,
-            // Cursors
-            IDC_ARROW,
-        },
-
-        wingdi::{
-            CreateSolidBrush,
-            RGB,
-        },
-    }
 };
 
 use image::{
@@ -36,13 +27,15 @@ use image::{
 };
 
 use std::{
-    ptr::{null_mut},
+    ptr::null_mut,
     ffi::OsString,
     os::windows::ffi::OsStrExt,
+    mem::transmute
 };
 
 pub enum CursorIcon{
     None,
+    System(SystemCursor),
     BGRA8{
         position:[u32;2],
         image:ImageBuffer<Bgra<u8>,Vec<u8>>,
@@ -67,27 +60,27 @@ impl WindowClass{
             .collect();
 
         let window_icon=match attributes.window_icon{
-            None=>null_mut(),
-            Some(image)=>Icon::from_bgra(true,[0u32;2],&image).handle()
+            None=>None,
+            Some(image)=>Some(Icon::from_bgra(true,[0u32;2],&image).handle())
         };
 
         let cursor=match attributes.cursor_icon{
-            CursorIcon::None=>unsafe{
-                LoadCursorW(null_mut(),IDC_ARROW)
-            },
+            CursorIcon::None=>None,
+            CursorIcon::System(cursor)=>unsafe{
+                Some(WinCore.cursor.load_system_cursor(cursor).unwrap())
+            }
             CursorIcon::BGRA8{
                 position,
                 image
-            }=>Icon::from_bgra(false,position,&image).handle()
+            }=>Some(unsafe{transmute(Icon::from_bgra(false,position,&image).handle())})
         };
 
         let background=match attributes.background{
-            Background::None=>null_mut(),
+            Background::None=>None,
             Background::Colour([red,green,blue])=>unsafe{
-                CreateSolidBrush(RGB(red,green,blue))
+                Some(WinCore.brush.create_solid(WinColour::new([red,green,blue])).unwrap())
             }
         };
-
 
         let mut style=WindowClassStyles::new()
             // to create opengl context
@@ -107,12 +100,12 @@ impl WindowClass{
             WinCore.window_class.register(
                 class_name.as_ptr(),
                 style,
-                Some(default_window_procedure),
+                default_window_procedure,
                 0,
                 64,
-                null_mut(),
+                None,
                 window_icon,
-                null_mut(),
+                None,
                 cursor,
                 background,
                 null_mut(),
@@ -140,32 +133,26 @@ impl WindowClass{
 impl Drop for WindowClass{
     fn drop(&mut self){
         unsafe{
-            let _result=WinCore.window_class.unregister(self.identifier(),null_mut());
+            let _result=WinCore.window_class.unregister(self.identifier(),None);
         }
     }
 }
 
 pub struct WindowClassAttributes{
-    /// The name of a class.
+    /// A name of a class.
     pub name:OsString,
 
-    /// The window icon.
-    /// 
-    /// `None` means the system default window icon.
+    /// A window icon.
     /// 
     /// The default is `None`.
     pub window_icon:Option<ImageBuffer<Bgra<u8>,Vec<u8>>>,
 
-    /// The window cursor icon.
+    /// A window cursor icon.
     /// 
-    /// `None` means the system default cursor icon.
-    /// 
-    /// The default is `None`.
+    /// The default is `CursorIcon::System(SystemCursor::Arrow)`.
     pub cursor_icon:CursorIcon,
 
-    /// A colour or an image used for painting the background.
-    /// 
-    /// If `None` is set, the system default background is used.
+    /// A colour or image used for painting the background.
     /// 
     /// The default is `None`.
     pub background:Background,
@@ -176,7 +163,7 @@ pub struct WindowClassAttributes{
     pub no_close:bool,
 
     /// Enables the drop shadow effect on a window.
-    /// The effect is turned on and off through SPI_SETDROPSHADOW.
+    /// The effect is turned on and off through `SPI_SETDROPSHADOW`.
     /// Typically, this is enabled for small,
     /// short-lived windows such as menus to emphasize their Z-order relationship to other windows.
     /// Windows created from a class with this style must be top-level windows;
@@ -200,7 +187,7 @@ impl WindowClassAttributes{
         Self{
             name,
             window_icon:None,
-            cursor_icon:CursorIcon::None,
+            cursor_icon:CursorIcon::System(SystemCursor::Arrow),
             background:Background::None,
             no_close:false,
             drop_shadow:false,

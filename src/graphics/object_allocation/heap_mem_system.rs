@@ -24,6 +24,20 @@ use std::{
     marker::PhantomData,
 };
 
+#[derive(Debug)]
+pub enum HeapDrawType{
+    Vertices(Vec<i32>), // count
+    Indices(Vec<isize>), // start
+}
+
+#[derive(Debug)]
+pub struct HeapDrawableObject{
+    pub draw_type:HeapDrawType,
+    pub count:Vec<i32>,
+    pub primitive_type:PrimitiveType,
+}
+
+#[derive(Debug)]
 pub struct HeapObject{
     /// Номера блоков с вершинами
     pub vertex_frames:Vec<FrameIDType>,
@@ -93,18 +107,6 @@ impl HeapObject{
     }
 }
 
-#[derive(Debug)]
-pub enum HeapDrawType{
-    Vertices(Vec<i32>), // count
-    Indices(Vec<isize>), // start
-}
-
-pub struct HeapDrawableObject{
-    pub draw_type:HeapDrawType,
-    pub count:Vec<i32>,
-    pub primitive_type:PrimitiveType,
-}
-
 pub struct HeapSystem<V:Vertex>{
     free_vertex_frames:Vec<FrameIDType>,
     free_index_frames:Vec<FrameIDType>,
@@ -146,7 +148,7 @@ impl<V:Vertex> HeapSystem<V>{
         }
         // Свободные объекты
         let mut free_objects=Vec::with_capacity(objects as usize);
-        for c in 0..objects{
+        for c in (0..objects).rev(){
             free_objects.push(c)
         }
 
@@ -171,9 +173,13 @@ impl<V:Vertex> HeapSystem<V>{
         indices:&[ElementIndexType],
         primitive_type:PrimitiveType
     )->Option<ObjectIDType>{
+        if vertices.len()==0{
+            return None
+        }
         if let Some(object_id)=self.free_objects.pop(){
             // Количество блоков для вершин и индексов
             let vertex_frames=(vertices.len()+frame_size-1)/frame_size;
+            // println!();
             let index_frames=(indices.len()+frame_size-1)/frame_size;
             // Проверка: есть ли нужное количество блоков для вершин и индексов
             if vertex_frames>self.free_vertex_frames.len() || index_frames>self.free_index_frames.len(){
@@ -297,22 +303,46 @@ impl<V:Vertex> HeapSystem<V>{
                 self.free_objects.push(id);
                 // Освобождение блоков вершин и добавление их в очередь
                 while let Some(vertex_frame_id)=object.vertex_frames.pop(){
-                    self.free_vertex_frames.push(vertex_frame_id);
+                    self.free_vertex_frames.push(vertex_frame_id)
                 }
                 // Освобождение блоков индексов и добавление их в очередь
                 while let Some(index_frame_id)=object.index_frames.pop(){
-                    self.free_index_frames.push(index_frame_id);
+                    self.free_index_frames.push(index_frame_id)
                 }
             }
         }
     }
 
     pub fn get_object(&self,id:ObjectIDType)->Option<&HeapObject>{
-        self.objects.get(id as usize)
+        if let Some(object)=self.objects.get(id as usize){
+            if object.vertex_frames.len()==0{
+                None
+            }
+            else{
+                Some(object)
+            }
+        }
+        else{
+            None
+        }
+    }
+
+    pub fn get_mut_object(&mut self,id:ObjectIDType)->Option<&mut HeapObject>{
+        if let Some(object)=self.objects.get_mut(id as usize){
+            if object.vertex_frames.len()==0{
+                None
+            }
+            else{
+                Some(object)
+            }
+        }
+        else{
+            None
+        }
     }
 
     pub fn get_drawable_object(&self,id:ObjectIDType)->Option<HeapDrawableObject>{
-        if let Some(object)=self.objects.get(id as usize){
+        if let Some(object)=self.get_object(id){
             Some(object.drawable())
         }
         else{
@@ -342,12 +372,18 @@ impl<V:Vertex> HeapSystem<V>{
                 return
             }
 
+            // Вписывание полных фреймов
             for c in 0..object.vertex_frames.len()-1{
                 let offset=object.vertex_frames[c] as usize*frame_size;
                 let vertices_slice=&vertices[c*frame_size..(c+1)*frame_size];
 
                 vertex_buffer.write(offset as isize,vertices_slice).unwrap();
             }
+
+            // Вписывание последнего фрейма
+            let offset=*object.vertex_frames.last().unwrap() as usize*frame_size;
+            let c=object.vertex_frames.len()-1;
+            vertex_buffer.write(offset as isize,&vertices[c*frame_size..]).unwrap();
         }
     }
 
@@ -377,6 +413,11 @@ impl<V:Vertex> HeapSystem<V>{
 
                 index_buffer.write(offset as isize,indices_slice).unwrap();
             }
+
+            // Вписывание последнего фрейма
+            let offset=*object.index_frames.last().unwrap() as usize*frame_size;
+            let c=object.index_frames.len()-1;
+            index_buffer.write(offset as isize,&indices[c*frame_size..]).unwrap();
         }
     }
 }

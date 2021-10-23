@@ -31,32 +31,32 @@ pub enum FramebufferTarget{
 
 #[derive(Clone,Copy,Debug)]
 pub struct FramebufferAttachement{
-    attachement:u32,
+    attachement:u32
 }
 
 impl FramebufferAttachement{
     /// `attachment` must be in the range zero to the value of GL_MAX_COLOR_ATTACHMENTS - 1
     pub const fn colour(attachment:u32)->FramebufferAttachement{
         Self{
-            attachement:COLOR_ATTACHMENT0+attachment,
+            attachement:COLOR_ATTACHMENT0+attachment
         }
     }
 
     pub const fn depth()->FramebufferAttachement{
         Self{
-            attachement:DEPTH_ATTACHMENT,
+            attachement:DEPTH_ATTACHMENT
         }
     }
 
     pub const fn stencil()->FramebufferAttachement{
         Self{
-            attachement:STENCIL_ATTACHMENT,
+            attachement:STENCIL_ATTACHMENT
         }
     }
 
     pub const fn depth_stencil()->FramebufferAttachement{
         Self{
-            attachement:DEPTH_STENCIL_ATTACHMENT,
+            attachement:DEPTH_STENCIL_ATTACHMENT
         }
     }
 }
@@ -70,7 +70,7 @@ pub enum BlitMask{
     ColourDepth=COLOR_BUFFER_BIT|DEPTH_BUFFER_BIT,
     ColourStencil=COLOR_BUFFER_BIT|STENCIL_BUFFER_BIT,
     DepthStencil=DEPTH_BUFFER_BIT|STENCIL_BUFFER_BIT,
-    ColourDepthStencil=COLOR_BUFFER_BIT|DEPTH_BUFFER_BIT|STENCIL_BUFFER_BIT,
+    ColourDepthStencil=COLOR_BUFFER_BIT|DEPTH_BUFFER_BIT|STENCIL_BUFFER_BIT
 }
 
 #[repr(u32)]

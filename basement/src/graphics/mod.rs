@@ -10,4 +10,4 @@ pub mod level2;
 pub type ColourComponent=f32;
 pub type Colour=[ColourComponent;4];
 
-pub static mut GCore:GraphicsCore=GraphicsCore::new();
+pub static mut GLCore:GraphicsCore=GraphicsCore::new();

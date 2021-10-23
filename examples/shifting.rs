@@ -6,11 +6,13 @@ use cat_engine::{
         Event,
         ProcessEvent,
         WindowEvent,
-        WindowProcedure,
-        WindowInner,
+        AppWindowProcedure,
+        OpenGLRenderContext,
+        WindowResizeType,
         quit,
     },
     graphics::{
+        Graphics,
         BlendingFunction,
         DrawMode,
     },
@@ -22,42 +24,71 @@ use cat_engine::{
 
 struct WindowHandle;
 
-impl WindowProcedure<WindowInner<Option<(Texture,f32)>>> for WindowHandle{
-    fn render(window:&Window,window_inner:&mut WindowInner<Option<(Texture,f32)>>){
-        window_inner.draw(window,|_,graphics,texture|{
-            graphics.clear_colour([1f32;4]);
-
-            // read here (line 83)
-            if let Some((texture,shift))=texture.as_ref(){
-                graphics.draw_parameters().switch(DrawMode::Shift);
-                graphics.draw_parameters().set_shift([*shift;2]);
-
-                graphics.draw_stack_textured_object(0,texture.texture_2d());
-
-                graphics.draw_parameters().switch(DrawMode::Shift);
-            }
-        }).unwrap_or_else(|_|{quit()});
+impl AppWindowProcedure<(Texture,f32),()> for WindowHandle{
+    fn create(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,()))->(Texture,f32){
+        (Texture::from_path("logo_400x400.png").unwrap(),0f32)
     }
 
-    fn handle(event:WindowEvent,_window:&Window,_window_inner:&mut WindowInner<Option<(Texture,f32)>>){
-        match event{
-            WindowEvent::CloseRequest=>quit(),
-            _=>{}
-        }
+    fn close_request(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut (Texture,f32))){
+        quit(0)
     }
+
+    fn destroy(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut (Texture,f32))){}
+
+    fn paint(
+        _window:&Window,
+        (_render_context,graphics,(texture,shift)):(&mut OpenGLRenderContext,&mut Graphics,&mut (Texture,f32))
+    ){
+        graphics.clear_colour([1f32;4]);
+        
+        graphics.graphics_2d.draw_parameters().switch(DrawMode::Shift);
+        graphics.graphics_2d.draw_parameters().set_shift([*shift;2]);
+
+        graphics.draw_stack_textured_object(0,texture.texture_2d());
+
+        graphics.graphics_2d.draw_parameters().switch(DrawMode::Shift);
+    }
+
+    #[cfg(feature="set_cursor_event")]
+    fn set_cursor(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut (Texture,f32))){}
+
+    fn resized(
+        _client_size:[u16;2],
+        _:WindowResizeType,
+        _:&Window,
+        _:(&mut OpenGLRenderContext,&mut Graphics,&mut (Texture,f32))
+    ){}
+
+    fn moved(
+        _client_position:[i16;2],
+        _:&Window,
+        _:(&mut OpenGLRenderContext,&mut Graphics,&mut (Texture,f32))
+    ){}
+
+    fn handle(
+        _event:WindowEvent,
+        _window:&Window,
+        _data:(&mut OpenGLRenderContext,&mut Graphics,&mut (Texture,f32))
+    ){}
+
+    #[cfg(feature="wnd_proc_catch_panic")]
+    fn catch_panic(
+        _window:&Window,
+        _data:(*mut OpenGLRenderContext,*mut Graphics,*mut (Texture,f32)),
+        _error:Box<dyn std::any::Any+Send>
+    ){}
 }
 
-fn main(){
-    let texture:Option<(Texture,f32)>=None;
 
+fn main(){
     let app_attributes=AppAttributes::new();
-    let app=App::new::<WindowHandle>(app_attributes,texture);
+    let app=App::new::<WindowHandle,()>(app_attributes,()).unwrap();
 
     let graphics=app.graphics();
 
     // Setting blending
-    graphics.core().blending.enable();
-    graphics.core().blending.set_function(
+    graphics.parameters.blend.enable();
+    graphics.parameters.blend.set_function(
         BlendingFunction::SourceAlpha,
         BlendingFunction::OneMinusSourceAlpha
     );
@@ -68,14 +99,12 @@ fn main(){
     );
     let _image=graphics.push_textured_object(&image_base).unwrap();
 
-    *app.storage()=Some((Texture::from_path("logo_400x400.png").unwrap(),0f32));
-
     app.event_loop.run(|event,_control|{
         match event{
-            Event::Process(ProcessEvent::Update(_))=>
-                if let Some((_,shift))=app.storage(){
-                    *shift+=1f32
-                }
+            Event::Process(ProcessEvent::Update(_))=>{
+                let (_,shift)=app.storage();
+                *shift+=1f32
+            }
 
             _=>{}
         }

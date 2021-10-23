@@ -10,8 +10,8 @@ use super::{
 };
 
 use cat_engine_basement::graphics::{
-    GCore,
-    core::UNPACK_ALIGNMENT,
+    GLCore,
+    core::parameters::UNPACK_ALIGNMENT,
     core::buffer::BufferUsage,
     core::drawing::PrimitiveType,
     core::texture::{
@@ -98,9 +98,9 @@ impl TextGraphics{
     }
 
     pub fn load_glyph_image(&self,size:[u32;2],image:&[u8]){
-        unsafe{GCore.set_pixel_storage_modei(UNPACK_ALIGNMENT,1)}
+        unsafe{GLCore.parameters.set_pixel_storage_modei(UNPACK_ALIGNMENT,1)}
         self.texture.write_image([0,0,size[0],size[1]],ImageDataFormat::R_U8,image);
-        unsafe{GCore.set_pixel_storage_modei(UNPACK_ALIGNMENT,4)}
+        unsafe{GLCore.parameters.set_pixel_storage_modei(UNPACK_ALIGNMENT,4)}
     }
 
     /// [offset_x,offset_y,width,height]
@@ -188,7 +188,7 @@ impl TextGraphics{
         let _=self.draw.set_uniform_value("glyph_colour",colour);
 
         unsafe{
-            GCore.drawing.draw_arrays(0,4,PrimitiveType::TriangleStrip)
+            GLCore.drawing.draw_arrays(0,4,PrimitiveType::TriangleStrip)
         }
         self.vertex_array.unbind();
     }
@@ -236,7 +236,7 @@ impl TextGraphics{
         let _=self.draw.set_uniform_value("glyph_colour",colour);
 
         unsafe{
-            GCore.drawing.draw_arrays(0,4,PrimitiveType::TriangleStrip)
+            GLCore.drawing.draw_arrays(0,4,PrimitiveType::TriangleStrip)
         }
         self.vertex_array.unbind();
     }

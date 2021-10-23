@@ -1,5 +1,3 @@
-use crate::implement_handle_wrapper;
-
 use super::{
     device_context::DeviceContextHandle,
 };
@@ -22,7 +20,6 @@ use winapi::{
         BITMAPINFO,
         BITMAPINFOHEADER,
         // functions
-        AlphaBlend,
         CreateBitmap,
         CreateBitmapIndirect,
         CreateCompatibleBitmap,
@@ -35,24 +32,21 @@ use winapi::{
         // formats of the colors
         DIB_PAL_COLORS,
         DIB_RGB_COLORS,
-
-        AC_SRC_OVER,
-        AC_SRC_ALPHA,
     },
 };
 
 #[derive(Clone,Copy,Debug)]
 #[repr(u32)]
 pub enum ColourFormat{
-    /// The color table should consist of an array of 16-bit indexes into the current logical palette.
+    /// The colour table should consist of an array of 16-bit indexes into the current logical palette.
     Palette=DIB_PAL_COLORS,
 
-    /// The color table should consist of literal red, green, blue (RGB) values.
+    /// The colour table should consist of literal red, green, blue (RGB) values.
     RGB=DIB_RGB_COLORS,
 }
 
 /// The `BitmapData` structure defines the width,
-/// height, color format, and bit values of a bitmap.
+/// height, colour format, and bit values of a bitmap.
 #[derive(Clone,Copy,Debug)]
 #[repr(C)]
 pub struct BitmapData{
@@ -72,10 +66,10 @@ pub struct BitmapData{
     /// that is word aligned.
     pub width_bytes:i32,
 
-    /// The count of color planes.
+    /// The count of colour planes.
     pub planes:u16,
 
-    /// The number of bits required to indicate the color of a pixel.
+    /// The number of bits required to indicate the colour of a pixel.
     pub pixel_bits:u16,
 
     /// A pointer to the location of the bit values for the bitmap.
@@ -203,7 +197,7 @@ impl Bitmap{
         )
     }
 
-    /// Creates a bitmap with the specified width, height, and color format (color planes and bits-per-pixel).
+    /// Creates a bitmap with the specified width, height, and colour format (colour planes and bits-per-pixel).
     /// 
     /// If an application sets the bmWidth or bmHeight members to zero,
     /// returns the handle to a 1-by-1 pixel, monochrome bitmap.
@@ -215,18 +209,18 @@ impl Bitmap{
     /// However, the bitmap can only be selected into a device context
     /// if the bitmap and the DC have the same format.
     /// 
-    /// While the `Bitmap::create_indirect` function can be used to create color bitmaps,
+    /// While the `Bitmap::create_indirect` function can be used to create colour bitmaps,
     /// for performance reasons applications should use `Bitmap::create_indirect`
-    /// to create monochrome bitmaps and `Bitmap::create_compatible` to create color bitmaps.
-    /// Whenever a color bitmap from `Bitmap::create_indirect` is selected into a device context,
+    /// to create monochrome bitmaps and `Bitmap::create_compatible` to create colour bitmaps.
+    /// Whenever a colour bitmap from `Bitmap::create_indirect` is selected into a device context,
     /// the system must ensure that the bitmap matches the format of the device context it is being selected into.
     /// Because `Bitmap::create_compatible` takes a device context,
     /// it returns a bitmap that has the same format as the specified device context.
-    /// Thus, subsequent calls to SelectObject are faster with a color bitmap from `Bitmap::create_compatible`
-    /// than with a color bitmap returned from `Bitmap::create_indirect`.
+    /// Thus, subsequent calls to SelectObject are faster with a colour bitmap from `Bitmap::create_compatible`
+    /// than with a colour bitmap returned from `Bitmap::create_indirect`.
     /// 
-    /// If the bitmap is monochrome,zeros represent the foreground color
-    /// and ones represent the background color for the destination device context.
+    /// If the bitmap is monochrome,zeros represent the foreground colour
+    /// and ones represent the background colour for the destination device context.
     /// 
     /// When you no longer need the bitmap,
     /// call the `DeleteObject` function to delete it.
@@ -247,20 +241,20 @@ impl Bitmap{
 
     /// Creates a bitmap compatible with the device that is associated with the specified device context.
     /// 
-    /// The color format of the bitmap created by the `Bitmap::create_compatible` function
-    /// matches the color format of the device identified by the hdc parameter.
+    /// The colour format of the bitmap created by the `Bitmap::create_compatible` function
+    /// matches the colour format of the device identified by the hdc parameter.
     /// This bitmap can be selected into any memory device context that is compatible with the original device.
     /// 
-    /// Because memory device contexts allow both color and monochrome bitmaps,
+    /// Because memory device contexts allow both colour and monochrome bitmaps,
     /// the format of the bitmap returned by the `Bitmap::create_compatible` function differs
     /// when the specified device context is a memory device context.
     /// However, a compatible bitmap that was created for a nonmemory device context
-    /// always possesses the same color format and uses the same color palette as the specified device context.
+    /// always possesses the same colour format and uses the same colour palette as the specified device context.
     /// 
     /// When a memory device context is created, it initially has a 1-by-1 monochrome bitmap selected into it.
     /// If this memory device context is used in `Bitmap::create_compatible`,
     /// the bitmap that is created is a monochrome bitmap.
-    /// To create a color bitmap,
+    /// To create a colour bitmap,
     /// use the HDC that was used to create the memory device context,
     /// as shown in the following code:
     /// ```
@@ -300,7 +294,6 @@ impl Bitmap{
     //     bitmap_header:&BITMAPINFOHEADER,
     //     bits:Option<&u8>,
     //     bitmap_info:&BITMAPINFO,
-
     // )->Option<BitmapHandle>{
     //     BitmapHandle::from_raw(
     //         CreateDIBitmap(
@@ -315,6 +308,9 @@ impl Bitmap{
 
     /// Deletes a bitmap freeing all system resources associated with the object.
     /// After the object is deleted, the specified handle is no longer valid.
+    /// 
+    /// When a pattern brush is deleted, the bitmap associated with the brush is not deleted.
+    /// The bitmap must be deleted independently.
     /// 
     /// If the function succeeds, the return value is `true`.
     /// 
@@ -339,40 +335,40 @@ impl Bitmap{
     /// 
     /// If the requested format for the DIB matches its internal format,
     /// the RGB values for the bitmap are copied.
-    /// If the requested format doesn't match the internal format, a color table is synthesized.
-    /// The following table describes the color table synthesized for each format.
+    /// If the requested format doesn't match the internal format, a colour table is synthesized.
+    /// The following table describes the colour table synthesized for each format.
     /// 
-    /// - 1_BPP - The color table consists of a black and a white entry.
-    /// - 4_BPP - The color table consists of a mix of colours identical to the standard VGA palette.
-    /// - 8_BPP - The color table consists of a general mix of 256 colours defined by GDI.
+    /// - 1_BPP - The colour table consists of a black and a white entry.
+    /// - 4_BPP - The colour table consists of a mix of colours identical to the standard VGA palette.
+    /// - 8_BPP - The colour table consists of a general mix of 256 colours defined by GDI.
     /// (Included in these 256 colours are the 20 colours found in the default logical palette.)
-    /// - 24_BPP - No color table is returned.
+    /// - 24_BPP - No colour table is returned.
     /// 
-    /// If the lpvBits parameter is a valid pointer,
-    /// the first six members of the BITMAPINFOHEADER structure must be initialized
+    /// If the `bits` parameter is a valid pointer,
+    /// the first six members of the `BITMAPINFOHEADER` structure must be initialized
     /// to specify the size and format of the DIB.
     /// The scan lines must be aligned on a DWORD except for RLE compressed bitmaps.
     /// 
     /// A bottom-up DIB is specified by setting the height to a positive number,
     /// while a top-down DIB is specified by setting the height to a negative number.
-    /// The bitmap color table will be appended to the BITMAPINFO structure.
+    /// The bitmap colour table will be appended to the `BITMAPINFO` structure.
     /// 
-    /// If lpvBits is NULL, GetDIBits examines the first member of the first structure pointed to by lpbi.
-    /// This member must specify the size, in bytes, of a BITMAPCOREHEADER or a BITMAPINFOHEADER structure.
+    /// If `bits` is `None`, `Bitmap::get_bits` examines the first member of the first structure pointed to by lpbi.
+    /// This member must specify the size, in bytes, of a `BITMAPCOREHEADER` or a `BITMAPINFOHEADER` structure.
     /// The function uses the specified size to determine how the remaining members should be initialized.
     /// 
-    /// If lpvBits is NULL and the bit count member of BITMAPINFO is initialized to zero,
-    /// GetDIBits fills in a BITMAPINFOHEADER structure or BITMAPCOREHEADER without the color table.
+    /// If `bits` is `None` and the bit count member of `BITMAPINFO` is initialized to zero,
+    /// `Bitmap::get_bits` fills in a `BITMAPINFOHEADER` structure or `BITMAPCOREHEADER` without the colour table.
     /// This technique can be used to query bitmap attributes.
     /// 
-    /// The bitmap identified by the hbmp parameter must not be selected
+    /// The bitmap identified by the `bitmap` parameter must not be selected
     /// into a device context when the application calls this function.
     /// 
     /// The origin for a bottom-up DIB is the lower-left corner of the bitmap;
     /// the origin for a top-down DIB is the upper-left corner.
     /// 
     /// If the `bits` parameter is `None`
-    /// and the function successfully fills the `BitmapInfo` structure,
+    /// and the function successfully fills the `BITMAPINFO` structure,
     /// the return value is nonzero.
     #[inline(always)]
     pub unsafe fn get_bits(
@@ -417,15 +413,15 @@ impl Bitmap{
     /// The origin for bottom-up DIBs is the lower-left corner of the bitmap;
     /// the origin for top-down DIBs is the upper-left corner of the bitmap.
     /// 
-    /// ICM: Color management is performed if color management has been enabled
-    /// with a call to SetICMMode with the iEnableICM parameter set to ICM_ON.
-    /// If the bitmap specified by lpbmi has a BITMAPV4HEADER
+    /// ICM: Colour management is performed if colour management has been enabled
+    /// with a call to `SetICMMode` with the `iEnableICM` parameter set to `ICM_ON`.
+    /// If the bitmap specified by lpbmi has a `BITMAPV4HEADER`
     /// that specifies the gamma and endpoints members,
-    /// or a BITMAPV5HEADER that specifies either the gamma
-    /// and endpoints membersor the profileData and profileSize members,
+    /// or a `BITMAPV5HEADER` that specifies either the gamma
+    /// and endpoints membersor the `profileData` and `profileSize` members,
     /// then the call treats the bitmap's pixels as being expressed
-    /// in the color space described by those members,
-    /// rather than in the device context's source color space.
+    /// in the colour space described by those members,
+    /// rather than in the device context's source colour space.
     /// 
     /// If the function succeeds, the return value is the number of scan lines copied.
     /// 
@@ -469,135 +465,4 @@ impl Bitmap{
             transmute(object_data)
         )!=0
     }
-}
-
-
-/// Controls blending by specifying the blending functions for source and destination bitmaps.
-#[repr(C)]
-pub struct BlendFunction{
-    /// The source blend operation.
-    /// Currently, the only source and destination blend operation
-    /// that has been defined is AC_SRC_OVER.
-    operation:u8,
-
-    /// Must be zero.
-    flags:u8,
-
-    /// Specifies an alpha transparency value to be used on the entire source bitmap.
-    /// The value is combined with any per-pixel alpha values in the source bitmap.
-    /// If you set the value to 0, it is assumed that your image is transparent.
-    /// Set the value to 255 (opaque) when you only want to use per-pixel alpha values.
-    source_constant_alpha:u8,
-
-    /// This flag is set when the bitmap has an Alpha channel (that is, per-pixel alpha).
-    /// Note that the APIs use premultiplied alpha,
-    /// which means that the red, green and blue channel values in the bitmap
-    /// must be premultiplied with the alpha channel value.
-    /// For example, if the alpha channel value is x, the red, green and blue channels
-    /// must be multiplied by x and divided by 0xff prior to the call.
-    alpha_format:u8,
-}
-
-impl BlendFunction{
-    pub const fn new(source_constant_alpha:u8)->BlendFunction{
-        Self{
-            operation:AC_SRC_OVER,
-            flags:0u8,
-            source_constant_alpha,
-            alpha_format:AC_SRC_ALPHA
-        }
-    }
-}
-
-impl Bitmap{
-    /// Displays bitmaps that have transparent or semitransparent pixels.
-    /// 
-    /// When the `AlphaFormat` member is `AC_SRC_ALPHA` (always),
-    /// the source bitmap must be 32 bpp.
-    /// If it is not, the AlphaBlend function will fail.
-    /// 
-    /// When the `BlendOp` member is `AC_SRC_OVER` (always),
-    /// the source bitmap is placed over the destination bitmap
-    /// based on the alpha values of the source pixels.
-    /// ```
-    /// colour = source * (source_alpha/255) + destination * (1-(destination_alpha/255))
-    /// ```
-    /// 
-    /// If the source bitmap does not use `source_constant_alpha` (that is, it equals 0xFF),
-    /// the per-pixel alpha determines the blend of the source and destination bitmaps,
-    /// as shown in the following table.
-    /// ```
-    /// colour = source + destination * (1-source_alpha))
-    /// ```
-    /// 
-    /// If the source has both the `source_constant_alpha` (that is, it is not 0xFF) and per-pixel alpha,
-    /// the source is pre-multiplied by the `source_constant_alpha`
-    /// and then the blend is based on the per-pixel alpha.
-    /// The following tables show this.
-    /// Note that `source_constant_alpha` is divided by 255 because it has a value that ranges from 0 to 255.
-    /// ```
-    /// colour = source + source_alpha/255
-    /// ```
-    /// 
-    /// If the source rectangle and destination rectangle are not the same size,
-    /// the source bitmap is stretched to match the destination rectangle.
-    /// If the `SetStretchBltMode` function is used,
-    /// the `iStretchMode` value is automatically converted to COLORONCOLOR for this function
-    /// (that is, BLACKONWHITE, WHITEONBLACK, and HALFTONE are changed to COLORONCOLOR).
-    /// 
-    /// The destination coordinates are transformed
-    /// by using the transformation currently specified for the destination device context.
-    /// The source coordinates are transformed
-    /// by using the transformation currently specified for the source device context.
-    /// 
-    /// An error occurs (and the function returns `false`)
-    /// if the source device context identifies an enhanced metafile device context.
-    /// 
-    /// If destination and source bitmaps do not have the same color format,
-    /// `Bitmap::alpha_blend` converts the source bitmap to match the destination bitmap.
-    /// 
-    /// `Bitmap::alpha_blend` does not support mirroring.
-    /// If either the width or height of the source or destination is negative,
-    /// this call will fail.
-    /// 
-    /// When rendering to a printer, first call GetDeviceCaps with SHADEBLENDCAPS to determine
-    /// if the printer supports blending with AlphaBlend. Note that, for a display DC,
-    /// all blending operations are supported and these flags represent whether the operations are accelerated.
-    /// 
-    /// If the source and destination are the same surface,
-    /// that is, they are both the screen or the same memory bitmap
-    /// and the source and destination rectangles overlap,
-    /// an error occurs and the function returns `false`.
-    /// 
-    /// The source rectangle must lie completely within the source surface,
-    /// otherwise an error occurs and the function returns `false`.
-    /// 
-    /// `Bitmap::alpha_blend` fails if the width or height of the source or destination is negative.
-    /// 
-    /// The `source_constant_alpha` member of `BlendFunction` specifies an alpha transparency value to be used
-    /// on the entire source bitmap. The `source_constant_alpha` value is combined with any per-pixel alpha values.
-    /// If `source_constant_alpha` is 0, it is assumed that the image is transparent.
-    /// Set the `source_constant_alpha` value to 255 (which indicates that the image is opaque)
-    /// when you only want to use per-pixel alpha values.
-    /// 
-    /// If the function succeeds, the return value is `true`.
-    /// 
-    /// If the function fails, the return value is `false`.
-    #[inline(always)]
-    pub unsafe fn alpha_blend(
-        &self,
-        destination_context:DeviceContextHandle,
-        [dx,dy,dwidth,dheight]:[i32;4],
-        source_context:DeviceContextHandle,
-        [sx,sy,swidth,sheight]:[i32;4],
-        function:BlendFunction,
-    )->bool{
-        AlphaBlend(
-            destination_context.as_raw(),
-            dx,dy,dwidth,dheight,
-            source_context.as_raw(),
-            sx,sy,swidth,sheight,
-            transmute(function)
-        )!=0
-    } 
 }

@@ -1,5 +1,5 @@
 use crate::graphics::{
-    GCore,
+    GLCore,
     core::GLError,
     core::shader::{
         ShaderType,
@@ -17,7 +17,7 @@ impl Shader{
     pub fn generate(shader_type:ShaderType)->Shader{
         unsafe{
             Self{
-                id:GCore.shader.create(shader_type),
+                id:GLCore.shader.create(shader_type),
             }
         }
     }
@@ -27,11 +27,11 @@ impl Shader{
     /// Создаёт и компилирует шейдер без проверки результата.
     pub unsafe fn new_unchecked(source:&str,shader_type:ShaderType)->Shader{
         // Создание шейдера
-        let id=GCore.shader.create(shader_type);
+        let id=GLCore.shader.create(shader_type);
         // Загрузка кода
-        GCore.shader.source(id,source);
+        GLCore.shader.source(id,source);
         // Компиляция
-        GCore.shader.compile(id);
+        GLCore.shader.compile(id);
 
         Self{
             id,
@@ -47,15 +47,15 @@ impl Shader{
 
             // Проверка компиляции
             let mut result:i32=MaybeUninit::uninit().assume_init();
-            GCore.shader.get_parameter(shader.id(),ShaderParameter::CompileStatus,&mut result);
+            GLCore.shader.get_parameter(shader.id(),ShaderParameter::CompileStatus,&mut result);
 
             if result==0{
                 let mut length=MaybeUninit::uninit().assume_init();
-                GCore.shader.get_parameter(shader.id(),ShaderParameter::InfoLogLength,&mut length);
+                GLCore.shader.get_parameter(shader.id(),ShaderParameter::InfoLogLength,&mut length);
 
                 let mut log=String::with_capacity(length as usize);
 
-                GCore.shader.get_info_log(shader.id(),&mut log);
+                GLCore.shader.get_info_log(shader.id(),&mut log);
 
                 return Err(log);
             }
@@ -73,22 +73,22 @@ impl Shader{
 impl Shader{
     pub fn compile(&self)->GLError{
         unsafe{
-            GCore.shader.compile(self.id);
-            GCore.get_error()
+            GLCore.shader.compile(self.id);
+            GLCore.get_error()
         }
     }
 
     pub fn get_parameter(&self,parameter:ShaderParameter,value:&mut i32)->GLError{
         unsafe{
-            GCore.shader.get_parameter(self.id,parameter,value);
-            GCore.get_error()
+            GLCore.shader.get_parameter(self.id,parameter,value);
+            GLCore.get_error()
         }
     }
 
     pub fn get_info_log(&self,log:&mut String)->GLError{
         unsafe{
-            GCore.shader.get_info_log(self.id,log);
-            GCore.get_error()
+            GLCore.shader.get_info_log(self.id,log);
+            GLCore.get_error()
         }
     }
 }
@@ -96,7 +96,7 @@ impl Shader{
 impl Drop for Shader{
     fn drop(&mut self){
         unsafe{
-            GCore.shader.delete(self.id);
+            GLCore.shader.delete(self.id);
         }
     }
 }

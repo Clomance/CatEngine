@@ -1,4 +1,4 @@
-use crate::graphics::GCore;
+use crate::graphics::GLCore;
 
 use super::Program;
 
@@ -35,73 +35,73 @@ impl<'a> Uniform<'a>{
 
     pub fn set_f32_1(&self,value:f32){
         unsafe{
-            GCore.uniform.set_f32_1(self.id,value)
+            GLCore.uniform.set_f32_1(self.id,value)
         }
     }
 
     pub fn set_f32_2(&self,values:[f32;2]){
         unsafe{
-            GCore.uniform.set_f32_2(self.id,values)
+            GLCore.uniform.set_f32_2(self.id,values)
         }
     }
 
     pub fn set_f32_3(&self,values:[f32;3]){
         unsafe{
-            GCore.uniform.set_f32_3(self.id,values)
+            GLCore.uniform.set_f32_3(self.id,values)
         }
     }
 
     pub fn set_f32_4(&self,values:[f32;4]){
         unsafe{
-            GCore.uniform.set_f32_4(self.id,values)
+            GLCore.uniform.set_f32_4(self.id,values)
         }
     }
 
     pub fn set_i32_1(&self,value:i32){
         unsafe{
-            GCore.uniform.set_i32_1(self.id,value)
+            GLCore.uniform.set_i32_1(self.id,value)
         }
     }
 
     pub fn set_i32_2(&self,values:[i32;2]){
         unsafe{
-            GCore.uniform.set_i32_2(self.id,values)
+            GLCore.uniform.set_i32_2(self.id,values)
         }
     }
 
     pub fn set_i32_3(&self,values:[i32;3]){
         unsafe{
-            GCore.uniform.set_i32_3(self.id,values)
+            GLCore.uniform.set_i32_3(self.id,values)
         }
     }
 
     pub fn set_i32_4(&self,values:[i32;4]){
         unsafe{
-            GCore.uniform.set_i32_4(self.id,values)
+            GLCore.uniform.set_i32_4(self.id,values)
         }
     }
 
     pub fn set_u32_1(&self,value:u32){
         unsafe{
-            GCore.uniform.set_u32_1(self.id,value)
+            GLCore.uniform.set_u32_1(self.id,value)
         }
     }
 
     pub fn set_u32_2(&self,values:[u32;2]){
         unsafe{
-            GCore.uniform.set_u32_2(self.id,values)
+            GLCore.uniform.set_u32_2(self.id,values)
         }
     }
 
     pub fn set_u32_3(&self,values:[u32;3]){
         unsafe{
-            GCore.uniform.set_u32_3(self.id,values)
+            GLCore.uniform.set_u32_3(self.id,values)
         }
     }
 
     pub fn set_u32_4(&self,values:[u32;4]){
         unsafe{
-            GCore.uniform.set_u32_4(self.id,values)
+            GLCore.uniform.set_u32_4(self.id,values)
         }
     }
 }

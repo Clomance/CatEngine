@@ -6,6 +6,7 @@ use crate::windows::{
         WindowHandle
     },
     core::device_context::DeviceContextHandle,
+    // level0::cursor::Cursor,
 };
 
 pub use crate::windows::core::window::{
@@ -63,7 +64,8 @@ pub struct CreateParameters<A>{
         w_param:usize,
         l_param:isize,
     )->isize,
-    pub window_procedure_args:*mut A,
+
+    pub create_parameters:*mut A,
     /// Defines whether redraw is requested immediately after redraw event processes.
     pub auto_redraw:bool,
 }
@@ -82,10 +84,10 @@ pub struct Window{
 }
 
 impl Window{
-    pub fn new<W:WindowProcedure<A>,A>(
+    pub fn new<W:WindowProcedure>(
         class:&WindowClass,
         attributes:WindowAttributes,
-        window_procedure_args:&mut A,
+        create_parameters:&mut W::CreateParameters,
     )->Result<Window,WinError>{
         let window_name:Vec<u16>=attributes.name
             .encode_wide()
@@ -152,8 +154,8 @@ impl Window{
 
         unsafe{
             let mut create_parameters=CreateParameters{
-                window_procedure:window_procedure::<W,A>,
-                window_procedure_args,
+                window_procedure:window_procedure::<W>,
+                create_parameters,
                 auto_redraw:attributes.auto_redraw,
             };
 
@@ -164,9 +166,9 @@ impl Window{
                 extended_style,
                 [x,y,width,height],
                 None,
-                null_mut(),
-                null_mut(),
-                &mut create_parameters,
+                None,
+                None,
+                Some(&mut create_parameters),
             ){
                 Ok(Self{
                     handle:window_handle,
@@ -373,8 +375,8 @@ impl Window{
         WinCore.window.set_window_long_ptr(self.handle,WindowData::WindowProcedure,procedure as isize);
     }
 
-    pub unsafe fn set_window_handle<W:WindowProcedure<A>,A>(&self){
-        WinCore.window.set_window_long_ptr(self.handle,WindowData::WindowProcedure,window_procedure::<W,A> as isize);
+    pub unsafe fn set_window_handle<W:WindowProcedure>(&self){
+        WinCore.window.set_window_long_ptr(self.handle,WindowData::WindowProcedure,window_procedure::<W> as isize);
     }
 }
 
@@ -386,8 +388,8 @@ impl Window{
     pub fn cursor_position(&self)->[i32;2]{
         unsafe{
             let mut point=[0i32;2];
-
             WinCore.cursor.get_position(&mut point);
+
             WinCore.window.screen_to_client(self.handle,&mut point);
 
             point

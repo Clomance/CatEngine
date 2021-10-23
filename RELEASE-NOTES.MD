@@ -1,6 +1,45 @@
+# 1.0.0 - alpha6
+
+### The `WindowProcedure` trait
+New functions:
+ - `create` - called when an application requests that a window be created
+ - `close_request` - called as a signal that a window or an application should terminate
+ - `destroy` - called when a window is being destroyed, after the window is removed from the screen
+ - `set_cursor` - called if the mouse causes the cursor to move within a window and mouse input is not captured (the `set_cursor_event` feature)
+ - `resized` - called after window's size has changed
+ - `moved` - called after a window has been moved
+ - `catch_panic` - called when one of the functions above panics and `catch_unwind` catches the panic in `WndProc`
+
+Renamed `render` to `paint`
+
+Renamed `DrawParameters` from `Graphics` to `DrawParameters2D`
+
+Renamed `GCore` to `GLCore`
+
+### Added
+ - the `AppWindowProcedure` trait - wraps `WindowProcedure`
+ - the `set_cursor_event` feature for handling set cursor events
+ - the `InstanceHandle`, `WindowClassInfo` structs
+ - cursor, brush, icon raw  functions for Windows (`WinCore`)
+ - the `CursorIcon::System` enumetion, it contains the system defined cursor
+ - the `DrawParameters` struct to `GLCore`
+ - the `GraphicsCore::flush` function
+
+### Other
+
+`CursorIcon::None` now doesn't set any cursor, use it for dynamic changing the cursor icon.
+In that case use `Cursor::set` to set the cursor
+
+The `quit` function has got an argument.
+
+Drawing heap objects is safe. It doesn't panic if you set a wrong object id.
+All objects with zero vertices are ignored, you can't add or push any.
+Also ids returned by `add_heap_object` start from zero.
+
+
 # 1.0.0 - alpha5
 
-## CatEngineBasement - 0.0.0-alpha4
+## CatEngineBasement - 0.0.0-alpha5
 
 ### Added
  - `WindowHandle` as a replacment for `HWND`
@@ -12,7 +51,7 @@
  - `Window::show_window` and `ShowCommand` to `WinCore`
  - `Window::client_to_screen`, `Window::screen_to_client` to `WinCore`
  - a `WindowProcedure::render` function
- - all the GL `Buffer` functions that are available for OpenGL 3.3 to `GCore`
+ - all the GL `Buffer` functions that are available for OpenGL 3.3 to `GLCore`
 
 ### Removed
  - `Redraw` from `WindowEvent`.

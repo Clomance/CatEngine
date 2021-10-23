@@ -1,18 +1,23 @@
-use super::window::WindowHandle;
+use super::{
+    InstanceHandle,
+    window::WindowHandle,
+    icon::IconHandle,
+    cursor::CursorHandle,
+    brush::BrushHandle,
+};
 
 use core::{
     mem::{
+        size_of,
         transmute,
-        transmute_copy
+        transmute_copy,
     },
     num::NonZeroU16,
 };
 
 use winapi::{
     shared::{
-        minwindef::HINSTANCE,
         windef::{
-            HICON,
             HBRUSH,
         }
     },
@@ -217,6 +222,25 @@ impl ClassAtom{
     }
 }
 
+
+/// Contains window class information.
+/// It is used with the RegisterClassEx and GetClassInfoEx functions.
+#[repr(C)]
+pub struct WindowClassInfo{
+    size:u32,
+    pub styles:WindowClassStyles,
+    pub lpfnWndProc:unsafe extern "system" fn(WindowHandle,u32,usize,isize)->isize,
+    pub class_data:i32,
+    pub window_extra_data:i32,
+    pub instance:Option<InstanceHandle>,
+    pub icon:Option<IconHandle>,
+    pub cursor:Option<CursorHandle>,
+    pub background:Option<BrushHandle>,
+    pub menu_name:*const u16,
+    pub class_name:*const u16,
+    pub small_icon:Option<IconHandle>,
+}
+
 /// All window classes that an application registers are unregistered when it terminates.
 /// 
 /// No window classes registered by a DLL are unregistered when the DLL is unloaded.
@@ -237,37 +261,37 @@ impl WindowClass{
     /// the return value is a class atom that uniquely identifies the class being registered.
     /// If the function fails, the return value is zero.
     /// To get extended error information, call `WindowsCore::get_last_error`.
-    pub unsafe fn register(
+    pub fn register(
         &self,
         class_name:*const u16,
         styles:WindowClassStyles,
-        window_procedure:Option<unsafe extern "system" fn(WindowHandle,u32,usize,isize)->isize>,
-        class_extra_data:i32,
-        window_extra_data:i32,
-        instance:HINSTANCE,
-        window_icon:HICON,
-        small_window_icon:HICON,
-        cursor:HICON,
-        background:HBRUSH,
+        window_procedure:unsafe extern "system" fn(WindowHandle,u32,usize,isize)->isize,
+        class_data:i32,
+        window_data:i32,
+        instance:Option<InstanceHandle>,
+        window_icon:Option<IconHandle>,
+        small_window_icon:Option<IconHandle>,
+        cursor:Option<CursorHandle>,
+        background:Option<BrushHandle>,
         menu_name:*const u16,
     )->Option<ClassAtom>{
-        let class_attributes=WNDCLASSEXW{
-            cbSize:std::mem::size_of::<WNDCLASSEXW>() as u32,
-            style:styles.flag,
-            lpfnWndProc:transmute(window_procedure),
-            cbClsExtra:class_extra_data,
-            cbWndExtra:window_extra_data,
-            hInstance:instance,
-            hIcon:window_icon,
-            hCursor:cursor,
-            hbrBackground:background,
-            lpszMenuName:menu_name,
-            lpszClassName:class_name,
-            hIconSm:small_window_icon,
-        };
-        ClassAtom::from_raw(
-            RegisterClassExW(&class_attributes)
-        )
+        unsafe{
+            let class_attributes=WNDCLASSEXW{
+                cbSize:size_of::<WNDCLASSEXW>() as u32,
+                style:styles.flag,
+                lpfnWndProc:transmute(window_procedure),
+                cbClsExtra:class_data,
+                cbWndExtra:window_data,
+                hInstance:InstanceHandle::to_raw(instance),
+                hIcon:IconHandle::to_raw(window_icon),
+                hCursor:CursorHandle::to_raw(cursor),
+                hbrBackground:BrushHandle::to_raw(background),
+                lpszMenuName:menu_name,
+                lpszClassName:class_name,
+                hIconSm:IconHandle::to_raw(small_window_icon),
+            };
+            ClassAtom::from_raw(RegisterClassExW(&class_attributes))
+        }
     }
 
     /// Unregisters a window class, freeing the memory required for the class.
@@ -278,8 +302,11 @@ impl WindowClass{
     /// If the class could not be found or if a window still exists that was created with the class,
     /// the return value is `false`.
     /// To get extended error information, call `WindowsCore::get_last_error`.
-    pub unsafe fn unregister(&self,class:ClassIdentifier,instance:HINSTANCE)->bool{
-        UnregisterClassW(class.identifier as *const _,instance)!=0
+    #[inline(always)]
+    pub fn unregister(&self,class:ClassIdentifier,instance:Option<InstanceHandle>)->bool{
+        unsafe{
+            UnregisterClassW(class.identifier as *const _,InstanceHandle::to_raw(instance))!=0
+        }
     }
 
     /// Retrieves information about a window class,
@@ -290,13 +317,20 @@ impl WindowClass{
     /// the return value is `true`.
     /// If the function does not find a matching class and successfully copy the data,
     /// the return value is `false`.
-    /// To get extended error information, call `WindowsCore::get_last_error`..
-    pub unsafe fn get_info(
+    /// To get extended error information, call `WindowsCore::get_last_error`.
+    #[inline(always)]
+    pub fn get_info(
         &self,
         class:ClassIdentifier,
-        instance:HINSTANCE,
-        info:&mut WNDCLASSEXW
+        instance:Option<InstanceHandle>,
+        info:&mut WindowClassInfo
     )->bool{
-        GetClassInfoExW(instance,class.identifier as *const _,info)!=0
+        unsafe{
+            GetClassInfoExW(
+                InstanceHandle::to_raw(instance),
+                class.identifier as *const _,
+                transmute(info)
+            )!=0
+        }
     }
 }

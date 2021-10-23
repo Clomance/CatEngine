@@ -64,7 +64,7 @@ impl AvailableIndexType for u32{
 
 /// Specifies the kind of primitives.
 #[repr(u32)]
-#[derive(Clone,Copy)]
+#[derive(Clone,Copy,Debug,PartialEq,PartialOrd,Eq,Ord)]
 pub enum PrimitiveType{
     Points=POINTS,
     Lines=LINES,
@@ -131,7 +131,13 @@ impl Drawing{
     /// or if a geometry shader is active and mode is incompatible
     /// with the input primitive type of the geometry shader in the currently installed program object.
     #[inline]
-    pub unsafe fn draw_elements(&self,start:i32,count:i32,index_type:IndexType,mode:PrimitiveType){
+    pub unsafe fn draw_elements(
+        &self,
+        start:i32,
+        count:i32,
+        index_type:IndexType,
+        mode:PrimitiveType
+    ){
         let offset=match index_type{
             IndexType::U8=>u8::offset(start as isize),
             IndexType::U16=>u16::offset(start as isize),
@@ -162,8 +168,18 @@ impl Drawing{
     /// if a non-zero buffer object name is bound to an enabled array
     /// and the buffer object's data store is currently mapped.
     #[inline(always)]
-    pub unsafe fn multi_draw_arrays(&self,start:&[i32],count:&[i32],mode:PrimitiveType){
-        transmute::<usize,fn(PrimitiveType,&i32,&i32,i32)>(self.glMultiDrawArrays)(mode,&start[0],&count[0],start.len() as i32)
+    pub unsafe fn multi_draw_arrays(
+        &self,
+        start:&[i32],
+        count:&[i32],
+        mode:PrimitiveType
+    ){
+        transmute::<usize,fn(PrimitiveType,&i32,&i32,i32)>(self.glMultiDrawArrays)(
+            mode,
+            start.get_unchecked(0),
+            count.get_unchecked(0),
+            start.len() as i32
+        )
     }
 
     /// Renders multiple sets of primitives by specifying indices of array data elements.
@@ -181,9 +197,9 @@ impl Drawing{
     ){
         transmute::<usize,fn(PrimitiveType,&i32,IndexType,&isize,i32)>(self.glMultiDrawElements)(
             mode,
-            &count[0],
+            count.get_unchecked(0),
             index_type,
-            &start[0],
+            start.get_unchecked(0),
             start.len() as i32
         )
     }
@@ -193,7 +209,7 @@ impl Drawing{
     /// `GLError::InvalidOperation` is generated
     /// if a non-zero buffer object name is bound to an enabled array or the element array
     /// and the buffer object's data store is currently mapped.
-    #[inline]
+    #[inline(always)]
     pub unsafe fn multi_draw_elements_typed<T:AvailableIndexType>(
         &self,
         start:&[isize],
@@ -202,9 +218,9 @@ impl Drawing{
     ){
         transmute::<usize,fn(PrimitiveType,&i32,u32,&isize,i32)>(self.glMultiDrawElements)(
             mode,
-            &count[0],
+            count.get_unchecked(0),
             T::gl_enum(),
-            &start[0],
+            start.get_unchecked(0),
             start.len() as i32
         )
     }

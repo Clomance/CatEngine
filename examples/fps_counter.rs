@@ -8,15 +8,19 @@ use cat_engine::{
         App,
         AppAttributes,
         Window,
-        WindowInner,
         WindowEvent,
-        WindowProcedure,
+        AppWindowProcedure,
         Event,
         ProcessEvent,
         VirtualKeyCode,
+        Monitor,
+        OpenGLRenderContext,
+        Fullscreen,
+        WindowResizeType,
         quit,
     },
     graphics::{
+        Graphics,
         BlendingFunction,
         PrimitiveType,
         TexturedVertex2D,
@@ -34,57 +38,96 @@ struct DrawData{
 }
 
 struct RenderData{
-    texture:Option<Texture>,
+    texture:Texture,
     redraw:DrawData,
 }
 
 struct WindowHandle;
 
-impl WindowProcedure<WindowInner<RenderData>> for WindowHandle{
-    fn render(window:&Window,window_inner:&mut WindowInner<RenderData>){
-        let draw_start=Instant::now();
-                let redraw_event_period=draw_start.duration_since(window_inner.storage().redraw.last_redraw);
-                window_inner.storage().redraw.last_redraw=draw_start;
-
-                window_inner.storage().redraw.current_fps=
-                    (Duration::from_secs(1).as_nanos()/redraw_event_period.as_nanos()) as u32;
-
-                window_inner.draw(window,|_window,graphics,render_data|{
-                    graphics.clear_colour([1f32;4]);
-
-                    if let Some(texture)=render_data.texture.as_ref(){
-                        graphics.draw_stack_textured_object(0,texture.texture_2d());
-                        graphics.draw_stack_textured_object(1,texture.texture_2d());
-                        graphics.draw_stack_textured_object(2,texture.texture_2d());
-                    }
-                }).unwrap_or_else(|_|{quit()});
+impl AppWindowProcedure<RenderData,()> for WindowHandle{
+    fn create(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,()))->RenderData{
+        RenderData{
+            texture:Texture::from_path("logo_400x400.png").unwrap(),
+            redraw:DrawData{
+                last_redraw:Instant::now(),
+                current_fps:0u32,
+            }
+        }
     }
 
-    fn handle(event:WindowEvent,_window:&Window,_window_inner:&mut WindowInner<RenderData>){
+    fn close_request(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)){
+        quit(0)
+    }
+
+    fn destroy(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)){}
+
+    fn paint(
+        _window:&Window,
+        (_render_context,graphics,data):(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)
+    ){
+        let draw_start=Instant::now();
+        let redraw_event_period=draw_start.duration_since(data.redraw.last_redraw);
+        data.redraw.last_redraw=draw_start;
+
+        data.redraw.current_fps=
+            (Duration::from_secs(1).as_nanos()/redraw_event_period.as_nanos()) as u32;
+
+        graphics.clear_colour([1f32;4]);
+
+        graphics.draw_stack_textured_object(0,data.texture.texture_2d());
+        graphics.draw_stack_textured_object(1,data.texture.texture_2d());
+        graphics.draw_stack_textured_object(2,data.texture.texture_2d());
+    }
+
+    #[cfg(feature="set_cursor_event")]
+    fn set_cursor(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)){}
+
+    fn resized(
+        _client_size:[u16;2],
+        _:WindowResizeType,
+        _:&Window,
+        _:(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)
+    ){}
+
+    fn moved(
+        _client_position:[i16;2],
+        _:&Window,
+        _:(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)
+    ){}
+
+    fn handle(
+        event:WindowEvent,
+        window:&Window,
+        _data:(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)
+    ){
         match event{
-            WindowEvent::CloseRequest=>quit(),
+            WindowEvent::KeyPress(VirtualKeyCode::A)=>{
+                window.set_fullscreen(Fullscreen::Monitor(Monitor::get_primary_monitor()))
+            }
+
+            WindowEvent::KeyPress(VirtualKeyCode::S)=>{
+                window.set_fullscreen(Fullscreen::None)
+            }
             _=>{}
         }
     }
+
+    #[cfg(feature="wnd_proc_catch_panic")]
+    fn catch_panic(
+        _window:&Window,
+        _data:(*mut OpenGLRenderContext,*mut Graphics,*mut RenderData),
+        _error:Box<dyn std::any::Any+Send>
+    ){}
 }
 
 fn main(){
     let app_attributes=AppAttributes::new();
-
-    let render_data=RenderData{
-        texture:None,
-        redraw:DrawData{
-            last_redraw:Instant::now(),
-            current_fps:0u32,
-        }
-    };
-
-    let app=App::new::<WindowHandle>(app_attributes,render_data);
+    let app=App::new::<WindowHandle,()>(app_attributes,()).unwrap();
 
     let graphics=app.graphics();
 
-    graphics.core().blending.enable();
-    graphics.core().blending.set_function(
+    graphics.parameters.blend.enable();
+    graphics.parameters.blend.set_function(
         BlendingFunction::SourceAlpha,
         BlendingFunction::OneMinusSourceAlpha
     );
@@ -119,8 +162,6 @@ fn main(){
         [1.0;4] // colour filter
     );
     let _image3=graphics.push_textured_object(&image_base).unwrap();
-
-    app.storage().texture=Some(Texture::from_path("logo_400x400.png").unwrap());
 
     let mut updates=0;
     app.event_loop.run(|event,_app_control|{

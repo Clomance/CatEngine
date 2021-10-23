@@ -3,13 +3,15 @@ use cat_engine::{
         App,
         AppAttributes,
         Window,
-        WindowInner,
         WindowEvent,
-        WindowProcedure,
+        AppWindowProcedure,
         VirtualKeyCode,
+        OpenGLRenderContext,
+        WindowResizeType,
         quit,
     },
     graphics::{
+        Graphics,
         BlendingFunction,
         PrimitiveType,
         TexturedVertex2D,
@@ -24,53 +26,90 @@ use cat_engine::{
 
 struct WindowHandle;
 
-impl WindowProcedure<WindowInner<Option<Texture>>> for WindowHandle{
-    fn render(window:&Window,window_inner:&mut WindowInner<Option<Texture>>){
-        window_inner.context().make_current(true).unwrap_or_else(|_|{quit()});
-        let [width,height]=window.client_size();
-        unsafe{
-            window_inner.graphics().core().viewport.set([0,0,width as i32,height as i32]);
-        }
-        window_inner.graphics().draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
-
-        if let Some(texture)=window_inner.storage_ref().as_ref(){
-            window_inner.graphics_ref().clear_colour([1f32;4]);
-            window_inner.graphics_ref().draw_stack_textured_object(0,texture.texture_2d());
-            window_inner.graphics_ref().draw_stack_textured_object(1,texture.texture_2d());
-            window_inner.graphics_ref().draw_stack_textured_object(2,texture.texture_2d());
-
-            window_inner.graphics_ref().core().finish();
-            window_inner.context().swap_buffers().unwrap_or_else(|_|{quit()});
-        }
+impl AppWindowProcedure<Texture,()> for WindowHandle{
+    fn create(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,()))->Texture{
+        Texture::from_path("logo_400x400.png").unwrap()
     }
 
-    fn handle(event:WindowEvent,_window:&Window,window_inner:&mut WindowInner<Option<Texture>>){
+    fn close_request(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)){
+        quit(0)
+    }
+
+    fn destroy(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)){}
+
+    fn paint(
+        window:&Window,
+        (render_context,graphics,texture):(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
+    ){
+        render_context.make_current(true).unwrap_or_else(|_|{quit(0)});
+        let [width,height]=window.client_size();
+        unsafe{
+            graphics.core().parameters.viewport.set([0,0,width as i32,height as i32]);
+        }
+        graphics.graphics_2d.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
+
+        graphics.clear_colour([1f32;4]);
+        graphics.draw_stack_textured_object(0,texture.texture_2d());
+        graphics.draw_stack_textured_object(1,texture.texture_2d());
+        graphics.draw_stack_textured_object(2,texture.texture_2d());
+
+        unsafe{
+            graphics.core().finish()
+        }
+        render_context.swap_buffers().unwrap_or_else(|_|{quit(0)});
+    }
+
+    #[cfg(feature="set_cursor_event")]
+    fn set_cursor(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)){}
+
+    fn resized(
+        _client_size:[u16;2],
+        _:WindowResizeType,
+        _:&Window,
+        _:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
+    ){}
+
+    fn moved(
+        _client_position:[i16;2],
+        _:&Window,
+        _:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
+    ){}
+
+    fn handle(
+        event:WindowEvent,
+        _window:&Window,
+        data:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
+    ){
         match event{
             WindowEvent::KeyPress(VirtualKeyCode::A)=>{
                 let image_base=ImageBase::new(
                     [400f32,100f32,100f32,100f32], // position and size
                     [0.5,0.5,0.5,1.0] // colour filter
                 );
-                window_inner.graphics().write_stack_textured_object_vertices(1,&image_base.vertices());
+                data.1.write_stack_textured_object_vertices(1,&image_base.vertices());
             }
 
-            WindowEvent::CloseRequest=>quit(),
             _=>{}
         }
     }
+
+    #[cfg(feature="wnd_proc_catch_panic")]
+    fn catch_panic(
+        _window:&Window,
+        _data:(*mut OpenGLRenderContext,*mut Graphics,*mut Texture),
+        _error:Box<dyn std::any::Any+Send>
+    ){}
 }
 
 fn main(){
     let app_attributes=AppAttributes::new();
-
-    let texture:Option<Texture>=None;
-    let app=App::new::<WindowHandle>(app_attributes,texture);
+    let app=App::new::<WindowHandle,()>(app_attributes,()).unwrap();
 
     let graphics=app.graphics();
 
     // Setting blending
-    graphics.core().blending.enable();
-    graphics.core().blending.set_function(
+    graphics.parameters.blend.enable();
+    graphics.parameters.blend.set_function(
         BlendingFunction::SourceAlpha,
         BlendingFunction::OneMinusSourceAlpha
     );
@@ -109,11 +148,8 @@ fn main(){
     );
     let _image3=graphics.push_textured_object(&image_base).unwrap();
 
-    *app.storage()=Some(Texture::from_path("logo_400x400.png").unwrap());
-
     app.event_loop.run(|event,_app_control|{
         match event{
-            
 
             _=>{}
         }

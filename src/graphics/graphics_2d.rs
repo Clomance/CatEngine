@@ -2,8 +2,6 @@ use crate::{
     Colour,
 };
 
-use cat_engine_basement::graphics::level1::Texture2D;
-
 #[cfg(feature="text_graphics")]
 use crate::text::{
     Scale,
@@ -31,12 +29,15 @@ use super::TextureGraphics;
 #[cfg(feature="text_graphics")]
 use super::TextGraphics;
 
+use cat_engine_basement::graphics::level1::Texture2D;
+
 #[cfg(feature="text_graphics")]
 use ttf_parser::{
     GlyphId,
     Face
 };
 
+#[derive(Clone)]
 pub struct Graphics2DAttributes{
     #[cfg(feature="simple_graphics")]
     pub simple_stack_vertices:ElementIndexType,

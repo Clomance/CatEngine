@@ -418,6 +418,11 @@ impl EventLoop{
                                     f(Event::Process(ProcessEvent::Quit),&mut loop_control);
                                     break
                                 }
+
+                                // WM_LBUTTONDOWN=>{
+                                //     println!("hello?")
+                                // }
+
                                 _=>event_handler(&message,&mut f,&mut loop_control),
                             }
                         }
@@ -650,6 +655,7 @@ fn event_handler<F:FnMut(Event,&mut LoopControl)>(message:&MSG,f:&mut F,control:
                 let [_,scroll_delta,_,_]:[i16;4]=transmute(message.wParam);
                 WindowEvent::MouseScroll(scroll_delta/WHEEL_DELTA)
             }
+
             _=>return,
         };
         f(Event::Window(event),control);

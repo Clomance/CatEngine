@@ -1,3 +1,6 @@
+mod parameters;
+pub use parameters::GraphicsParameters;
+
 mod buffer;
 pub use buffer::Buffer;
 

@@ -1,5 +1,5 @@
 use crate::graphics::{
-    GCore,
+    GLCore,
     core::GLError,
     core::drawing::{
         PrimitiveType,
@@ -22,11 +22,13 @@ impl Drawing{
     /// with the input primitive type of the geometry shader in the currently installed program object.
     pub fn draw_arrays(start:i32,count:i32,mode:PrimitiveType)->GLError{
         unsafe{
-            GCore.drawing.draw_arrays(start,count,mode);
-            GCore.get_error()
+            GLCore.drawing.draw_arrays(start,count,mode);
+            GLCore.get_error()
         }
     }
 
+    /// Render primitives from array data.
+    /// 
     /// `GLError::InvalidValue` is generated if `count` is negative.
     /// 
     /// `GLError::InvalidOperation` is generated
@@ -36,11 +38,13 @@ impl Drawing{
     /// with the input primitive type of the geometry shader in the currently installed program object.
     pub fn draw_elements(start:i32,count:i32,index_type:IndexType,mode:PrimitiveType)->GLError{
         unsafe{
-            GCore.drawing.draw_elements(start,count,index_type,mode);
-            GCore.get_error()
+            GLCore.drawing.draw_elements(start,count,index_type,mode);
+            GLCore.get_error()
         }
     }
 
+    /// Renders primitives from array dat
+    /// 
     /// `GLError::InvalidValue` is generated if `count` is negative.
     /// 
     /// `GLError::InvalidOperation` is generated
@@ -50,8 +54,8 @@ impl Drawing{
     /// with the input primitive type of the geometry shader in the currently installed program object.
     pub fn draw_elements_typed<T:AvailableIndexType>(start:i32,count:i32,mode:PrimitiveType)->GLError{
         unsafe{
-            GCore.drawing.draw_elements_typed::<T>(start,count,mode);
-            GCore.get_error()
+            GLCore.drawing.draw_elements_typed::<T>(start,count,mode);
+            GLCore.get_error()
         }
     }
 
@@ -62,8 +66,8 @@ impl Drawing{
     /// and the buffer object's data store is currently mapped.
     pub fn multi_draw_arrays(&self,start:&[i32],count:&[i32],mode:PrimitiveType)->GLError{
         unsafe{
-            GCore.drawing.multi_draw_arrays(start,count,mode);
-            GCore.get_error()
+            GLCore.drawing.multi_draw_arrays(start,count,mode);
+            GLCore.get_error()
         }
     }
 
@@ -80,8 +84,8 @@ impl Drawing{
         mode:PrimitiveType
     )->GLError{
         unsafe{
-            GCore.drawing.multi_draw_elements(start,count,index_type,mode);
-            GCore.get_error()
+            GLCore.drawing.multi_draw_elements(start,count,index_type,mode);
+            GLCore.get_error()
         }
     }
 
@@ -97,8 +101,8 @@ impl Drawing{
         mode:PrimitiveType
     )->GLError{
         unsafe{
-            GCore.drawing.multi_draw_elements_typed::<T>(start,count,mode);
-            GCore.get_error()
+            GLCore.drawing.multi_draw_elements_typed::<T>(start,count,mode);
+            GLCore.get_error()
         }
     }
 }

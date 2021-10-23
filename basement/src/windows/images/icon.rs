@@ -1,5 +1,6 @@
 use crate::windows::{
     WinCore,
+    core::icon::IconHandle,
 };
 
 use winapi::{
@@ -31,7 +32,7 @@ pub struct Pixel{
 }
 
 pub struct Icon{
-    handle:HICON,
+    handle:IconHandle,
 }
 
 impl Icon{
@@ -64,20 +65,20 @@ impl Icon{
             };
 
             Self{
-                handle:CreateIconIndirect(&mut iconinfo),
+                handle:IconHandle::from_raw(CreateIconIndirect(&mut iconinfo)).unwrap()
             }
         }
     }
 
     #[inline(always)]
-    pub fn handle(&self)->HICON{
+    pub fn handle(&self)->IconHandle{
         self.handle
     }
 
     #[inline(always)]
     pub fn destroy(self){
         unsafe{
-            DestroyIcon(self.handle);
+            DestroyIcon(self.handle.as_raw());
         }
     }
 }

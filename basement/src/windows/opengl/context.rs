@@ -186,6 +186,7 @@ impl Drop for OpenGLRenderContext{
     }
 }
 
+#[derive(Clone)]
 pub struct OpenGLRenderContextAttributes{
     pub vsync:bool,
 }

@@ -1,5 +1,5 @@
 use crate::graphics::{
-    GCore,
+    GLCore,
     core::GLError,
     core::buffer::BufferTarget,
 };
@@ -26,7 +26,7 @@ impl<V:Vertex> VertexArray<V>{
     pub fn generate()->VertexArray<V>{
         unsafe{
             let mut id=MaybeUninit::uninit().assume_init();
-            GCore.vertex_array.generate_one(&mut id);
+            GLCore.vertex_array.generate_one(&mut id);
             Self{
                 id,
                 marker:PhantomData,
@@ -46,15 +46,15 @@ impl<V:Vertex> VertexArray<V>{
     #[inline(always)]
     pub fn bind(&self)->GLError{
         unsafe{
-            GCore.vertex_array.bind(self.id);
-            GCore.get_error()
+            GLCore.vertex_array.bind(self.id);
+            GLCore.get_error()
         }
     }
 
     #[inline(always)]
     pub fn unbind(&self){
         unsafe{
-            GCore.vertex_array.bind(0)
+            GLCore.vertex_array.bind(0)
         }
     }
 }
@@ -62,7 +62,7 @@ impl<V:Vertex> VertexArray<V>{
 impl<V:Vertex> Drop for VertexArray<V>{
     fn drop(&mut self){
         unsafe{
-            GCore.vertex_array.delete_one(&self.id);
+            GLCore.vertex_array.delete_one(&self.id);
         }
     }
 }

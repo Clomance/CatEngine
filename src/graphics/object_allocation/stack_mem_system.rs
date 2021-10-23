@@ -105,6 +105,9 @@ impl<V:Vertex> StackSystem<V>{
         indices:&[ElementIndexType],
         primitive_type:PrimitiveType
     )->Option<ObjectIDType>{
+        if vertices.len()==0{
+            return None
+        }
         // Количество вершин
         let vertex_count=vertices.len() as i32;
         // Количество индексов

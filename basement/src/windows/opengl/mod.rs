@@ -1,4 +1,4 @@
-use crate::graphics::GCore;
+use crate::graphics::GLCore;
 
 mod context;
 pub use context::{
@@ -47,7 +47,7 @@ impl OpenGraphicsLibrary{
 
     pub fn load_functions(&self){
         unsafe{
-            GCore.load_functions(self);
+            GLCore.load_functions(self);
         }
     }
 }

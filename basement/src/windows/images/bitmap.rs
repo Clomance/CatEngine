@@ -1,26 +1,13 @@
 use crate::windows::{
     WinCore,
+    WinError,
     core::bitmap::BitmapHandle,
-};
-
-use std::{
-    mem::transmute,
-};
-
-use winapi::{
-    shared::windef::HBITMAP,
-
-    um::wingdi::{
-        CreateBitmap,
-        DeleteObject,
-    },
 };
 
 use image::{
     ImageBuffer,
     Bgra,
 };
-
 
 
 pub struct Bitmap{
@@ -37,19 +24,27 @@ impl Bitmap{
         }
     }
 
-    pub fn from_bgra(image:&ImageBuffer<Bgra<u8>,Vec<u8>>)->Bitmap{
+    pub fn from_bgra(image:&ImageBuffer<Bgra<u8>,Vec<u8>>)->Result<Bitmap,WinError>{
         unsafe{
             let (width,height)=image.dimensions();
             let data=&*image.as_ptr();
 
-            Self{
-                handle:WinCore.bitmap.create([width as i32,height as i32],1,32,Some(data)).unwrap(),
+            if let Some(bitmap)=WinCore.bitmap.create([width as i32,height as i32],1,32,Some(data)){
+                Ok(
+                    Self{
+                        handle:bitmap,
+                    }
+                )
+            }
+            else{
+                Err(
+                    WinError::get_last_error()
+                )
             }
         }
     }
 
-    #[inline(always)]
-    pub fn handle(&self)->BitmapHandle{
+    pub const fn handle(&self)->BitmapHandle{
         self.handle
     }
 

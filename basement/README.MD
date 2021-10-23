@@ -9,15 +9,15 @@
 [doc.rs]:https://docs.rs/cat_engine_basement/
 
 
-There is some levels of wrapping:
+There are some levels of wrapping:
  - core - just wrappers (`WinCore` and `GLCore`)
 ```rust
     let mut id:u32=MaybeUninit::uninit().assume_init();
-    GCore.buffer.generate_one(&mut id);
+    GLCore.buffer.generate_one(&mut id);
 
-    GCore.buffer.bind(BufferTarget::ArrayBuffer,id);
+    GLCore.buffer.bind(BufferTarget::ArrayBuffer,id);
 
-    GCore.buffer.rewrite(BufferTarget::ArrayBuffer,1024,core::ptr::null(),BufferUsage::DynamicDraw);
+    GLCore.buffer.rewrite(BufferTarget::ArrayBuffer,1024,core::ptr::null(),BufferUsage::DynamicDraw);
 ```
 
  - level [ i ] - describes system objects and their relationships (only for `GLCore`), the higher level the more specific structures

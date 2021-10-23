@@ -1,5 +1,5 @@
 use crate::graphics::{
-    GCore,
+    GLCore,
     core::GLError,
     core::texture::{
         TextureBindTarget,
@@ -27,7 +27,7 @@ impl Texture{
     pub fn generate()->Texture{
         unsafe{
             let mut id=MaybeUninit::uninit().assume_init();
-            GCore.texture.generate_one(&mut id);
+            GLCore.texture.generate_one(&mut id);
 
             Self{
                 id,
@@ -62,8 +62,8 @@ impl Texture{
     /// if texture was previously created with a target that doesn't match that of target.
     pub fn bind(&self,target:TextureBindTarget)->GLError{
         unsafe{
-            GCore.texture.bind(target,self.id);
-            GCore.get_error()
+            GLCore.texture.bind(target,self.id);
+            GLCore.get_error()
         }
     }
 
@@ -77,8 +77,8 @@ impl Texture{
     /// Returns `GLError::InvalidValue` if there's no current context.
     pub fn unbind(target:TextureBindTarget)->GLError{
         unsafe{
-            GCore.texture.bind(target,0);
-            GCore.get_error()
+            GLCore.texture.bind(target,0);
+            GLCore.get_error()
         }
     }
 
@@ -95,7 +95,7 @@ impl Texture{
     #[inline(always)]
     pub fn set_base_level(target:TextureParameterTarget,level:i32){
         unsafe{
-            GCore.texture.set_base_level(target,level)
+            GLCore.texture.set_base_level(target,level)
         }
     }
 
@@ -105,7 +105,7 @@ impl Texture{
     #[inline(always)]
     pub fn set_compare_function(&self,target:TextureParameterTarget,function:TextureCompareFunction){
         unsafe{
-            GCore.texture.set_compare_function(target,function)
+            GLCore.texture.set_compare_function(target,function)
         }
     }
 
@@ -113,7 +113,7 @@ impl Texture{
     #[inline(always)]
     pub fn set_compare_mode(&self,target:TextureParameterTarget,mode:TextureCompareMode){
         unsafe{
-            GCore.texture.set_compare_mode(target,mode)
+            GLCore.texture.set_compare_mode(target,mode)
         }
     }
 
@@ -126,7 +126,7 @@ impl Texture{
     #[inline(always)]
     pub fn set_mag_filter(target:TextureParameterTarget,filter:TextureMagFilter){
         unsafe{
-            GCore.texture.set_mag_filter(target,filter)
+            GLCore.texture.set_mag_filter(target,filter)
         }
     }
 
@@ -139,7 +139,7 @@ impl Texture{
     #[inline(always)]
     pub fn set_min_filter(target:TextureParameterTarget,filter:TextureMinFilter){
         unsafe{
-            GCore.texture.set_min_filter(target,filter);
+            GLCore.texture.set_min_filter(target,filter);
         }
     }
 
@@ -149,7 +149,7 @@ impl Texture{
     #[inline(always)]
     pub fn set_wrap_s(target:TextureParameterTarget,value:TextureWrap){
         unsafe{
-            GCore.texture.set_wrap_s(target,value);
+            GLCore.texture.set_wrap_s(target,value);
         }
     }
 
@@ -159,7 +159,7 @@ impl Texture{
     #[inline(always)]
     pub fn set_wrap_t(target:TextureParameterTarget,value:TextureWrap){
         unsafe{
-            GCore.texture.set_wrap_t(target,value);
+            GLCore.texture.set_wrap_t(target,value);
         }
     }
 
@@ -169,7 +169,7 @@ impl Texture{
     #[inline(always)]
     pub fn set_wrap_r(target:TextureParameterTarget,value:TextureWrap){
         unsafe{
-            GCore.texture.set_wrap_r(target,value);
+            GLCore.texture.set_wrap_r(target,value);
         }
     }
 }
@@ -190,7 +190,7 @@ impl Texture{
             else{
                 0 as *const core::ffi::c_void
             };
-            GCore.texture.rewrite_image_2d(
+            GLCore.texture.rewrite_image_2d(
                 target,
                 mipmap_level,
                 texture_internal_format,
@@ -198,7 +198,7 @@ impl Texture{
                 image_data_format,
                 data_ref
             );
-            GCore.get_error()
+            GLCore.get_error()
         }
     }
 
@@ -216,14 +216,14 @@ impl Texture{
             else{
                 0 as *const core::ffi::c_void
             };
-            GCore.texture.write_image_2d(
+            GLCore.texture.write_image_2d(
                 target,
                 mipmap_level,
                 [x,y,width,height],
                 image_data_format,
                 data_ref
             );
-            GCore.get_error()
+            GLCore.get_error()
         }
     }
 }
@@ -231,7 +231,7 @@ impl Texture{
 impl Drop for Texture{
     fn drop(&mut self){
         unsafe{
-            GCore.texture.delete_one(&self.id)
+            GLCore.texture.delete_one(&self.id)
         }
     }
 }

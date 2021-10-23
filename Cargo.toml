@@ -1,8 +1,8 @@
 [package]
 name = "cat_engine"
-version = "1.0.0-alpha5"
+version = "1.0.0-alpha6"
 authors = ["Clomance <Hisoskar@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 homepage = "https://github.com/Clomance/CatEngine"
 repository = "https://github.com/Clomance/CatEngine"
@@ -40,7 +40,14 @@ default = [
     "simple_graphics",
     "texture_graphics",
     "text_graphics",
+    # Windows
+    "wnd_proc_catch_panic",
 ]
+
+# Windows
+set_cursor_event = ["cat_engine_basement/set_cursor_event"]
+wnd_proc_catch_panic = ["cat_engine_basement/wnd_proc_catch_panic"]
+
 
 ### AUDIO
 audio = ["cat_audio"]
@@ -64,8 +71,8 @@ optional = true
 
 [dependencies.cat_engine_basement]
 path = "basement"
-version = "0.0.0-alpha5"
-features = ["opengl"]
+version = "0.0.0-alpha6"
+features = ["opengl","windowing"]
 
 
 [dependencies]

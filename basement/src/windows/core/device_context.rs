@@ -1,9 +1,8 @@
-use crate::implement_handle_wrapper;
-
 use super::{
+    Colour,
+    ColourResult,
     bitmap::{
         BitmapHandle,
-        // BitmapInfo,
     },
     window::WindowHandle,
 };
@@ -32,8 +31,16 @@ use winapi::{
             SwapBuffers,
             ChoosePixelFormat,
             SetPixelFormat,
-            BitBlt,
+
             PIXELFORMATDESCRIPTOR,
+
+            BitBlt,
+            PatBlt,
+            AlphaBlend,
+
+            GetBrushOrgEx,
+            SetBrushOrgEx,
+            SetDCBrushColor,
 
             // pixel buffer properties
             PFD_DRAW_TO_WINDOW,
@@ -75,12 +82,17 @@ use winapi::{
             SRCINVERT,
             SRCPAINT,
             WHITENESS,
+
+            // alpha blend
+            AC_SRC_OVER,
+            AC_SRC_ALPHA,
         },
     }
 };
 
 /// A set of bit flags that specify properties of the pixel buffer.
 /// The properties are generally not mutually exclusive; you can set any combination of bit flags, with the exceptions noted.
+#[derive(Clone,Copy)]
 #[repr(u32)]
 pub enum PixelBufferProperty{
     /// The buffer can draw to a window or device surface.
@@ -203,6 +215,7 @@ pub enum PixelBufferProperty{
 }
 
 /// Specifies the type of pixel data.
+#[derive(Clone,Copy)]
 #[repr(u8)]
 pub enum PixelType{
     /// RGBA pixels. Each pixel has four components in this order: red, green, blue, and alpha.
@@ -324,6 +337,7 @@ impl PixelFormat{
 /// These codes define how the color data for the source rectangle
 /// is to be combined with the color data for the destination rectangle
 /// to achieve the final color.
+#[derive(Clone,Copy)]
 #[repr(u32)]
 pub enum BitBltOperation{
     /// Fills the destination rectangle using the color associated with index 0 in the physical palette.
@@ -399,7 +413,30 @@ pub enum BitBltOperation{
     SourcePaint=SRCPAINT,
 }
 
-/// The replacement for `HDC`.
+#[derive(Clone,Copy)]
+#[repr(u32)]
+pub enum PatternBltOperation{
+    /// Fills the destination rectangle using the color associated with index 0 in the physical palette.
+    /// (This color is black for the default physical palette.)
+    Blackness=BLACKNESS,
+
+    /// Fills the destination rectangle using the color associated with index 1 in the physical palette.
+    /// (This color is white for the default physical palette.)
+    Whiteness=WHITENESS,
+
+    /// Inverts the destination rectangle.
+    DestinationInvert=DSTINVERT,
+
+    /// Copies the brush currently selected in hdcDest, into the destination bitmap.
+    PatternCopy=PATCOPY,
+
+    /// Combines the colours of the brush currently selected in hdcDest,
+    /// with the colours of the destination rectangle
+    /// by using the Boolean XOR operator.
+    PatternInvert=PATINVERT,
+}
+
+/// A replacement for `HDC`.
 /// Can be wraped with `Option` with null pointer optimization.
 #[derive(Clone,Copy)]
 #[repr(transparent)]
@@ -435,14 +472,14 @@ impl DeviceContext{
     /// You can set the attributes; obtain the current settings of its attributes;
     /// and select pens, brushes, and regions.
     /// 
-    /// The CreateCompatibleDC function can only be used with devices that support raster operations.
-    /// An application can determine whether a device supports these operations by calling the GetDeviceCaps function.
+    /// The `DeviceContext::create_compatible` function can only be used with devices that support raster operations.
+    /// An application can determine whether a device supports these operations by calling the `GetDeviceCaps` function.
     /// 
-    /// When you no longer need the memory DC, call the DeleteDC function.
-    /// We recommend that you call DeleteDC to delete the DC.
-    /// However, you can also call DeleteObject with the HDC to delete the DC.
+    /// When you no longer need the memory DC, call the `DeleteDC` function.
+    /// We recommend that you call `DeleteDC` to delete the DC.
+    /// However, you can also call `DeleteObject` with the HDC to delete the DC.
     /// 
-    /// If hdc is NULL, the thread that calls CreateCompatibleDC owns the HDC that is created.
+    /// If hdc is `None`, the thread that calls `DeviceContext::create_compatible` owns the HDC that is created.
     /// When this thread is destroyed, the HDC is no longer valid.
     /// Thus, if you create the HDC and pass it to another thread,
     /// then exit the first thread, the second thread will not be able to use the HDC.
@@ -455,13 +492,15 @@ impl DeviceContext{
     /// 
     /// If the function fails, the return value is `None`.
     #[inline(always)]
-    pub unsafe fn create_compatible_context(
+    pub fn create_compatible(
         &self,
         context:Option<DeviceContextHandle>
     )->Option<DeviceContextHandle>{
-        DeviceContextHandle::from_raw(
-            CreateCompatibleDC(DeviceContextHandle::to_raw(context))
-        )
+        unsafe{
+            DeviceContextHandle::from_raw(
+                CreateCompatibleDC(DeviceContextHandle::to_raw(context))
+            )
+        }
     }
 
     /// Releases a device context (DC),
@@ -473,8 +512,10 @@ impl DeviceContext{
     /// If the DC was released, returns `true`.
     /// If the DC was not released, returns `false`.
     #[inline(always)]
-    pub unsafe fn release(&self,window:WindowHandle,context:DeviceContextHandle)->bool{
-        ReleaseDC(window.as_raw(),context.as_raw())!=0
+    pub fn release(&self,window:WindowHandle,context:DeviceContextHandle)->bool{
+        unsafe{
+            ReleaseDC(window.as_raw(),context.as_raw())!=0
+        }
     }
 }
 
@@ -492,8 +533,10 @@ impl DeviceContext{
     /// If the function fails, returns `false`.
     /// To get extended error information, call `WinCore::get_last_error`.
     #[inline(always)]
-    pub unsafe fn swap_buffers(&self,context:DeviceContextHandle)->bool{
-        SwapBuffers(context.as_raw())!=0
+    pub fn swap_buffers(&self,context:DeviceContextHandle)->bool{
+        unsafe{
+            SwapBuffers(context.as_raw())!=0
+        }
     }
 
     /// Attempts to match an appropriate pixel format
@@ -510,8 +553,10 @@ impl DeviceContext{
     /// If the function fails, the return value is zero.
     /// To get extended error information, call `WinCore::get_last_error`.
     #[inline(always)]
-    pub unsafe fn choose_pixel_format(&self,context:DeviceContextHandle,format:&PixelFormat)->i32{
-        ChoosePixelFormat(context.as_raw(),format.descriptor())
+    pub fn choose_pixel_format(&self,context:DeviceContextHandle,format:&PixelFormat)->i32{
+        unsafe{
+            ChoosePixelFormat(context.as_raw(),format.descriptor())
+        }
     }
 
     /// Sets the pixel format of the specified device context to the format specified by the PixelFormat index.
@@ -536,16 +581,57 @@ impl DeviceContext{
     /// If the function fails, returns `false`.
     /// To get extended error information, call `WinCore::get_last_error`.
     #[inline(always)]
-    pub unsafe fn set_pixel_format(
+    pub fn set_pixel_format(
         &self,
         context:DeviceContextHandle,
         format_index:i32,
         format:&PixelFormat
     )->bool{
-        SetPixelFormat(context.as_raw(),format_index,format.descriptor())!=0
+        unsafe{
+            SetPixelFormat(context.as_raw(),format_index,format.descriptor())!=0
+        }
     }
 }
 
+/// Controls blending by specifying the blending functions for source and destination bitmaps.
+#[derive(Clone,Copy)]
+#[repr(C)]
+pub struct BlendFunction{
+    /// The source blend operation.
+    /// Currently, the only source and destination blend operation
+    /// that has been defined is AC_SRC_OVER.
+    operation:u8,
+
+    /// Must be zero.
+    flags:u8,
+
+    /// Specifies an alpha transparency value to be used on the entire source bitmap.
+    /// The value is combined with any per-pixel alpha values in the source bitmap.
+    /// If you set the value to 0, it is assumed that your image is transparent.
+    /// Set the value to 255 (opaque) when you only want to use per-pixel alpha values.
+    source_constant_alpha:u8,
+
+    /// This flag is set when the bitmap has an Alpha channel (that is, per-pixel alpha).
+    /// Note that the APIs use premultiplied alpha,
+    /// which means that the red, green and blue channel values in the bitmap
+    /// must be premultiplied with the alpha channel value.
+    /// For example, if the alpha channel value is x, the red, green and blue channels
+    /// must be multiplied by x and divided by 0xff prior to the call.
+    alpha_format:u8,
+}
+
+impl BlendFunction{
+    pub const fn new(source_constant_alpha:u8)->BlendFunction{
+        Self{
+            operation:AC_SRC_OVER,
+            flags:0u8,
+            source_constant_alpha,
+            alpha_format:AC_SRC_ALPHA
+        }
+    }
+}
+
+/// Bit-block transfer functions.
 impl DeviceContext{
     /// Performs a bit-block transfer of the color data corresponding to a rectangle of pixels
     /// from the specified source device context into a destination device context.
@@ -579,7 +665,7 @@ impl DeviceContext{
     /// If the function fails, the return value is `false`.
     /// To get extended error information, call `WinCore::get_last_error`.
     #[inline(always)]
-    pub unsafe fn bit_blt(
+    pub fn bit_blt(
         &self,
         destination_context:DeviceContextHandle,
         [dx,dy]:[i32;2],
@@ -588,16 +674,125 @@ impl DeviceContext{
         [width,height]:[i32;2],
         operation:BitBltOperation,
     )->bool{
-        BitBlt(
-            destination_context.as_raw(),
-            dx,dy,width,height,
-            source_context.as_raw(),
-            sx,sy,
-            operation as u32
-        )!=0
+        unsafe{
+            BitBlt(
+                destination_context.as_raw(),
+                dx,dy,width,height,
+                source_context.as_raw(),
+                sx,sy,
+                operation as u32
+            )!=0
+        }
     }
 
+    /// Paints the specified rectangle using the brush that is currently selected into the specified device context.
+    /// The brush color and the surface color or colors are combined by using the specified raster operation.
+    /// 
+    /// The values of the `operation` parameter for this function are a limited subset of the full 256 ternary raster-operation codes;
+    /// in particular, an operation code that refers to a source rectangle cannot be used.
+    /// 
+    /// Not all devices support the `DeviceContext::pattern_blt` function.
+    /// For more information, see the description of the `RC_BITBLT` capability in the `GetDeviceCaps` function.
+    /// 
+    /// If the function succeeds, the return value is `true`.
+    /// 
+    /// If the function fails, the return value is `false`.
+    pub fn pattern_blt(&self,context:DeviceContextHandle,[x,y,width,height]:[i32;4],operation:PatternBltOperation)->bool{
+        unsafe{
+            PatBlt(context.as_raw(),x,y,width,height,operation as u32)!=0
+        }
+    }
 
+    /// Displays bitmaps that have transparent or semitransparent pixels.
+    /// 
+    /// When the `AlphaFormat` member is `AC_SRC_ALPHA` (always),
+    /// the source bitmap must be 32 bpp.
+    /// If it is not, the AlphaBlend function will fail.
+    /// 
+    /// When the `BlendOp` member is `AC_SRC_OVER` (always),
+    /// the source bitmap is placed over the destination bitmap
+    /// based on the alpha values of the source pixels.
+    /// ```
+    /// colour = source * (source_alpha/255) + destination * (1-(destination_alpha/255))
+    /// ```
+    /// 
+    /// If the source bitmap does not use `source_constant_alpha` (that is, it equals 0xFF),
+    /// the per-pixel alpha determines the blend of the source and destination bitmaps,
+    /// as shown in the following table.
+    /// ```
+    /// colour = source + destination * (1-source_alpha))
+    /// ```
+    /// 
+    /// If the source has both the `source_constant_alpha` (that is, it is not 0xFF) and per-pixel alpha,
+    /// the source is pre-multiplied by the `source_constant_alpha`
+    /// and then the blend is based on the per-pixel alpha.
+    /// The following tables show this.
+    /// Note that `source_constant_alpha` is divided by 255 because it has a value that ranges from 0 to 255.
+    /// ```
+    /// colour = source + source_alpha/255
+    /// ```
+    /// 
+    /// If the source rectangle and destination rectangle are not the same size,
+    /// the source bitmap is stretched to match the destination rectangle.
+    /// If the `SetStretchBltMode` function is used,
+    /// the `iStretchMode` value is automatically converted to COLORONCOLOR for this function
+    /// (that is, BLACKONWHITE, WHITEONBLACK, and HALFTONE are changed to COLORONCOLOR).
+    /// 
+    /// The destination coordinates are transformed
+    /// by using the transformation currently specified for the destination device context.
+    /// The source coordinates are transformed
+    /// by using the transformation currently specified for the source device context.
+    /// 
+    /// An error occurs (and the function returns `false`)
+    /// if the source device context identifies an enhanced metafile device context.
+    /// 
+    /// If destination and source bitmaps do not have the same colour format,
+    /// `Bitmap::alpha_blend` converts the source bitmap to match the destination bitmap.
+    /// 
+    /// `Bitmap::alpha_blend` does not support mirroring.
+    /// If either the width or height of the source or destination is negative,
+    /// this call will fail.
+    /// 
+    /// When rendering to a printer, first call GetDeviceCaps with SHADEBLENDCAPS to determine
+    /// if the printer supports blending with AlphaBlend. Note that, for a display DC,
+    /// all blending operations are supported and these flags represent whether the operations are accelerated.
+    /// 
+    /// If the source and destination are the same surface,
+    /// that is, they are both the screen or the same memory bitmap
+    /// and the source and destination rectangles overlap,
+    /// an error occurs and the function returns `false`.
+    /// 
+    /// The source rectangle must lie completely within the source surface,
+    /// otherwise an error occurs and the function returns `false`.
+    /// 
+    /// `Bitmap::alpha_blend` fails if the width or height of the source or destination is negative.
+    /// 
+    /// The `source_constant_alpha` member of `BlendFunction` specifies an alpha transparency value to be used
+    /// on the entire source bitmap. The `source_constant_alpha` value is combined with any per-pixel alpha values.
+    /// If `source_constant_alpha` is 0, it is assumed that the image is transparent.
+    /// Set the `source_constant_alpha` value to 255 (which indicates that the image is opaque)
+    /// when you only want to use per-pixel alpha values.
+    /// 
+    /// If the function succeeds, the return value is `true`.
+    /// 
+    /// If the function fails, the return value is `false`.
+    #[inline(always)]
+    pub unsafe fn alpha_blend(
+        &self,
+        destination_context:DeviceContextHandle,
+        [dx,dy,dwidth,dheight]:[i32;4],
+        source_context:DeviceContextHandle,
+        [sx,sy,swidth,sheight]:[i32;4],
+        function:BlendFunction,
+    )->bool{
+        AlphaBlend(
+            destination_context.as_raw(),
+            dx,dy,dwidth,dheight,
+            source_context.as_raw(),
+            sx,sy,swidth,sheight,
+            transmute(function)
+        )!=0
+    }
 }
 
 impl DeviceContext{
@@ -610,7 +805,7 @@ impl DeviceContext{
     /// 
     /// An application cannot select a single bitmap into more than one DC at a time.
     /// 
-    /// ICM: If the object being selected is a brush or a pen, color management is performed.
+    /// ICM: If the object being selected is a brush or a pen, colour management is performed.
     /// 
     /// If the selected object is not a region and the function succeeds,
     /// the return value is a handle to the object being replaced.
@@ -621,8 +816,8 @@ impl DeviceContext{
     /// `NULLREGION` - Region is empty.
     /// 
     /// If an error occurs and the selected object is not a region,
-    /// the return value is NULL.
-    /// Otherwise, it is HGDI_ERROR.
+    /// the return value is `NULL`.
+    /// Otherwise, it is `HGDI_ERROR`.
     #[inline(always)]
     pub unsafe fn select_object(
         &self,
@@ -648,13 +843,110 @@ impl DeviceContext{
     /// 
     /// If an error occurs, the return value is `None`.
     #[inline(always)]
-    pub unsafe fn select_bitmap(
+    pub fn select_bitmap(&self,context:DeviceContextHandle,handle:BitmapHandle)->Option<BitmapHandle>{
+        unsafe{
+            transmute(SelectObject(context.as_raw(),transmute(handle)))
+        }
+    }
+}
+
+/// Brush functions.
+impl DeviceContext{
+    /// Sets the brush origin that GDI assigns to the next brush an application selects into the specified device context.
+    /// 
+    /// `x` - The x-coordinate, in device units, of the new brush origin.
+    /// If this value is greater than the brush width,
+    /// its value is reduced using the modulus operator (nXOrg mod brush width).
+    /// 
+    /// `y` - The y-coordinate, in device units, of the new brush origin.
+    /// If this value is greater than the brush height,
+    /// its value is reduced using the modulus operator (nYOrg mod brush height).
+    /// 
+    /// The brush origin is a pair of coordinates specifying the location of one pixel in the bitmap.
+    /// The default brush origin coordinates are (0,0).
+    /// For horizontal coordinates, the value 0 corresponds to the leftmost column of pixels;
+    /// the width corresponds to the rightmost column.
+    /// For vertical coordinates, the value 0 corresponds to the uppermost row of pixels;
+    /// the height corresponds to the lowermost row.
+    /// 
+    /// The system automatically tracks the origin of all window-managed device contexts
+    /// and adjusts their brushes as necessary to maintain an alignment of patterns on the surface.
+    /// The brush origin that is set with this call is relative to the upper-left corner of the client area.
+    /// 
+    /// An application should call SetBrushOrgEx after setting the bitmap stretching mode to HALFTONE by using SetStretchBltMode.
+    /// This must be done to avoid brush misalignment.
+    /// 
+    /// The system automatically tracks the origin of all window-managed device contexts
+    /// and adjusts their brushes as necessary to maintain an alignment of patterns on the surface.
+    /// 
+    /// If the function succeeds, the return value is `true`.
+    /// 
+    /// If the function fails, the return value is `false`.
+    pub fn set_brush_origin(
         &self,
         context:DeviceContextHandle,
-        handle:BitmapHandle,
-    )->Option<BitmapHandle>{
-        BitmapHandle::from_raw(
-            SelectObject(context.as_raw(),handle.as_raw() as *mut _) as *mut _
-        )
+        [x,y]:[i32;2],
+        previous_point:Option<&mut [i32;2]>
+    )->bool{
+        unsafe{
+            SetBrushOrgEx(context.as_raw(),x,y,transmute(previous_point))!=0
+        }
+    }
+
+    /// Retrieves the current brush origin for the specified device context.
+    /// 
+    /// The brush origin is a set of coordinates with values between 0 and 7,
+    /// specifying the location of one pixel in the bitmap.
+    /// The default brush origin coordinates are (0,0).
+    /// For horizontal coordinates, the value 0 corresponds to the leftmost column of pixels;
+    /// the value 7 corresponds to the rightmost column.
+    /// For vertical coordinates, the value 0 corresponds to the uppermost row of pixels;
+    /// the value 7 corresponds to the lowermost row.
+    /// When the system positions the brush at the start of any painting operation,
+    /// it maps the origin of the brush to the location in the window's client area specified by the brush origin.
+    /// For example, if the origin is set to (2,3),
+    /// the system maps the origin of the brush (0,0) to the location (2,3) on the window's client area.
+    /// 
+    /// If an application uses a brush to fill the backgrounds of both a parent and a child window with matching colors,
+    /// it may be necessary to set the brush origin after painting the parent window but before painting the child window.
+    /// 
+    /// The system automatically tracks the origin of all window-managed device contexts
+    /// and adjusts their brushes as necessary to maintain an alignment of patterns on the surface.
+    /// 
+    /// If the function succeeds, the return value is `true`.
+    /// 
+    /// If the function fails, the return value is `false`.
+    pub fn get_brush_origin(&self,context:DeviceContextHandle,point:&mut [i32;2])->bool{
+        unsafe{
+            GetBrushOrgEx(context.as_raw(),transmute(point))!=0
+        }
+    }
+
+    /// Sets the current device context (DC) brush color to the specified color value.
+    /// If the device cannot represent the specified color value,
+    /// the color is set to the nearest physical color.
+    /// 
+    /// When the stock DC_BRUSH is selected in a DC,
+    /// all the subsequent drawings will be done using the DC brush color
+    /// until the stock brush is deselected.
+    /// The default DC_BRUSH color is WHITE.
+    /// 
+    /// The function returns the previous DC_BRUSH color,
+    /// even if the stock brush DC_BRUSH is not selected in the DC:
+    /// however, this will not be used in drawing operations
+    /// until the stock DC_BRUSH is selected in the DC.
+    /// 
+    /// The GetStockObject function with an argument of DC_BRUSH
+    /// or DC_PEN can be used interchangeably with the SetDCPenColor and SetDCBrushColor functions.
+    /// 
+    /// ICM: Colour management is performed if ICM is enabled.
+    /// 
+    /// If the function succeeds, the return value specifies the previous DC brush color as a COLORREF value.
+    /// 
+    /// If the function fails, the return value is `CLR_INVALID`.
+    pub fn set_brush_colour(&self,context:DeviceContextHandle,colour:Colour)->ColourResult{
+        unsafe{
+            transmute(SetDCBrushColor(context.as_raw(),colour.as_raw()))
+        }
     }
 }

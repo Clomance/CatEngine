@@ -6,6 +6,7 @@ use crate::graphics::{
 use cat_engine_basement::windows::{
     WindowClass,
     OpenGraphicsLibrary,
+    WindowProcedure,
 };
 
 pub use cat_engine_basement::{
@@ -13,6 +14,7 @@ pub use cat_engine_basement::{
         EventLoop,
         Window,
         CursorIcon,
+        SystemCursor,
         Background,
         Fullscreen,
         Monitor,
@@ -26,71 +28,177 @@ pub use cat_engine_basement::{
         OpenGLRenderContextAttributes,
         EventInterval,
         WinError,
-        WindowProcedure,
         ProcessEvent,
         Event,
         WindowEvent,
+        WindowResizeType,
         quit,
     },
 };
 
 use std::{
     cell::UnsafeCell,
-    mem::MaybeUninit
+    mem::replace,
+    marker::PhantomData,
 };
 
-pub struct EmptyHandler;
-
-impl<S> WindowProcedure<WindowInner<S>> for EmptyHandler{
-    fn render(_:&Window,_:&mut WindowInner<S>){}
-    fn handle(_:WindowEvent,_:&Window,_:&mut WindowInner<S>){}
+pub enum AppCreateParamters<S,C>{
+    None,
+    Get(OpenGLRenderContextAttributes,Graphics2DAttributes,C),
+    Return(*mut OpenGLRenderContext,*mut Graphics,*mut S),
 }
 
-pub struct WindowInner<S>{
-    graphics:Graphics,
-    context:OpenGLRenderContext,
-    storage:*mut S,
+impl<S,C> AppCreateParamters<S,C>{
+    pub fn take(&mut self)->AppCreateParamters<S,C>{
+        replace(self,AppCreateParamters::None)
+    }
 }
 
-impl<S> WindowInner<S>{
-    pub fn graphics_ref(&self)->&Graphics{
-        &self.graphics
-    }
+/// Defines app window's behavior.
+pub trait AppWindowProcedure<S,C>{
+    /// Called when an application requests that a window be created.
+    fn create(window:&Window,data:(&mut OpenGLRenderContext,&mut Graphics,C))->S;
 
-    pub fn graphics(&mut self)->&mut Graphics{
-        &mut self.graphics
-    }
+    /// Called as a signal that a window or an application should terminate.
+    fn close_request(window:&Window,data:(&mut OpenGLRenderContext,&mut Graphics,&mut S));
 
-    pub fn context(&self)->&OpenGLRenderContext{
-        &self.context
-    }
+    /// Called when a window is being destroyed,
+    /// after the window is removed from the screen.
+    fn destroy(window:&Window,data:(&mut OpenGLRenderContext,&mut Graphics,&mut S));
 
-    pub fn storage(&mut self)->&mut S{
-        unsafe{
-            &mut *self.storage
+    /// Called when the system or another application
+    /// makes a request to paint a portion of an application's window.
+    fn paint(window:&Window,data:(&mut OpenGLRenderContext,&mut Graphics,&mut S));
+
+    /// Called if the mouse causes the cursor to move
+    /// within a window and mouse input is not captured.
+    #[cfg(feature="set_cursor_event")]
+    fn set_cursor(window:&Window,data:(&mut OpenGLRenderContext,&mut Graphics,&mut S));
+
+    /// Called after window's size has changed.
+    /// 
+    /// `client_size` specifies the new width of the client area.
+    fn resized(client_size:[u16;2],resize_type:WindowResizeType,window:&Window,data:(&mut OpenGLRenderContext,&mut Graphics,&mut S));
+
+    /// Called after a window has been moved.
+    /// 
+    /// `client_position` contains coordinates of the upper-left corner of the client area of the window.
+    fn moved(client_position:[i16;2],window:&Window,data:(&mut OpenGLRenderContext,&mut Graphics,&mut S));
+
+    fn handle(event:WindowEvent,window:&Window,data:(&mut OpenGLRenderContext,&mut Graphics,&mut S));
+
+    #[cfg(feature="wnd_proc_catch_panic")]
+    fn catch_panic(window:&Window,data:(*mut OpenGLRenderContext,*mut Graphics,*mut S),error:Box<dyn std::any::Any+Send>);
+}
+
+pub struct AppWindowHandler<P:AppWindowProcedure<S,C>,S,C>{
+    procedure:PhantomData<P>,
+    create_parameter:PhantomData<C>,
+    storage:PhantomData<S>,
+}
+
+impl<P:AppWindowProcedure<S,C>,S,C> WindowProcedure for AppWindowHandler<P,S,C>{
+    type CreateParameters=AppCreateParamters<S,C>;
+    type Data=(*mut OpenGLRenderContext,*mut Graphics,*mut S);
+
+    fn create(
+        window:&Window,
+        create_paramters:&mut AppCreateParamters<S,C>
+    )->Result<Self::Data,WinError>{
+        if let AppCreateParamters::Get(rca,ga,storage)=create_paramters.take(){
+            // create a render context
+            match OpenGLRenderContext::new(window,rca){
+                Ok(render_context)=>{
+                    // load opengl functions
+                    let opengl_library=OpenGraphicsLibrary::new();
+                    opengl_library.load_functions();
+
+                    let graphics=Graphics::new(ga);
+
+                    let empty_storage:S=unsafe{std::mem::MaybeUninit::zeroed().assume_init()};
+                    let window_data=Box::leak(Box::new((render_context,graphics,empty_storage)));
+
+                    // call user function
+                    let storage=P::create(window,(&mut window_data.0,&mut window_data.1,storage));
+
+                    // write with raw pointer to avoid dropping zeroed `S`
+                    unsafe{((&mut window_data.2) as *mut S).write(storage)}
+
+                    *create_paramters=AppCreateParamters::Return(
+                        &mut window_data.0,
+                        &mut window_data.1,
+                        &mut window_data.2
+                    );
+
+                    Ok((&mut window_data.0,&mut window_data.1,&mut window_data.2))
+                }
+
+                Err(error)=>Err(error),
+            }
+        }
+        else{
+            unreachable!()
         }
     }
 
-    pub fn storage_ref(&self)->&S{
+    fn close_request(window:&Window,data:Self::Data){
+        let data=unsafe{(&mut*data.0,&mut*data.1,&mut*data.2)};
+        P::close_request(window,data)
+    }
+
+    fn destroy(window:&Window,data:Self::Data){
+        P::destroy(window,unsafe{(&mut*data.0,&mut*data.1,&mut*data.2)});
+        // thats the way we drop OpenGLRenderContext
         unsafe{
-            &*self.storage
+            Box::<(OpenGLRenderContext,Graphics,S)>::from_raw(std::mem::transmute(data.0));
         }
     }
 
-    pub fn draw<F:FnMut(&Window,&mut Graphics,&S)>(&mut self,window:&Window,mut f:F)->Result<(),WinError>{
-        self.context.make_current(true)?;
+    fn paint(window:&Window,data:Self::Data){
+        let (render_context,graphics,storage)=unsafe{(&mut*data.0,&mut*data.1,&mut*data.2)};
+
+        render_context.make_current(true).unwrap();
 
         let [width,height]=window.client_size();
+
         unsafe{
-            self.graphics.core().viewport.set([0,0,width as i32,height as i32]);
+            graphics.core().parameters.viewport.set([0,0,width as i32,height as i32]);
         }
-        self.graphics.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
+        graphics.graphics_2d.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
 
-        f(window,&mut self.graphics,unsafe{&*self.storage});
+        P::paint(window,(render_context,graphics,storage));
 
-        self.graphics.core().finish();
-        self.context.swap_buffers()?;
-        Ok(())
+        unsafe{
+            graphics.core().finish()
+        }
+
+        render_context.swap_buffers().unwrap();
+    }
+
+    #[cfg(feature="set_cursor_event")]
+    fn set_cursor(window:&Window,data:Self::Data){
+        let data=unsafe{(&mut*data.0,&mut*data.1,&mut*data.2)};
+        P::set_cursor(window,data)
+    }
+
+    fn resized(client_size:[u16;2],resize_type:WindowResizeType,window:&Window,data:Self::Data){
+        let data=unsafe{(&mut*data.0,&mut*data.1,&mut*data.2)};
+        P::resized(client_size,resize_type,window,data)
+    }
+
+    fn moved(client_position:[i16;2],window:&Window,data:Self::Data){
+        let data=unsafe{(&mut*data.0,&mut*data.1,&mut*data.2)};
+        P::moved(client_position,window,data)
+    }
+
+    fn handle(event:WindowEvent,window:&Window,data:Self::Data){
+        let data=unsafe{(&mut*data.0,&mut*data.1,&mut*data.2)};
+        P::handle(event,window,data)
+    }
+
+    #[cfg(feature="wnd_proc_catch_panic")]
+    fn catch_panic(window:&Window,data:Self::Data,error:Box<dyn std::any::Any+Send>){
+        P::catch_panic(window,data,error)
     }
 }
 
@@ -101,92 +209,64 @@ pub struct App<S:Sized+'static>{
     pub event_loop:EventLoop,
     window_class:WindowClass,
     pub window:Window,
-    window_inner:UnsafeCell<Box<WindowInner<S>>>,
-    storage:UnsafeCell<Box<S>>,
+    data:(*mut OpenGLRenderContext,*mut Graphics,*mut S),
 }
 
 impl<S:Sized+'static> App<S>{
     /// Creates an application with the given attributes.
-    /// 
-    /// `W` is the type
-    /// that implements the `WindowProcedure` trait
-    /// that defines window's behavior.
-    /// 
-    /// `WindowInner` stores graphics and context structures and `S`.
-    /// 
-    /// `S` is user defined type for anything (e.g. for storing objects for rendering).
-    pub fn new<W:WindowProcedure<WindowInner<S>>>(attributes:AppAttributes,storage:S)->App<S>{
+    pub fn new<P:AppWindowProcedure<S,C>,C>(
+        attributes:AppAttributes,
+        storage_parameters:C
+    )->Result<App<S>,WinError>{
         let event_loop=EventLoop::new(attributes.event_loop);
 
-        let class=WindowClass::new(attributes.class).unwrap();
+        let class=WindowClass::new(attributes.class)?;
 
-        let inner=MaybeUninit::<WindowInner<S>>::zeroed();
-        let inner=unsafe{inner.assume_init()};
-        let mut window_inner:Box<WindowInner<S>>=Box::new(inner);
-
-        let window=Window::new::<EmptyHandler,WindowInner<S>>(
-            &class,
-            attributes.window,
-            window_inner.as_mut()
-        ).unwrap();
-
-        let context=OpenGLRenderContext::new(
-            &window,
-            attributes.render_context
-        ).unwrap();
-
-        let library=OpenGraphicsLibrary::new();
-        library.load_functions();
-
-        let graphics=Graphics::new(attributes.graphics);
-
-        let mut app_storage=Box::new(storage);
-
-        unsafe{
-            (window_inner.as_mut() as *mut WindowInner<S>).write(WindowInner{
-                graphics,
-                context,
-                storage:app_storage.as_mut()
-            });
+        let mut paramenters=AppCreateParamters::Get(
+            attributes.render_context,
+            attributes.graphics,
+            storage_parameters
+        );
+        let window=Window::new::<AppWindowHandler<P,S,C>>(&class,attributes.window,&mut paramenters)?;
+        if let AppCreateParamters::Return(c,g,s)=paramenters.take(){
+            Ok(
+                Self{
+                    event_loop,
+                    window_class:class,
+                    window,
+                    data:(c,g,s),
+                }
+            )
         }
-
-        unsafe{window.set_window_handle::<W,WindowInner<S>>()}
-
-        Self{
-            event_loop,
-            window_class:class,
-            window,
-            window_inner:UnsafeCell::new(window_inner),
-            storage:UnsafeCell::new(app_storage),
+        else{
+            unreachable!()
         }
     }
 
-    /// Replaces the window procedure with functions defined by `W`.
-    pub fn set_window_handle<W:WindowProcedure<WindowInner<S>>>(&self){
+    /// Replaces the window procedure.
+    pub fn set_window_handle<P:AppWindowProcedure<S,C>,C>(&self){
         unsafe{
-            self.window.set_window_handle::<W,WindowInner<S>>()
+            self.window.set_window_handle::<AppWindowHandler<P,S,C>>()
         }
     }
 }
 
 impl<S:Sized+'static> App<S>{
-    pub fn window_inner(&self)->&mut WindowInner<S>{
+    pub fn context(&self)->&mut OpenGLRenderContext{
         unsafe{
-            (&mut*self.window_inner.get()).as_mut()
+            &mut*self.data.0
         }
     }
 
     pub fn graphics(&self)->&mut Graphics{
-        &mut self.window_inner().graphics
-    }
-
-    pub fn context(&self)->&OpenGLRenderContext{
-        &self.window_inner().context
+        unsafe{
+            &mut*self.data.1
+        }
     }
 
     pub fn storage(&self)->&mut S{
         unsafe{
-            (&mut*self.storage.get()).as_mut()
+            &mut*self.data.2
         }
     }
 }

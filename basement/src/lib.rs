@@ -9,6 +9,8 @@
     dead_code
 )]
 
+#![cfg_attr(feature="nightly-docs",feature(doc_cfg))]
+
 /// Some useful structures and functions.
 #[cfg(feature="support")]
 pub mod support;
@@ -16,6 +18,7 @@ pub mod support;
 #[cfg(any(feature="opengl"))]
 pub mod graphics;
 
+#[cfg_attr(feature = "nightly-docs", doc(cfg(target_os="windows")))]
 #[cfg(all(target_os="windows",feature="windowing"))]
 pub mod windows;
 

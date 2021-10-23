@@ -56,15 +56,17 @@ pub use draw_parameters::{
     DrawParameters,
 };
 
-use cat_engine_basement::graphics::level1::Texture2D;
-
-use cat_engine_basement::graphics::GCore;
+use cat_engine_basement::graphics::{
+    GLCore,
+    level0::GraphicsParameters,
+    level1::Texture2D
+};
 
 pub use cat_engine_basement::graphics::core::{
     GraphicsCore,
     ClearMask,
     drawing::PrimitiveType,
-    blending::{
+    parameters::blend::{
         BlendingEquation,
         BlendingFunction,
     },
@@ -78,7 +80,8 @@ const frame_size:usize=3;
 const minimal_frames:usize=3;
 
 pub struct Graphics{
-    graphics_2d:Graphics2D,
+    pub graphics_2d:Graphics2D,
+    pub parameters:GraphicsParameters,
 }
 
 impl Graphics{
@@ -86,33 +89,20 @@ impl Graphics{
     pub fn new(attributes:Graphics2DAttributes)->Graphics{
         Self{
             graphics_2d:Graphics2D::new(attributes),
+            parameters:GraphicsParameters::new(),
         }
     }
 
-    pub fn graphics_2d(&self)->&Graphics2D{
-        &self.graphics_2d
-    }
-
-    pub fn graphics_2d_mut(&mut self)->&mut Graphics2D{
-        &mut self.graphics_2d
-    }
-
-    pub fn core(&self)->&GraphicsCore{
-        unsafe{
-            &GCore
-        }
-    }
-
-    pub fn draw_parameters(&mut self)->&mut DrawParameters{
-        self.graphics_2d.draw_parameters()
+    pub unsafe fn core(&self)->&GraphicsCore{
+        &GLCore
     }
 }
 
 impl Graphics{
     pub fn clear_colour(&self,colour:Colour){
         unsafe{
-            GCore.set_clear_colour(colour);
-            GCore.clear(ClearMask::Colour)
+            GLCore.parameters.set_clear_colour(colour);
+            GLCore.clear(ClearMask::Colour)
         }
     }
 }

@@ -1,8 +1,8 @@
-use crate::implement_handle_wrapper;
-
 use super::{
+    InstanceHandle,
     window_class::ClassIdentifier,
     device_context::DeviceContextHandle,
+    menu::MenuHandle,
 };
 
 use core::{
@@ -19,7 +19,6 @@ use winapi::{
             HMENU,
             HWND,
         },
-        minwindef::HINSTANCE,
     },
 
     um::{
@@ -40,6 +39,9 @@ use winapi::{
             GetWindowLongPtrW,
             ClientToScreen,
             ScreenToClient,
+
+            SetClassLongPtrW,
+            GetClassLongPtrW,
             // window styles
             WS_BORDER,
             WS_CAPTION,
@@ -118,6 +120,18 @@ use winapi::{
             SWP_FRAMECHANGED,
             GWLP_HINSTANCE,
             GWLP_ID,
+            // class data
+            GCW_ATOM,
+            GCL_CBCLSEXTRA,
+            GCL_CBWNDEXTRA,
+            GCLP_HBRBACKGROUND,
+            GCLP_HCURSOR,
+            GCLP_HICON,
+            GCLP_HICONSM,
+            GCLP_HMODULE,
+            GCLP_MENUNAME,
+            GCL_STYLE,
+            GCLP_WNDPROC,
         },
     }
 };
@@ -573,9 +587,9 @@ impl ExtendedWindowStyles{
     }
 }
 
-/// The replacement for `HWND`.
+/// A replacement for `HWND`.
 /// Can be wraped with `Option` with null pointer optimization.
-#[derive(Clone,Copy)]
+#[derive(Clone,Copy,Debug)]
 #[repr(transparent)]
 pub struct WindowHandle{
     inner:NonNull<HWND>,
@@ -598,7 +612,7 @@ impl Window{
     /// provided that the module that registers the class is also the module that creates the window.
     /// The class can also be any of the predefined system class names.
     #[inline(always)]
-    pub unsafe fn create<P>(
+    pub fn create<P>(
         &self,
         class:ClassIdentifier,
         window_name:*const u16,
@@ -606,23 +620,25 @@ impl Window{
         extended_style:ExtendedWindowStyles,
         [x,y,width,height]:[i32;4],
         parent_window:Option<WindowHandle>,
-        menu:HMENU,
-        instance:HINSTANCE,
-        create_parameters:*mut P,
+        menu:Option<MenuHandle>,
+        instance:Option<InstanceHandle>,
+        create_parameters:Option<&mut P>,
     )->Option<WindowHandle>{
-        WindowHandle::from_raw(
-            CreateWindowExW(
-                extended_style.flag,
-                class.as_ptr(),
-                window_name,
-                style.flag,
-                x,y,width,height,
-                WindowHandle::to_raw(parent_window),
-                menu,
-                instance,
-                create_parameters as *mut _,
+        unsafe{
+            WindowHandle::from_raw(
+                CreateWindowExW(
+                    extended_style.flag,
+                    class.as_ptr(),
+                    window_name,
+                    style.flag,
+                    x,y,width,height,
+                    WindowHandle::to_raw(parent_window),
+                    MenuHandle::to_raw(menu),
+                    InstanceHandle::to_raw(instance),
+                    transmute(create_parameters)
+                )
             )
-        )
+        }
     }
 
     /// Destroys the specified window.
@@ -650,8 +666,10 @@ impl Window{
     /// 
     /// If the window being destroyed is a child window that does not have the `WS_EX_NOPARENTNOTIFY` style, a `WM_PARENTNOTIFY` message is sent to the parent.
     #[inline(always)]
-    pub unsafe fn destroy(&self,window:WindowHandle)->bool{
-        DestroyWindow(window.as_raw())!=0
+    pub fn destroy(&self,window:WindowHandle)->bool{
+        unsafe{
+            DestroyWindow(window.as_raw())!=0
+        }
     }
 
     /// Retrieves a handle to a device context (DC) for the client area of a specified window or for the entire screen.
@@ -679,8 +697,10 @@ impl Window{
     }
 
     #[inline(always)]
-    pub unsafe fn get_device_context_unchecked(&self,window:Option<WindowHandle>)->DeviceContextHandle{
-        DeviceContextHandle::from_raw_unchecked(GetDC(WindowHandle::to_raw(window)))
+    pub fn get_device_context_unchecked(&self,window:Option<WindowHandle>)->DeviceContextHandle{
+        unsafe{
+            DeviceContextHandle::from_raw_unchecked(GetDC(WindowHandle::to_raw(window)))
+        }
     }
 
     /// Retrieves the dimensions of the bounding rectangle of the specified window.
@@ -704,13 +724,15 @@ impl Window{
     /// `Window::get_window_rectangle` will not include the area of the drop shadow.
     /// 
     /// To get the window bounds excluding the drop shadow,
-    /// use DwmGetWindowAttribute, specifying `DWMWA_EXTENDED_FRAME_BOUNDS`.
+    /// use `DwmGetWindowAttribute`, specifying `DWMWA_EXTENDED_FRAME_BOUNDS`.
     /// Note that unlike the Window Rect,
     /// the DWM Extended Frame Bounds are not adjusted for DPI.
     /// Getting the extended frame bounds can only be done after the window has been shown at least once.
     #[inline(always)]
-    pub unsafe fn get_window_rectangle(&self,window:WindowHandle,rectangle:&mut [i32;4])->bool{
-        GetWindowRect(window.as_raw(),transmute(rectangle))!=0
+    pub fn get_window_rectangle(&self,window:WindowHandle,rectangle:&mut [i32;4])->bool{
+        unsafe{
+            GetWindowRect(window.as_raw(),transmute(rectangle))!=0
+        }
     }
 
     /// Retrieves the coordinates of a window's client area.
@@ -727,8 +749,10 @@ impl Window{
     /// the bottom-right coordinates of the returned rectangle are exclusive.
     /// In other words, the pixel at (right, bottom) lies immediately outside the rectangle.
     #[inline(always)]
-    pub unsafe fn get_client_rectangle(&self,window:WindowHandle,rectangle:&mut [i32;4])->bool{
-        GetClientRect(window.as_raw(),transmute(rectangle))!=0
+    pub fn get_client_rectangle(&self,window:WindowHandle,rectangle:&mut [i32;4])->bool{
+        unsafe{
+            GetClientRect(window.as_raw(),transmute(rectangle))!=0
+        }
     }
 
     /// Changes the size, position, and Z order of a child, pop-up, or top-level window.
@@ -775,8 +799,10 @@ impl Window{
     /// To use `Window::set_window_position` to bring a window to the top,
     /// the process that owns the window must have `SetForegroundWindow` permission.
     #[inline(always)]
-    pub unsafe fn set_window_position(&self,window:WindowHandle,insert_after:Option<WindowHandle>,[x,y,width,height]:[i32;4],flag:u32)->bool{
-        SetWindowPos(window.as_raw(),WindowHandle::to_raw(insert_after),x,y,width,height,flag)!=0
+    pub fn set_window_position(&self,window:WindowHandle,insert_after:Option<WindowHandle>,[x,y,width,height]:[i32;4],flag:u32)->bool{
+        unsafe{
+            SetWindowPos(window.as_raw(),WindowHandle::to_raw(insert_after),x,y,width,height,flag)!=0
+        }
     }
 
     /// Changes an attribute of the specified window.
@@ -856,8 +882,10 @@ impl Window{
     /// If the function succeeds, returns `true`.
     /// If the function fails, return `false`.
     #[inline(always)]
-    pub unsafe fn client_to_screen(&self,window:WindowHandle,point:&mut [i32;2])->bool{
-        ClientToScreen(window.as_raw(),transmute(point))!=0
+    pub fn client_to_screen(&self,window:WindowHandle,point:&mut [i32;2])->bool{
+        unsafe{
+            ClientToScreen(window.as_raw(),transmute(point))!=0
+        }
     }
 
     /// Converts the screen coordinates of a specified point on the screen to client-area coordinates.
@@ -881,7 +909,97 @@ impl Window{
     /// If the function succeeds, returns `true`.
     /// If the function fails, return `false`.
     #[inline(always)]
-    pub unsafe fn screen_to_client(&self,window:WindowHandle,point:&mut [i32;2])->bool{
-        ScreenToClient(window.as_raw(),transmute(point))!=0
+    pub fn screen_to_client(&self,window:WindowHandle,point:&mut [i32;2])->bool{
+        unsafe{
+            ScreenToClient(window.as_raw(),transmute(point))!=0
+        }
+    }
+}
+
+#[repr(i32)]
+#[derive(Clone,Copy,Debug)]
+pub enum ClassData{
+    /// Retrieves an ATOM value that uniquely identifies the window class.
+    /// This is the same atom that the RegisterClassEx function returns.
+    Atom=GCW_ATOM,
+
+    /// Retrieves the size, in bytes, of the extra memory associated with the class.
+    ClassExtraDataSize=GCL_CBCLSEXTRA,
+
+    /// Retrieves the size, in bytes, of the extra window memory associated with each window in the class.
+    /// For information on how to access this memory, see `Window::get_window_long_ptr`.
+    WindowExtraDataSize=GCL_CBWNDEXTRA,
+
+    /// Retrieves a handle to the background brush associated with the class.
+    BackgroundBrushHandle=GCLP_HBRBACKGROUND,
+
+    /// Retrieves a handle to the cursor associated with the class.
+    CursorHandle=GCLP_HCURSOR,
+
+    /// Retrieves a handle to the icon associated with the class.
+    IconHandle=GCLP_HICON,
+
+    /// Retrieves a handle to the small icon associated with the class.
+    SmallIconHandle=GCLP_HICONSM,
+
+    /// Retrieves a handle to the module that registered the class.
+    ModuleHandle=GCLP_HMODULE,
+
+    /// Retrieves the pointer to the menu name string.
+    /// The string identifies the menu resource associated with the class.
+    MenuName=GCLP_MENUNAME,
+
+    /// Retrieves the window-class style bits.
+    ClassStyle=GCL_STYLE,
+
+    /// Retrieves the address of the window procedure,
+    /// or a handle representing the address of the window procedure.
+    /// You must use the CallWindowProc function to call the window procedure.
+    WindowProcedute=GCLP_WNDPROC,
+
+    ExtraData=0i32,
+}
+
+impl Window{
+    /// Replaces the specified value at the specified offset in the extra class memory
+    /// or the `WNDCLASSEX` structure for the class to which the specified window belongs.
+    /// 
+    /// If you use the `Window::set_class_long_ptr` function and the `ClassData::WindowProcedure` index to replace the window procedure,
+    /// the window procedure must conform to the guidelines specified in the description of the `WindowProc` callback function.
+    /// 
+    /// Calling `Window::set_class_long_ptr` with the `ClassData::WindowProcedure` index creates a subclass of the window class
+    /// that affects all windows subsequently created with the class.
+    /// An application can subclass a system class,
+    /// but should not subclass a window class created by another process.
+    /// 
+    /// Reserve extra class memory by specifying a nonzero value in the `class_extra_data` member of the `WNDCLASSEX` structure used with the `WindowClass::register` function.
+    /// 
+    /// Use the `Window::set_class_long_ptr` function with care.
+    /// For example,
+    /// it is possible to change the background colour for a class by using `Window::set_class_long_ptr`,
+    /// but this change does not immediately repaint all windows belonging to the class.
+    /// 
+    /// If the function succeeds, the return value is the previous value of the specified offset.
+    /// If this was not previously set, the return value is zero.
+    /// 
+    /// If the function fails, the return value is zero.
+    /// To get extended error information, call `WinCore::get_last_error`.
+    #[inline(always)]
+    pub unsafe fn set_class_long_ptr(&self,window:WindowHandle,index:ClassData,value:isize)->usize{
+        SetClassLongPtrW(window.as_raw(),index as i32,value)
+    }
+
+    /// Retrieves the specified value from the `WNDCLASSEX` structure associated with the specified window.
+    /// 
+    /// Reserve extra class memory by specifying a nonzero value in the `class_extra_data` member
+    /// of the `WNDCLASSEX` structure used with the `WindowClass::register` function.
+    /// 
+    /// If the function succeeds, the return value is the requested value.
+    /// 
+    /// If the function fails, the return value is zero.
+    /// To get extended error information, call `WinCore::get_last_error`.
+    #[inline(always)]
+    pub unsafe fn get_class_long_ptr(&self,window:WindowHandle,index:ClassData)->usize{
+        GetClassLongPtrW(window.as_raw(),index as i32)
     }
 }

@@ -1,5 +1,5 @@
 use crate::graphics::{
-    GCore,
+    GLCore,
     core::GLError,
     core::buffer::{
         BufferTarget,
@@ -26,7 +26,7 @@ impl<I:Sized> Buffer<I>{
     pub fn generate()->Buffer<I>{
         unsafe{
             let mut id:u32=MaybeUninit::uninit().assume_init();
-            GCore.buffer.generate_one(&mut id);
+            GLCore.buffer.generate_one(&mut id);
 
             Self{
                 id,
@@ -51,8 +51,8 @@ impl<I:Sized> Buffer<I>{
     /// if `buffer` is not a name previously returned from a call to `Buffer::generate()`.
     pub fn bind(&self,target:BufferTarget)->GLError{
         unsafe{
-            GCore.buffer.bind(target,self.id);
-            GCore.get_error()
+            GLCore.buffer.bind(target,self.id);
+            GLCore.get_error()
         }
     }
 
@@ -64,8 +64,8 @@ impl<I:Sized> Buffer<I>{
     #[inline(always)]
     pub fn unbind(target:BufferTarget)->GLError{
         unsafe{
-            GCore.buffer.bind(target,0);
-            GCore.get_error()
+            GLCore.buffer.bind(target,0);
+            GLCore.get_error()
         }
     }
 
@@ -80,8 +80,8 @@ impl<I:Sized> Buffer<I>{
     #[inline(always)]
     pub fn bind_base(&self,target:BufferIndexedTarget,index:u32)->GLError{
         unsafe{
-            GCore.buffer.bind_base(target,index,self.id);
-            GCore.get_error()
+            GLCore.buffer.bind_base(target,index,self.id);
+            GLCore.get_error()
         }
     }
 
@@ -91,8 +91,8 @@ impl<I:Sized> Buffer<I>{
     #[inline(always)]
     pub fn bind_range(&self,target:BufferIndexedTarget,index:u32,start:isize,count:isize)->GLError{
         unsafe{
-            GCore.buffer.bind_range(target,index,self.id,start,count);
-            GCore.get_error()
+            GLCore.buffer.bind_range(target,index,self.id,start,count);
+            GLCore.get_error()
         }
     }
 }
@@ -112,8 +112,8 @@ impl<I:Sized> Buffer<I>{
     /// or if the buffer object being updated is mapped.
     pub fn write_raw(target:BufferTarget,offset:isize,size:isize,data:&I)->GLError{
         unsafe{
-            GCore.buffer.write(target,offset,size,data);
-            GCore.get_error()
+            GLCore.buffer.write(target,offset,size,data);
+            GLCore.get_error()
         }
     }
 
@@ -132,8 +132,8 @@ impl<I:Sized> Buffer<I>{
             let offset=size_of::<I>() as isize*offset;
             let size=size_of::<I>()*data.len();
             let data=&*data.as_ptr();
-            GCore.buffer.write::<I>(target,offset,size as isize,data);
-            GCore.get_error()
+            GLCore.buffer.write::<I>(target,offset,size as isize,data);
+            GLCore.get_error()
         }
     }
 
@@ -150,8 +150,8 @@ impl<I:Sized> Buffer<I>{
     /// Returns `GLError::OutOfMemory` if the GL is unable to create a data store with the specified size.
     pub fn rewrite_raw(target:BufferTarget,size:isize,data:Option<&I>,usage:BufferUsage)->GLError{
         unsafe{
-            GCore.buffer.rewrite(target,size,data,usage);
-            GCore.get_error()
+            GLCore.buffer.rewrite(target,size,data,usage);
+            GLCore.get_error()
         }
     }
 
@@ -166,8 +166,8 @@ impl<I:Sized> Buffer<I>{
         unsafe{
             let size=size_of::<I>()*data.len();
             let data=&*data.as_ptr();
-            GCore.buffer.rewrite::<I>(target,size as isize,Some(data),usage);
-            GCore.get_error()
+            GLCore.buffer.rewrite::<I>(target,size as isize,Some(data),usage);
+            GLCore.get_error()
         }
     }
 
@@ -184,8 +184,8 @@ impl<I:Sized> Buffer<I>{
     /// Returns `GLError::OutOfMemory` if the GL is unable to create a data store with the specified size.
     pub fn rewrite_empty(target:BufferTarget,size:isize,usage:BufferUsage)->GLError{
         unsafe{
-            GCore.buffer.rewrite::<I>(target,size*size_of::<I>() as isize,None,usage);
-            GCore.get_error()
+            GLCore.buffer.rewrite::<I>(target,size*size_of::<I>() as isize,None,usage);
+            GLCore.get_error()
         }
     }
 }
@@ -193,7 +193,7 @@ impl<I:Sized> Buffer<I>{
 impl<I:Sized> Drop for Buffer<I>{
     fn drop(&mut self){
         unsafe{
-            GCore.buffer.delete_one(&self.id);
+            GLCore.buffer.delete_one(&self.id);
         }
     }
 }

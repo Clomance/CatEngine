@@ -1,8 +1,8 @@
 [package]
 name = "cat_engine_basement"
-version = "0.0.0-alpha5"
+version = "0.0.0-alpha6"
 authors = ["Clomance <Hisoskar@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 homepage = "https://github.com/Clomance/CatEngine"
 repository = "https://github.com/Clomance/CatEngine"
@@ -18,13 +18,26 @@ exclude = [
 ]
 
 [features]
-default = ["opengl","support","windowing"]
+default = [
+    "opengl",
+    "support",
+    "windowing",
+    # Windows
+    "wnd_proc_catch_panic",
+]
 support = []
 opengl = ["image"]
 windowing = ["image","winapi"]
 
+# Windows
+set_cursor_event = []
+wnd_proc_catch_panic = []
+
 [package.metadata.docs.rs]
-features = ["default"]
+features = [
+    "default",
+    "set_cursor_event",
+]
 default-target = "x86_64-pc-windows-msvc"
 
 [target.'cfg(windows)'.dependencies.winapi]

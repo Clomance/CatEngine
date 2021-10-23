@@ -1,5 +1,5 @@
 use cat_engine_basement::graphics::{
-    GCore,
+    GLCore,
     core::GLError,
     core::texture::{
         Texture2DRewriteTarget,

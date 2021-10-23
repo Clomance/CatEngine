@@ -1,5 +1,3 @@
-use crate::implement_handle_wrapper;
-
 use super::device_context::DeviceContextHandle;
 
 use core::{
@@ -21,7 +19,7 @@ use winapi::{
     }
 };
 
-/// The replacement for `HGLRC`.
+/// A replacement for `HGLRC`.
 /// Can be wraped with `Option` with null pointer optimization.
 #[derive(Clone,Copy)]
 #[repr(transparent)]
