@@ -32,6 +32,7 @@ exclude = [
 [package.metadata.docs.rs]
 features = [
     "default",
+    "set_cursor_event"
 ]
 default-target = "x86_64-pc-windows-msvc"
 
