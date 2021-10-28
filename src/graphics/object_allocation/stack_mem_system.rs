@@ -153,20 +153,6 @@ impl<V:Vertex> StackSystem<V>{
         Some(object_index)
     }
 
-    #[inline(always)]
-    pub fn get_object(&self,id:ObjectIDType)->Option<&StackObject>{
-        self.objects.get(id as usize)
-    }
-
-    pub fn get_drawable_object(&self,id:ObjectIDType)->Option<StackDrawableObject>{
-        if let Some(object)=self.objects.get(id as usize){
-            Some(object.drawable())
-        }
-        else{
-            None
-        }
-    }
-
     pub fn pop_object(&mut self){
         if let Some(object)=self.objects.pop(){
             self.vertex_buffer_ptr-=object.vertex_count;
@@ -206,5 +192,41 @@ impl<V:Vertex> StackSystem<V>{
                 index_buffer.write(object.vertex_start as isize,indices).unwrap();
             }
         }
+    }
+}
+
+/// Default get functions.
+#[cfg(not(feature="unsafe_release_stack_memmory_system"))]
+impl <V:Vertex> StackSystem<V>{
+    #[inline(always)]
+    pub fn get_object(&self,id:ObjectIDType)->Option<&StackObject>{
+        self.objects.get(id as usize)
+    }
+
+    pub fn get_drawable_object(&self,id:ObjectIDType)->Option<StackDrawableObject>{
+        if let Some(object)=self.objects.get(id as usize){
+            Some(object.drawable())
+        }
+        else{
+            None
+        }
+    }
+}
+
+/// Removed some unnessesary checks.
+#[cfg(feature="unsafe_release_stack_memmory_system")]
+impl <V:Vertex> StackSystem<V>{
+    #[inline(always)]
+    pub fn get_object(&self,id:ObjectIDType)->&StackObject{
+        self.objects.get_unchecked(id as usize)
+    }
+
+    #[inline(always)]
+    pub fn get_mut_object(&self,id:ObjectIDType)->&mut StackObject{
+        self.objects.get_mut_unchecked(id as usize)
+    }
+
+    pub fn get_drawable_object(&self,id:ObjectIDType)->StackDrawableObject{
+        self.objects.get_unchecked(id as usize).drawable()
     }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "cat_engine"
-version = "1.0.0-alpha6"
+version = "1.0.0-alpha7"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2021"
 
@@ -45,7 +45,7 @@ default = [
     "wnd_proc_catch_panic",
 ]
 
-# Windows
+### Windows
 set_cursor_event = ["cat_engine_basement/set_cursor_event"]
 wnd_proc_catch_panic = ["cat_engine_basement/wnd_proc_catch_panic"]
 
@@ -72,8 +72,8 @@ optional = true
 
 [dependencies.cat_engine_basement]
 path = "basement"
-version = "0.0.0-alpha6"
-features = ["opengl","windowing"]
+version = "0.0.0-alpha7"
+features = ["opengl"]
 
 
 [dependencies]

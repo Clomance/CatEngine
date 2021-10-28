@@ -1,8 +1,5 @@
 use cat_engine_basement::{
     windows::{
-        WinCore,
-        core::window::ClassData,
-        core::cursor::CursorHandle,
         EventLoop,
         LoopControl,
         EventLoopAttributes,
@@ -17,6 +14,8 @@ use cat_engine_basement::{
         ProcessEvent,
         Event,
         WinError,
+        StandardSystemColour,
+        Background,
     },
 };
 
@@ -74,7 +73,8 @@ fn main(){
     let ea=EventLoopAttributes::new();
     let event_loop=EventLoop::new(ea);
 
-    let wca=WindowClassAttributes::new("CatEngineBasementWindowClass");
+    let mut wca=WindowClassAttributes::new("CatEngineBasementWindowClass");
+    wca.background=Background::SystemColour(WindowBackgroundSystemColour::Window);
     let wc=WindowClass::new(wca).unwrap();
 
     let wa=WindowAttributes::new("CatEngineBesementWindow");

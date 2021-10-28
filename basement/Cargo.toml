@@ -1,6 +1,6 @@
 [package]
 name = "cat_engine_basement"
-version = "0.0.0-alpha6"
+version = "0.0.0-alpha7"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2021"
 
@@ -21,13 +21,15 @@ exclude = [
 default = [
     "opengl",
     "support",
-    "windowing",
     # Windows
     "wnd_proc_catch_panic",
 ]
 support = []
 opengl = ["image"]
-windowing = ["image","winapi"]
+
+
+# Documentation
+nightly-docs = []
 
 # Windows
 set_cursor_event = []
@@ -36,11 +38,12 @@ wnd_proc_catch_panic = []
 [package.metadata.docs.rs]
 features = [
     "default",
+    "nightly-docs",
     "set_cursor_event",
 ]
 default-target = "x86_64-pc-windows-msvc"
 
-[target.'cfg(windows)'.dependencies.winapi]
+[target.'cfg(any(windows,doc))'.dependencies.winapi]
 version = "0.3.9"
 features = [
     "winuser",
@@ -52,7 +55,6 @@ features = [
     "profileapi",
     "winbase",
 ]
-optional = true
 
 [dependencies]
 image = { version="0.23.13", optional = true}

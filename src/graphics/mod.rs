@@ -26,7 +26,9 @@ pub use objects::{
     ShapeObject,
 };
 
+#[cfg(feature="text_graphics")]
 mod glyph_image_builder;
+#[cfg(feature="text_graphics")]
 use glyph_image_builder::GlyphImageBuilder;
 
 #[cfg(feature="simple_graphics")]
@@ -85,7 +87,7 @@ pub struct Graphics{
 }
 
 impl Graphics{
-    #[cfg(target_os="windows")]
+    #[cfg(any(windows))]
     pub fn new(attributes:Graphics2DAttributes)->Graphics{
         Self{
             graphics_2d:Graphics2D::new(attributes),

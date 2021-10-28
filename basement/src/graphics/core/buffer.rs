@@ -1,4 +1,4 @@
-#[cfg(target_os="windows")]
+#[cfg(any(windows))]
 use crate::windows::OpenGraphicsLibrary;
 
 use core::mem::transmute;
@@ -305,7 +305,7 @@ impl Buffer{
         }
     }
 
-    #[cfg(target_os="windows")]
+    #[cfg(any(windows))]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             self.glGenBuffers=transmute(library.get_proc_address("glGenBuffers\0"));

@@ -38,25 +38,13 @@ impl AppWindowProcedure<Texture,()> for WindowHandle{
     fn destroy(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)){}
 
     fn paint(
-        window:&Window,
-        (render_context,graphics,texture):(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
+        _window:&Window,
+        (_render_context,graphics,texture):(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
     ){
-        render_context.make_current(true).unwrap_or_else(|_|{quit(0)});
-        let [width,height]=window.client_size();
-        unsafe{
-            graphics.core().parameters.viewport.set([0,0,width as i32,height as i32]);
-        }
-        graphics.graphics_2d.draw_parameters().set_viewport([0f32,0f32,width as f32,height as f32]);
-
         graphics.clear_colour([1f32;4]);
         graphics.draw_stack_textured_object(0,texture.texture_2d());
         graphics.draw_stack_textured_object(1,texture.texture_2d());
         graphics.draw_stack_textured_object(2,texture.texture_2d());
-
-        unsafe{
-            graphics.core().finish()
-        }
-        render_context.swap_buffers().unwrap_or_else(|_|{quit(0)});
     }
 
     #[cfg(feature="set_cursor_event")]

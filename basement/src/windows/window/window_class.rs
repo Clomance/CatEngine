@@ -2,7 +2,6 @@ use crate::windows::{
     WinCore,
     WinError,
     WinColour,
-    core::window::WindowHandle,
     // level0::brush::Brush,
 };
 
@@ -12,13 +11,16 @@ pub use crate::windows::core::{
         ClassAtom,
         WindowClassStyle,
         WindowClassStyles,
+        WindowBackgroundColour,
+        WindowBackgroundSystemColour,
+        WindowClassInfo,
     },
     cursor::SystemCursor,
 };
 
 use super::{
     Icon,
-    default_window_procedure,
+    setup_window_procedure,
 };
 
 use image::{
@@ -28,8 +30,6 @@ use image::{
 
 use std::{
     ptr::null_mut,
-    ffi::OsString,
-    os::windows::ffi::OsStrExt,
     mem::transmute
 };
 
@@ -44,19 +44,23 @@ pub enum CursorIcon{
 
 pub enum Background{
     None,
-    Colour([u8;3]),
+    SystemColour(WindowBackgroundSystemColour),
+    RGBColour([u8;3]),
 }
 
 /// A window class.
+/// 
+/// Unregistrered when goes out of scope.
 pub struct WindowClass{
-    identifier:ClassAtom, // a class atom
+    identifier:ClassAtom,
 }
 
 impl WindowClass{
+    /// Registers a window class for subsequent use in creating windows.
     pub fn new(attributes:WindowClassAttributes)->Result<WindowClass,WinError>{
         let class_name:Vec<u16>=attributes.name
-            .encode_wide()
-            .chain(Some(0).into_iter())
+            .encode_utf16()
+            .chain([0].into_iter())
             .collect();
 
         let window_icon=match attributes.window_icon{
@@ -69,16 +73,19 @@ impl WindowClass{
             CursorIcon::System(cursor)=>unsafe{
                 Some(WinCore.cursor.load_system_cursor(cursor).unwrap())
             }
-            CursorIcon::BGRA8{
-                position,
-                image
-            }=>Some(unsafe{transmute(Icon::from_bgra(false,position,&image).handle())})
+            CursorIcon::BGRA8{position,image}=>unsafe{
+                Some(transmute(Icon::from_bgra(false,position,&image).handle()))
+            }
         };
 
         let background=match attributes.background{
             Background::None=>None,
-            Background::Colour([red,green,blue])=>unsafe{
-                Some(WinCore.brush.create_solid(WinColour::new([red,green,blue])).unwrap())
+            Background::SystemColour(colour)=>{
+                Some(WindowBackgroundColour::system_colour(colour))
+            }
+            Background::RGBColour([red,green,blue])=>unsafe{
+                let brush=WinCore.brush.create_solid(WinColour::new([red,green,blue])).unwrap();
+                Some(WindowBackgroundColour::brush(brush))
             }
         };
 
@@ -100,7 +107,7 @@ impl WindowClass{
             WinCore.window_class.register(
                 class_name.as_ptr(),
                 style,
-                default_window_procedure,
+                setup_window_procedure,
                 0,
                 64,
                 None,
@@ -120,13 +127,26 @@ impl WindowClass{
         }
     }
 
+    // Returns the class atom.
     pub const fn atom(&self)->ClassAtom{
         self.identifier
     }
 
+    /// Returns the class atom wrapped into `ClassIdentifier`.
     #[inline(always)]
     pub fn identifier(&self)->ClassIdentifier{
         ClassIdentifier::atom(self.identifier)
+    }
+
+    /// Retrieves information about a window class,
+    /// including a handle to the small icon associated with the window class.
+    /// The function does not retrieve a handle to the small icon.
+    pub fn get_info(&self)->WindowClassInfo{
+        unsafe{
+            let mut info=WindowClassInfo::new();
+            WinCore.window_class.get_info(self.identifier(),None,&mut info);
+            info
+        }
     }
 }
 
@@ -140,7 +160,7 @@ impl Drop for WindowClass{
 
 pub struct WindowClassAttributes{
     /// A name of a class.
-    pub name:OsString,
+    pub name:String,
 
     /// A window icon.
     /// 
@@ -182,7 +202,7 @@ pub struct WindowClassAttributes{
 
 impl WindowClassAttributes{
     pub fn new(name:&str)->WindowClassAttributes{
-        let name=OsString::from(name);
+        let name=String::from(name);
 
         Self{
             name,

@@ -1,6 +1,6 @@
 use crate::graphics::Colour;
 
-#[cfg(target_os="windows")]
+#[cfg(any(windows))]
 use crate::windows::OpenGraphicsLibrary;
 
 use core::mem::transmute;
@@ -189,7 +189,7 @@ impl Blend{
         }
     }
 
-    #[cfg(target_os="windows")]
+    #[cfg(any(windows))]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             self.glBlendColor=transmute(library.get_proc_address("glBlendColor\0"));
@@ -204,7 +204,7 @@ impl Blend{
 impl Blend{
     /// Sets the blend constant colour.
     /// 
-    /// The colour components are clamped to the range [0,1] before being stored.
+    /// The colour components are clamped to the range \[0,1\] before being stored.
     /// 
     /// Initially the colour is set to `[0f32;4]`.
     #[inline(always)]

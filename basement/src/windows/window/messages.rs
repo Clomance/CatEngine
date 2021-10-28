@@ -314,7 +314,7 @@ pub enum WindowMessage{
     /// An application can prompt the user for confirmation, prior to destroying a window,
     /// by processing the WM_CLOSE message and calling the DestroyWindow function only if the user confirms the choice.
     /// 
-    /// By default, the DefWindowProc function calls the DestroyWindow function to destroy the window.
+    /// By default, the DefWindowProc function calls the `Window::destroy` function to destroy the window.
     Close=WM_CLOSE,
 
     /// Sent when a window is being destroyed.

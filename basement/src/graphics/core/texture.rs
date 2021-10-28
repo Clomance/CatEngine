@@ -1,4 +1,4 @@
-#[cfg(target_os="windows")]
+#[cfg(any(windows))]
 use crate::windows::OpenGraphicsLibrary;
 
 use core::mem::transmute;
@@ -512,7 +512,7 @@ impl Texture{
         }
     }
 
-    #[cfg(target_os="windows")]
+    #[cfg(any(windows))]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             self.glGenTextures=transmute(library.get_proc_address("glGenTextures\0"));

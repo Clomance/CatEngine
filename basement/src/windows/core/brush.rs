@@ -1,8 +1,6 @@
 use super::{
     Colour,
-    ColourResult,
     bitmap::BitmapHandle,
-    device_context::DeviceContextHandle,
 };
 
 use winapi::{
@@ -42,7 +40,6 @@ use core::{
     mem::{
         transmute,
         transmute_copy,
-        size_of,
     },
     ptr::NonNull,
 };
@@ -60,15 +57,15 @@ pub enum BrushStyle{
     /// A pattern brush defined by a device-independent bitmap (DIB) specification.
     /// If lbStyle is BS_DIBPATTERN, the lbHatch member contains a handle to a packed DIB.
     /// For more information, see discussion in lbHatch.
-    DIBPATTERN=BS_DIBPATTERN,
+    DIBPattern=BS_DIBPATTERN,
 
     /// See BS_DIBPATTERN.
-    DIBPATTERN8X8=BS_DIBPATTERN8X8,
+    DIBPattern8X8=BS_DIBPATTERN8X8,
 
     /// A pattern brush defined by a device-independent bitmap (DIB) specification.
     /// If lbStyle is BS_DIBPATTERNPT, the lbHatch member contains a pointer to a packed DIB.
     /// For more information, see discussion in lbHatch.
-    DIBPATTERNPT=BS_DIBPATTERNPT,
+    DIBPatternPT=BS_DIBPATTERNPT,
 
     /// Hatched brush.
     Hatched=BS_HATCHED,
@@ -80,7 +77,7 @@ pub enum BrushStyle{
     Pattern=BS_PATTERN,
 
     /// See BS_PATTERN.
-    PATTERN8X8=BS_PATTERN8X8,
+    Pattern8X8=BS_PATTERN8X8,
 
     /// Solid brush.
     Solid=BS_SOLID,
@@ -156,15 +153,15 @@ pub struct BrushLog{
     /// or it is the pointer returned by a call like LocalLock (handle_to_the_dib).
     /// A packed DIB consists of a BITMAPINFO structure immediately followed by the array of bytes that define the pixels of the bitmap.
     /// 
-    /// If lbStyle is BS_HATCHED,
+    /// If `style` is BS_HATCHED,
     /// the lbHatch member specifies the orientation of the lines used to create the hatch.
     /// It can be one of the following values.
     /// 
-    /// If lbStyle is BS_PATTERN,
+    /// If `style` is BS_PATTERN,
     /// lbHatch is a handle to the bitmap that defines the pattern.
     /// The bitmap cannot be a DIB section bitmap, which is created by the CreateDIBSection function.
     /// 
-    /// If lbStyle is BS_SOLID or BS_HOLLOW, lbHatch is ignored.
+    /// If `style` is BS_SOLID or BS_HOLLOW, `hatch` is ignored.
     hatch:usize,
 }
 
@@ -177,7 +174,7 @@ impl BrushLog{
         }
     }
 
-    #[inline]
+    #[inline(always)]
     pub fn solid(colour:Colour)->BrushLog{
         Self{
             style:BrushStyle::Solid,
@@ -215,11 +212,12 @@ impl BrushLog{
 /// A brush is a bitmap that the system uses to paint the interiors of filled shapes.
 /// 
 /// After an application creates a brush,
-/// it can select it into any device context by calling the `DeviceContext::select_brush` function.
+/// it can select it into any device context
+/// by calling the `DeviceContext::select_brush` function.
 /// 
 /// ICM: No colour is done at brush creation.
- /// However, colour management is performed
- /// when the brush is selected into an ICM-enabled device context.
+/// However, colour management is performed
+/// when the brush is selected into an ICM-enabled device context.
 /// 
 /// When you no longer need the created brush, call the `Brush::destroy` function to delete it.
 pub struct Brush;

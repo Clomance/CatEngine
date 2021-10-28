@@ -49,6 +49,7 @@ pub use window::{
     WindowClass,
     WindowClassAttributes,
     WindowResizeType,
+    WindowBackgroundSystemColour,
     // functions
     quit
 };

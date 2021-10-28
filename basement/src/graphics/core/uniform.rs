@@ -1,4 +1,4 @@
-#[cfg(target_os="windows")]
+#[cfg(any(windows))]
 use crate::windows::OpenGraphicsLibrary;
 
 use core::mem::transmute;
@@ -88,7 +88,7 @@ impl Uniform{
         }
     }
 
-    #[cfg(target_os="windows")]
+    #[cfg(any(windows))]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             self.glUniform1f=transmute(library.get_proc_address("glUniform1f\0"));

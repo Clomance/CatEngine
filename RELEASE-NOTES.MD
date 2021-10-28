@@ -1,3 +1,24 @@
+# 1.0.0 - alpha7
+
+### CatEngineBasement
+
+Fixed compile errors with shader programs on some OpenGL versions.
+
+Fixed the window title error. Now it appears fine.
+
+Added `WindowClass::register_indirect`, `WindowBackgroundSystemColour` and `WindowBackgroundColour` to `WinCore` for the `window_class` module.
+
+Updated `Background`: added the `SystemColour` option, renamed `Colour` to `RGBColour`.
+
+Fixed feature errors. Removed the `windowing` feature.
+
+Added docs configurations with the `nightly-docs` feature.
+
+### CatEngine
+
+Some changes for future updates.
+
+
 # 1.0.0 - alpha6
 
 ### The `WindowProcedure` trait
@@ -10,11 +31,10 @@ New functions:
  - `moved` - called after a window has been moved
  - `catch_panic` - called when one of the functions above panics and `catch_unwind` catches the panic in `WndProc`
 
-Renamed `render` to `paint`
-
-Renamed `DrawParameters` from `Graphics` to `DrawParameters2D`
-
-Renamed `GCore` to `GLCore`
+### Renamed
+ - `WindowProcedure::render` to `paint`
+ - `DrawParameters` from `Graphics` to `DrawParameters2D`
+ - `GCore` to `GLCore`
 
 ### Added
  - the `AppWindowProcedure` trait - wraps `WindowProcedure`

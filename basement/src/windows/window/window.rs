@@ -45,10 +45,6 @@ use winapi::{
 
 use std::{
     ptr::null_mut,
-    ffi::{
-        OsString,
-    },
-    os::windows::ffi::OsStrExt,
 };
 
 
@@ -90,8 +86,8 @@ impl Window{
         create_parameters:&mut W::CreateParameters,
     )->Result<Window,WinError>{
         let window_name:Vec<u16>=attributes.name
-            .encode_wide()
-            .chain(Some(0).into_iter())
+            .encode_utf16()
+            .chain([0].into_iter())
             .collect();
 
         let mut style=WindowStyles::new()
@@ -438,7 +434,7 @@ impl Drop for Window{
 
 pub struct WindowAttributes{
     /// The window name and title.
-    pub name:OsString,
+    pub name:String,
 
     /// The window size.
     /// 
@@ -474,7 +470,7 @@ pub struct WindowAttributes{
 impl WindowAttributes{
     pub fn new(name:&str)->WindowAttributes{
         Self{
-            name:OsString::from(name),
+            name:String::from(name),
             size:None,
             position:None,
             visible:true,

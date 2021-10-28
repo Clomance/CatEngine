@@ -1,6 +1,9 @@
 use super::{
     InstanceHandle,
-    window::WindowHandle,
+    window::{
+        WindowHandle,
+        default_window_procedure,
+    },
     icon::IconHandle,
     cursor::CursorHandle,
     brush::BrushHandle,
@@ -12,21 +15,18 @@ use core::{
         transmute,
         transmute_copy,
     },
-    num::NonZeroU16,
+    ptr::null_mut,
+    num::{
+        NonZeroU16,
+        NonZeroIsize,
+    },
 };
 
 use winapi::{
-    shared::{
-        windef::{
-            HBRUSH,
-        }
-    },
-
     um::{
         winuser::{
             RegisterClassExW,
             UnregisterClassW,
-            WNDCLASSEXW,
             GetClassInfoExW,
             // window class styles
             CS_HREDRAW,
@@ -41,6 +41,27 @@ use winapi::{
             CS_BYTEALIGNWINDOW,
             CS_GLOBALCLASS,
             CS_DROPSHADOW,
+
+            // window background colours
+            COLOR_ACTIVEBORDER,
+            COLOR_ACTIVECAPTION,
+            COLOR_APPWORKSPACE,
+            COLOR_BACKGROUND,
+            COLOR_BTNFACE,
+            COLOR_BTNSHADOW,
+            COLOR_BTNTEXT,
+            COLOR_CAPTIONTEXT,
+            COLOR_GRAYTEXT,
+            COLOR_HIGHLIGHT,
+            COLOR_HIGHLIGHTTEXT,
+            COLOR_INACTIVEBORDER,
+            COLOR_INACTIVECAPTION,
+            COLOR_MENU,
+            COLOR_MENUTEXT,
+            COLOR_SCROLLBAR,
+            COLOR_WINDOW,
+            COLOR_WINDOWFRAME,
+            COLOR_WINDOWTEXT,
         },
     }
 };
@@ -135,6 +156,7 @@ pub enum WindowClassStyle{
 }
 
 /// Represents class styles.
+#[derive(Clone,Copy,Debug)]
 pub struct WindowClassStyles{
     flag:u32
 }
@@ -222,23 +244,174 @@ impl ClassAtom{
     }
 }
 
+#[derive(Copy,Clone,Debug)]
+#[repr(i32)]
+pub enum WindowBackgroundSystemColour{
+    ActiveBorder=COLOR_ACTIVEBORDER,
+    ActioveCaption=COLOR_ACTIVECAPTION,
+    AppWorkspace=COLOR_APPWORKSPACE,
+    Background=COLOR_BACKGROUND,
+    ButtonFace=COLOR_BTNFACE,
+    ButtonShadow=COLOR_BTNSHADOW,
+    ButtonText=COLOR_BTNTEXT,
+    CaptionText=COLOR_CAPTIONTEXT,
+    GrayText=COLOR_GRAYTEXT,
+    Highlight=COLOR_HIGHLIGHT,
+    HighlightText=COLOR_HIGHLIGHTTEXT,
+    InactiveBorder=COLOR_INACTIVEBORDER,
+    InactioveCaption=COLOR_INACTIVECAPTION,
+    Menu=COLOR_MENU,
+    MenuText=COLOR_MENUTEXT,
+    Scrollbar=COLOR_SCROLLBAR,
+    Window=COLOR_WINDOW,
+    WindowFrame=COLOR_WINDOWFRAME,
+    WindowText=COLOR_WINDOWTEXT,
+}
+
+/// A handle to the class background brush.
+/// This member can be a handle to the brush to be used for painting the background,
+/// or it can be a colour value.
+#[derive(Clone,Copy,Debug)]
+#[repr(transparent)]
+pub struct WindowBackgroundColour{
+    inner:NonZeroIsize,
+}
+
+impl WindowBackgroundColour{
+    #[inline(always)]
+    pub fn system_colour(colour:WindowBackgroundSystemColour)->WindowBackgroundColour{
+        Self{
+            inner:unsafe{transmute(colour as isize+1)}
+        }
+    }
+
+    #[inline(always)]
+    pub fn brush(brush:BrushHandle)->WindowBackgroundColour{
+        Self{
+            inner:unsafe{transmute(brush.as_raw())}
+        }
+    }
+}
 
 /// Contains window class information.
 /// It is used with the RegisterClassEx and GetClassInfoEx functions.
+#[derive(Clone)]
 #[repr(C)]
 pub struct WindowClassInfo{
     size:u32,
+    /// The class styles.
+    /// This member can be any combination of `WindowClassStyle`.
+    /// 
+    /// The default is no styles.
     pub styles:WindowClassStyles,
-    pub lpfnWndProc:unsafe extern "system" fn(WindowHandle,u32,usize,isize)->isize,
-    pub class_data:i32,
-    pub window_extra_data:i32,
+
+    /// A pointer to the window procedure.
+    /// You must use the `CallWindowProc` function to call the window procedure.
+    /// 
+    /// The default is `default_window_procedure` (`DefWindowProcW`).
+    pub window_procedure:unsafe extern "system" fn(WindowHandle,u32,usize,isize)->isize,
+
+    /// The number of extra bytes to allocate following the window-class structure.
+    /// The system initializes the bytes to zero.
+    /// 
+    /// The default is `0`.
+    pub extra_class_data:i32,
+
+    /// The number of extra bytes to allocate following the window instance.
+    /// The system initializes the bytes to zero.
+    /// If an application uses `WindowClassInfo` to register a dialog box created
+    /// by using the CLASS directive in the resource file,
+    /// it must set this member to `8`.
+    /// 
+    /// The default is `0`.
+    pub extra_window_data:i32,
+
+    /// A handle to the instance that contains the window procedure for the class.
+    /// 
+    /// The default is `None`.
     pub instance:Option<InstanceHandle>,
+
+    /// A handle to the class icon.
+    /// This member must be a handle to an icon resource.
+    /// If this member is `None`, the system provides a default icon.
+    /// 
+    /// The default is `None`.
     pub icon:Option<IconHandle>,
+
+    /// A handle to the class cursor.
+    /// This member must be a handle to a cursor resource.
+    /// If this member is `None`, an application must explicitly set the cursor shape
+    /// whenever the mouse moves into the application's window.
+    /// 
+    /// The default is `None`.
     pub cursor:Option<CursorHandle>,
-    pub background:Option<BrushHandle>,
+
+    /// A handle to the class background brush.
+    /// This member can be a handle to the brush to be used for painting the background,
+    /// or it can be a colour value.
+    /// 
+    /// The system automatically deletes class background brushes
+    /// when the class is unregistered by using `Class::unregister`.
+    /// An application should not delete these brushes.
+    /// 
+    /// When this member is `None`, an application must paint its own background
+    /// whenever it is requested to paint in it's client area.
+    /// To determine whether the background must be painted,
+    /// an application can either process the `WM_ERASEBKGND` message
+    /// or test the `fErase` member of the `PAINTSTRUCT` structure filled by the `BeginPaint` function.
+    /// 
+    /// The default is `None`.
+    pub background:Option<WindowBackgroundColour>,
+
+    /// Pointer to a null-terminated character string
+    /// that specifies the resource name of the class menu,
+    /// as the name appears in the resource file.
+    /// If you use an integer to identify the menu, use the `MAKEINTRESOURCE` macro.
+    /// If this member is `None`, windows belonging to this class have no default menu.
+    /// 
+    /// The default is `null`.
     pub menu_name:*const u16,
+
+    /// A pointer to a null-terminated string or is an atom.
+    /// If this parameter is an atom,
+    /// it must be a class atom created by a previous call to the `Class::register` function.
+    /// The atom must be in the low-order word of `class_name`; the high-order word must be zero.
+    /// 
+    /// If `class_name` is a string, it specifies the window class name.
+    /// The class name can be any name registered with `Class::register`,
+    /// or any of the predefined control-class names.
+    /// 
+    /// The maximum length for `class_name` is 256.
+    /// If `class_name` is greater than the maximum length, the `Class::register` function will fail.
+    /// 
+    /// The default is `null`.
     pub class_name:*const u16,
+
+    /// A handle to a small icon that is associated with the window class.
+    /// If this member is `None`, the system searches the icon resource specified
+    /// by the `icon` member for an icon of the appropriate size to use as the small icon.
+    /// 
+    /// The default is `None`.
     pub small_icon:Option<IconHandle>,
+}
+
+impl WindowClassInfo{
+    pub fn new()->WindowClassInfo{
+        Self{
+            size:size_of::<WindowClassInfo>() as u32,
+            styles:WindowClassStyles::new(),
+            window_procedure:default_window_procedure,
+            extra_class_data:0i32,
+            extra_window_data:0i32,
+            instance:None,
+            icon:None,
+            cursor:None,
+            background:None,
+            menu_name:null_mut(),
+            class_name:null_mut(),
+            small_icon:None,
+        }
+    }
 }
 
 /// All window classes that an application registers are unregistered when it terminates.
@@ -266,31 +439,36 @@ impl WindowClass{
         class_name:*const u16,
         styles:WindowClassStyles,
         window_procedure:unsafe extern "system" fn(WindowHandle,u32,usize,isize)->isize,
-        class_data:i32,
-        window_data:i32,
+        extra_class_data:i32,
+        extra_window_data:i32,
         instance:Option<InstanceHandle>,
-        window_icon:Option<IconHandle>,
-        small_window_icon:Option<IconHandle>,
+        icon:Option<IconHandle>,
+        small_icon:Option<IconHandle>,
         cursor:Option<CursorHandle>,
-        background:Option<BrushHandle>,
+        background:Option<WindowBackgroundColour>,
         menu_name:*const u16,
     )->Option<ClassAtom>{
+        let mut attributes=WindowClassInfo::new();
+        attributes.styles=styles;
+        attributes.window_procedure=window_procedure;
+        attributes.extra_class_data=extra_class_data;
+        attributes.extra_window_data=extra_window_data;
+        attributes.instance=instance;
+        attributes.icon=icon;
+        attributes.cursor=cursor;
+        attributes.background=background;
+        attributes.menu_name=menu_name;
+        attributes.class_name=class_name;
+        attributes.small_icon=small_icon;
         unsafe{
-            let class_attributes=WNDCLASSEXW{
-                cbSize:size_of::<WNDCLASSEXW>() as u32,
-                style:styles.flag,
-                lpfnWndProc:transmute(window_procedure),
-                cbClsExtra:class_data,
-                cbWndExtra:window_data,
-                hInstance:InstanceHandle::to_raw(instance),
-                hIcon:IconHandle::to_raw(window_icon),
-                hCursor:CursorHandle::to_raw(cursor),
-                hbrBackground:BrushHandle::to_raw(background),
-                lpszMenuName:menu_name,
-                lpszClassName:class_name,
-                hIconSm:IconHandle::to_raw(small_window_icon),
-            };
-            ClassAtom::from_raw(RegisterClassExW(&class_attributes))
+            ClassAtom::from_raw(RegisterClassExW(transmute(&attributes)))
+        }
+    }
+
+    #[inline(always)]
+    pub fn register_indirect(&self,info:&WindowClassInfo)->Option<ClassAtom>{
+        unsafe{
+            ClassAtom::from_raw(RegisterClassExW(transmute(&info)))
         }
     }
 

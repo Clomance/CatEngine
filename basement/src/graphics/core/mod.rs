@@ -1,4 +1,4 @@
-#[cfg(target_os="windows")]
+#[cfg(any(windows))]
 use crate::windows::OpenGraphicsLibrary;
 
 pub mod parameters;
@@ -169,7 +169,7 @@ impl GraphicsCore{
         }
     }
 
-    #[cfg(target_os="windows")]
+    #[cfg(any(windows))]
     pub fn load_functions(&mut self,library:&OpenGraphicsLibrary){
         self.parameters.load(library);
         self.buffer.load(library);

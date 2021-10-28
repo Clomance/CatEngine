@@ -312,43 +312,6 @@ impl<V:Vertex> HeapSystem<V>{
             }
         }
     }
-
-    pub fn get_object(&self,id:ObjectIDType)->Option<&HeapObject>{
-        if let Some(object)=self.objects.get(id as usize){
-            if object.vertex_frames.len()==0{
-                None
-            }
-            else{
-                Some(object)
-            }
-        }
-        else{
-            None
-        }
-    }
-
-    pub fn get_mut_object(&mut self,id:ObjectIDType)->Option<&mut HeapObject>{
-        if let Some(object)=self.objects.get_mut(id as usize){
-            if object.vertex_frames.len()==0{
-                None
-            }
-            else{
-                Some(object)
-            }
-        }
-        else{
-            None
-        }
-    }
-
-    pub fn get_drawable_object(&self,id:ObjectIDType)->Option<HeapDrawableObject>{
-        if let Some(object)=self.get_object(id){
-            Some(object.drawable())
-        }
-        else{
-            None
-        }
-    }
 }
 
 impl<V:Vertex> HeapSystem<V>{
@@ -422,10 +385,50 @@ impl<V:Vertex> HeapSystem<V>{
     }
 }
 
+/// Default get functions.
+#[cfg(not(feature="unsafe_release_heap_memmory_system"))]
+impl<V:Vertex> HeapSystem<V>{
+    pub fn get_object(&self,id:ObjectIDType)->Option<&HeapObject>{
+        if let Some(object)=self.objects.get(id as usize){
+            if object.vertex_frames.len()==0{
+                None
+            }
+            else{
+                Some(object)
+            }
+        }
+        else{
+            None
+        }
+    }
+
+    pub fn get_mut_object(&mut self,id:ObjectIDType)->Option<&mut HeapObject>{
+        if let Some(object)=self.objects.get_mut(id as usize){
+            if object.vertex_frames.len()==0{
+                None
+            }
+            else{
+                Some(object)
+            }
+        }
+        else{
+            None
+        }
+    }
+
+    pub fn get_drawable_object(&self,id:ObjectIDType)->Option<HeapDrawableObject>{
+        if let Some(object)=self.get_object(id){
+            Some(object.drawable())
+        }
+        else{
+            None
+        }
+    }
+}
+
 /// Removed some unnessesary checks.
-/// feature="unsafe_release_heap_memmory_system"
 #[cfg(feature="unsafe_release_heap_memmory_system")]
-impl HeapSystem{
+impl<V:Vertex> HeapSystem<V>{
     /// Removed index checks.
     pub fn get_object(&self,id:ObjectIDType)->&HeapObject{
         self.objects.get_unchecked(id as usize)

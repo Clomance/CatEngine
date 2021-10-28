@@ -15,11 +15,11 @@ void main() {
 
     vec2 position = vec2(vertex_position);
 
-    if ((draw_mode & 1) == 1){
+    if ((draw_mode & uint(1)) == uint(1)){
         position += vertex_shift;
     }
 
-    if ((draw_mode & 2) == 2){
+    if ((draw_mode & uint(2)) == uint(2)){
         float cos = vertex_rotation.x;
         float sin = vertex_rotation.y;
         vec2 rotation_center = vec2(vertex_rotation.zw);

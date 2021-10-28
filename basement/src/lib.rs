@@ -8,7 +8,7 @@
     unused_imports,
     dead_code
 )]
-
+// Enables docs nightly features
 #![cfg_attr(feature="nightly-docs",feature(doc_cfg))]
 
 /// Some useful structures and functions.
@@ -18,9 +18,8 @@ pub mod support;
 #[cfg(any(feature="opengl"))]
 pub mod graphics;
 
-#[cfg_attr(feature = "nightly-docs", doc(cfg(target_os="windows")))]
-#[cfg(all(target_os="windows",feature="windowing"))]
+#[cfg(any(target_os="windows"))]
+#[cfg_attr(feature="nightly-docs",doc(cfg(target_os="windows")))]
 pub mod windows;
 
-#[cfg(any(feature="opengl",feature="windowing"))]
 pub use image;

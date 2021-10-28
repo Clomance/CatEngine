@@ -1,4 +1,4 @@
-#[cfg(target_os="windows")]
+#[cfg(any(windows))]
 use crate::windows::OpenGraphicsLibrary;
 
 use core::mem::transmute;
@@ -95,7 +95,7 @@ impl Drawing{
         }
     }
 
-    #[cfg(target_os="windows")]
+    #[cfg(any(windows))]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             self.glDrawArrays=transmute(library.get_proc_address("glDrawArrays\0"));

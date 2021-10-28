@@ -4,7 +4,9 @@ use crate::windows::{
     MouseButton,
     core::window::{
         WindowData,
-        WindowHandle
+        WindowHandle,
+
+        default_window_procedure,
     },
 };
 
@@ -27,11 +29,9 @@ use winapi::{
             // structs
             CREATESTRUCTW,
             // functions
-            DefWindowProcW,
             MapVirtualKeyW,
             BeginPaint,
             EndPaint,
-            PostQuitMessage,
             // constants
             MAPVK_VSC_TO_VK,
             WHEEL_DELTA,
@@ -301,33 +301,29 @@ pub const window_settings_auto_redraw:WindowData=WindowData::User;
 /// Стартовая функция для всех окон.
 /// 
 /// Устанавливает начальные параметры.
-pub unsafe extern "system" fn default_window_procedure(
+pub unsafe extern "system" fn setup_window_procedure(
     window_handle:WindowHandle,
     message:u32,
     w_param:usize,
     l_param:isize,
 )->isize{
     let message:WindowMessage=transmute(message);
-    match message{
-        WindowMessage::NonClientCreate=>{
-            let create_struct:&mut CREATESTRUCTW=transmute(l_param);
-            let create_parameters:&mut CreateParameters<u8>=transmute(create_struct.lpCreateParams);
+    if let WindowMessage::NonClientCreate=message{
+        let create_struct:&mut CREATESTRUCTW=transmute(l_param);
+        
+        let create_parameters:&mut CreateParameters<u8>=transmute(create_struct.lpCreateParams);
 
-            // Установка доп настроек
-            WinCore.window.set_window_long_ptr(window_handle,window_settings_auto_redraw,create_parameters.auto_redraw as isize);
+        // Установка доп настроек
+        WinCore.window.set_window_long_ptr(window_handle,window_settings_auto_redraw,create_parameters.auto_redraw as isize);
 
-            // Установка новой функции окна
-            WinCore.window.set_window_long_ptr(window_handle,WindowData::WindowProcedure,create_parameters.window_procedure as isize);
+        // Установка новой функции окна
+        WinCore.window.set_window_long_ptr(window_handle,WindowData::WindowProcedure,create_parameters.window_procedure as isize);
 
-            // Чтобы в `let data=*(window.get_user_data() as *mut W::Data);`
-            // не использовался нулевой указатель (в `wrap_window_procedure`)
-            WinCore.window.set_window_long_ptr(window_handle,WindowData::UserData,l_param);
-
-            1
-        }
-
-        _=>DefWindowProcW(window_handle.as_raw(),message as u32,w_param,l_param)
+        // Чтобы в `let data=*(window.get_user_data() as *mut W::Data);`
+        // не использовался нулевой указатель (в `wrap_window_procedure`)
+        WinCore.window.set_window_long_ptr(window_handle,WindowData::UserData,l_param);
     }
+    default_window_procedure(window_handle,message as u32,w_param,l_param)
 }
 
 /// Процедура окна.
@@ -347,7 +343,7 @@ pub unsafe extern "system" fn window_procedure<W:WindowProcedure>(
             Err(e)=>{
                 let data=*(window.get_user_data() as *mut W::Data);
                 W::catch_panic(window,data,e);
-                DefWindowProcW(window_handle.as_raw(),message as u32,w_param,l_param)
+                default_window_procedure(window_handle,message as u32,w_param,l_param)
             }
         }
     }
@@ -356,7 +352,7 @@ pub unsafe extern "system" fn window_procedure<W:WindowProcedure>(
     wrap_window_procedure::<W>(window,message,w_param,l_param)
 }
 
-unsafe fn wrap_window_procedure<W:WindowProcedure>(window:&Window,message:u32,w_param:usize,l_param:isize)->isize{
+unsafe extern "system" fn wrap_window_procedure<W:WindowProcedure>(window:&Window,message:u32,w_param:usize,l_param:isize)->isize{
     let window_handle=window.handle();
     let message:WindowMessage=transmute(message);
     // Тут точно не нулевой указатель: в `default_window_procedure` сюда устанавливается
@@ -612,6 +608,6 @@ unsafe fn wrap_event(window:&Window,message:u32,w_param:usize,l_param:isize)->Ev
             )
         }
 
-        _=>EventWrapResult::None(DefWindowProcW(window.handle.as_raw(),message,w_param,l_param))
+        _=>EventWrapResult::None(default_window_procedure(window.handle,message,w_param,l_param))
     }
 }

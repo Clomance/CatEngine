@@ -156,6 +156,7 @@ impl ColourResult{
     }
 }
 
+/// Wrapper for some winapi functions.
 pub struct WindowsCore{
     pub bitmap:Bitmap,
     pub brush:Brush,

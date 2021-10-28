@@ -17,7 +17,7 @@ pub use messages::WindowResizeType;
 
 mod window_procedure;
 use window_procedure::{
-    default_window_procedure,
+    setup_window_procedure,
     window_procedure,
     window_settings_auto_redraw,
 };
@@ -30,6 +30,7 @@ pub use window_class::{
     WindowClass,
     WindowClassAttributes,
     WindowClassStyle,
+    WindowBackgroundSystemColour,
 };
 
 mod window;
@@ -67,6 +68,8 @@ pub trait WindowProcedure{
 
     /// Called if the mouse causes the cursor to move
     /// within a window and mouse input is not captured.
+    /// 
+    /// Note that you have to set up cursor manually each time the function is called.
     #[cfg(feature="set_cursor_event")]
     fn set_cursor(window:&Window,data:Self::Data);
 

@@ -297,11 +297,11 @@ pub enum LoopControl{
 unsafe impl Sync for LoopControl{}
 unsafe impl Send for LoopControl{}
 
-pub struct Control{
-    state:LoopControl,
-    update_interval:i64,
-    redraw_request_interval:i64,
-}
+// pub struct Control{
+//     state:LoopControl,
+//     update_interval:i64,
+//     redraw_request_interval:i64,
+// }
 
 /// Represents interval between events or an event rate.
 /// 
@@ -418,10 +418,6 @@ impl EventLoop{
                                     f(Event::Process(ProcessEvent::Quit),&mut loop_control);
                                     break
                                 }
-
-                                // WM_LBUTTONDOWN=>{
-                                //     println!("hello?")
-                                // }
 
                                 _=>event_handler(&message,&mut f,&mut loop_control),
                             }
