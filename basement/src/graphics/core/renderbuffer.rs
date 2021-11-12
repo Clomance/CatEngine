@@ -1,4 +1,4 @@
-#[cfg(any(windows))]
+#[cfg(all(target_os="windows",feature="windows"))]
 use crate::windows::OpenGraphicsLibrary;
 
 
@@ -31,7 +31,7 @@ impl Renderbuffer{
         }
     }
 
-    #[cfg(any(windows))]
+    #[cfg(all(target_os="windows",feature="windows"))]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             self.glGenFramebuffers=transmute(library.get_proc_address("glGenFramebuffers\0"));

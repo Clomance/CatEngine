@@ -1,6 +1,6 @@
 use crate::graphics::Colour;
 
-#[cfg(any(windows))]
+#[cfg(all(target_os="windows",feature="windows"))]
 use crate::windows::OpenGraphicsLibrary;
 
 use core::mem::transmute;
@@ -190,7 +190,7 @@ impl Blend{
         }
     }
 
-    #[cfg(any(windows))]
+    #[cfg(all(target_os="windows",feature="windows"))]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             self.glBlendColor=transmute(library.get_proc_address("glBlendColor\0"));

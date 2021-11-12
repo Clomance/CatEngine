@@ -1,4 +1,4 @@
-#[cfg(any(windows))]
+#[cfg(all(target_os="windows",feature="windows"))]
 use crate::windows::OpenGraphicsLibrary;
 
 use core::mem::transmute;
@@ -97,7 +97,7 @@ impl VertexArray{
         }
     }
 
-    #[cfg(any(windows))]
+    #[cfg(all(target_os="windows",feature="windows"))]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             self.glGenVertexArrays=transmute(library.get_proc_address("glGenVertexArrays\0"));

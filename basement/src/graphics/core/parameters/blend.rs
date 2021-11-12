@@ -1,4 +1,4 @@
-#[cfg(target_os="windows")]
+#[cfg(all(target_os="windows",feature="windows"))]
 use crate::windows::OpenGraphicsLibrary;
 
 use crate::graphics::Colour;
@@ -159,7 +159,8 @@ pub enum BlendingFunction{
     // OneMinusSourse1Alpha=ONE_MINUS_SRC1_ALPHA,
 }
 
-#[cfg_attr(windows,link(name="opengl32"))]
+// #[cfg_attr(windows,link(name="opengl32"))]
+#[cfg(all(target_os="linux",feature="linux"))]
 extern "system"{
     fn glBlendColor(red:f32,greed:f32,blue:f32,alpha:f32)->();
     fn glBlendFunc(sourse_factor:BlendingFunction,destination_factor:BlendingFunction)->();
@@ -253,7 +254,7 @@ impl Blend{
         Self
     }
 
-    #[cfg(target_os="windows")]
+    #[cfg(all(target_os="windows",feature="windows"))]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             use gl::*;

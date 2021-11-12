@@ -1,4 +1,4 @@
-#[cfg(windows)]
+#[cfg(all(target_os="windows",feature="windows"))]
 use crate::windows::OpenGraphicsLibrary;
 
 use crate::graphics::core::types::*;
@@ -6,17 +6,17 @@ use crate::graphics::core::types::*;
 use core::mem::transmute;
 
 // #[cfg_attr(windows,link(name="opengl32"))]
-#[cfg(target_os="linux")]
+#[cfg(all(target_os="linux",feature="linux"))]
 extern "system"{
     fn glViewport(x:GLint,y:GLint,width:GLint,height:GLint)->();
 }
 
-#[cfg(target_os="windows")]
+#[cfg(all(target_os="windows",feature="windows"))]
 mod gl{
     pub static mut glViewport:usize=0;
 }
 
-#[cfg(target_os="windows")]
+#[cfg(all(target_os="windows",feature="windows"))]
 mod gl_functions{
     use super::*;
 
@@ -27,7 +27,7 @@ mod gl_functions{
     }
 }
 
-#[cfg(windows)]
+#[cfg(all(target_os="windows",feature="windows"))]
 use gl_functions::*;
 
 pub struct Viewport;
@@ -37,7 +37,7 @@ impl Viewport{
         Self
     }
 
-    #[cfg(windows)]
+    #[cfg(all(target_os="windows",feature="windows"))]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             use gl::*;

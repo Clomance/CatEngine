@@ -22,9 +22,13 @@ exclude = [
 default = [
     "opengl",
     "support",
+    "windows",
+    "linux",
     # Windows
     "wnd_proc_catch_panic",
 ]
+windows = []
+linux = []
 support = []
 opengl = []
 
@@ -62,7 +66,7 @@ features = [
 default-target = "x86_64-pc-windows-msvc"
 
 
-[target.'cfg(any(windows,doc))'.dependencies.winapi]
+[target.'cfg(all(any(windows,doc),feature="windows"))'.dependencies.winapi]
 version = "0.3.9"
 features = [
     "winuser",
@@ -74,12 +78,13 @@ features = [
     "profileapi",
     "winbase",
 ]
+optional = true
 
 [target.'cfg(any(windows,doc))'.dependencies.image]
 image = "0.23.13"
 
 
-[target.'cfg(any(target_os = "linux"))'.dependencies.x11]
+[target.'cfg(any(target_os="linux",feature="linux"))'.dependencies.x11]
 version = "2.19.1"
 features = [
     "xlib",
@@ -87,3 +92,4 @@ features = [
     "xcursor",
     "xinput",
 ]
+optional = true

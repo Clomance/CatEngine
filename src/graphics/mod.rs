@@ -87,7 +87,7 @@ pub struct Graphics{
 }
 
 impl Graphics{
-    #[cfg(any(windows))]
+    #[cfg(all(target_os="windows",feature="windows"))]
     pub fn new(attributes:Graphics2DAttributes)->Graphics{
         Self{
             graphics_2d:Graphics2D::new(attributes),

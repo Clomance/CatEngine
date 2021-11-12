@@ -1,4 +1,4 @@
-#[cfg(windows)]
+#[cfg(all(target_os="windows",feature="windows"))]
 use crate::windows::OpenGraphicsLibrary;
 
 use super::types::*;
@@ -191,7 +191,7 @@ extern "system"{
     )->();
 }
 
-#[cfg(windows)]
+#[cfg(all(target_os="windows",feature="windows"))]
 mod gl{
     pub static mut glDrawArrays:usize=0;
     pub static mut glDrawArraysInstanced:usize=0;
@@ -209,7 +209,7 @@ mod gl{
     pub static mut glMultiDrawElementsBaseVertex:usize=0;
 }
 
-#[cfg(windows)]
+#[cfg(all(target_os="windows",feature="windows"))]
 mod gl_functions{
     use super::*;
 
@@ -359,7 +359,7 @@ mod gl_functions{
     }
 }
 
-#[cfg(windows)]
+#[cfg(all(target_os="windows",feature="windows"))]
 use gl_functions::*;
 
 pub struct Drawing;
@@ -369,7 +369,7 @@ impl Drawing{
         Self
     }
 
-    #[cfg(windows)]
+    #[cfg(all(target_os="windows",feature="windows"))]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
             use gl::*;

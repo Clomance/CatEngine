@@ -1,4 +1,4 @@
-#[cfg(any(windows))]
+#[cfg(all(target_os="windows",feature="windows"))]
 use crate::windows::OpenGraphicsLibrary;
 
 pub mod blend;
@@ -250,7 +250,7 @@ impl GraphicsParameters{
         }
     }
 
-    #[cfg(any(windows))]
+    #[cfg(all(target_os="windows",feature="windows"))]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         self.blend.load(library);
         self.viewport.load(library);
