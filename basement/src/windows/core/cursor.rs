@@ -39,7 +39,7 @@ use winapi::{
 #[derive(Clone,Copy,Debug)]
 #[repr(transparent)]
 pub struct CursorHandle{
-    inner:NonNull<HCURSOR>,
+    inner:NonNull<()>,
 }
 implement_handle_wrapper!(CursorHandle,HCURSOR);
 

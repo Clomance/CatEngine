@@ -1,6 +1,6 @@
 [package]
 name = "cat_engine"
-version = "1.0.0-alpha7"
+version = "1.0.0-alpha8"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2021"
 
@@ -66,13 +66,13 @@ text_graphics = ["ttf-parser","ab_glyph_rasterizer"]
 # audio
 [dependencies.cat_audio]
 path = "cat_audio"
-version = "0.0.4"
+version = "0.0.5"
 optional = true
 
 
 [dependencies.cat_engine_basement]
 path = "basement"
-version = "0.0.0-alpha7"
+version = "0.0.0-alpha8"
 features = ["opengl"]
 
 

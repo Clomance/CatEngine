@@ -7,7 +7,10 @@ use crate::{
 };
 
 use cat_engine_basement::graphics::{
-    core::drawing::PrimitiveType,
+    core::drawing::{
+        PrimitiveType,
+        AvailableIndexType,
+    },
     level0::Vertex,
     level1::{
         VertexBuffer,
@@ -18,9 +21,16 @@ use cat_engine_basement::graphics::{
 use std::marker::PhantomData;
 
 pub struct StackObject{
+    /// Порядковый номер стартовой вершины.
     pub vertex_start:i32,
+
+    /// Количество вершин.
     pub vertex_count:i32,
+
+    /// Порядковый номер стартового индекса.
     pub index_start:i32,
+
+    /// Количество индексов.
     pub index_count:i32,
     pub primitive_type:PrimitiveType,
 }
@@ -35,7 +45,7 @@ impl StackObject{
         }
         else{
             (
-                StackDrawType::Indices(self.index_start),
+                StackDrawType::Indices(ElementIndexType::offset(self.index_start as isize)),
                 self.index_count
             )
         };
@@ -50,8 +60,8 @@ impl StackObject{
 
 #[derive(Debug)]
 pub enum StackDrawType{
-    Vertices(i32), // count
-    Indices(i32), // start
+    Vertices(i32),
+    Indices(isize),
 }
 
 pub struct StackDrawableObject{

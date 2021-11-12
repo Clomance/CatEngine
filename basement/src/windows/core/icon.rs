@@ -33,7 +33,7 @@ use winapi::{
 #[derive(Clone,Copy)]
 #[repr(transparent)]
 pub struct IconHandle{
-    inner:NonNull<HICON>,
+    inner:NonNull<()>,
 }
 implement_handle_wrapper!(IconHandle,HICON);
 

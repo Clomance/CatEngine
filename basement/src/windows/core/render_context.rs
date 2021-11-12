@@ -24,7 +24,7 @@ use winapi::{
 #[derive(Clone,Copy)]
 #[repr(transparent)]
 pub struct RenderContextHandle{
-    inner:NonNull<HGLRC>,
+    inner:NonNull<()>,
 }
 implement_handle_wrapper!(RenderContextHandle,HGLRC);
 

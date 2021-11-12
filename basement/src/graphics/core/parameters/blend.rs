@@ -1,7 +1,7 @@
-use crate::graphics::Colour;
-
-#[cfg(any(windows))]
+#[cfg(target_os="windows")]
 use crate::windows::OpenGraphicsLibrary;
+
+use crate::graphics::Colour;
 
 use core::mem::transmute;
 
@@ -159,6 +159,82 @@ pub enum BlendingFunction{
     // OneMinusSourse1Alpha=ONE_MINUS_SRC1_ALPHA,
 }
 
+#[cfg_attr(windows,link(name="opengl32"))]
+extern "system"{
+    fn glBlendColor(red:f32,greed:f32,blue:f32,alpha:f32)->();
+    fn glBlendFunc(sourse_factor:BlendingFunction,destination_factor:BlendingFunction)->();
+    fn glBlendFuncSeparate(
+        sourse_factor_rgb:BlendingFunction,
+        destination_factor_rgb:BlendingFunction,
+        sourse_factor_alpha:BlendingFunction,
+        destination_factor_alpha:BlendingFunction
+    )->();
+    fn glBlendEquation(equation:BlendingEquation)->();
+    fn glBlendEquationSeparate(
+        equation_rgb:BlendingEquation,
+        equation_alpha:BlendingEquation
+    )->();
+}
+
+mod gl{
+    pub static mut glBlendColor:usize=0;
+    pub static mut glBlendFunc:usize=0;
+    pub static mut glBlendFuncSeparate:usize=0;
+    pub static mut glBlendEquation:usize=0;
+    pub static mut glBlendEquationSeparate:usize=0;
+}
+
+mod gl_function{
+    use super::*;
+
+    pub unsafe extern "system" fn glBlendColor(red:f32,greed:f32,blue:f32,alpha:f32){
+        transmute::<usize,fn(f32,f32,f32,f32)>(gl::glBlendColor)(red,greed,blue,alpha)
+    }
+    pub unsafe extern "system" fn glBlendFunc(sourse_factor:BlendingFunction,destination_factor:BlendingFunction){
+        transmute::<usize,fn(
+            BlendingFunction,
+            BlendingFunction
+        )>(gl::glBlendFunc)
+        (
+            sourse_factor,
+            destination_factor
+        )
+    }
+    pub unsafe extern "system" fn glBlendFuncSeparate(
+        sourse_factor_rgb:BlendingFunction,
+        destination_factor_rgb:BlendingFunction,
+        sourse_factor_alpha:BlendingFunction,
+        destination_factor_alpha:BlendingFunction
+    ){
+        transmute::<usize,fn(
+            BlendingFunction,
+            BlendingFunction,
+            BlendingFunction,
+            BlendingFunction
+        )>(gl::glBlendFuncSeparate)(
+            sourse_factor_rgb,
+            destination_factor_rgb,
+            sourse_factor_alpha,
+            destination_factor_alpha
+        )
+    }
+    pub unsafe extern "system" fn glBlendEquation(equation:BlendingEquation){
+        transmute::<usize,fn(BlendingEquation)>(gl::glBlendEquation)(equation)
+    }
+    pub unsafe extern "system" fn glBlendEquationSeparate(
+        equation_rgb:BlendingEquation,
+        equation_alpha:BlendingEquation
+    ){
+        transmute::<usize,fn(
+            BlendingEquation,
+            BlendingEquation
+        )>(gl::glBlendEquationSeparate)(
+            equation_rgb,
+            equation_alpha
+        )
+    }
+}
+
 /// A wrapper for blending functions.
 /// 
 /// Blend is disabled by default.
@@ -170,33 +246,23 @@ pub enum BlendingFunction{
 /// The default blending functions for `Destination` are `BlendingFunction::Zero`.
 /// 
 /// The default blending equations are `BlendingEquation::Addition`.
-pub struct Blend{
-    glBlendColor:usize,
-    glBlendFunc:usize,
-    glBlendFuncSeparate:usize,
-    glBlendEquation:usize,
-    glBlendEquationSeparate:usize,
-}
+pub struct Blend;
 
 impl Blend{
     pub const fn new()->Blend{
-        Self{
-            glBlendColor:0,
-            glBlendFunc:0,
-            glBlendFuncSeparate:0,
-            glBlendEquation:0,
-            glBlendEquationSeparate:0,
-        }
+        Self
     }
 
-    #[cfg(any(windows))]
+    #[cfg(target_os="windows")]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
-            self.glBlendColor=transmute(library.get_proc_address("glBlendColor\0"));
-            self.glBlendFunc=transmute(library.get_proc_address("glBlendFunc\0"));
-            self.glBlendFuncSeparate=transmute(library.get_proc_address("glBlendFuncSeparate\0"));
-            self.glBlendEquation=transmute(library.get_proc_address("glBlendEquation\0"));
-            self.glBlendEquationSeparate=transmute(library.get_proc_address("glBlendEquationSeparate\0"));
+            use gl::*;
+
+            glBlendColor=transmute(library.get_proc_address("glBlendColor\0"));
+            glBlendFunc=transmute(library.get_proc_address("glBlendFunc\0"));
+            glBlendFuncSeparate=transmute(library.get_proc_address("glBlendFuncSeparate\0"));
+            glBlendEquation=transmute(library.get_proc_address("glBlendEquation\0"));
+            glBlendEquationSeparate=transmute(library.get_proc_address("glBlendEquationSeparate\0"));
         }
     }
 }
@@ -210,7 +276,7 @@ impl Blend{
     #[inline(always)]
     pub fn set_blending_colour(&self,[red,greed,blue,alpha]:Colour){
         unsafe{
-            transmute::<usize,fn(f32,f32,f32,f32)>(self.glBlendColor)(red,greed,blue,alpha)
+            glBlendColor(red,greed,blue,alpha)
         }
     }
 
@@ -231,14 +297,7 @@ impl Blend{
         destination_factor:BlendingFunction
     ){
         unsafe{
-            transmute::<usize,fn(
-                BlendingFunction,
-                BlendingFunction
-            )>(self.glBlendFunc)
-            (
-                sourse_factor,
-                destination_factor
-            )
+            glBlendFunc(sourse_factor,destination_factor)
         }
     }
 
@@ -252,12 +311,7 @@ impl Blend{
         destination_factor_alpha:BlendingFunction,
     ){
         unsafe{
-            transmute::<usize,fn(
-                BlendingFunction,
-                BlendingFunction,
-                BlendingFunction,
-                BlendingFunction
-            )>(self.glBlendFuncSeparate)(
+            glBlendFuncSeparate(
                 sourse_factor_rgb,
                 destination_factor_rgb,
                 sourse_factor_alpha,
@@ -270,7 +324,7 @@ impl Blend{
     #[inline(always)]
     pub fn set_equation(&self,equation:BlendingEquation){
         unsafe{
-            transmute::<usize,fn(BlendingEquation)>(self.glBlendEquation)(equation)
+            glBlendEquation(equation)
         }
     }
 
@@ -282,10 +336,7 @@ impl Blend{
         equation_alpha:BlendingEquation
     ){
         unsafe{
-            transmute::<usize,fn(
-                BlendingEquation,
-                BlendingEquation
-            )>(self.glBlendEquationSeparate)(
+            glBlendEquationSeparate(
                 equation_rgb,
                 equation_alpha
             )

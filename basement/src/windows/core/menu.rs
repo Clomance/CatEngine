@@ -18,7 +18,7 @@ use core::{
 #[derive(Clone,Copy)]
 #[repr(transparent)]
 pub struct MenuHandle{
-    inner:NonNull<HMENU>,
+    inner:NonNull<()>,
 }
 implement_handle_wrapper!(MenuHandle,HMENU);
 

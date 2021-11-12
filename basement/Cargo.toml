@@ -1,13 +1,14 @@
 [package]
 name = "cat_engine_basement"
-version = "0.0.0-alpha7"
+version = "0.0.0-alpha8"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2021"
 
 homepage = "https://github.com/Clomance/CatEngine"
 repository = "https://github.com/Clomance/CatEngine"
-description = "The CatEnigne's basement"
+description = "CatEnigne's basement"
 documentation = "https://docs.rs/cat_engine_basement/"
+
 license = "MIT"
 readme = "README.md"
 keywords = ["graphics","opengl","windows","windowing"]
@@ -25,7 +26,7 @@ default = [
     "wnd_proc_catch_panic",
 ]
 support = []
-opengl = ["image"]
+opengl = []
 
 
 # Documentation
@@ -35,6 +36,23 @@ nightly-docs = []
 set_cursor_event = []
 wnd_proc_catch_panic = []
 
+### EXAMPLES
+[[example]]
+name = "winapi_window"
+path = "examples/windows/window.rs"
+
+[[example]]
+name = "winapi_opengl"
+path = "examples/windows/opengl.rs"
+
+[[example]]
+name = "x11_window"
+path = "examples/linux/window.rs"
+
+[[example]]
+name = "opengl_test"
+path = "examples/windows/opengl_test.rs"
+
 [package.metadata.docs.rs]
 features = [
     "default",
@@ -42,6 +60,7 @@ features = [
     "set_cursor_event",
 ]
 default-target = "x86_64-pc-windows-msvc"
+
 
 [target.'cfg(any(windows,doc))'.dependencies.winapi]
 version = "0.3.9"
@@ -56,5 +75,15 @@ features = [
     "winbase",
 ]
 
-[dependencies]
-image = { version="0.23.13", optional = true}
+[target.'cfg(any(windows,doc))'.dependencies.image]
+image = "0.23.13"
+
+
+[target.'cfg(any(target_os = "linux"))'.dependencies.x11]
+version = "2.19.1"
+features = [
+    "xlib",
+    "glx",
+    "xcursor",
+    "xinput",
+]

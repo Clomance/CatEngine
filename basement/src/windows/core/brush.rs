@@ -47,7 +47,7 @@ use core::{
 #[derive(Clone,Copy)]
 #[repr(transparent)]
 pub struct BrushHandle{
-    inner:NonNull<HBRUSH>,
+    inner:NonNull<()>,
 }
 implement_handle_wrapper!(BrushHandle,HBRUSH);
 

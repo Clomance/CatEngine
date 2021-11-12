@@ -22,4 +22,9 @@ pub mod graphics;
 #[cfg_attr(feature="nightly-docs",doc(cfg(target_os="windows")))]
 pub mod windows;
 
+#[cfg(any(target_os="linux"))]
+#[cfg_attr(feature="nightly-docs",doc(cfg(target_os="linux")))]
+pub mod linux;
+
+#[cfg(any(target_os="windows"))]
 pub use image;

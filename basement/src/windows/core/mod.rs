@@ -90,7 +90,7 @@ use winapi::{
 #[derive(Clone,Copy)]
 #[repr(transparent)]
 pub struct InstanceHandle{
-    inner:NonNull<HINSTANCE>,
+    inner:NonNull<()>,
 }
 implement_handle_wrapper!(InstanceHandle,HINSTANCE);
 

@@ -137,7 +137,7 @@ impl BitmapData{
 #[derive(Clone,Copy)]
 #[repr(transparent)]
 pub struct BitmapHandle{
-    inner:NonNull<HBITMAP>,
+    inner:NonNull<()>,
 }
 implement_handle_wrapper!(BitmapHandle,HBITMAP);
 

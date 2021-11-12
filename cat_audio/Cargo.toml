@@ -1,6 +1,6 @@
 [package]
 name = "cat_audio"
-version = "0.0.4"
+version = "0.0.5"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2018"
 
@@ -28,7 +28,7 @@ raw = ["extended"]
 
 [dependencies.cat_engine_basement]
 path = "../basement"
-version = "0.0.0-alpha4"
+version = "0.0.0-alpha8"
 features = ["support"]
 default-features = false
 

@@ -22,7 +22,10 @@ use cat_engine_basement::graphics::{
         drawing::PrimitiveType,
         buffer::BufferUsage,
     },
-    level0::VertexArray,
+    level0::{
+        Drawing,
+        VertexArray,
+    },
     level1::{
         VertexBuffer,
         IndexBuffer,
@@ -88,7 +91,6 @@ impl TextureGraphics{
     }
 }
 
-/// Heap.
 impl TextureGraphics{
     pub fn add_object_raw(
         &mut self,
@@ -152,16 +154,16 @@ impl TextureGraphics{
             texture.bind();
 
             match object.draw_type{
-                HeapDrawType::Vertices(first)=>unsafe{
-                    GLCore.drawing.multi_draw_arrays(&first,&object.count,object.primitive_type)
+                HeapDrawType::Vertices(first)=>{
+                   Drawing::multi_draw_arrays(&first,&object.count,object.primitive_type);
                 }
 
-                HeapDrawType::Indices(indices)=>unsafe{
-                   GLCore.drawing.multi_draw_elements_typed::<ElementIndexType>(
+                HeapDrawType::Indices(indices)=>{
+                    Drawing::multi_draw_elements_typed::<ElementIndexType>(
                         &indices,
                         &object.count,
                         object.primitive_type
-                    )
+                    );
                 }
             }
 
@@ -170,7 +172,7 @@ impl TextureGraphics{
     }
 }
 
-/// Stack.
+
 impl TextureGraphics{
     pub fn push_object_raw(
         &mut self,

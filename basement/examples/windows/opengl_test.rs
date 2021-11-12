@@ -1,8 +1,9 @@
 use cat_engine_basement::{
     graphics::{
         GLCore,
-        core::ClearMask,
         Colour,
+        core::ClearMask,
+        core::drawing::PrimitiveType,
     },
     windows::{
         EventLoop,
@@ -23,6 +24,7 @@ use cat_engine_basement::{
         ProcessEvent,
         Event,
         WinError,
+        WindowResizeType,
     },
 };
 
@@ -59,9 +61,11 @@ impl WindowProcedure for Handler{
         quit(0)
     }
 
-    fn render(_:&Window,data:Self::Data){
+    fn paint(_:&Window,data:Self::Data){
         unsafe{
             GLCore.clear(ClearMask::Colour);
+            GLCore.drawing.draw_arrays(0,1,PrimitiveType::Points);
+            GLCore.drawing.draw_arrays_instanced(0,1,1,PrimitiveType::Points);
         }
 
         let render_context=unsafe{&*data};
@@ -70,6 +74,10 @@ impl WindowProcedure for Handler{
 
     #[cfg(feature="set_cursor_event")]
     fn set_cursor(_window:&Window,data:Self::Data){}
+
+    fn resized(_client_size:[u16;2],_:WindowResizeType,_:&Window,_:Self::Data){}
+
+    fn moved(_client_position:[i16;2],_:&Window,_:Self::Data){}
 
     fn handle(event:WindowEvent,_window:&Window,_data:Self::Data){
         match event{

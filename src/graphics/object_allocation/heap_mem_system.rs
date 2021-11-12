@@ -11,7 +11,10 @@ use crate::{
 };
 
 use cat_engine_basement::graphics::{
-    core::drawing::PrimitiveType,
+    core::drawing::{
+        AvailableIndexType,
+        PrimitiveType
+    },
     level0::Vertex,
     level1::{
         VertexBuffer,
@@ -26,8 +29,8 @@ use std::{
 
 #[derive(Debug)]
 pub enum HeapDrawType{
-    Vertices(Vec<i32>), // count
-    Indices(Vec<isize>), // start
+    Vertices(Vec<i32>),
+    Indices(Vec<isize>),
 }
 
 #[derive(Debug)]

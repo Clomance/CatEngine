@@ -1,23 +1,47 @@
-#[cfg(any(windows))]
+#[cfg(windows)]
 use crate::windows::OpenGraphicsLibrary;
+
+use crate::graphics::core::types::*;
 
 use core::mem::transmute;
 
-pub struct Viewport{
-    glViewport:usize,
+// #[cfg_attr(windows,link(name="opengl32"))]
+#[cfg(target_os="linux")]
+extern "system"{
+    fn glViewport(x:GLint,y:GLint,width:GLint,height:GLint)->();
 }
+
+#[cfg(target_os="windows")]
+mod gl{
+    pub static mut glViewport:usize=0;
+}
+
+#[cfg(target_os="windows")]
+mod gl_functions{
+    use super::*;
+
+    pub unsafe extern "system" fn glViewport(x:GLint,y:GLint,width:GLint,height:GLint){
+        transmute::<usize,fn(GLint,GLint,GLint,GLint)>(gl::glViewport)(
+            x,y,width,height
+        )
+    }
+}
+
+#[cfg(windows)]
+use gl_functions::*;
+
+pub struct Viewport;
 
 impl Viewport{
     pub const fn new()->Viewport{
-        Self{
-            glViewport:0,
-        }
+        Self
     }
 
-    #[cfg(any(windows))]
+    #[cfg(windows)]
     pub fn load(&mut self,library:&OpenGraphicsLibrary){
         unsafe{
-            self.glViewport=transmute(library.get_proc_address("glViewport\0"))
+            use gl::*;
+            glViewport=transmute(library.get_proc_address("glViewport\0"));
         }
     }
 }
@@ -45,7 +69,7 @@ impl Viewport{
     /// 
     /// `GLError::InvalidValue` is generated if either `width` or `height` is negative.
     #[inline(always)]
-    pub unsafe fn set(&self,[x,y,widht,height]:[i32;4]){
-        transmute::<usize,fn(i32,i32,i32,i32)>(self.glViewport)(x,y,widht,height)
+    pub unsafe fn set(&self,[x,y,width,height]:[i32;4]){
+        glViewport(x,y,width,height);
     }
 }

@@ -429,6 +429,6 @@ pub enum PatternBltOperation{
 #[derive(Clone,Copy)]
 #[repr(transparent)]
 pub struct DeviceContextHandle{
-    inner:NonNull<HDC>,
+    inner:NonNull<()>,
 }
 implement_handle_wrapper!(DeviceContextHandle,HDC);

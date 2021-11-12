@@ -114,7 +114,7 @@ use winapi::{
 #[derive(Clone,Copy,Debug)]
 #[repr(transparent)]
 pub struct WindowHandle{
-    inner:NonNull<HWND>,
+    inner:NonNull<()>,
 }
 
 implement_handle_wrapper!(WindowHandle,HWND);

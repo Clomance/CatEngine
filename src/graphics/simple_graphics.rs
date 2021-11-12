@@ -22,7 +22,10 @@ use cat_engine_basement::graphics::{
         drawing::PrimitiveType,
         buffer::BufferUsage,
     },
-    level0::VertexArray,
+    level0::{
+        Drawing,
+        VertexArray
+    },
     level1::{
         VertexBuffer,
         IndexBuffer,
@@ -86,7 +89,6 @@ impl SimpleGraphics{
     }
 }
 
-/// Heap.
 impl SimpleGraphics{
     pub fn add_object_raw(
         &mut self,
@@ -143,16 +145,20 @@ impl SimpleGraphics{
             }
 
             match object.draw_type{
-                HeapDrawType::Vertices(first)=>unsafe{
-                    GLCore.drawing.multi_draw_arrays(&first,&object.count,object.primitive_type)
+                HeapDrawType::Vertices(first)=>{
+                    Drawing::multi_draw_arrays(
+                        &first,
+                        &object.count,
+                        object.primitive_type
+                    );
                 }
 
-                HeapDrawType::Indices(indices)=>unsafe{
-                    GLCore.drawing.multi_draw_elements_typed::<ElementIndexType>(
+                HeapDrawType::Indices(indices)=>{
+                    Drawing::multi_draw_elements_typed::<ElementIndexType>(
                         &indices,
                         &object.count,
                         object.primitive_type
-                    )
+                    );
                 }
             }
 
@@ -161,7 +167,6 @@ impl SimpleGraphics{
     }
 }
 
-/// Stack.
 impl SimpleGraphics{
     pub fn push_object_raw(
         &mut self,
@@ -220,16 +225,16 @@ impl SimpleGraphics{
 
 
             match object.draw_type{
-                StackDrawType::Vertices(first)=>unsafe{
-                    GLCore.drawing.draw_arrays(first,object.count,object.primitive_type)
+                StackDrawType::Vertices(start)=>{
+                    Drawing::draw_arrays(start,object.count,object.primitive_type);
                 }
 
-                StackDrawType::Indices(first)=>unsafe{
-                    GLCore.drawing.draw_elements_typed::<ElementIndexType>(
-                        first,
+                StackDrawType::Indices(start)=>{
+                    Drawing::draw_elements_typed::<ElementIndexType>(
+                        start,
                         object.count,
                         object.primitive_type
-                    )
+                    );
                 }
             }
 

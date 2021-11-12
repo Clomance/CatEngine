@@ -190,6 +190,11 @@ pub enum DrawBufferMode{
     FrontBack=FRONT_AND_BACK
 }
 
+#[cfg_attr(windows,link(name="Opengl32"))]
+extern "system"{
+    fn glClearColor(red:f32,green:f32,blue:f32,alpha:f32)->();
+}
+
 pub struct GraphicsParameters{
     pub blend:Blend,
     pub viewport:Viewport,
@@ -212,8 +217,6 @@ pub struct GraphicsParameters{
 //     glDepthFunc:usize,
 //     glDepthMask:usize,
 //     glDepthRange:usize,
-
-    glClearColor:usize,
 
     glDrawBuffer:usize,
 }
@@ -243,8 +246,6 @@ impl GraphicsParameters{
             // glDepthMask:0,
             // glDepthRange:0,
 
-            glClearColor:0,
-
             glDrawBuffer:0,
         }
     }
@@ -273,8 +274,6 @@ impl GraphicsParameters{
             // self.glDepthFunc=transmute(library.get_proc_address("glDepthFunc\0"));
             // self.glDepthMask=transmute(library.get_proc_address("glDepthMask\0"));
             // self.glDepthRange=transmute(library.get_proc_address("glDepthRange\0"));
-
-            self.glClearColor=transmute(library.get_proc_address("glClearColor\0"));
 
             self.glDrawBuffer=transmute(library.get_proc_address("glDrawBuffer\0"));
         }
@@ -372,7 +371,7 @@ impl GraphicsParameters{
     #[inline(always)]
     pub fn set_clear_colour(&self,[red,greed,blue,alpha]:[f32;4]){
         unsafe{
-            transmute::<usize,fn(f32,f32,f32,f32)>(self.glClearColor)(red,greed,blue,alpha)
+            glClearColor(red,greed,blue,alpha)
         }
     }
 

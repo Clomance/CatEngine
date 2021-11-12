@@ -1,4 +1,4 @@
-#[cfg(any(windows))]
+#[cfg(windows)]
 use crate::windows::OpenGraphicsLibrary;
 
 pub mod parameters;
@@ -33,11 +33,57 @@ use std::{
     mem::transmute,
 };
 
+pub mod types{
+    use std::{
+        marker::{
+            PhantomData,
+            PhantomPinned
+        },
+        os::raw::{
+            c_uchar,
+            c_char,
+            c_short,
+            c_ushort,
+            c_uint,
+            c_int,
+            c_float,
+            c_double,
+            c_void
+        }
+    };
+
+    pub struct __GLsync{
+        _data:[u8;0],
+        _marker:PhantomData<(*mut u8,PhantomPinned)>,
+    }
+
+    pub type GLboolean=c_uchar;
+    pub type GLbyte=c_char;
+    pub type GLubyte=c_uchar;
+    pub type GLshort=c_short;
+    pub type GLushort=c_ushort;
+    pub type GLint=c_int;
+    pub type GLuint=c_uint;
+    pub type GLfixed=c_uint;
+    pub type GLint64=i64;
+    pub type GLuint64=u64;
+    pub type GLsizei=c_int;
+    pub type GLenum=c_uint;
+    pub type GLintptr=isize;
+    pub type GLsizeiptr=isize;
+    pub type GLsync=*const __GLsync;
+    pub type GLbitfield=c_int;
+    pub type GLhalf=c_ushort;
+    pub type GLfloat=c_float;
+    pub type GLclampf=c_float;
+    pub type GLdouble=c_double;
+    pub type GLclampd=c_double;
+    pub type GLvoid=c_void;
+}
+
 const MAJOR_VERSION:u32=0x821B;
 const MINOR_VERSION:u32=0x821C;
 const VERSION:u32=0x1F02;
-
-
 
 // Clear mask bits
 const COLOR_BUFFER_BIT:u32=0x00004000;
@@ -164,12 +210,12 @@ impl GraphicsCore{
 
             glDrawBuffer:0,
 
-            glFinish:0, // 
+            glFinish:0,
             glFlush:0,
         }
     }
 
-    #[cfg(any(windows))]
+    #[cfg(windows)]
     pub fn load_functions(&mut self,library:&OpenGraphicsLibrary){
         self.parameters.load(library);
         self.buffer.load(library);
