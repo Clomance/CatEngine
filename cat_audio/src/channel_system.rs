@@ -3,7 +3,7 @@ use super::{
     TrackIter,
 };
 
-use cat_engine_basement::support::SyncRawMutPtr;
+use cat_engine_basement::support::sync_raw_ptr::SyncRawMutPtr;
 
 use std::{
     ops::AddAssign,

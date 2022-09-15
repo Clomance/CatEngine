@@ -1,3 +1,9 @@
+# 1.0.0
+
+Whole engine rebuild.
+
+
+
 # 1.0.0 - alpha8
 
 ### CatEngineBasement
@@ -6,11 +12,9 @@ Updated the `drawing` module in `GLCore`.
 
 Added some functions for `X11`.
 
-Optimized: now all `gl` functions are linked at compile time.
-
 Fixed bad gl functions.
 
-Fixed feature errors.
+Fixed feature issues. Added new :)
 
 
 # 1.0.0 - alpha7

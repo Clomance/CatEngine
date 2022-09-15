@@ -6,7 +6,7 @@ use super::{
     sample::SampleTransform,
 };
 
-use cat_engine_basement::support::SyncRawMutPtr;
+use cat_engine_basement::support::sync_raw_ptr::SyncRawMutPtr;
 
 use cpal::{
     Host,
@@ -391,10 +391,7 @@ pub (crate) fn event_loop_handler(
 }
 
 /// Вывод звука и постобработка (`feature="audio_post_processing"`).
-fn output<
-    S:SampleTransform,
-    #[cfg(feature="audio_post_processing")]P:FnMut(&mut Vec<f32>)
->(
+fn output<S:SampleTransform,#[cfg(feature="audio_post_processing")]P:FnMut(&mut Vec<f32>)>(
     channel_system:&mut ChannelSystem,
     channels:u16,
     volume:f32,

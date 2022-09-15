@@ -1,72 +1,32 @@
 [package]
 name = "cat_engine_basement"
-version = "0.0.0-alpha8"
+version = "0.0.0"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2021"
 
-homepage = "https://github.com/Clomance/CatEngine"
-repository = "https://github.com/Clomance/CatEngine"
-description = "CatEnigne's basement"
-documentation = "https://docs.rs/cat_engine_basement/"
-
 license = "MIT"
 readme = "README.md"
-keywords = ["graphics","opengl","windows","windowing"]
+keywords = ["graphics", "opengl", "windows", "windowing"]
 exclude = [
     "logo.png",
     "logo_400x400.png",
     "examples",
 ]
 
+
 [features]
 default = [
-    "opengl",
-    "support",
-    "windows",
-    "linux",
-    # Windows
-    "wnd_proc_catch_panic",
+    "wnd_proc_catch_panic_default"
 ]
-windows = []
-linux = []
-support = []
-opengl = []
 
-
-# Documentation
-nightly-docs = []
-
-# Windows
+### WINAPI
 set_cursor_event = []
 wnd_proc_catch_panic = []
-
-### EXAMPLES
-[[example]]
-name = "winapi_window"
-path = "examples/windows/window.rs"
-
-[[example]]
-name = "winapi_opengl"
-path = "examples/windows/opengl.rs"
-
-[[example]]
-name = "x11_window"
-path = "examples/linux/window.rs"
-
-[[example]]
-name = "opengl_test"
-path = "examples/windows/opengl_test.rs"
-
-[package.metadata.docs.rs]
-features = [
-    "default",
-    "nightly-docs",
-    "set_cursor_event",
-]
-default-target = "x86_64-pc-windows-msvc"
+# The default panic handler.
+wnd_proc_catch_panic_default = ["wnd_proc_catch_panic"]
 
 
-[target.'cfg(all(any(windows,doc),feature="windows"))'.dependencies.winapi]
+[target.'cfg(any(target_os="windows",doc))'.dependencies.winapi]
 version = "0.3.9"
 features = [
     "winuser",
@@ -78,18 +38,8 @@ features = [
     "profileapi",
     "winbase",
 ]
-optional = true
-
-[target.'cfg(any(windows,doc))'.dependencies.image]
-image = "0.23.13"
 
 
-[target.'cfg(any(target_os="linux",feature="linux"))'.dependencies.x11]
-version = "2.19.1"
-features = [
-    "xlib",
-    "glx",
-    "xcursor",
-    "xinput",
-]
-optional = true
+[dependencies]
+glm = "0.2.3"
+image = "0.23.14"

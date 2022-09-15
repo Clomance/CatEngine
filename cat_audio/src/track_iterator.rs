@@ -5,7 +5,7 @@ use super::{
 
 use cat_engine_basement::support::{
     math::gcd,
-    SyncRawPtr,
+    sync_raw_ptr::SyncRawPtr,
 };
 
 enum PlayType{
@@ -78,7 +78,7 @@ pub struct TrackIter{
 impl TrackIter{
     pub fn empty()->TrackIter{
         Self{
-            data:SyncRawPtr::zero(),
+            data:SyncRawPtr::null(),
             track_sample_rate:0u32,
 
             track_len:0usize,

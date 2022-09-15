@@ -9,26 +9,58 @@
     dead_code
 )]
 
-/// The dark side of the engine.
 pub use cat_engine_basement as basement;
+
+pub mod window{
+    pub use cat_engine_basement::winapi::{
+        window::{
+            Window,
+            WindowAttributes,
+
+            WindowClass,
+            WindowClassAttributes,
+
+            Fullscreen,
+            CursorIcon,
+            SystemCursor,
+            Background,
+            WindowBackgroundSystemColour,
+
+            WindowClassStyle,
+            WindowClassStyles,
+
+            WindowStyle,
+            WindowStyles,
+
+            ExtendedWindowStyle,
+            ExtendedWindowStyles,
+        },
+
+        MouseButton,
+        VirtualKeyCode,
+
+        Monitor,
+        EventLoopAttributes,
+        OpenGLRenderContextAttributes,
+    };
+
+    pub type WinError=cat_engine_basement::winapi::Error;
+}
+
+pub use cat_audio as audio;
+
+mod app;
+pub use app::{
+    App,
+    AppAttributes,
+};
+
+pub mod system;
+
+pub mod object;
 
 pub mod graphics;
 
-pub mod app;
-
-#[cfg(feature="texture_graphics")]
-pub mod texture;
-
-#[cfg(feature="text_graphics")]
 pub mod text;
 
-pub use cat_engine_basement::image;
-
-#[cfg(feature="simple_graphics")]
-pub mod shapes;
-
-/// RGBA - [f32; 4]
-pub type Colour=[f32;4];
-
-#[cfg(feature="audio")]
-pub use cat_audio as audio;
+pub mod texture;

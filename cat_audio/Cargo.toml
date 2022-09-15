@@ -2,7 +2,7 @@
 name = "cat_audio"
 version = "0.0.5"
 authors = ["Clomance <Hisoskar@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 homepage = "https://github.com/Clomance/CatEngine/tree/master/cat_audio"
 repository = "https://github.com/Clomance/CatEngine/tree/master/cat_audio"
@@ -28,8 +28,8 @@ raw = ["extended"]
 
 [dependencies.cat_engine_basement]
 path = "../basement"
-version = "0.0.0-alpha8"
-features = ["support"]
+version = "0.0.0"
+features = []
 default-features = false
 
 [dependencies]

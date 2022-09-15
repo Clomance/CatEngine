@@ -1,188 +1,180 @@
-use std::time::{
-    Duration,
-    Instant,
-};
-
 use cat_engine::{
-    app::{
-        App,
-        AppAttributes,
+    App,
+    AppAttributes,
+
+    window::{
         Window,
-        WindowEvent,
-        AppWindowProcedure,
-        Event,
-        ProcessEvent,
-        VirtualKeyCode,
-        Monitor,
-        OpenGLRenderContext,
-        Fullscreen,
-        WindowResizeType,
-        quit,
     },
+
     graphics::{
         Graphics,
-        BlendingFunction,
+        TextVertex,
+        MeshAttributes,
         PrimitiveType,
-        TexturedVertex2D,
     },
-    texture::{
-        ImageBase,
-        ImageObject,
-        Texture
+
+    system::{
+        System,
+        StartSystem,
+        SystemManager,
+        SystemEvent,
+        SystemStatus,
     },
+
+    object::{
+        ObjectManager,
+        TextObject,
+        ObjectEvent,
+        TextRenderData,
+        Vertices,
+        Indices,
+    },
+
+    text::{
+        GlyphCache,
+        FontOwner
+    }
 };
 
-struct DrawData{
-    last_redraw:Instant,
-    current_fps:u32,
-}
+use std::time::{
+    Instant,
+    Duration
+};
 
-struct RenderData{
-    texture:Texture,
-    redraw:DrawData,
-}
+pub struct ExampleSystem;
 
-struct WindowHandle;
+impl<'a> System<'a> for ExampleSystem {
+    type CreateParameters = ();
+    type SharedData = ();
+    type Objects = ();
 
-impl AppWindowProcedure<RenderData,()> for WindowHandle{
-    fn create(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,()))->RenderData{
-        RenderData{
-            texture:Texture::from_path("logo_400x400.png").unwrap(),
-            redraw:DrawData{
-                last_redraw:Instant::now(),
-                current_fps:0u32,
-            }
-        }
+    fn create(
+        _create_parameters: &mut Self::CreateParameters,
+        _window: &Window,
+        _shared: &mut Self::SharedData
+    ) -> ExampleSystem {
+        ExampleSystem
     }
 
-    fn close_request(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)){
-        quit(0)
+    fn set_objects(&mut self, _shared: &mut Self::SharedData, mut object_manager: ObjectManager) -> Self::Objects {
+        let graphics = object_manager.graphics();
+
+        graphics.parameters.set_clear_colour(Some([1f32; 4]));
+
+        let font = FontOwner::load("resources/font1").unwrap();
+        let glyph_cache = GlyphCache::new("9876543210", 60f32, &font);
+        let font = graphics.text.push_font(glyph_cache).unwrap();
+
+        let attributes = MeshAttributes::new(PrimitiveType::Triangles);
+        let layer = graphics.text.create_layer(attributes).unwrap();
+
+        graphics.push_text_layer(layer, font);
+
+        let object = FpsCounter::new();
+        let indices=[
+            0,1,2,
+            1,2,3,
+            4,5,6,
+            5,6,7,
+            8,9,10,
+            9,10,11
+        ];
+        object_manager.push_text_object(object, Vertices::empty(12), Indices::new(&indices), layer).unwrap();
     }
-
-    fn destroy(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)){}
-
-    fn paint(
-        _window:&Window,
-        (_render_context,graphics,data):(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)
-    ){
-        let draw_start=Instant::now();
-        let redraw_event_period=draw_start.duration_since(data.redraw.last_redraw);
-        data.redraw.last_redraw=draw_start;
-
-        data.redraw.current_fps=
-            (Duration::from_secs(1).as_nanos()/redraw_event_period.as_nanos()) as u32;
-
-        graphics.clear_colour([1f32;4]);
-
-        graphics.draw_stack_textured_object(0,data.texture.texture_2d());
-        graphics.draw_stack_textured_object(1,data.texture.texture_2d());
-        graphics.draw_stack_textured_object(2,data.texture.texture_2d());
-    }
-
-    #[cfg(feature="set_cursor_event")]
-    fn set_cursor(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)){}
-
-    fn resized(
-        _client_size:[u16;2],
-        _:WindowResizeType,
-        _:&Window,
-        _:(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)
-    ){}
-
-    fn moved(
-        _client_position:[i16;2],
-        _:&Window,
-        _:(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)
-    ){}
 
     fn handle(
-        event:WindowEvent,
-        window:&Window,
-        _data:(&mut OpenGLRenderContext,&mut Graphics,&mut RenderData)
-    ){
-        match event{
-            WindowEvent::KeyPress(VirtualKeyCode::A)=>{
-                window.set_fullscreen(Fullscreen::Monitor(Monitor::get_primary_monitor()))
-            }
-
-            WindowEvent::KeyPress(VirtualKeyCode::S)=>{
-                window.set_fullscreen(Fullscreen::None)
-            }
-            _=>{}
-        }
+        &mut self,
+        _objects: &mut Self::Objects,
+        _event: SystemEvent,
+        _window: &Window,
+        _shared: &mut Self::SharedData,
+        _system_manager: SystemManager
+    ) -> SystemStatus {
+        SystemStatus::Next
     }
 
-    #[cfg(feature="wnd_proc_catch_panic")]
-    fn catch_panic(
-        _window:&Window,
-        _data:(*mut OpenGLRenderContext,*mut Graphics,*mut RenderData),
-        _error:Box<dyn std::any::Any+Send>
-    ){}
+    fn destroy(&mut self, _shared:&mut Self::SharedData, _graphics:&mut Graphics) {
+
+    }
 }
 
-fn main(){
-    let app_attributes=AppAttributes::new();
-    let app=App::new::<WindowHandle,()>(app_attributes,()).unwrap();
+impl<'a> StartSystem<'a> for ExampleSystem {
+    fn create_shared_data(_create_parameters: &mut Self::CreateParameters) -> Self::SharedData {
 
-    let graphics=app.graphics();
+    }
+}
 
-    graphics.parameters.blend.enable();
-    graphics.parameters.blend.set_function(
-        BlendingFunction::SourceAlpha,
-        BlendingFunction::OneMinusSourceAlpha
-    );
+fn main() {
+    let attributes = AppAttributes::new("ExampleWindow");
 
-    let vertices=[
-        TexturedVertex2D::new(
-            [400f32,0f32],
-            [1f32,1f32],
-            [1.0,0.5,0.5,0.0]
-        ),
-        TexturedVertex2D::new([400f32,400f32],[1f32,0f32],[0.5,0.5,0.5,0.6]),
-        TexturedVertex2D::new([0f32,400f32],[0f32,0f32],[0.5,0.5,0.5,1.0]),
-        TexturedVertex2D::new([0f32,0f32],[0f32,1f32],[0.5,0.5,0.5,1.0]),
-    ];
+    let mut app = App::new::<ExampleSystem>(attributes, &mut ()).unwrap();
 
-    let _image1=graphics.push_textured_object_raw(
-        &vertices,
-        &[0,1,3,1,2,3],
-        PrimitiveType::Triangles
-    ).unwrap();
+    app.run();
+}
 
-    let image_base=ImageBase::new(
-        [400f32,0f32,400f32,400f32],
-        [0.5,0.5,0.5,1.0]
-    );
-    let _image2=graphics.push_textured_object(&image_base).unwrap();
+pub struct FpsCounter {
+    last_redraw: Instant,
+    frames: u32,
+}
 
-    // CREATING WITH IMAGEOBJECT
-    let image_base=ImageObject::new(
-        [800f32,0f32,200f32,400f32], // position and size
-        [0f32,0f32,0.5f32,1f32], // texture position and size
-        [1.0;4] // colour filter
-    );
-    let _image3=graphics.push_textured_object(&image_base).unwrap();
+impl FpsCounter {
+    pub fn new() -> FpsCounter{
+        Self{
+            last_redraw: Instant::now(),
+            frames: 0
+        }
+    }
+}
 
-    let mut updates=0;
-    app.event_loop.run(|event,_app_control|{
-        match event{
-            Event::Process(ProcessEvent::Update(_))=>{
-                updates+=1;
-                if updates==50{
-                    println!("current fps - {}",app.storage().redraw.current_fps);
-                    updates=0;
+impl TextObject for FpsCounter{
+    fn event(&mut self, event: ObjectEvent, render_data: &mut TextRenderData) {
+        match event {
+            ObjectEvent::Prerender => {
+                let colour = [0f32, 0f32, 0f32, 1f32];
+
+                let redraw_start = Instant::now();
+
+                self.frames += 1;
+
+                if redraw_start.duration_since(self.last_redraw) >= Duration::from_secs(1) {
+                    self.last_redraw = redraw_start;
+
+                    let font = render_data.glyph_cache;
+
+                    let mut position = [0f32; 2];
+
+                    let global_size = font.global_size();
+                    let global_offset = font.global_offset();
+
+                    let mut vertices = Vec::with_capacity(12);
+
+                    for n in self.frames.to_string().chars(){
+                        let glyph = font.glyph(&n).unwrap();
+
+                        let x1 = position[0] + global_offset[0];
+                        let y1 = position[1] - global_offset[1];
+                        let x2 = position[0] + global_offset[0] + global_size[0];
+                        let y2 = position[1] - global_offset[1] + global_size[1];
+
+                        let glyph_texture = glyph.texture as f32;
+
+                        position[0] += glyph.horizontal_advance;
+
+                        vertices.push(TextVertex::new([x1, y1, 1f32, 1f32], colour, [0f32, 1f32, glyph_texture]));
+                        vertices.push(TextVertex::new([x1, y2, 1f32, 1f32], colour, [0f32, 0f32, glyph_texture]));
+                        vertices.push(TextVertex::new([x2, y1, 1f32, 1f32], colour, [1f32, 1f32, glyph_texture]));
+                        vertices.push(TextVertex::new([x2, y2, 1f32, 1f32], colour, [1f32, 0f32, glyph_texture]));
+                    }
+
+                    render_data.render.set_index_render_bounds(0, vertices.len() / 2 * 3).unwrap();
+
+                    render_data.render.write_vertices(0, &vertices).unwrap();
+
+                    self.frames = 0;
                 }
             }
 
-            Event::Window(WindowEvent::KeyPress(VirtualKeyCode::W))=>{
-
-            }
-
-            Event::Window(WindowEvent::KeyPress(VirtualKeyCode::S))=>{
-
-            }
-
-            _=>{}
+            _ => {}
         }
-    });
+    }
 }

@@ -1,23 +1,21 @@
 [package]
 name = "cat_engine"
-version = "1.0.0-alpha8"
+version = "1.0.0"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2021"
 
 homepage = "https://github.com/Clomance/CatEngine"
 repository = "https://github.com/Clomance/CatEngine"
-description = "A 2D graphics engine with audio output support"
+description = "A 2D graphics engine"
 documentation = "https://docs.rs/cat_engine/"
 license = "MIT"
 readme = "README.md"
 keywords = [
     "windows",
+    "windowing",
     "graphics",
     "opengl",
-    "audio",
-    "playback",
 ]
-
 exclude = [
     "resources",
     "LICENSE",
@@ -29,54 +27,22 @@ exclude = [
     "RELEASE-NOTES.MD"
 ]
 
-[package.metadata.docs.rs]
-features = [
-    "default",
-    "set_cursor_event"
-]
-default-target = "x86_64-pc-windows-msvc"
 
-[features]
-default = [
-    "simple_graphics",
-    "texture_graphics",
-    "text_graphics",
-    # Windows
-    "wnd_proc_catch_panic",
-]
+[dependencies.cat_engine_basement]
+default-features = false
+features = ["wnd_proc_catch_panic"]
+path = "basement"
+version = "0.0.0"
 
-### Windows
-set_cursor_event = ["cat_engine_basement/set_cursor_event"]
-wnd_proc_catch_panic = ["cat_engine_basement/wnd_proc_catch_panic"]
-
-
-### AUDIO
-audio = ["cat_audio"]
-extended_audio = ["cat_audio/extended"]
-raw_audio = ["cat_audio/raw"]
-
-### GRAPHICS
-# plain objects
-simple_graphics = []
-# textures
-texture_graphics = []
-# text
-text_graphics = ["ttf-parser","ab_glyph_rasterizer"]
-
-# audio
 [dependencies.cat_audio]
 path = "cat_audio"
 version = "0.0.5"
-optional = true
-
-
-[dependencies.cat_engine_basement]
-path = "basement"
-version = "0.0.0-alpha8"
-features = ["opengl"]
-
 
 [dependencies]
 # text
-ttf-parser = { version = "0.12.3", optional = true }
-ab_glyph_rasterizer = { version = "0.1.4", optional = true }
+ttf-parser = { version = "0.15.2" }
+ab_glyph_rasterizer = { version = "0.1.6" }
+
+
+[dev-dependencies]
+image = "0.23.14"

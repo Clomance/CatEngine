@@ -1,136 +1,82 @@
 use cat_engine::{
-    app::{
-        App,
-        AppAttributes,
+    App,
+    AppAttributes,
+
+    window::{
         Window,
-        WindowEvent,
-        AppWindowProcedure,
-        OpenGLRenderContext,
-        WindowResizeType,
-        quit,
     },
-    graphics::{
-        Graphics,
-        BlendingFunction,
-        PrimitiveType,
-        TexturedVertex2D,
+
+    graphics::Graphics,
+
+    system::{
+        System,
+        StartSystem,
+        SystemManager,
+        SystemEvent,
+        SystemStatus,
     },
-    texture::{
-        ImageBase,
-        ImageObject,
-        Texture
-    },
+
+    object::{
+        ObjectManager,
+    }
 };
 
-struct WindowHandle;
+pub struct ExampleSystem;
 
-impl AppWindowProcedure<Texture,()> for WindowHandle{
-    fn create(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,()))->Texture{
-        Texture::from_path("logo_400x400.png").unwrap()
+impl<'s> System<'s> for ExampleSystem{
+    type CreateParameters = ();
+    type SharedData = ();
+    type Objects = ();
+
+    fn create(
+        _create_parameters: &mut Self::CreateParameters,
+        _window: &Window,
+        _shared: &mut Self::SharedData
+    ) -> ExampleSystem {
+        ExampleSystem
     }
 
-    fn close_request(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)){
-        quit(0)
+    fn set_objects(
+        &mut self,
+        _shared: &mut Self::SharedData,
+        _object_manager: ObjectManager
+    ) -> Self::Objects {
+
     }
-
-    fn destroy(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)){}
-
-    fn paint(
-        _window:&Window,
-        (_render_context,graphics,texture):(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
-    ){
-        graphics.clear_colour([1f32;4]);
-
-        graphics.draw_stack_textured_object(0,texture.texture_2d());
-        graphics.draw_stack_textured_object(1,texture.texture_2d());
-        graphics.draw_heap_textured_object(0,texture.texture_2d());
-    }
-
-    #[cfg(feature="set_cursor_event")]
-    fn set_cursor(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)){}
-
-    fn resized(
-        _client_size:[u16;2],
-        _:WindowResizeType,
-        _:&Window,
-        _:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
-    ){}
-
-    fn moved(
-        _client_position:[i16;2],
-        _:&Window,
-        _:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
-    ){}
 
     fn handle(
-        _event:WindowEvent,
-        _window:&Window,
-        _data:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
-    ){}
+        &mut self,
+        _objects: &mut Self::Objects,
+        _event: SystemEvent,
+        _window: &Window,
+        _shared: &mut Self::SharedData,
+        _system_manager: SystemManager
+    ) -> SystemStatus {
 
-    #[cfg(feature="wnd_proc_catch_panic")]
-    fn catch_panic(
-        _window:&Window,
-        _data:(*mut OpenGLRenderContext,*mut Graphics,*mut Texture),
-        _error:Box<dyn std::any::Any+Send>
-    ){}
+        SystemStatus::Next
+    }
+
+    fn destroy(
+        &mut self,
+        _shared: &mut Self::SharedData,
+        _graphics: &mut Graphics
+    ) {
+
+    }
 }
 
-fn main(){
-    let app_attributes=AppAttributes::new();
+impl<'s> StartSystem<'s> for ExampleSystem {
+    fn create_shared_data(
+        _create_parameters: &mut Self::CreateParameters
+    ) -> Self::SharedData {
 
-    let app=App::new::<WindowHandle,()>(app_attributes,()).unwrap();
+    }
+}
 
-    let graphics=app.graphics();
+fn main() {
+    let attributes = AppAttributes::new("ExampleWindow");
 
-    // Setting blending
-    graphics.parameters.blend.enable();
-    graphics.parameters.blend.set_function(
-        BlendingFunction::SourceAlpha,
-        BlendingFunction::OneMinusSourceAlpha
-    );
+    let mut app = App::new::<ExampleSystem>(attributes, &mut ()).unwrap();
 
-    // CREATING FROM PARTS
-    let vertices=[
-        TexturedVertex2D::new(
-            [400f32,0f32], // position
-            [1f32,1f32], // texture coordinates
-            [1.0,0.5,0.5,0.0] // colour filter
-        ),
-        TexturedVertex2D::new([400f32,400f32],[1f32,0f32],[0.5,0.5,0.5,0.6]),
-        TexturedVertex2D::new([0f32,400f32],[0f32,0f32],[0.5,0.5,0.5,1.0]),
-        TexturedVertex2D::new([0f32,0f32],[0f32,1f32],[0.5,0.5,0.5,1.0]),
-    ];
-
-    // Adding to heap-type buffer
-    // Note that the heap-type buffer supports only 3-vertex and 3-index frames.
-    // It means that `PrimitiveType` that uses previous vertices may work wrong.
-    let _image1=graphics.add_textured_object_raw(
-        &vertices, // vertices
-        &[0,1,3,1,2,3], // indicies associated with the given vertices
-        PrimitiveType::Triangles // drawing type
-    ).unwrap();
-
-    // CREATING WITH IMAGEBASE
-    let image_base=ImageBase::new(
-        [400f32,0f32,400f32,400f32], // position and size
-        [0.5,0.5,0.5,1.0] // colour filter
-    );
-    // Pushing to the stack-type buffer
-    let _image2=graphics.push_textured_object(&image_base).unwrap();
-
-    // CREATING WITH IMAGEOBJECT
-    let image_base=ImageObject::new(
-        [800f32,0f32,400f32,400f32], // position and size
-        [0f32,0f32,1f32,1f32], // texture position and size
-        [1.0;4] // colour filter
-    );
-    let _image3=graphics.push_textured_object(&image_base).unwrap();
-
-    app.event_loop.run(|event,_app_control|{
-        match event{
-
-            _=>{}
-        }
-    });
+    app.run();
 }

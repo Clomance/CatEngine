@@ -1,109 +1,194 @@
 use cat_engine::{
-    app::{
-        App,
-        AppAttributes,
-        WindowEvent,
-        AppWindowProcedure,
-        OpenGLRenderContext,
+    App,
+    AppAttributes,
+
+    window::{
         Window,
-        WindowResizeType,
-        quit,
     },
+
     graphics::{
-        BlendingFunction,
         Graphics,
+        TextVertex,
+        MeshAttributes,
+        PrimitiveType,
+        ElementIndexType
     },
+
+    system::{
+        System,
+        StartSystem,
+        SystemManager,
+        SystemEvent,
+        SystemStatus,
+    },
+
+    object::{
+        ObjectManager,
+        TextObject,
+        ObjectEvent,
+        TextRenderData,
+        Vertices,
+        Indices
+    },
+
     text::{
-        FontOwner,
-        CachedFont,
-        Scale,
-    },
+        GlyphCache,
+        FontOwner
+    }
 };
 
-struct WindowHandle;
 
-impl AppWindowProcedure<CachedFont,()> for WindowHandle{
+
+pub struct ExampleSystem;
+
+impl<'a> System<'a> for ExampleSystem {
+    type CreateParameters = ();
+    type SharedData = ();
+    type Objects = ();
+
     fn create(
-        _window:&Window,
-        data:(&mut OpenGLRenderContext,&mut Graphics,())
-    )->CachedFont{
-        let font_owner=FontOwner::load("resources/font1").unwrap();
-        CachedFont::new_alphabet(font_owner,"He",Scale::new(0.1f32,0.1f32),&mut data.1.graphics_2d)
+        _create_parameters: &mut Self::CreateParameters,
+        _window: &Window,
+        _shared: &mut Self::SharedData
+    ) -> ExampleSystem {
+        ExampleSystem
     }
 
-    fn close_request(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut CachedFont)){
-        quit(0)
+    fn set_objects(&mut self, _shared: &mut Self::SharedData, mut object_manager: ObjectManager) -> Self::Objects {
+        let graphics = object_manager.graphics();
+
+        graphics.parameters.set_clear_colour(Some([1f32; 4]));
+
+        let font = FontOwner::load("resources/font1").unwrap();
+        let glyph_cache = GlyphCache::new("Something", 60f32, &font);
+        let font = graphics.text.push_font(glyph_cache).unwrap();
+
+        let attributes = MeshAttributes::new(PrimitiveType::Triangles);
+        let layer = graphics.text.create_layer(attributes).unwrap();
+
+        graphics.push_text_layer(layer, font);
+
+        let text = TextView::new([100f32; 2], [0f32, 0f32, 0f32, 1f32], 60f32, "Something".to_string());
+        let (vertices,indices)=text.attributes(object_manager.graphics().text.get_font(0).unwrap());
+        object_manager.push_text_object(text, Vertices::new(&vertices), Indices::new(&indices), layer).unwrap();
     }
-
-    fn destroy(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut CachedFont)){}
-
-    fn paint(
-        _window:&Window,
-        (_render_context,graphics,font):(&mut OpenGLRenderContext,&mut Graphics,&mut CachedFont)
-    ){
-        graphics.clear_colour([0f32,0f32,0f32,1f32]);
-
-        let mut position=[120f32,240f32];
-        let mut horizontal_advance=0f32;
-        for character in "Hello, world!!!".chars(){
-            graphics.draw_char(
-                character,
-                [1f32;4],
-                position,
-                Some(&mut horizontal_advance),
-                Scale::new(0.1f32,0.1f32),
-                font,
-            );
-
-            position[0]+=horizontal_advance;
-        }
-    }
-
-    #[cfg(feature="set_cursor_event")]
-    fn set_cursor(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut CachedFont)){}
-
-    fn resized(
-        _client_size:[u16;2],
-        _:WindowResizeType,
-        _:&Window,_:(&mut OpenGLRenderContext,&mut Graphics,&mut CachedFont)
-    ){}
-
-    fn moved(
-        _client_position:[i16;2],
-        _:&Window,_:(&mut OpenGLRenderContext,&mut Graphics,&mut CachedFont)
-    ){}
 
     fn handle(
-        _event:WindowEvent,
-        _window:&Window,
-        _data:(&mut OpenGLRenderContext,&mut Graphics,&mut CachedFont)
-    ){}
+        &mut self,
+        _objects: &mut Self::Objects,
+        _event: SystemEvent,
+        _window: &Window,
+        _shared: &mut Self::SharedData,
+        _system_manager: SystemManager
+    ) -> SystemStatus {
+        SystemStatus::Next
+    }
 
-    #[cfg(feature="wnd_proc_catch_panic")]
-    fn catch_panic(
-        _window:&Window,
-        _data:(*mut OpenGLRenderContext,*mut Graphics,*mut CachedFont),
-        _error:Box<dyn std::any::Any+Send>
-    ){}
+    fn destroy(
+        &mut self,
+        _shared:&mut Self::SharedData,
+        _graphics:&mut Graphics
+    ) {
+
+    }
 }
 
-fn main(){
-    let app_attributes=AppAttributes::new();
-    let app=App::new::<WindowHandle,()>(app_attributes,()).unwrap();
+impl<'a> StartSystem<'a> for ExampleSystem {
+    fn create_shared_data(_create_parameters: &mut Self::CreateParameters) -> Self::SharedData {
 
-    let graphics=app.graphics();
+    }
+}
 
-    // Setting blending
-    graphics.parameters.blend.enable();
-    graphics.parameters.blend.set_function(
-        BlendingFunction::SourceAlpha,
-        BlendingFunction::OneMinusSourceAlpha
-    );
+fn main() {
+    let attributes = AppAttributes::new("ExampleWindow");
 
-    app.event_loop.run(|event,_app_control|{
-        match event{
+    let mut app = App::new::<ExampleSystem>(attributes, &mut ()).unwrap();
 
-            _=>{}
+    app.run();
+}
+
+
+
+pub struct TextView {
+    position: [f32; 2],
+    colour: [f32; 4],
+    font_size: f32,
+    text: String,
+}
+
+impl TextView {
+    pub fn new(
+        position: [f32; 2],
+        colour: [f32; 4],
+        font_size: f32,
+        text: String
+    ) -> TextView {
+        Self {
+            position,
+            colour,
+            font_size,
+            text,
         }
-    });
+    }
+
+    pub fn attributes(&self, font: &GlyphCache) -> (Vec<TextVertex>, Vec<ElementIndexType>){
+        let mut position = self.position;
+
+        let mut global_size = font.global_size();
+        let mut global_offset = font.global_offset();
+
+        let scale = self.font_size / global_size[0];
+
+        global_size[0] *= scale;
+        global_size[1] *= scale;
+        global_offset[0] *= scale;
+        global_offset[1] *= scale;
+
+        let mut vertices = Vec::new();
+        let mut indices = Vec::new();
+
+        let mut i = 0;
+        for character in self.text.chars() {
+            if !character.is_whitespace() {
+                let glyph = font.glyph(&character).unwrap();
+
+                let x1 = position[0] + global_offset[0];
+                let y1 = position[1] - global_offset[1];
+                let x2 = position[0] + global_offset[0] + global_size[0];
+                let y2 = position[1] - global_offset[1] + global_size[1];
+
+                let glyph_texture = glyph.texture as f32;
+
+                position[0] += glyph.horizontal_advance * scale;
+
+                vertices.push(TextVertex::new([x1, y1, 1f32, 1f32], self.colour, [0f32, 1f32, glyph_texture]));
+                vertices.push(TextVertex::new([x1, y2, 1f32, 1f32], self.colour, [0f32, 0f32, glyph_texture]));
+                vertices.push(TextVertex::new([x2, y1, 1f32, 1f32], self.colour, [1f32, 1f32, glyph_texture]));
+                vertices.push(TextVertex::new([x2, y2, 1f32, 1f32], self.colour, [1f32, 0f32, glyph_texture]));
+
+                for _ in 0..3 {
+                    indices.push(i);
+                    i += 1;
+                }
+
+                i -= 2;
+
+                for _ in 0..3 {
+                    indices.push(i);
+                    i += 1;
+                }
+            }
+            else{
+                position[0] += font.whitespace_advance() * scale;
+            }
+        }
+
+        (vertices,indices)
+    }
+}
+
+impl TextObject for TextView {
+    fn event(&mut self, _event: ObjectEvent, _render_data: &mut TextRenderData) {
+
+    }
 }

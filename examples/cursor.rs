@@ -1,110 +1,88 @@
 use cat_engine::{
-    app::{
-        App,
-        AppAttributes,
+    App,
+    AppAttributes,
+
+    window::{
         Window,
-        WindowEvent,
-        AppWindowProcedure,
-        OpenGLRenderContext,
-        WindowResizeType,
-        quit,
+        CursorIcon,
     },
-    graphics::{
-        Graphics,
-        BlendingFunction,
+
+    graphics::Graphics,
+
+    system::{
+        System,
+        StartSystem,
+        SystemManager,
+        SystemEvent,
+        SystemStatus,
     },
-    texture::{
-        ImageBase,
-        Texture
+
+    object::{
+        ObjectManager
     },
 };
 
-struct WindowHandle;
+pub struct ExampleSystem;
 
-impl AppWindowProcedure<Texture,()> for WindowHandle{
-    fn create(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,()))->Texture{
-        Texture::from_path("logo_400x400.png").unwrap()
+impl<'a> System<'a> for ExampleSystem {
+    type CreateParameters = ();
+    type SharedData = ();
+    type Objects = ();
+
+    fn create(
+        _create_parameters: &mut Self::CreateParameters,
+        _window: &Window,
+        _shared: &mut Self::SharedData
+    ) -> ExampleSystem {
+        ExampleSystem
     }
 
-    fn close_request(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)){
-        quit(0)
+    fn set_objects(
+        &mut self,
+        _shared: &mut Self::SharedData,
+        _object_manager: ObjectManager
+    ) -> Self::Objects {
+
     }
-
-    fn destroy(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)){}
-
-    fn paint(
-        window:&Window,
-        (_render_context,graphics,texture):(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
-    ){
-        graphics.clear_colour([1f32;4]);
-
-        let [width,height]=window.client_size();
-
-        graphics.graphics_2d.draw_parameters().set_shift([(width/2) as f32-200f32,(height/2) as f32-200f32]);
-        graphics.draw_stack_textured_object(0,texture.texture_2d());
-    }
-
-    #[cfg(feature="set_cursor_event")]
-    fn set_cursor(_window:&Window,_data:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)){}
-
-    fn resized(
-        _client_size:[u16;2],
-        _:WindowResizeType,
-        _:&Window,
-        _:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
-    ){}
-
-    fn moved(
-        _client_position:[i16;2],
-        _:&Window,
-        _:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
-    ){}
 
     fn handle(
-        event:WindowEvent,
-        _window:&Window,
-        _data:(&mut OpenGLRenderContext,&mut Graphics,&mut Texture)
-    ){
-        match event{
-
-            _=>{}
-        }
+        &mut self,
+        _objects: &mut Self::Objects,
+        _event: SystemEvent,
+        _window: &Window,
+        _shared: &mut Self::SharedData,
+        _system_manager: SystemManager
+    ) -> SystemStatus {
+        SystemStatus::Next
     }
 
-    #[cfg(feature="wnd_proc_catch_panic")]
-    fn catch_panic(
-        _window:&Window,
-        _data:(*mut OpenGLRenderContext,*mut Graphics,*mut Texture),
-        _error:Box<dyn std::any::Any+Send>
-    ){}
+    fn destroy(
+        &mut self,
+        _shared: &mut Self::SharedData,
+        _graphics: &mut Graphics
+    ) {
+
+    }
 }
 
+impl<'a> StartSystem<'a> for ExampleSystem {
+    fn create_shared_data(
+        _create_parameters: &mut Self::CreateParameters
+    ) -> Self::SharedData {
 
-fn main(){
-    let app_attributes=AppAttributes::new();
+    }
+}
 
-    let app=App::new::<WindowHandle,()>(app_attributes,()).unwrap();
+fn main() {
+    let mut attributes = AppAttributes::new("ExampleWindow");
 
-    let graphics=app.graphics();
+    let cursor_icon = image::open("logo_400x400.png").unwrap().to_bgra8();
+    attributes.class.cursor_icon = CursorIcon::BGRA8 {
+        position: [200u32; 2],
+        image: cursor_icon,
+    };
 
-    // Setting blending
-    graphics.parameters.blend.enable();
-    graphics.parameters.blend.set_function(
-        BlendingFunction::SourceAlpha,
-        BlendingFunction::OneMinusSourceAlpha
-    );
+    let mut app = App::new::<ExampleSystem>(attributes, &mut ()).unwrap();
 
-    // CREATING WITH IMAGEBASE
-    let image_base=ImageBase::new(
-        [400f32,0f32,400f32,400f32], // position and size
-        [0.5,0.5,0.5,1.0] // colour filter
-    );
-    let _image=graphics.push_textured_object(&image_base).unwrap();
-
-    app.event_loop.run(|event,_app_control|{
-        match event{
-
-            _=>{}
-        }
-    });
+    app.run();
 }
