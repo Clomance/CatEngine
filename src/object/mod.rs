@@ -1,4 +1,5 @@
-use std::{marker::PhantomData, ops::{Deref, DerefMut}};
+mod storage;
+pub (crate) use storage::ObjectStorage;
 
 use cat_engine_basement::{
     support::storage::DynamicStorage
@@ -17,6 +18,8 @@ use crate::{
     },
     text::GlyphCache, texture::Texture2D
 };
+
+pub use self::storage::{ObjectReference, ObjectArray};
 
 pub trait SimpleObject{
     fn event(&mut self,event:ObjectEvent,render:&mut SimpleRenderData);
@@ -37,344 +40,10 @@ pub enum ObjectEvent{
 }
 
 #[derive(Debug)]
-enum ObjectType{
+pub enum ObjectType{
     Simple,
     Textured,
     Text
-}
-
-struct ObjectData{
-    ptr:*mut (),
-    handle:fn(*mut (),ObjectEvent,*mut ()),
-    drop:fn(*mut ()),
-    layer:usize,
-    object_id:usize,
-    object_type:ObjectType,
-}
-
-pub struct ObjectRef<O>{
-    ptr:*mut O,
-}
-
-impl<O> ObjectRef<O>{
-    pub (crate) fn new(ptr:*mut O)->ObjectRef<O>{
-        Self{
-            ptr
-        }
-    }
-}
-
-impl<O> Deref for ObjectRef<O>{
-    type Target=O;
-
-    fn deref(&self)->&O{
-        unsafe{&*self.ptr}
-    }
-}
-
-impl<O> DerefMut for ObjectRef<O>{
-    fn deref_mut(&mut self)->&mut O{
-        unsafe{&mut *self.ptr}
-    }
-}
-
-pub struct ObjectArray<O>{
-    index:usize,
-    objects:Vec<ObjectRef<O>>
-}
-
-impl<O> ObjectArray<O>{
-    pub fn len(&self)->usize{
-        self.objects.len()
-    }
-
-    pub fn get(&mut self,index:usize)->Option<&mut ObjectRef<O>>{
-        self.objects.get_mut(index)
-    }
-
-    pub fn remove(&mut self,index:usize,object_manager:&mut ObjectManager){
-        let object=object_manager.object_storage.data[self.index].remove(index);
-
-        match object.object_type{
-            ObjectType::Simple=>{
-                object_manager.graphics.simple.remove_object(object.layer,object.object_id)
-            }
-
-            ObjectType::Textured=>{
-                object_manager.graphics.textured.remove_object(object.layer,object.object_id)
-            }
-
-            ObjectType::Text=>{
-                object_manager.graphics.text.remove_object(object.layer,object.object_id)
-            }
-        }
-
-        (object.drop)(object.ptr);
-
-        self.objects.remove(index);
-    }
-}
-
-impl<O:SimpleObject> ObjectArray<O>{
-    pub fn push_simple(
-        &mut self,
-        object:O,
-        vertices:Vertices<SimpleVertex>,
-        indices:Indices<ElementIndexType>,
-        layer:usize,
-        object_manager:&mut ObjectManager
-    ){
-        let attributes=ObjectAttributes::new(
-            vertices.vertices,
-            vertices.allocate,
-            indices.indices,
-            indices.allocate,
-            indices.range
-        );
-        let object_id=object_manager.graphics.simple.push_object(attributes,layer).unwrap();
-
-        let object=Box::new(object);
-
-        let object_ptr=Box::leak(object);
-
-        let data=ObjectData{
-            ptr:object_ptr as *mut O as *mut (),
-            handle:simple_object_handle_wrapper::<O>,
-            drop:drop_wrapper::<O>,
-            layer,
-            object_id,
-            object_type:ObjectType::Simple,
-        };
-
-        object_manager.object_storage.data[self.index].push(data);
-
-        self.objects.push(ObjectRef::new(object_ptr));
-    }
-}
-
-impl<O:TextureObject> ObjectArray<O>{
-    pub fn push_textured(
-        &mut self,
-        object:O,
-        vertices:Vertices<TexturedVertex>,
-        indices:Indices<ElementIndexType>,
-        layer:usize,
-        object_manager:&mut ObjectManager
-    ){
-        let attributes=ObjectAttributes::new(
-            vertices.vertices,
-            vertices.allocate,
-            indices.indices,
-            indices.allocate,
-            indices.range
-        );
-        let object_id=object_manager.graphics.textured.push_object(attributes,layer).unwrap();
-
-        let object=Box::new(object);
-
-        let object_ptr=Box::leak(object);
-
-        let data=ObjectData{
-            ptr:object_ptr as *mut O as *mut (),
-            handle:texture_object_handle_wrapper::<O>,
-            drop:drop_wrapper::<O>,
-            layer,
-            object_id,
-            object_type:ObjectType::Textured,
-        };
-
-        object_manager.object_storage.data[self.index].push(data);
-
-        self.objects.push(ObjectRef::new(object_ptr));
-    }
-}
-
-impl<O:TextObject> ObjectArray<O>{
-    pub fn push_text(
-        &mut self,
-        object:O,
-        vertices:Vertices<TextVertex>,
-        indices:Indices<ElementIndexType>,
-        layer:usize,
-        object_manager:&mut ObjectManager
-    ){
-        let attributes=ObjectAttributes::new(
-            vertices.vertices,
-            vertices.allocate,
-            indices.indices,
-            indices.allocate,
-            indices.range
-        );
-        let object_id=object_manager.graphics.text.push_object(attributes,layer).unwrap();
-
-        let object=Box::new(object);
-
-        let object_ptr=Box::leak(object);
-
-        let data=ObjectData{
-            ptr:object_ptr as *mut O as *mut (),
-            handle:text_object_handle_wrapper::<O>,
-            drop:drop_wrapper::<O>,
-            layer,
-            object_id,
-            object_type:ObjectType::Text,
-        };
-
-        object_manager.object_storage.data[self.index].push(data);
-
-        self.objects.push(ObjectRef::new(object_ptr));
-    }
-}
-
-pub struct ObjectStorage{
-    references:*mut (),
-    data:Vec<Vec<ObjectData>>
-}
-
-impl ObjectStorage{
-    pub (crate) fn new()->ObjectStorage{
-        Self{
-            references:std::ptr::null_mut(),
-            data:Vec::new(),
-        }
-    }
-
-    pub (crate) fn set_references(&mut self,references:*mut ()){
-        self.references=references
-    }
-
-    pub (crate) fn get_references(&mut self)->*mut (){
-        self.references
-    }
-
-    pub fn push_simple_object<O:SimpleObject>(
-        &mut self,
-        object:O,
-        layer:usize,
-        object_id:usize,
-    )->ObjectRef<O>{
-        let object=Box::new(object);
-
-        let object_ptr=Box::leak(object);
-
-        let data=ObjectData{
-            ptr:object_ptr as *mut O as *mut (),
-            handle:simple_object_handle_wrapper::<O>,
-            drop:drop_wrapper::<O>,
-            layer,
-            object_id,
-            object_type:ObjectType::Simple,
-        };
-
-        self.data.push(vec![data]);
-
-        ObjectRef{
-            ptr:object_ptr
-        }
-    }
-
-    pub fn push_textured_object<O:TextureObject>(
-        &mut self,
-        object:O,
-        layer:usize,
-        object_id:usize,
-    )->ObjectRef<O>{
-        let object=Box::new(object);
-
-        let object_ptr=Box::leak(object);
-
-        let data=ObjectData{
-            ptr:object_ptr as *mut O as *mut (),
-            handle:texture_object_handle_wrapper::<O>,
-            drop:drop_wrapper::<O>,
-            layer,
-            object_id,
-            object_type:ObjectType::Textured,
-        };
-
-        self.data.push(vec![data]);
-
-        ObjectRef{
-            ptr:object_ptr
-        }
-    }
-
-    pub fn push_text_object<O:TextObject>(
-        &mut self,
-        object:O,
-        layer:usize,
-        object_id:usize,
-    )->ObjectRef<O>{
-        let object=Box::new(object);
-
-        let object_ptr=Box::leak(object);
-
-        let data=ObjectData{
-            ptr:object_ptr as *mut O as *mut (),
-            handle:text_object_handle_wrapper::<O>,
-            drop:drop_wrapper::<O>,
-            layer,
-            object_id,
-            object_type:ObjectType::Text,
-        };
-
-        self.data.push(vec![data]);
-
-        ObjectRef{
-            ptr:object_ptr
-        }
-    }
-
-    pub fn push_simple_object_array<O:SimpleObject>(&mut self)->ObjectArray<O>{
-        let index=self.data.len();
-        self.data.push(Vec::new());
-
-        ObjectArray{
-            index,
-            objects:Vec::new(),
-        }
-    }
-
-    pub fn push_texture_object_array<O:TextureObject>(&mut self)->ObjectArray<O>{
-        let index=self.data.len();
-        self.data.push(Vec::new());
-
-        ObjectArray{
-            index,
-            objects:Vec::new(),
-        }
-    }
-
-    pub fn push_text_object_array<O:TextObject>(&mut self)->ObjectArray<O>{
-        let index=self.data.len();
-        self.data.push(Vec::new());
-
-        ObjectArray{
-            index,
-            objects:Vec::new(),
-        }
-    }
-
-    pub (crate) fn clear_storage(&mut self,graphics:&mut Graphics){
-        while let Some(objects)=self.data.pop(){
-            for object in objects{
-                match object.object_type{
-                    ObjectType::Simple=>{
-                        graphics.simple.remove_object(object.layer,object.object_id);
-                    }
-
-                    ObjectType::Textured=>{
-                        graphics.textured.remove_object(object.layer,object.object_id);
-                    }
-
-                    ObjectType::Text=>{
-                        graphics.text.remove_object(object.layer,object.object_id);
-                    }
-                }
-                (object.drop)(object.ptr)
-            }
-        }
-    }
 }
 
 pub (crate) struct Objects{
@@ -415,8 +84,8 @@ impl Objects{
                     }
 
                     ObjectType::Textured=>unsafe{
-                        let texture=graphics.textured.get_layer_texture_raw(object.layer);
-                        let render_data=graphics.textured.get_render_data(object.layer,object.object_id);
+                        let texture=graphics.texture.get_layer_texture_raw(object.layer);
+                        let render_data=graphics.texture.get_render_data(object.layer,object.object_id);
 
                         let mut texture_render_data=TextureRenderData{
                             render:render_data,
@@ -443,16 +112,16 @@ impl Objects{
     }
 }
 
-pub struct ObjectManager<'m>{
-    object_storage:&'m mut ObjectStorage,
-    graphics:&'m mut Graphics,
+pub struct ObjectManager<'a>{
+    object_storage:&'a mut ObjectStorage,
+    graphics:&'a mut Graphics,
 }
 
-impl<'m> ObjectManager<'m>{
+impl<'a> ObjectManager<'a>{
     pub (crate) fn new(
-        object_storage:&'m mut ObjectStorage,
-        graphics:&'m mut Graphics
-    )->ObjectManager<'m>{
+        object_storage:&'a mut ObjectStorage,
+        graphics:&'a mut Graphics
+    )->ObjectManager<'a>{
         Self{
             object_storage,
             graphics
@@ -465,7 +134,7 @@ impl<'m> ObjectManager<'m>{
         vertices:Vertices<SimpleVertex>,
         indices:Indices<ElementIndexType>,
         layer:usize
-    )->Result<ObjectRef<O>,MeshError>{
+    )->Result<ObjectReference<'a,O>,MeshError>{
         let attributes=ObjectAttributes::new(
             vertices.vertices,
             vertices.allocate,
@@ -485,7 +154,7 @@ impl<'m> ObjectManager<'m>{
         vertices:Vertices<TexturedVertex>,
         indices:Indices<ElementIndexType>,
         layer:usize
-    )->Result<ObjectRef<O>,MeshError>{
+    )->Result<ObjectReference<'a,O>,MeshError>{
         let attributes=ObjectAttributes::new(
             vertices.vertices,
             vertices.allocate,
@@ -493,7 +162,7 @@ impl<'m> ObjectManager<'m>{
             indices.allocate,
             indices.range
         );
-        match self.graphics.textured.push_object(attributes,layer){
+        match self.graphics.texture.push_object(attributes,layer){
             Ok(object_id)=>Ok(self.object_storage.push_textured_object(object,layer,object_id)),
             Err(e)=>Err(e)
         }
@@ -505,7 +174,7 @@ impl<'m> ObjectManager<'m>{
         vertices:Vertices<TextVertex>,
         indices:Indices<ElementIndexType>,
         layer:usize
-    )->Result<ObjectRef<O>,MeshError>{
+    )->Result<ObjectReference<'a,O>,MeshError>{
         let attributes=ObjectAttributes::new(
             vertices.vertices,
             vertices.allocate,
@@ -520,15 +189,15 @@ impl<'m> ObjectManager<'m>{
     }
 
 
-    pub fn push_simple_object_array<O:SimpleObject>(&mut self)->ObjectArray<O>{
+    pub fn push_simple_object_array<O:SimpleObject>(&mut self)->ObjectArray<'a,O>{
         self.object_storage.push_simple_object_array()
     }
 
-    pub fn push_texture_object_array<O:TextureObject>(&mut self)->ObjectArray<O>{
+    pub fn push_texture_object_array<O:TextureObject>(&mut self)->ObjectArray<'a,O>{
         self.object_storage.push_texture_object_array()
     }
 
-    pub fn push_text_object_array<O:TextObject>(&mut self)->ObjectArray<O>{
+    pub fn push_text_object_array<O:TextObject>(&mut self)->ObjectArray<'a,O>{
         self.object_storage.push_text_object_array()
     }
 
@@ -550,43 +219,6 @@ pub struct TextRenderData<'a>{
     pub render:RenderData<'a,TextVertex,ElementIndexType>,
     pub glyph_cache:&'a GlyphCache,
 }
-
-fn simple_object_handle_wrapper<O:SimpleObject>(object:*mut (),event:ObjectEvent,render_data:*mut ()){
-    unsafe{
-        let object=&mut *(object as *mut O);
-
-        let render_data=&mut *(render_data as *mut SimpleRenderData);
-
-        object.event(event,render_data)
-    }
-}
-
-fn texture_object_handle_wrapper<O:TextureObject>(object:*mut (),event:ObjectEvent,render_data:*mut ()){
-    unsafe{
-        let object=&mut *(object as *mut O);
-
-        let render_data=&mut *(render_data as *mut TextureRenderData);
-
-        object.event(event,render_data)
-    }
-}
-
-fn text_object_handle_wrapper<O:TextObject>(object:*mut (),event:ObjectEvent,render_data:*mut ()){
-    unsafe{
-        let object=&mut *(object as *mut O);
-
-        let render_data=&mut *(render_data as *mut TextRenderData);
-
-        object.event(event,render_data)
-    }
-}
-
-fn drop_wrapper<O>(object:*mut ()){
-    unsafe{
-        Box::from_raw(object as *mut O);
-    }
-}
-
 
 
 /// Note that if you convert from `Vec<V>`,

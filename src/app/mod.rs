@@ -1,7 +1,6 @@
 use crate::{
     window::WinError,
     system::{
-        System,
         Systems,
         SystemEvent,
         StartSystem,
@@ -10,8 +9,6 @@ use crate::{
     object::{
         Objects,
         ObjectEvent,
-        ObjectManager,
-        ObjectStorage,
     },
 
     graphics::{
@@ -44,7 +41,7 @@ use cat_engine_basement::{
     }
 };
 
-use std::marker::PhantomData;
+use std::{marker::PhantomData};
 
 pub (crate) struct AppCreateParameters<P>{
     pub context:OpenGLRenderContextAttributes,
@@ -79,7 +76,7 @@ pub struct App{
 }
 
 impl App{
-    pub fn new<'s,S:StartSystem<'s>+'s>(attributes:AppAttributes,create_parameters:&'s mut S::CreateParameters)->Result<App,WinError>{
+    pub fn new<'s,'a,S:StartSystem<'s,'a>+'s+'a>(attributes:AppAttributes,create_parameters:&'s mut S::CreateParameters)->Result<App,WinError>{
         let window_class=match WindowClass::new(attributes.class){
             Ok(class)=>class,
             Err(e)=>return Err(e)
@@ -91,7 +88,7 @@ impl App{
             create_parameters
         };
 
-        let window=match Window::new::<WinProc<'s,S>>(&window_class,attributes.window,&mut app_create_parameters){
+        let window=match Window::new::<WinProc<'s,'a,S>>(&window_class,attributes.window,&mut app_create_parameters){
             Ok(window)=>window,
             Err(e)=>return Err(e)
         };
@@ -126,17 +123,18 @@ impl App{
     }
 }
 
-pub (crate) struct WinProc<'s,S:StartSystem<'s>>{
-    marker:PhantomData<&'s S>
+pub (crate) struct WinProc<'s,'a,S:StartSystem<'s,'a>+'s>{
+    marker1:PhantomData<&'s S>,
+    marker2:PhantomData<&'a S>
 }
 
-impl<'s,S:StartSystem<'s>> WindowProcedure for WinProc<'s,S>{
+impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
     type CreateParameters=AppCreateParameters<&'s mut S::CreateParameters>;
     type Data=AppSystem<S::SharedData>;
 
     fn create(window:&Window,create_parameters:&mut Self::CreateParameters)->Result<Self::Data,Error>{
         match OpenGLRenderContext::new(window,create_parameters.context.clone()){
-            Ok(render_context)=>unsafe{
+            Ok(render_context)=>{
                 let opengl_module=OpenGraphicsLibrary::new();
 
                 let [w,h]=window.client_size();
@@ -164,16 +162,7 @@ impl<'s,S:StartSystem<'s>> WindowProcedure for WinProc<'s,S>{
                     app_system.systems.shared_data(),
                 );
 
-                let shared_data=std::mem::transmute(app_system.systems.shared_data());
-
-                let object_storage_id=app_system.objects.create_storage();
-                let object_storage=app_system.objects.get_storage(object_storage_id);
-                let start_system=app_system.systems.push(start_system,object_storage_id);
-
-                let object_manager=ObjectManager::new(std::mem::transmute(object_storage as *mut ObjectStorage),std::mem::transmute(&mut app_system.graphics));
-                let references=start_system.set_objects(shared_data,object_manager);
-                let object_storage_references=Box::new(references);
-                object_storage.set_references(Box::leak(object_storage_references) as *mut S::Objects as *mut ());
+                app_system.systems.push(start_system,&mut app_system.objects,&mut app_system.graphics);
 
                 Ok(app_system)
             },

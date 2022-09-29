@@ -1,5 +1,3 @@
-use crate::object::SimpleObject;
-
 use super::{
     ElementIndexType,
     Vertex,

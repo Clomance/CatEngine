@@ -20,7 +20,7 @@ use cat_engine::{
         ObjectEvent,
         ObjectManager,
         SimpleRenderData,
-        ObjectRef,
+        ObjectReference,
         Vertices,
         Indices,
         TextureObject,
@@ -69,27 +69,18 @@ impl Pong {
     }
 }
 
-impl<'a> System<'a> for Pong {
+impl<'s, 'a> System<'s, 'a> for Pong {
     type Objects = (
-        ObjectRef<Paddle>,
-        ObjectRef<Paddle>,
-        ObjectRef<Ball>,
+        ObjectReference<'a, Paddle>,
+        ObjectReference<'a, Paddle>,
+        ObjectReference<'a, Ball>,
     );
     type SharedData = ();
-    type CreateParameters = ();
-
-    fn create(
-        _create_parameters: &mut Self::CreateParameters,
-        _window: &Window,
-        _shared: &mut Self::SharedData,
-    ) -> Self {
-        Pong::new()
-    }
 
     fn set_objects(
         &mut self,
         _shared: &mut Self::SharedData,
-        mut objects: ObjectManager,
+        mut objects: ObjectManager<'a>,
     ) -> Self::Objects {
         objects.graphics().parameters.set_clear_colour(Some([1f32; 4]));
 
@@ -110,10 +101,10 @@ impl<'a> System<'a> for Pong {
 
         let image = image::open("resources/ball.png").unwrap();
         let texture = Texture2D::new(TextureMinFilter::Linear, TextureMagFilter::Linear, [image.width(), image.height()], image.as_bytes());
-        let texture = objects.graphics().textured.push_texture(texture).unwrap();
+        let texture = objects.graphics().texture.push_texture(texture).unwrap();
 
         let attributes = MeshAttributes::new(PrimitiveType::Triangles);
-        let textured_layer = objects.graphics().textured.create_layer(attributes).unwrap();
+        let textured_layer = objects.graphics().texture.create_layer(attributes).unwrap();
 
         objects.graphics().push_texture_layer(textured_layer, texture);
 
@@ -293,8 +284,18 @@ impl<'a> System<'a> for Pong {
     }
 }
 
-impl<'a> StartSystem<'a> for Pong{
-    fn create_shared_data(_create_parameters:&mut Self::CreateParameters)->Self::SharedData{
+impl<'s, 'a> StartSystem<'s, 'a> for Pong {
+    type CreateParameters = ();
+
+    fn create(
+        _create_parameters: &mut Self::CreateParameters,
+        _window: &Window,
+        _shared: &mut Self::SharedData,
+    ) -> Self {
+        Pong::new()
+    }
+
+    fn create_shared_data(_create_parameters: &mut Self::CreateParameters) -> Self::SharedData {
         
     }
 }

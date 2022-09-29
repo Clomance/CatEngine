@@ -41,18 +41,9 @@ use cat_engine::{
 
 pub struct ExampleSystem;
 
-impl<'a> System<'a> for ExampleSystem {
-    type CreateParameters = ();
+impl<'s, 'a> System<'s, 'a> for ExampleSystem {
     type SharedData = ();
     type Objects = ();
-
-    fn create(
-        _create_parameters: &mut Self::CreateParameters,
-        _window: &Window,
-        _shared: &mut Self::SharedData
-    ) -> ExampleSystem {
-        ExampleSystem
-    }
 
     fn set_objects(&mut self, _shared: &mut Self::SharedData, mut object_manager: ObjectManager) -> Self::Objects {
         let graphics = object_manager.graphics();
@@ -93,7 +84,17 @@ impl<'a> System<'a> for ExampleSystem {
     }
 }
 
-impl<'a> StartSystem<'a> for ExampleSystem {
+impl<'s, 'a> StartSystem<'s, 'a> for ExampleSystem {
+    type CreateParameters = ();
+
+    fn create(
+        _create_parameters: &mut Self::CreateParameters,
+        _window: &Window,
+        _shared: &mut Self::SharedData
+    ) -> ExampleSystem {
+        ExampleSystem
+    }
+
     fn create_shared_data(_create_parameters: &mut Self::CreateParameters) -> Self::SharedData {
 
     }

@@ -26,7 +26,6 @@ use std::{
         Add,
         SubAssign
     },
-    marker::PhantomData
 };
 
 #[derive(Debug,Clone,Copy,PartialEq,Eq)]
@@ -90,6 +89,14 @@ impl<
             index_start,
             index_count
         }
+    }
+
+    pub fn read_vertices(&self)->&[V]{
+        self.mesh.read_vertices(self.vertex_start,self.vertex_count).unwrap()
+    }
+
+    pub fn read_indices(&self)->&[I]{
+        self.mesh.read_indices(self.index_start,self.index_count).unwrap()
     }
 
     pub fn write_vertices(&mut self,start:usize,data:&[V])->Result<(),MeshError>{
@@ -254,6 +261,14 @@ impl<V:Vertex,I:AvailableIndexType> BufferedMesh<V,I>{
 
             objects:DynamicStorage::with_capacity(attributes.object_storage_capacity),
         }
+    }
+
+    pub fn read_vertices(&self,start:usize,count:usize)->Option<&[V]>{
+        self.vertex_buffer_local.get(start..start+count)
+    }
+
+    pub fn read_indices(&self,start:usize,count:usize)->Option<&[I]>{
+        self.index_buffer_local.get(start..start+count)
     }
 
     pub fn flush_vertices(&mut self){

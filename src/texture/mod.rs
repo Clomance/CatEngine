@@ -1,7 +1,7 @@
-use std::io::Read;
-
 use cat_engine_basement::opengl::{
-    core::texture::{Texture as TextureFunctions, Texture2DWriteTarget},
+    core::{
+        texture::Texture2DWriteTarget
+    },
     texture::{
         Texture as RawTexture,
         Texture2DAllocateTarget,
@@ -114,6 +114,6 @@ impl Texture2D{
             PixelFormat::RGBA,
             PixelType::U8,
             unsafe{data.get_unchecked(0)}
-        )
+        );
     }
 }

@@ -1,6 +1,4 @@
 mod mesh;
-use std::marker::PhantomData;
-
 use mesh::{
     BufferedMesh,
 };
@@ -237,7 +235,7 @@ pub struct Graphics{
     pub camera:Camera,
 
     pub simple:SimpleGraphics,
-    pub textured:TextureGraphics,
+    pub texture:TextureGraphics,
     pub text:TextGraphics,
 
     pub parameters:GraphicsParameters,
@@ -270,7 +268,7 @@ impl Graphics{
 
         let simple=SimpleGraphics::new(&attribites.simple);
 
-        let textured=TextureGraphics::new(&attribites.texture);
+        let texture=TextureGraphics::new(&attribites.texture);
 
         let text=TextGraphics::new(&attribites.text);
 
@@ -280,7 +278,7 @@ impl Graphics{
             camera:Camera::new(viewport,view_space_size),
 
             simple,
-            textured,
+            texture,
             text,
 
             parameters:GraphicsParameters::new(),
@@ -362,7 +360,7 @@ impl Graphics{
     }
 
     pub fn push_texture_layer(&mut self,layer:usize,texture:usize)->bool{
-        if let Some(mesh)=self.textured.attach_layer(layer,texture){
+        if let Some(mesh)=self.texture.attach_layer(layer,texture){
             let info=LayerInfo{
                 layer_type:LayerType::Textured,
                 index:layer,
@@ -377,7 +375,7 @@ impl Graphics{
     }
 
     pub fn insert_texture_layer(&mut self,location:usize,layer:usize,texture:usize)->bool{
-        if let Some(mesh)=self.textured.attach_layer(layer,texture){
+        if let Some(mesh)=self.texture.attach_layer(layer,texture){
             let info=LayerInfo{
                 layer_type:LayerType::Textured,
                 index:layer,
@@ -400,7 +398,7 @@ impl Graphics{
             }
 
             LayerType::Textured=>{
-                self.textured.detach_layer(info.index)
+                self.texture.detach_layer(info.index)
             }
 
             LayerType::Text=>{
@@ -418,7 +416,7 @@ impl Graphics{
             }
 
             LayerType::Textured=>{
-                self.textured.detach_layer(info.index)
+                self.texture.detach_layer(info.index)
             }
 
             LayerType::Text=>{

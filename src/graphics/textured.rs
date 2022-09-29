@@ -8,7 +8,7 @@ use super::{
     MeshError, ObjectAttributes,
 };
 
-use crate::{object::TextureObject, texture::Texture2D};
+use crate::{texture::Texture2D};
 
 use cat_engine_basement::{
     opengl::{

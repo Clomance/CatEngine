@@ -18,19 +18,9 @@ use cat_engine_basement::{
     },
 };
 
-pub trait System<'s>{
+pub trait System<'s,'a>:'s{
     type Objects;
     type SharedData;
-    type CreateParameters;
-
-    /// Creates the system.
-    /// 
-    /// See `SystemManager::push`.
-    fn create(
-        create_parameters:&mut Self::CreateParameters,
-        window:&Window,
-        shared:&mut Self::SharedData,
-    )->Self;
 
     /// Sets up system's layers, objects, etc.
     /// 
@@ -38,7 +28,7 @@ pub trait System<'s>{
     fn set_objects(
         &mut self,
         shared:&mut Self::SharedData,
-        object_manager:ObjectManager,
+        object_manager:ObjectManager<'a>,
     )->Self::Objects;
 
     /// Processes the system events.
@@ -48,33 +38,49 @@ pub trait System<'s>{
         event:SystemEvent,
         window:&Window,
         shared:&mut Self::SharedData,
-        manager:SystemManager
+        manager:SystemManager<'a>
     )->SystemStatus;
 
-    fn destroy(&mut self,shared:&mut Self::SharedData,graphics:&mut Graphics);
+    fn destroy(
+        &mut self,
+        shared:&mut Self::SharedData,
+        graphics:&mut Graphics
+    );
 }
 
-pub trait StartSystem<'s>:System<'s>{
+
+pub trait StartSystem<'s,'a>:System<'s,'a>{
+    type CreateParameters:'s;
+
     fn create_shared_data(create_parameters:&mut Self::CreateParameters)->Self::SharedData;
+
+    /// Creates the system.
+    /// 
+    /// See `SystemManager::push`.
+    fn create(
+        create_parameters:&mut Self::CreateParameters,
+        window:&Window,
+        shared:&mut Self::SharedData,
+    )->Self;
 }
 
-pub struct SystemManager<'m>{
+pub struct SystemManager<'a>{
     current_system:usize,
-    active_systems:&'m mut Vec<SystemStructure>,
-    paused_systems:&'m mut Vec<SystemStructure>,
+    active_systems:&'a mut Vec<SystemTable>,
+    paused_systems:&'a mut Vec<SystemTable>,
 
-    objects:&'m mut Objects,
-    graphics:&'m mut Graphics,
+    objects:&'a mut Objects,
+    graphics:&'a mut Graphics,
 }
 
-impl<'m> SystemManager<'m>{
+impl<'a> SystemManager<'a>{
     pub (crate) fn new(
         current_system:usize,
-        active_systems:&'m mut Vec<SystemStructure>,
-        paused_systems:&'m mut Vec<SystemStructure>,
-        objects:&'m mut Objects,
-        graphics:&'m mut Graphics
-    )->SystemManager<'m>{
+        active_systems:&'a mut Vec<SystemTable>,
+        paused_systems:&'a mut Vec<SystemTable>,
+        objects:&'a mut Objects,
+        graphics:&'a mut Graphics
+    )->SystemManager<'a>{
         Self{
             current_system,
             active_systems,
@@ -88,7 +94,7 @@ impl<'m> SystemManager<'m>{
         self.graphics
     }
 
-    pub fn object_manager(&mut self)->ObjectManager<'m>{
+    pub fn object_manager(&mut self)->ObjectManager<'a>{
         let system=&self.active_systems[self.current_system];
         let object_storage=self.objects.get_storage(system.object_storage);
         unsafe{
@@ -99,17 +105,11 @@ impl<'m> SystemManager<'m>{
         }
     }
 
-    pub fn push<'s,S:System<'s>>(
+    pub fn push<'s,S:System<'s,'a>+'s>(
         &mut self,
-        window:&Window,
-        shared:&mut S::SharedData,
-        create_parameters:&mut S::CreateParameters
+        system:S,
+        shared:&'s mut S::SharedData,
     ){
-        let system=S::create(
-            create_parameters,
-            window,
-            shared,
-        );
         let mut boxed_system=Box::new(system);
 
         let object_storage_id=self.objects.create_storage();
@@ -124,15 +124,15 @@ impl<'m> SystemManager<'m>{
 
         let object_storage_references=boxed_system.as_mut().set_objects(shared,object_manager);
         let object_storage_references=Box::new(object_storage_references);
-        object_storage.set_references(Box::leak(object_storage_references) as *mut S::Objects as *mut ());
 
         let data=Box::leak(boxed_system);
 
-        let system=SystemStructure{
-            system:data as *mut _ as *mut (),
+        let system=SystemTable{
+            data:data as *mut _ as *mut (),
+            object_storage_references:Box::leak(object_storage_references) as *mut S::Objects as *mut (),
             object_storage:object_storage_id,
             handle:unsafe{std::mem::transmute(system_handle_wrapper::<S> as usize)},
-            drop:system_drop_wrapper::<S>
+            destroy:system_destroy_wrapper::<S>,
         };
 
         self.active_systems.push(system);
@@ -171,30 +171,39 @@ pub enum SystemEvent{
     Destroy,
 }
 
-pub (crate) struct SystemStructure{
-    system:*mut (),
-    object_storage:usize,
+pub (crate) struct SystemTable{
+    data:*mut (),
+    pub object_storage_references:*mut (),
+    pub object_storage:usize,
     handle:fn(*mut (),*mut (),SystemEvent,&Window,*mut (),SystemManager)->SystemStatus,
-    drop:fn(*mut (),*mut (),*mut (),&mut Graphics),
+    destroy:fn(*mut (),*mut (),*mut (),*mut Graphics),
 }
 
-impl SystemStructure{
+impl SystemTable{
     #[inline(always)]
     fn handle(
         &self,
-        object_references:*mut (),
         event:SystemEvent,
         window:&Window,
         shared:*mut (),
         system_manager:SystemManager
     )->SystemStatus{
         (self.handle)(
-            self.system,
-            object_references,
+            self.data,
+            self.object_storage_references,
             event,
             window,
             shared,
             system_manager
+        )
+    }
+
+    fn destroy(&self,shared:*mut (),graphics:*mut Graphics){
+        (self.destroy)(
+            self.data,
+            self.object_storage_references,
+            shared,
+            graphics
         )
     }
 }
@@ -203,9 +212,9 @@ pub (crate) struct Systems<D>{
     /// Общие данные.
     shared:D,
     /// Активные системы.
-    active:Vec<SystemStructure>,
+    active:Vec<SystemTable>,
     /// Неактивные системы.
-    paused:Vec<SystemStructure>
+    paused:Vec<SystemTable>
 }
 
 impl<D> Systems<D>{
@@ -217,21 +226,32 @@ impl<D> Systems<D>{
         }
     }
 
-    pub fn push<'s,S:System<'s>>(&mut self,system:S,object_storage:usize)->&mut S{
+    pub fn push<'s,'a,S:System<'s,'a>+'s>(&mut self,system:S,objects:&mut Objects,graphics:&mut Graphics){
         let boxed_system=Box::new(system);
-
         let data=Box::leak(boxed_system);
 
-        let system=SystemStructure{
-            system:data as *mut _ as *mut (),
-            object_storage,
+        let object_storage_id=objects.create_storage();
+        let object_storage=objects.get_storage(object_storage_id);
+
+        let object_manager=unsafe{
+            ObjectManager::new(
+                std::mem::transmute(object_storage as *mut ObjectStorage),
+                std::mem::transmute(graphics as *mut Graphics)
+            )
+        };
+
+        let object_reference=data.set_objects(unsafe{std::mem::transmute(&mut self.shared)},object_manager);
+        let object_storage_references=Box::new(object_reference);
+
+        let system=SystemTable{
+            data:data as *mut _ as *mut (),
+            object_storage:object_storage_id,
+            object_storage_references:Box::leak(object_storage_references) as *mut S::Objects as *mut (),
             handle:unsafe{std::mem::transmute(system_handle_wrapper::<S> as usize)},
-            drop:system_drop_wrapper::<S>
+            destroy:system_destroy_wrapper::<S>
         };
 
         self.active.push(system);
-
-        data
     }
 
     pub fn object_handle(&mut self,event:ObjectEvent,objects:&mut Objects,graphics:&mut Graphics){
@@ -244,15 +264,13 @@ impl<D> Systems<D>{
         let mut c=0;
         unsafe{
             while c<self.active.len(){
-                let active_systems:&'static mut Vec<SystemStructure>=std::mem::transmute(&mut self.active);
-                let pause_systems:&'static mut Vec<SystemStructure>=std::mem::transmute(&mut self.paused);
+                let active_systems:&'static mut Vec<SystemTable>=std::mem::transmute(&mut self.active);
+                let pause_systems:&'static mut Vec<SystemTable>=std::mem::transmute(&mut self.paused);
 
                 let system=self.active.get_unchecked(c);
-                let object_references=objects.get_storage(system.object_storage).get_references();
                 let manager=SystemManager::new(c,active_systems,pause_systems,objects,graphics);
 
                 let status=system.handle(
-                    object_references,
                     event,
                     window,
                     &mut self.shared as *mut D as *mut (),
@@ -263,7 +281,8 @@ impl<D> Systems<D>{
                     SystemStatus::Stop=>{
                         let system=self.active.remove(c);
                         objects.remove_storage(system.object_storage,graphics);
-                        (system.drop)(system.system,object_references,&mut self.shared as *mut D as *mut (),graphics);
+
+                        system.destroy(&mut self.shared as *mut D as *mut (),graphics);
                     }
 
                     SystemStatus::Pause=>{
@@ -287,13 +306,13 @@ impl<D> Systems<D>{
     }
 }
 
-fn system_handle_wrapper<'s,S:System<'s>>(
+fn system_handle_wrapper<'s,'a,S:System<'s,'a>>(
     system:*mut (),
     objects:*mut (),
     event:SystemEvent,
     window:&Window,
     shared:*mut (),
-    manager:SystemManager
+    manager:SystemManager<'a>
 )->SystemStatus{
     unsafe{
         let system=&mut *(system as *mut S);
@@ -306,11 +325,14 @@ fn system_handle_wrapper<'s,S:System<'s>>(
     }
 }
 
-fn system_drop_wrapper<'s,S:System<'s>>(data:*mut (),objects:*mut (),shared:*mut (),graphics:&mut Graphics){
+fn system_destroy_wrapper<'s,'a,S:System<'s,'a>>(data:*mut (),objects:*mut (),shared:*mut (),graphics:*mut Graphics){
     unsafe{
         let system=&mut *(data as *mut S);
         let shared=&mut *(shared as *mut S::SharedData);
-        system.destroy(shared,graphics);
+
+        if !graphics.is_null(){
+            system.destroy(shared,&mut *graphics);
+        }
 
         // Вызываем ленивый деконструктор для данных системы
         Box::from_raw(data as *mut S);

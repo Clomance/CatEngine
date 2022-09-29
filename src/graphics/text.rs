@@ -1,6 +1,5 @@
 use crate::{
     text::GlyphCache,
-    object::TextObject
 };
 
 use super::{
