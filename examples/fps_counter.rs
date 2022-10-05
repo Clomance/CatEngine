@@ -25,7 +25,6 @@ use cat_engine::{
         ObjectManager,
         TextObject,
         ObjectEvent,
-        TextRenderData,
         Vertices,
         Indices,
     },
@@ -128,7 +127,9 @@ impl FpsCounter {
 }
 
 impl TextObject for FpsCounter{
-    fn event(&mut self, event: ObjectEvent, render_data: &mut TextRenderData) {
+    fn event(&mut self, event: ObjectEvent) {
+        let mut render_data = self.get_render_data();
+
         match event {
             ObjectEvent::Prerender => {
                 let colour = [0f32, 0f32, 0f32, 1f32];

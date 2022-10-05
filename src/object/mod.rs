@@ -1,3 +1,7 @@
+mod manager;
+
+pub use manager::ObjectManager;
+
 mod storage;
 pub (crate) use storage::ObjectStorage;
 
@@ -12,25 +16,73 @@ use crate::{
         SimpleVertex,
         TexturedVertex,
         TextVertex,
-        MeshError,
         ElementIndexType,
-        ObjectAttributes,
     },
-    text::GlyphCache, texture::Texture2D
+    text::GlyphCache,
+    texture::Texture2D, object::storage::ObjectData
 };
 
 pub use self::storage::{ObjectReference, ObjectArray};
 
-pub trait SimpleObject{
-    fn event(&mut self,event:ObjectEvent,render:&mut SimpleRenderData);
+pub trait SimpleObject:Sized{
+    fn event(&mut self,event:ObjectEvent);
+
+    fn get_render_data<'o,'d>(&'o self)->SimpleRenderData<'d>{
+        unsafe{
+            let ptr=self as *const Self as *const usize;
+
+            let table=&*(ptr.offset(-3) as *const ObjectData<Self>);
+            let graphics=&mut *table.graphics;
+
+            let render_data=graphics.simple.get_render_data(table.layer,table.object_id).unwrap();
+
+            SimpleRenderData{
+                render:render_data
+            }
+        }
+    }
 }
 
-pub trait TextureObject{
-    fn event(&mut self,event:ObjectEvent,render:&mut TextureRenderData);
+pub trait TextureObject:Sized{
+    fn event(&mut self,event:ObjectEvent);
+
+    fn get_render_data<'o,'d>(&'o self)->TextureRenderData<'d>{
+        unsafe{
+            let ptr=self as *const Self as *const usize;
+
+            let table=&*(ptr.offset(-3) as *const ObjectData<Self>);
+            let graphics=&mut *table.graphics;
+
+            let texture=graphics.texture.get_layer_texture_raw(table.layer);
+            let render_data=graphics.texture.get_render_data(table.layer,table.object_id);
+
+            TextureRenderData{
+                render:render_data,
+                texture:&*texture
+            }
+        }
+    }
 }
 
-pub trait TextObject{
-    fn event(&mut self,event:ObjectEvent,render:&mut TextRenderData);
+pub trait TextObject:Sized{
+    fn event(&mut self,event:ObjectEvent);
+
+    fn get_render_data<'o,'d>(&'o self)->TextRenderData<'d>{
+        unsafe{
+            let ptr=self as *const Self as *const usize;
+
+            let table=&*(ptr.offset(-3) as *const ObjectData<Self>);
+            let graphics=&mut *table.graphics;
+
+            let glyph_cache=graphics.text.get_layer_font_raw(table.layer);
+            let render_data=graphics.text.get_render_data(table.layer,table.object_id);
+
+            TextRenderData{
+                render:render_data,
+                glyph_cache:&*glyph_cache
+            }
+        }
+    }
 }
 
 #[derive(Clone,Copy)]
@@ -71,138 +123,12 @@ impl Objects{
         storage.clear_storage(graphics)
     }
 
-    pub fn handle(&mut self,storage:usize,event:ObjectEvent,graphics:&mut Graphics){
+    pub fn handle(&mut self,storage:usize,event:ObjectEvent){
         for objects in &mut self.objects.get_mut(storage).unwrap().data{
             for object in objects{
-                match object.object_type{
-                    ObjectType::Simple=>unsafe{
-                        let render_data=graphics.simple.get_render_data(object.layer,object.object_id);
-                        let mut simple_render_data=SimpleRenderData{
-                            render:render_data
-                        };
-                        (object.handle)(object.ptr,event,std::mem::transmute(&mut simple_render_data))
-                    }
-
-                    ObjectType::Textured=>unsafe{
-                        let texture=graphics.texture.get_layer_texture_raw(object.layer);
-                        let render_data=graphics.texture.get_render_data(object.layer,object.object_id);
-
-                        let mut texture_render_data=TextureRenderData{
-                            render:render_data,
-                            texture:&*texture,
-                        };
-
-                        (object.handle)(object.ptr,event,std::mem::transmute(&mut texture_render_data))
-                    }
-
-                    ObjectType::Text=>unsafe{
-                        let glyph_cache=graphics.text.get_layer_font_raw(object.layer);
-                        let render_data=graphics.text.get_render_data(object.layer,object.object_id);
-    
-                        let mut tex_render_data=TextRenderData{
-                            render:render_data,
-                            glyph_cache:&*glyph_cache,
-                        };
-
-                        (object.handle)(object.ptr,event,std::mem::transmute(&mut tex_render_data))
-                    }
-                }
+                object.handle(event);
             }
         }
-    }
-}
-
-pub struct ObjectManager<'a>{
-    object_storage:&'a mut ObjectStorage,
-    graphics:&'a mut Graphics,
-}
-
-impl<'a> ObjectManager<'a>{
-    pub (crate) fn new(
-        object_storage:&'a mut ObjectStorage,
-        graphics:&'a mut Graphics
-    )->ObjectManager<'a>{
-        Self{
-            object_storage,
-            graphics
-        }
-    }
-
-    pub fn push_simple_object<O:SimpleObject>(
-        &mut self,
-        object:O,
-        vertices:Vertices<SimpleVertex>,
-        indices:Indices<ElementIndexType>,
-        layer:usize
-    )->Result<ObjectReference<'a,O>,MeshError>{
-        let attributes=ObjectAttributes::new(
-            vertices.vertices,
-            vertices.allocate,
-            indices.indices,
-            indices.allocate,
-            indices.range
-        );
-        match self.graphics.simple.push_object(attributes,layer){
-            Ok(object_id)=>Ok(self.object_storage.push_simple_object(object,layer,object_id)),
-            Err(e)=>Err(e)
-        }
-    }
-
-    pub fn push_texture_object<O:TextureObject>(
-        &mut self,
-        object:O,
-        vertices:Vertices<TexturedVertex>,
-        indices:Indices<ElementIndexType>,
-        layer:usize
-    )->Result<ObjectReference<'a,O>,MeshError>{
-        let attributes=ObjectAttributes::new(
-            vertices.vertices,
-            vertices.allocate,
-            indices.indices,
-            indices.allocate,
-            indices.range
-        );
-        match self.graphics.texture.push_object(attributes,layer){
-            Ok(object_id)=>Ok(self.object_storage.push_textured_object(object,layer,object_id)),
-            Err(e)=>Err(e)
-        }
-    }
-
-    pub fn push_text_object<O:TextObject>(
-        &mut self,
-        object:O,
-        vertices:Vertices<TextVertex>,
-        indices:Indices<ElementIndexType>,
-        layer:usize
-    )->Result<ObjectReference<'a,O>,MeshError>{
-        let attributes=ObjectAttributes::new(
-            vertices.vertices,
-            vertices.allocate,
-            indices.indices,
-            indices.allocate,
-            indices.range
-        );
-        match self.graphics.text.push_object(attributes,layer){
-            Ok(object_id)=>Ok(self.object_storage.push_text_object(object,layer,object_id)),
-            Err(e)=>Err(e)
-        }
-    }
-
-
-    pub fn push_simple_object_array<O:SimpleObject>(&mut self)->ObjectArray<'a,O>{
-        self.object_storage.push_simple_object_array()
-    }
-
-    pub fn push_texture_object_array<O:TextureObject>(&mut self)->ObjectArray<'a,O>{
-        self.object_storage.push_texture_object_array()
-    }
-
-    pub fn push_text_object_array<O:TextObject>(&mut self)->ObjectArray<'a,O>{
-        self.object_storage.push_text_object_array()
-    }
-
-    pub fn graphics(&mut self)->&mut Graphics{
-        self.graphics
     }
 }
 

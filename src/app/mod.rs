@@ -155,21 +155,24 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
 
                 let shared_data=S::create_shared_data(create_parameters.create_parameters);
 
-                let mut app_system=AppSystem::new(graphics,Systems::new(shared_data),Objects::new());
-                let start_system=S::create(
-                    &mut create_parameters.create_parameters,
-                    window,
-                    app_system.systems.shared_data(),
-                );
-
-                app_system.systems.push(start_system,&mut app_system.objects,&mut app_system.graphics);
-
-                Ok(app_system)
+                Ok(
+                    AppSystem::new(graphics,Systems::new(shared_data),Objects::new())
+                )
             },
             Err(e)=>{
                 Err(e)
             }
         }
+    }
+
+    fn data_packed(window:&Window,create_parameters:&mut Self::CreateParameters,data:&mut Self::Data){
+        let start_system=S::create(
+            &mut create_parameters.create_parameters,
+            window,
+            data.systems.shared_data(),
+        );
+
+        data.systems.push(start_system,&mut data.objects,&mut data.graphics);
     }
 
     fn close(window:&Window,_:&mut Self::Data){
@@ -192,7 +195,7 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
         }
         app.graphics.render_context.swap_buffers().unwrap();
 
-        app.systems.object_handle(ObjectEvent::Prerender,&mut app.objects,&mut app.graphics);
+        app.systems.object_handle(ObjectEvent::Prerender,&mut app.objects);
 
         app.graphics.camera.uniform_buffer.write(&app.graphics.camera.matrix).unwrap();
         app.graphics.camera.uniform_buffer.bind_base(0);
@@ -301,7 +304,7 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
     }
 
     fn user_event(_w_param:usize,_l_param:isize,window:&Window,data:&mut Self::Data){
-        data.systems.object_handle(ObjectEvent::Update,&mut data.objects,&mut data.graphics);
+        data.systems.object_handle(ObjectEvent::Update,&mut data.objects);
         data.systems.handle(
             SystemEvent::Update,
             &window,

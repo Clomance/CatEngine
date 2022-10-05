@@ -19,12 +19,10 @@ use cat_engine::{
         SimpleObject,
         ObjectEvent,
         ObjectManager,
-        SimpleRenderData,
         ObjectReference,
         Vertices,
         Indices,
         TextureObject,
-        TextureRenderData,
     },
 
     graphics::{
@@ -341,7 +339,7 @@ impl Paddle {
 }
 
 impl SimpleObject for Paddle {
-    fn event(&mut self, event: ObjectEvent, render_data: &mut SimpleRenderData) {
+    fn event(&mut self, event: ObjectEvent) {
         match event {
             ObjectEvent::Update => {
                 match self.moving {
@@ -358,8 +356,9 @@ impl SimpleObject for Paddle {
             }
 
             ObjectEvent::Prerender => {
-                let vertices=self.vertices();
+                let vertices = self.vertices();
 
+                let mut render_data = self.get_render_data();
                 render_data.render.write_vertices(0, &vertices).unwrap();
             }
         }
@@ -410,16 +409,15 @@ impl Ball {
             1, 2, 3
         ]
     }
-
 }
 
 impl TextureObject for Ball {
-    fn event(&mut self, event: ObjectEvent, render_data: &mut TextureRenderData){
+    fn event(&mut self, event: ObjectEvent){
         match event {
             ObjectEvent::Prerender => {
                 let vertices = self.vertices();
 
-                render_data.render.write_vertices(0, &vertices).unwrap();
+                self.get_render_data().render.write_vertices(0, &vertices).unwrap();
             }
 
             ObjectEvent::Update => {

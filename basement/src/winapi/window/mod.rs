@@ -54,6 +54,11 @@ pub trait WindowProcedure{
     /// Called when an application requests that the window be created.
     fn create(window:&Window,parameters:&mut Self::CreateParameters)->Result<Self::Data,Error>;
 
+    /// Called when the data returned from `create` is boxed.
+    /// 
+    /// Now the data may safety be accessed with raw pointers.
+    fn data_packed(window:&Window,parameters:&mut Self::CreateParameters,data:&mut Self::Data);
+
     /// Called as a signal that the window or application should terminate.
     fn close(window:&Window,data:&mut Self::Data);
 

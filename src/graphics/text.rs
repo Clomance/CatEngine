@@ -41,8 +41,8 @@ use cat_engine_basement::{
 
 use std::ptr::null_mut;
 
-const vertex_shader_source:&'static str=include_str!("shaders/text/vertex.glsl");
-const fragment_shader_source:&'static str=include_str!("shaders/text/fragment.glsl");
+const VERTEX_SHADER_SOURCE:&'static str=include_str!("shaders/text/vertex.glsl");
+const FRAGMENT_SHADER_SOURCE:&'static str=include_str!("shaders/text/fragment.glsl");
 
 #[derive(Clone,Copy,Debug)]
 pub struct TextVertex{
@@ -132,15 +132,15 @@ impl Layer for TextLayer{
 }
 
 pub struct TextGraphicsAttributes{
-    pub font_limit:usize,
-    pub layer_limit:usize,
+    pub fonts_limit:usize,
+    pub layers_limit:usize,
 }
 
 impl TextGraphicsAttributes{
     pub const fn new()->TextGraphicsAttributes{
         Self{
-            font_limit:10,
-            layer_limit:10
+            fonts_limit:10,
+            layers_limit:10
         }
     }
 }
@@ -159,8 +159,8 @@ pub struct TextGraphics{
 
 impl TextGraphics{
     pub (crate) fn new(attributes:&TextGraphicsAttributes)->TextGraphics{
-        let vertex_shader=Shader::new(vertex_shader_source,ShaderType::VertexShader).unwrap();
-        let fragment_shader=Shader::new(fragment_shader_source,ShaderType::FragmentShader).unwrap();
+        let vertex_shader=Shader::new(VERTEX_SHADER_SOURCE,ShaderType::VertexShader).unwrap();
+        let fragment_shader=Shader::new(FRAGMENT_SHADER_SOURCE,ShaderType::FragmentShader).unwrap();
 
         let program=Program::new();
         program.attach_shader(&vertex_shader);
@@ -172,15 +172,15 @@ impl TextGraphics{
         let layer_draw_parameters_location=program.get_uniform_location("LayerDrawParameters\0").unwrap();
 
         Self{
-            font_usage:vec![0u8;attributes.font_limit],
-            font_storage:StaticStorage::new(attributes.font_limit),
+            font_usage:vec![0u8;attributes.fonts_limit],
+            font_storage:StaticStorage::new(attributes.fonts_limit),
 
             program,
             layer_draw_parameters_location,
 
-            valid:vec![0u8;attributes.layer_limit],
-            font_attached:vec![0usize;attributes.layer_limit],
-            layers:StaticStorage::new(attributes.layer_limit),
+            valid:vec![0u8;attributes.layers_limit],
+            font_attached:vec![0usize;attributes.layers_limit],
+            layers:StaticStorage::new(attributes.layers_limit),
         }
     }
 

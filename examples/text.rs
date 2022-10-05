@@ -26,7 +26,6 @@ use cat_engine::{
         ObjectManager,
         TextObject,
         ObjectEvent,
-        TextRenderData,
         Vertices,
         Indices
     },
@@ -189,7 +188,7 @@ impl TextView {
 }
 
 impl TextObject for TextView {
-    fn event(&mut self, _event: ObjectEvent, _render_data: &mut TextRenderData) {
+    fn event(&mut self, _event: ObjectEvent) {
 
     }
 }

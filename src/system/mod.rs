@@ -54,9 +54,6 @@ pub trait StartSystem<'s,'a>:System<'s,'a>{
 
     fn create_shared_data(create_parameters:&mut Self::CreateParameters)->Self::SharedData;
 
-    /// Creates the system.
-    /// 
-    /// See `SystemManager::push`.
     fn create(
         create_parameters:&mut Self::CreateParameters,
         window:&Window,
@@ -198,6 +195,7 @@ impl SystemTable{
         )
     }
 
+    #[inline(always)]
     fn destroy(&self,shared:*mut (),graphics:*mut Graphics){
         (self.destroy)(
             self.data,
@@ -254,9 +252,9 @@ impl<D> Systems<D>{
         self.active.push(system);
     }
 
-    pub fn object_handle(&mut self,event:ObjectEvent,objects:&mut Objects,graphics:&mut Graphics){
+    pub fn object_handle(&mut self,event:ObjectEvent,objects:&mut Objects){
         for system in &self.active{
-            objects.handle(system.object_storage,event.clone(),graphics)
+            objects.handle(system.object_storage,event.clone())
         }
     }
 
@@ -335,9 +333,9 @@ fn system_destroy_wrapper<'s,'a,S:System<'s,'a>>(data:*mut (),objects:*mut (),sh
         }
 
         // Вызываем ленивый деконструктор для данных системы
-        Box::from_raw(data as *mut S);
+        drop(Box::from_raw(data as *mut S));
 
         // Вызываем ленивый деконструктор для ссылок на объекты
-        Box::from_raw(objects as *mut S::Objects);
+        drop(Box::from_raw(objects as *mut S::Objects));
     }
 }

@@ -376,6 +376,9 @@ unsafe extern "system" fn wrap_window_procedure<W:WindowProcedure>(window:&Windo
                             let data_ptr=Box::leak(boxed_data) as *mut W::Data;
                             // Установка параметров
                             WindowFunctions::set_window_long_ptr(window.handle(),WindowData::UserData,data_ptr as isize);
+
+                            W::data_packed(window,transmute(parameters),&mut *data_ptr);
+
                             0
                         }
                         Err(error)=>{

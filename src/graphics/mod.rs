@@ -1,5 +1,5 @@
 mod mesh;
-use mesh::{
+pub (crate) use mesh::{
     BufferedMesh,
 };
 

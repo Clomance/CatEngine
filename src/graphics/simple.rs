@@ -33,8 +33,8 @@ use cat_engine_basement::{
     support::math::matrix::Matrix
 };
 
-const vertex_shader_source:&'static str=include_str!("shaders/simple/vertex.glsl");
-const fragment_shader_source:&'static str=include_str!("shaders/simple/fragment.glsl");
+const VERTEX_SHADER_SOURCE:&'static str=include_str!("shaders/simple/vertex.glsl");
+const FRAGMENT_SHADER_SOURCE:&'static str=include_str!("shaders/simple/fragment.glsl");
 
 #[derive(Debug,Clone,Copy)]
 pub struct SimpleVertex{
@@ -107,13 +107,13 @@ impl Layer for SimpleLayer{
 }
 
 pub struct SimpleGraphicsAttributes{
-    pub layer_limit:usize,
+    pub layers_limit:usize,
 }
 
 impl SimpleGraphicsAttributes{
     pub const fn new()->SimpleGraphicsAttributes{
         Self{
-            layer_limit:10
+            layers_limit:10
         }
     }
 }
@@ -128,8 +128,8 @@ pub struct SimpleGraphics{
 
 impl SimpleGraphics{
     pub (crate) fn new(attributes:&SimpleGraphicsAttributes)->SimpleGraphics{
-        let vertex_shader=Shader::new(vertex_shader_source,ShaderType::VertexShader).unwrap();
-        let fragment_shader=Shader::new(fragment_shader_source,ShaderType::FragmentShader).unwrap();
+        let vertex_shader=Shader::new(VERTEX_SHADER_SOURCE,ShaderType::VertexShader).unwrap();
+        let fragment_shader=Shader::new(FRAGMENT_SHADER_SOURCE,ShaderType::FragmentShader).unwrap();
 
         let program=Program::new();
         program.attach_shader(&vertex_shader);
@@ -145,29 +145,35 @@ impl SimpleGraphics{
             program,
             layer_draw_parameters_location,
 
-            valid:vec![0u8;attributes.layer_limit],
-            layers:StaticStorage::new(attributes.layer_limit),
+            valid:vec![0u8;attributes.layers_limit],
+            layers:StaticStorage::new(attributes.layers_limit),
         }
     }
 
-    pub (crate) fn get_render_data(&mut self,layer:usize,object:usize)->RenderData<SimpleVertex,ElementIndexType>{
-        let layer=self.layers.get_mut(layer).unwrap();
-        let info=layer.mesh.get_render_data(object).unwrap();
+    pub (crate) fn get_render_data(&mut self,layer:usize,object:usize)->Option<RenderData<SimpleVertex,ElementIndexType>>{
+        if let Some(layer)=self.layers.get_mut(layer){
+            let info=layer.mesh.get_render_data(object).unwrap();
 
-        let vertex_start=info.vertex_buffer_start;
-        let vertex_count=info.vertex_buffer_count;
+            let vertex_start=info.vertex_buffer_start;
+            let vertex_count=info.vertex_buffer_count;
+    
+            let index_start=info.index_buffer_start;
+            let index_count=info.index_buffer_count;
 
-        let index_start=info.index_buffer_start;
-        let index_count=info.index_buffer_count;
-
-        RenderData::new(
-            &mut layer.mesh,
-            object,
-            vertex_start as usize,
-            vertex_count as usize,
-            index_start as usize,
-            index_count as usize
-        )
+            Some(
+                RenderData::new(
+                    &mut layer.mesh,
+                    object,
+                    vertex_start as usize,
+                    vertex_count as usize,
+                    index_start as usize,
+                    index_count as usize
+                )
+            )
+        }
+        else{
+            None
+        }
     }
 
     pub fn create_layer(&mut self,attributes:MeshAttributes)->Option<usize>{

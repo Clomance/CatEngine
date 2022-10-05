@@ -543,7 +543,7 @@ impl GlyphCacheBuilder{
         }
     }
 
-    pub fn finish(self)->GlyphCache{
-        self.glyph_cache
+    pub fn finish(self)->(GlyphCache,FontOwner){
+        (self.glyph_cache,self.font)
     }
 }

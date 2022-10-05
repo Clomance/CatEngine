@@ -40,8 +40,8 @@ use cat_engine_basement::{
     },
 };
 
-const vertex_shader_source:&'static str=include_str!("shaders/texture/vertex.glsl");
-const fragment_shader_source:&'static str=include_str!("shaders/texture/fragment.glsl");
+const VERTEX_SHADER_SOURCE:&'static str=include_str!("shaders/texture/vertex.glsl");
+const FRAGMENT_SHADER_SOURCE:&'static str=include_str!("shaders/texture/fragment.glsl");
 
 struct TextureLayer{
     program:u32,
@@ -121,15 +121,15 @@ impl Vertex for TexturedVertex{
 }
 
 pub struct TextureGraphicsAttributes{
-    pub texture_limit:usize,
-    pub layer_limit:usize,
+    pub textures_limit:usize,
+    pub layers_limit:usize,
 }
 
 impl TextureGraphicsAttributes{
     pub const fn new()->TextureGraphicsAttributes{
         Self{
-            texture_limit:10,
-            layer_limit:10
+            textures_limit:10,
+            layers_limit:10
         }
     }
 }
@@ -148,8 +148,8 @@ pub struct TextureGraphics{
 
 impl TextureGraphics{
     pub (crate) fn new(attributes:&TextureGraphicsAttributes)->TextureGraphics{
-        let vertex_shader=Shader::new(vertex_shader_source,ShaderType::VertexShader).unwrap();
-        let fragment_shader=Shader::new(fragment_shader_source,ShaderType::FragmentShader).unwrap();
+        let vertex_shader=Shader::new(VERTEX_SHADER_SOURCE,ShaderType::VertexShader).unwrap();
+        let fragment_shader=Shader::new(FRAGMENT_SHADER_SOURCE,ShaderType::FragmentShader).unwrap();
 
         let program=Program::new();
         program.attach_shader(&vertex_shader);
@@ -162,15 +162,15 @@ impl TextureGraphics{
         let layer_draw_parameters_location=program.get_uniform_location("LayerDrawParameters\0").unwrap();
 
         Self{
-            texture_usage:vec![0u8;attributes.texture_limit],
-            texture_storage:StaticStorage::new(attributes.texture_limit),
+            texture_usage:vec![0u8;attributes.textures_limit],
+            texture_storage:StaticStorage::new(attributes.textures_limit),
 
             program,
             layer_draw_parameters_location,
 
-            valid:vec![0u8;attributes.layer_limit],
-            texture_attached:vec![0usize;attributes.layer_limit],
-            layers:StaticStorage::new(attributes.layer_limit),
+            valid:vec![0u8;attributes.layers_limit],
+            texture_attached:vec![0usize;attributes.layers_limit],
+            layers:StaticStorage::new(attributes.layers_limit),
         }
     }
 

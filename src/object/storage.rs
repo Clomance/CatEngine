@@ -9,9 +9,21 @@ use crate::{
     },
 };
 
-use std::{marker::PhantomData, ops::{Deref, DerefMut}};
+use super::{
+    SimpleObject,
+    Vertices,
+    Indices,
+    ObjectManager,
+    TextObject,
+    TextureObject,
+    ObjectEvent,
+    ObjectType
+};
 
-use super::{SimpleObject, Vertices, Indices, ObjectManager, TextObject, TextureObject, ObjectEvent, TextureRenderData, SimpleRenderData, TextRenderData, ObjectType};
+use std::{
+    marker::PhantomData,
+    ops::{Deref, DerefMut},
+};
 
 pub struct ObjectReference<'a,O>{
     ptr:*mut O,
@@ -58,21 +70,24 @@ impl<'a,O> ObjectArray<'a,O>{
     pub fn remove(&mut self,index:usize,object_manager:&mut ObjectManager){
         let object=object_manager.object_storage.data[self.index].remove(index);
 
+        let layer=object.get_layer();
+        let object_id=object.get_object_id();
+
         match object.object_type{
             ObjectType::Simple=>{
-                object_manager.graphics.simple.remove_object(object.layer,object.object_id)
+                object_manager.graphics.simple.remove_object(layer,object_id)
             }
 
             ObjectType::Textured=>{
-                object_manager.graphics.texture.remove_object(object.layer,object.object_id)
+                object_manager.graphics.texture.remove_object(layer,object_id)
             }
 
             ObjectType::Text=>{
-                object_manager.graphics.text.remove_object(object.layer,object.object_id)
+                object_manager.graphics.text.remove_object(layer,object_id)
             }
         }
 
-        (object.drop)(object.ptr);
+        (object.drop)(object.data);
 
         self.objects.remove(index);
     }
@@ -96,16 +111,22 @@ impl<'a,O:SimpleObject> ObjectArray<'a,O>{
         );
         let object_id=object_manager.graphics.simple.push_object(attributes,layer).unwrap();
 
-        let object=Box::new(object);
+        let table=Box::new(
+            ObjectData{
+                object,
+                graphics:object_manager.graphics,
+                layer,
+                object_id
+            }
+        );
 
-        let object_ptr=Box::leak(object);
+        let table_ptr=Box::leak(table);
+        let object_ptr=&mut table_ptr.object;
 
-        let data=ObjectData{
-            ptr:object_ptr as *mut O as *mut (),
+        let data=ObjectTable{
+            data:object_ptr as *mut O as *mut (),
             handle:simple_object_handle_wrapper::<O>,
             drop:drop_wrapper::<O>,
-            layer,
-            object_id,
             object_type:ObjectType::Simple,
         };
 
@@ -133,16 +154,22 @@ impl<'a,O:TextureObject> ObjectArray<'a,O>{
         );
         let object_id=object_manager.graphics.texture.push_object(attributes,layer).unwrap();
 
-        let object=Box::new(object);
+        let table=Box::new(
+            ObjectData{
+                object,
+                graphics:object_manager.graphics,
+                layer,
+                object_id
+            }
+        );
 
-        let object_ptr=Box::leak(object);
+        let table_ptr=Box::leak(table);
+        let object_ptr=&mut table_ptr.object;
 
-        let data=ObjectData{
-            ptr:object_ptr as *mut O as *mut (),
+        let data=ObjectTable{
+            data:object_ptr as *mut O as *mut (),
             handle:texture_object_handle_wrapper::<O>,
             drop:drop_wrapper::<O>,
-            layer,
-            object_id,
             object_type:ObjectType::Textured,
         };
 
@@ -170,16 +197,22 @@ impl<'a,O:TextObject> ObjectArray<'a,O>{
         );
         let object_id=object_manager.graphics.text.push_object(attributes,layer).unwrap();
 
-        let object=Box::new(object);
+        let table=Box::new(
+            ObjectData{
+                object,
+                graphics:object_manager.graphics,
+                layer,
+                object_id
+            }
+        );
 
-        let object_ptr=Box::leak(object);
+        let table_ptr=Box::leak(table);
+        let object_ptr=&mut table_ptr.object;
 
-        let data=ObjectData{
-            ptr:object_ptr as *mut O as *mut (),
+        let data=ObjectTable{
+            data:object_ptr as *mut O as *mut (),
             handle:text_object_handle_wrapper::<O>,
             drop:drop_wrapper::<O>,
-            layer,
-            object_id,
             object_type:ObjectType::Text,
         };
 
@@ -189,17 +222,48 @@ impl<'a,O:TextObject> ObjectArray<'a,O>{
     }
 }
 
-pub struct ObjectData{
-    pub ptr:*mut (),
-    pub handle:fn(*mut (),ObjectEvent,*mut ()),
+pub struct ObjectTable{
+    pub data:*mut (),
+    pub handle:fn(*mut (),ObjectEvent),
     pub drop:fn(*mut ()),
-    pub layer:usize,
-    pub object_id:usize,
     pub object_type:ObjectType,
 }
 
+impl ObjectTable{
+    pub fn get_layer(&self)->usize{
+        unsafe{
+            let table=&*(self.data.offset(-3) as *const ObjectData<Self>);
+
+            table.layer
+        }
+    }
+
+    pub fn get_object_id(&self)->usize{
+        unsafe{
+            let table=&*(self.data.offset(-3) as *const ObjectData<Self>);
+
+            table.object_id
+        }
+    }
+
+    pub fn handle(&self,event:ObjectEvent){
+        (self.handle)(self.data,event)
+    }
+
+    pub fn drop(&self){
+        (self.drop)(self.data)
+    }
+}
+
+pub struct ObjectData<O>{
+    pub graphics:*mut Graphics,
+    pub layer:usize,
+    pub object_id:usize,
+    pub object:O,
+}
+
 pub struct ObjectStorage{
-    pub data:Vec<Vec<ObjectData>>
+    pub data:Vec<Vec<ObjectTable>>
 }
 
 impl ObjectStorage{
@@ -214,17 +278,24 @@ impl ObjectStorage{
         object:O,
         layer:usize,
         object_id:usize,
+        graphics:&mut Graphics
     )->ObjectReference<'a,O>{
-        let object=Box::new(object);
+        let table=Box::new(
+            ObjectData{
+                object,
+                graphics,
+                layer,
+                object_id
+            }
+        );
 
-        let object_ptr=Box::leak(object);
+        let table_ptr=Box::leak(table);
+        let object_ptr=&mut table_ptr.object;
 
-        let data=ObjectData{
-            ptr:object_ptr as *mut O as *mut (),
+        let data=ObjectTable{
+            data:object_ptr as *mut O as *mut (),
             handle:simple_object_handle_wrapper::<O>,
             drop:drop_wrapper::<O>,
-            layer,
-            object_id,
             object_type:ObjectType::Simple,
         };
 
@@ -238,17 +309,24 @@ impl ObjectStorage{
         object:O,
         layer:usize,
         object_id:usize,
+        graphics:&mut Graphics
     )->ObjectReference<'a,O>{
-        let object=Box::new(object);
+        let table=Box::new(
+            ObjectData{
+                object,
+                graphics,
+                layer,
+                object_id
+            }
+        );
 
-        let object_ptr=Box::leak(object);
+        let table_ptr=Box::leak(table);
+        let object_ptr=&mut table_ptr.object;
 
-        let data=ObjectData{
-            ptr:object_ptr as *mut O as *mut (),
+        let data=ObjectTable{
+            data:object_ptr as *mut O as *mut (),
             handle:texture_object_handle_wrapper::<O>,
             drop:drop_wrapper::<O>,
-            layer,
-            object_id,
             object_type:ObjectType::Textured,
         };
 
@@ -262,17 +340,24 @@ impl ObjectStorage{
         object:O,
         layer:usize,
         object_id:usize,
+        graphics:&mut Graphics
     )->ObjectReference<'a,O>{
-        let object=Box::new(object);
+        let table=Box::new(
+            ObjectData{
+                object,
+                graphics,
+                layer,
+                object_id
+            }
+        );
 
-        let object_ptr=Box::leak(object);
+        let table_ptr=Box::leak(table);
+        let object_ptr=&mut table_ptr.object;
 
-        let data=ObjectData{
-            ptr:object_ptr as *mut O as *mut (),
+        let data=ObjectTable{
+            data:object_ptr as *mut O as *mut (),
             handle:text_object_handle_wrapper::<O>,
             drop:drop_wrapper::<O>,
-            layer,
-            object_id,
             object_type:ObjectType::Text,
         };
 
@@ -314,57 +399,55 @@ impl ObjectStorage{
     pub (crate) fn clear_storage(&mut self,graphics:&mut Graphics){
         while let Some(objects)=self.data.pop(){
             for object in objects{
+                let layer=object.get_layer();
+                let object_id=object.get_object_id();
+
                 match object.object_type{
                     ObjectType::Simple=>{
-                        graphics.simple.remove_object(object.layer,object.object_id);
+                        graphics.simple.remove_object(layer,object_id);
                     }
 
                     ObjectType::Textured=>{
-                        graphics.texture.remove_object(object.layer,object.object_id);
+                        graphics.texture.remove_object(layer,object_id);
                     }
 
                     ObjectType::Text=>{
-                        graphics.text.remove_object(object.layer,object.object_id);
+                        graphics.text.remove_object(layer,object_id);
                     }
                 }
-                (object.drop)(object.ptr)
+                object.drop()
             }
         }
     }
 }
 
-fn simple_object_handle_wrapper<O:SimpleObject>(object:*mut (),event:ObjectEvent,render_data:*mut ()){
+fn simple_object_handle_wrapper<O:SimpleObject>(object:*mut (),event:ObjectEvent){
     unsafe{
         let object=&mut *(object as *mut O);
 
-        let render_data=&mut *(render_data as *mut SimpleRenderData);
-
-        object.event(event,render_data)
+        object.event(event)
     }
 }
 
-fn texture_object_handle_wrapper<O:TextureObject>(object:*mut (),event:ObjectEvent,render_data:*mut ()){
+fn texture_object_handle_wrapper<O:TextureObject>(object:*mut (),event:ObjectEvent){
     unsafe{
         let object=&mut *(object as *mut O);
 
-        let render_data=&mut *(render_data as *mut TextureRenderData);
-
-        object.event(event,render_data)
+        object.event(event)
     }
 }
 
-fn text_object_handle_wrapper<O:TextObject>(object:*mut (),event:ObjectEvent,render_data:*mut ()){
+fn text_object_handle_wrapper<O:TextObject>(object:*mut (),event:ObjectEvent){
     unsafe{
         let object=&mut *(object as *mut O);
 
-        let render_data=&mut *(render_data as *mut TextRenderData);
-
-        object.event(event,render_data)
+        object.event(event)
     }
 }
 
 fn drop_wrapper<O>(object:*mut ()){
     unsafe{
-        Box::from_raw(object as *mut O);
+        let table=object.offset(-3) as *mut ObjectData<O>;
+        drop(Box::from_raw(table))
     }
 }

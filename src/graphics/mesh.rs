@@ -208,7 +208,7 @@ impl Default for MeshAttributes{
     }
 }
 
-pub struct BufferedMesh<V:Vertex,I:AvailableIndexType>{
+pub (crate) struct BufferedMesh<V:Vertex,I:AvailableIndexType>{
     vertex_buffer:VertexBuffer<V>,
     vertex_buffer_local:Vec<V>,
     vertex_buffer_changed:bool,

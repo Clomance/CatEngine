@@ -267,9 +267,12 @@ pub enum IndexType{
 /// 
 /// Don't implement for any other types.
 pub trait AvailableIndexType:Sized+Copy+TryFrom<usize>{
-    fn gl_enum()->GLenum;
-
     fn index_type()->IndexType;
+
+    #[inline(always)]
+    fn gl_enum()->GLenum{
+        Self::index_type() as GLenum
+    }
 
     fn offset(index:isize)->isize{
         core::mem::size_of::<Self>() as isize*index
@@ -278,11 +281,6 @@ pub trait AvailableIndexType:Sized+Copy+TryFrom<usize>{
 
 impl AvailableIndexType for u8{
     #[inline(always)]
-    fn gl_enum()->GLenum{
-        IndexType::U8 as GLenum
-    }
-
-    #[inline(always)]
     fn index_type()->IndexType{
         IndexType::U8
     }
@@ -290,22 +288,12 @@ impl AvailableIndexType for u8{
 
 impl AvailableIndexType for u16{
     #[inline(always)]
-    fn gl_enum()->GLenum{
-        IndexType::U16 as GLenum
-    }
-
-    #[inline(always)]
     fn index_type()->IndexType{
         IndexType::U16
     }
 }
 
 impl AvailableIndexType for u32{
-    #[inline(always)]
-    fn gl_enum()->GLenum{
-        IndexType::U32 as GLenum
-    }
-
     #[inline(always)]
     fn index_type()->IndexType{
         IndexType::U32
