@@ -329,7 +329,7 @@ impl<V:Vertex,I:AvailableIndexType> BufferedMesh<V,I>{
         }
     }
 }
-    
+
 impl<
     V:Vertex+Debug,
     I:AvailableIndexType+Add<Output=I>+SubAssign+Debug

@@ -218,7 +218,7 @@ impl GlyphCache{
                         1,
                         PixelFormat::RED,
                         PixelType::U8,
-                        unsafe{builder.image().get_unchecked(0)}
+                        unsafe{builder.image_buffer.get_unchecked(0)}
                     );
 
                     let glyph=Glyph{
@@ -341,14 +341,7 @@ impl GlyphImageBuilder{
         }
     }
 
-    pub fn image(&self)->&[u8]{
-        &self.image_buffer
-    }
 
-    pub fn dimensions(&self)->[usize;2]{
-        let (width,height)=self.rasterizer.dimensions();
-        [width,height]
-    }
 }
 
 impl OutlineBuilder for GlyphImageBuilder{
@@ -412,15 +405,43 @@ impl OutlineBuilder for GlyphImageBuilder{
     }
 }
 
+/// An iteratable glyph cache builder.
 pub struct GlyphCacheBuilder{
-    font_scale:f32,
     font:FontOwner,
-    glyph_cache:GlyphCache,
-    builder:GlyphImageBuilder
+    inner:UnsafeGlyphCacheBuilder
 }
 
 impl GlyphCacheBuilder{
     pub fn new(capacity:usize,font:FontOwner,font_size:f32)->GlyphCacheBuilder{
+        let inner=UnsafeGlyphCacheBuilder::new(capacity,&font,font_size);
+        Self{
+            font,
+            inner
+        }
+    }
+
+    /// Adds a character to a glyph cache.
+    /// 
+    /// If the cache already contains the character, does nothing.
+    pub fn add_glyph(&mut self,character:char){
+        unsafe{
+            self.inner.add_glyph(&self.font,character)
+        }
+    }
+
+    pub fn finish(self)->(GlyphCache,FontOwner){
+        (self.inner.finish(),self.font)
+    }
+}
+
+pub struct UnsafeGlyphCacheBuilder{
+    font_scale:f32,
+    glyph_cache:GlyphCache,
+    builder:GlyphImageBuilder
+}
+
+impl UnsafeGlyphCacheBuilder{
+    pub fn new(capacity:usize,font:&FontOwner,font_size:f32)->UnsafeGlyphCacheBuilder{
         let global_bounding_box=font.face().global_bounding_box();
         let global_size=[global_bounding_box.width() as usize,global_bounding_box.height() as usize];
 
@@ -489,7 +510,6 @@ impl GlyphCacheBuilder{
 
         Self{
             font_scale:scale,
-            font,
             glyph_cache:GlyphCache{
                 global_size,
                 global_offset,
@@ -501,10 +521,19 @@ impl GlyphCacheBuilder{
         }
     }
 
-    pub fn add_glyph(&mut self,character:char){
-        if let Some(glyph_id)=self.font.face().glyph_index(character){
-            if let Some(bounding_box)=self.builder.build_image(glyph_id,self.font.face()){
-                let horizontal_advance=if let Some(advance)=self.font.face().glyph_hor_advance(glyph_id){
+    /// Adds a character to a glyph cache.
+    /// 
+    /// If the cache already contains the character, does nothing.
+    /// 
+    /// Use the same font as used when creating the builder, the other font may cause undefined behavior.
+    pub unsafe fn add_glyph(&mut self,font:&FontOwner,character:char){
+        if self.glyph_cache.glyphs.contains_key(&character){
+            return
+        }
+
+        if let Some(glyph_id)=font.face().glyph_index(character){
+            if let Some(bounding_box)=self.builder.build_image(glyph_id,font.face()){
+                let horizontal_advance=if let Some(advance)=font.face().glyph_hor_advance(glyph_id){
                     advance as f32*self.font_scale
                 }
                 else{
@@ -513,7 +542,7 @@ impl GlyphCacheBuilder{
 
                 let layer=self.glyph_cache.len() as i32;
 
-                unsafe{GLCore::set_pixel_storei(PixelStoreParameter::UNPACK_ALIGNMENT,1)}
+                GLCore::set_pixel_storei(PixelStoreParameter::UNPACK_ALIGNMENT,1);
 
                 Texture::write_3d(
                     Texture3DWriteTarget::Texture2DArray,
@@ -526,10 +555,10 @@ impl GlyphCacheBuilder{
                     1,
                     PixelFormat::RED,
                     PixelType::U8,
-                    unsafe{self.builder.image().get_unchecked(0)}
+                    self.builder.image_buffer.get_unchecked(0)
                 );
 
-                unsafe{GLCore::set_pixel_storei(PixelStoreParameter::UNPACK_ALIGNMENT,4)}
+                GLCore::set_pixel_storei(PixelStoreParameter::UNPACK_ALIGNMENT,4);
 
                 let glyph=Glyph{
                     texture:layer as i32,
@@ -543,7 +572,7 @@ impl GlyphCacheBuilder{
         }
     }
 
-    pub fn finish(self)->(GlyphCache,FontOwner){
-        (self.glyph_cache,self.font)
+    pub fn finish(self)->GlyphCache{
+        self.glyph_cache
     }
 }
