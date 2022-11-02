@@ -23,6 +23,8 @@ use cat_engine::{
         Vertices,
         Indices,
         TextureObject,
+        SimpleRenderDataInterface,
+        TextureRenderDataInterface,
     },
 
     graphics::{
@@ -75,7 +77,7 @@ impl<'s, 'a> System<'s, 'a> for Pong {
     );
     type SharedData = ();
 
-    fn set_objects(
+    fn set_up(
         &mut self,
         _shared: &mut Self::SharedData,
         mut objects: ObjectManager<'a>,
@@ -124,7 +126,7 @@ impl<'s, 'a> System<'s, 'a> for Pong {
         event: SystemEvent,
         window: &Window,
         _shared: &mut (),
-        _manager: SystemManager
+        _manager: SystemManager<'a>
     ) -> SystemStatus {
         match event {
             SystemEvent::Update => {
@@ -339,7 +341,7 @@ impl Paddle {
 }
 
 impl SimpleObject for Paddle {
-    fn event(&mut self, event: ObjectEvent) {
+    fn event(&mut self, event: ObjectEvent, render_data: SimpleRenderDataInterface) {
         match event {
             ObjectEvent::Update => {
                 match self.moving {
@@ -358,8 +360,7 @@ impl SimpleObject for Paddle {
             ObjectEvent::Prerender => {
                 let vertices = self.vertices();
 
-                let mut render_data = self.get_render_data();
-                render_data.render.write_vertices(0, &vertices).unwrap();
+                render_data.get_render_data().write_vertices(0, &vertices).unwrap();
             }
         }
     }
@@ -412,12 +413,12 @@ impl Ball {
 }
 
 impl TextureObject for Ball {
-    fn event(&mut self, event: ObjectEvent){
+    fn event(&mut self, event: ObjectEvent, render_data: TextureRenderDataInterface){
         match event {
             ObjectEvent::Prerender => {
                 let vertices = self.vertices();
 
-                self.get_render_data().render.write_vertices(0, &vertices).unwrap();
+                render_data.get_render_data().write_vertices(0, &vertices).unwrap();
             }
 
             ObjectEvent::Update => {

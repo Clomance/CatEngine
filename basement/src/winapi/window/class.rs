@@ -94,33 +94,29 @@ impl WindowClass{
             }
         };
 
-        let mut style=WindowClassStyles::new()
+        let mut styles=WindowClassStyles::new()
             // for opengl
             .set(WindowClassStyle::OwnDeviceContext);
 
         if attributes.no_close{
-            style=style.set(WindowClassStyle::NoClose)
+            styles=styles.set(WindowClassStyle::NoClose)
         }
         if attributes.drop_shadow{
-            style=style.set(WindowClassStyle::DropShadow)
+            styles=styles.set(WindowClassStyle::DropShadow)
         }
         if attributes.double_clicks{
-            style=style.set(WindowClassStyle::DoubleClicks)
+            styles=styles.set(WindowClassStyle::DoubleClicks)
         }
 
-        if let Some(class)=WindowClassFunctions::register(
-            class_name.as_ptr(),
-            style,
-            setup_window_procedure,
-            0,
-            64,
-            None,
-            window_icon,
-            None,
-            cursor,
-            background,
-            null_mut(),
-        ){
+        let mut class_info=WindowClassInfo::new();
+        class_info.class_name=class_name.as_ptr();
+        class_info.styles=styles;
+        class_info.window_procedure=setup_window_procedure;
+        class_info.extra_window_data=64;
+        class_info.icon=window_icon;
+        class_info.cursor=cursor;
+        class_info.background=background;
+        if let Some(class)=WindowClassFunctions::register(&class_info){
             Ok(Self{
                 identifier:class,
             })
@@ -138,7 +134,7 @@ impl WindowClass{
     /// Returns the class atom wrapped into `ClassIdentifier`.
     #[inline(always)]
     pub fn identifier(&self)->ClassIdentifier{
-        ClassIdentifier::atom(self.identifier)
+        ClassIdentifier::from_atom(self.identifier)
     }
 
     /// Retrieves information about a window class,

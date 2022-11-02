@@ -70,14 +70,14 @@ impl AppAttributes{
 }
 
 pub struct App{
-    window_class:WindowClass,
+    _window_class:WindowClass,
     window:Window,
     event_loop:EventLoop,
 }
 
 impl App{
-    pub fn new<'s,'a,S:StartSystem<'s,'a>+'s+'a>(attributes:AppAttributes,create_parameters:&'s mut S::CreateParameters)->Result<App,WinError>{
-        let window_class=match WindowClass::new(attributes.class){
+    pub fn new<'a,'s:'a,S:StartSystem<'a,'s>+'s+'a>(attributes:AppAttributes,create_parameters:&'s mut S::CreateParameters)->Result<App,WinError>{
+        let _window_class=match WindowClass::new(attributes.class){
             Ok(class)=>class,
             Err(e)=>return Err(e)
         };
@@ -88,7 +88,7 @@ impl App{
             create_parameters
         };
 
-        let window=match Window::new::<WinProc<'s,'a,S>>(&window_class,attributes.window,&mut app_create_parameters){
+        let window=match Window::new::<WinProc<'a,'s,S>>(&_window_class,attributes.window,&mut app_create_parameters){
             Ok(window)=>window,
             Err(e)=>return Err(e)
         };
@@ -97,7 +97,7 @@ impl App{
 
         Ok(
             Self{
-                window_class,
+                _window_class,
                 window,
                 event_loop,
             }
@@ -189,40 +189,40 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
         quit(0);
     }
 
-    fn paint(window:&Window,app:&mut Self::Data){
+    fn paint(window:&Window,data:&mut Self::Data){
         unsafe{
             GLCore::flush()
         }
-        app.graphics.render_context.swap_buffers().unwrap();
+        data.graphics.render_context.swap_buffers().unwrap();
 
-        app.systems.object_handle(ObjectEvent::Prerender,&mut app.objects);
+        data.objects.event(ObjectEvent::Prerender);
 
-        app.graphics.camera.uniform_buffer.write(&app.graphics.camera.matrix).unwrap();
-        app.graphics.camera.uniform_buffer.bind_base(0);
+        data.graphics.camera.uniform_buffer.write(&data.graphics.camera.matrix).unwrap();
+        data.graphics.camera.uniform_buffer.bind_base(0);
 
         window.draw(||{
             unsafe{
-                GLCore::clear(app.graphics.parameters.clear_mask);
+                GLCore::clear(data.graphics.parameters.clear_mask);
 
-                app.graphics.draw();
+                data.graphics.draw();
             }
         });
 
         window.redraw();
     }
 
-    fn resized(size:[u16;2],_:WindowResizeType,window:&Window,app:&mut Self::Data){
+    fn resized(size:[u16;2],_:WindowResizeType,window:&Window,data:&mut Self::Data){
         unsafe{
-            app.graphics.camera.set_viewport([size[0] as f32,size[1] as f32]);
+            data.graphics.camera.set_viewport([size[0] as f32,size[1] as f32]);
             // app.graphics.camera.uniform_buffer.write(&app.graphics.camera.matrix).unwrap();
             GLCore::set_viewport(0,0,size[0] as i32,size[1] as i32);
         }
 
-        app.systems.handle(
+        data.systems.handle(
             SystemEvent::Resize(size),
             window,
-            &mut app.objects,
-            &mut app.graphics
+            &mut data.objects,
+            &mut data.graphics
         )
     }
 
@@ -304,7 +304,7 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
     }
 
     fn user_event(_w_param:usize,_l_param:isize,window:&Window,data:&mut Self::Data){
-        data.systems.object_handle(ObjectEvent::Update,&mut data.objects);
+        data.objects.event(ObjectEvent::Update);
         data.systems.handle(
             SystemEvent::Update,
             &window,

@@ -41,14 +41,11 @@ use cat_engine_basement::{
             Core as GLCore,
             CoreCapability,
 
-            depth::{
-                Depth,
-                DepthFunction,
-            },
             blend::{
                 Blend,
                 BlendingFunction,
-            }, ClearMask,
+            },
+            ClearMask,
         },
         buffer::{
             UniformBuffer,

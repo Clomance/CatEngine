@@ -194,14 +194,14 @@ pub struct ClassIdentifier{
 impl ClassIdentifier{
     /// `name` specifies the window class name.
     #[inline(always)]
-    pub fn name(name:*const u16)->ClassIdentifier{
+    pub fn from_name(name:*const u16)->ClassIdentifier{
         Self{
             identifier:name as isize,
         }
     }
 
     #[inline(always)]
-    pub fn atom(atom:ClassAtom)->ClassIdentifier{
+    pub fn from_atom(atom:ClassAtom)->ClassIdentifier{
         Self{
             identifier:atom.as_raw() as isize,
         }
@@ -425,32 +425,10 @@ impl WindowClass{
     /// If the function fails, the return value is zero.
     /// To get extended error information, call `WindowsCore::get_last_error`.
     pub fn register(
-        class_name:*const u16,
-        styles:WindowClassStyles,
-        window_procedure:unsafe extern "system" fn(WindowHandle,u32,usize,isize)->isize,
-        extra_class_data:i32,
-        extra_window_data:i32,
-        instance:Option<InstanceHandle>,
-        icon:Option<IconHandle>,
-        small_icon:Option<IconHandle>,
-        cursor:Option<CursorHandle>,
-        background:Option<WindowBackgroundColour>,
-        menu_name:*const u16,
+        class_info:&WindowClassInfo,
     )->Option<ClassAtom>{
-        let mut attributes=WindowClassInfo::new();
-        attributes.styles=styles;
-        attributes.window_procedure=window_procedure;
-        attributes.extra_class_data=extra_class_data;
-        attributes.extra_window_data=extra_window_data;
-        attributes.instance=instance;
-        attributes.icon=icon;
-        attributes.cursor=cursor;
-        attributes.background=background;
-        attributes.menu_name=menu_name;
-        attributes.class_name=class_name;
-        attributes.small_icon=small_icon;
         unsafe{
-            ClassAtom::from_raw(RegisterClassExW(transmute(&attributes)))
+            ClassAtom::from_raw(RegisterClassExW(transmute(class_info)))
         }
     }
 

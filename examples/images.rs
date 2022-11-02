@@ -27,7 +27,7 @@ impl<'s, 'a> System<'s, 'a> for ExampleSystem{
     type SharedData = ();
     type Objects = ();
 
-    fn set_objects(
+    fn set_up(
         &mut self,
         _shared: &mut Self::SharedData,
         _object_manager: ObjectManager

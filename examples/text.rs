@@ -27,7 +27,8 @@ use cat_engine::{
         TextObject,
         ObjectEvent,
         Vertices,
-        Indices
+        Indices,
+        TextRenderDataInterface
     },
 
     text::{
@@ -44,7 +45,7 @@ impl<'s, 'a> System<'s, 'a> for ExampleSystem {
     type SharedData = ();
     type Objects = ();
 
-    fn set_objects(&mut self, _shared: &mut Self::SharedData, mut object_manager: ObjectManager) -> Self::Objects {
+    fn set_up(&mut self, _shared: &mut Self::SharedData, mut object_manager: ObjectManager) -> Self::Objects {
         let graphics = object_manager.graphics();
 
         graphics.parameters.set_clear_colour(Some([1f32; 4]));
@@ -188,7 +189,7 @@ impl TextView {
 }
 
 impl TextObject for TextView {
-    fn event(&mut self, _event: ObjectEvent) {
+    fn event(&mut self, _event: ObjectEvent, _render_data: TextRenderDataInterface) {
 
     }
 }

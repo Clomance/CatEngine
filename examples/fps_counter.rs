@@ -27,6 +27,7 @@ use cat_engine::{
         ObjectEvent,
         Vertices,
         Indices,
+        TextRenderDataInterface,
     },
 
     text::{
@@ -46,7 +47,7 @@ impl<'s, 'a> System<'s, 'a> for ExampleSystem {
     type SharedData = ();
     type Objects = ();
 
-    fn set_objects(&mut self, _shared: &mut Self::SharedData, mut object_manager: ObjectManager) -> Self::Objects {
+    fn set_up(&mut self, _shared: &mut Self::SharedData, mut object_manager: ObjectManager) -> Self::Objects {
         let graphics = object_manager.graphics();
 
         graphics.parameters.set_clear_colour(Some([1f32; 4]));
@@ -127,9 +128,7 @@ impl FpsCounter {
 }
 
 impl TextObject for FpsCounter{
-    fn event(&mut self, event: ObjectEvent) {
-        let mut render_data = self.get_render_data();
-
+    fn event(&mut self, event: ObjectEvent, render_data: TextRenderDataInterface) {
         match event {
             ObjectEvent::Prerender => {
                 let colour = [0f32, 0f32, 0f32, 1f32];
@@ -141,7 +140,7 @@ impl TextObject for FpsCounter{
                 if redraw_start.duration_since(self.last_redraw) >= Duration::from_secs(1) {
                     self.last_redraw = redraw_start;
 
-                    let font = render_data.glyph_cache;
+                    let font = render_data.get_font();
 
                     let mut position = [0f32; 2];
 
@@ -168,9 +167,9 @@ impl TextObject for FpsCounter{
                         vertices.push(TextVertex::new([x2, y2, 1f32, 1f32], colour, [1f32, 0f32, glyph_texture]));
                     }
 
-                    render_data.render.set_index_render_bounds(0, vertices.len() / 2 * 3).unwrap();
+                    render_data.get_render_data().set_index_render_bounds(0, vertices.len() / 2 * 3).unwrap();
 
-                    render_data.render.write_vertices(0, &vertices).unwrap();
+                    render_data.get_render_data().write_vertices(0, &vertices).unwrap();
 
                     self.frames = 0;
                 }
