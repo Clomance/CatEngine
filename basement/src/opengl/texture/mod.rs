@@ -37,12 +37,12 @@ pub struct Texture{
 impl Texture{
     pub fn new()->Texture{
         unsafe{
-            let mut id:u32=MaybeUninit::uninit().assume_init();
+            let mut id=MaybeUninit::uninit();
 
-            TextureFunctions::generate(1,&mut id);
+            TextureFunctions::generate(1,id.as_mut_ptr());
 
             Self{
-                id,
+                id:id.assume_init(),
             }
         }
     }

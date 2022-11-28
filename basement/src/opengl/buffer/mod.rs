@@ -38,12 +38,12 @@ pub struct Buffer<T>{
 impl<T> Buffer<T>{
     pub fn new()->Buffer<T>{
         unsafe{
-            let mut id:u32=MaybeUninit::uninit().assume_init();
+            let mut id=MaybeUninit::uninit();
 
-            BufferFunctions::generate(1,&mut id);
+            BufferFunctions::generate(1,id.as_mut_ptr());
 
             Self{
-                id,
+                id:id.assume_init(),
                 marker:PhantomData
             }
         }

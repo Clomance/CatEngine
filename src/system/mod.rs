@@ -36,6 +36,52 @@ pub enum SystemEvent{
 
 
 
+pub trait System<'s,'a>:'static{
+    type Objects;
+    type SharedData;
+
+    /// Sets up system's layers, objects, etc.
+    /// 
+    /// Called after the `System::create` function.
+    fn set_up(
+        &'s mut self,
+        shared:&mut Self::SharedData,
+        object_manager:ObjectManager<'a>,
+    )->Self::Objects;
+
+    /// Processes the system events.
+    fn handle(
+        &'s mut self,
+        objects:&mut Self::Objects,
+        event:SystemEvent,
+        window:&Window,
+        shared:&mut Self::SharedData,
+        manager:SystemManager<'a>
+    )->SystemStatus;
+
+    fn destroy(
+        &'s mut self,
+        shared:&mut Self::SharedData,
+        graphics:&mut Graphics
+    );
+}
+
+
+
+pub trait StartSystem<'s,'a>:System<'s,'a>{
+    type CreateParameters:'s;
+
+    fn create_shared_data(create_parameters:&mut Self::CreateParameters)->Self::SharedData;
+
+    fn create(
+        create_parameters:&mut Self::CreateParameters,
+        window:&Window,
+        shared:&mut Self::SharedData,
+    )->Self;
+}
+
+
+
 pub struct ExtendedSystemData<S,O>{
     system:S,
     object_references:O,
@@ -218,51 +264,6 @@ impl<D> Systems<D>{
             }
         }
     }
-}
-
-
-
-pub trait System<'s,'a>:'static{
-    type Objects;
-    type SharedData;
-
-    /// Sets up system's layers, objects, etc.
-    /// 
-    /// Called after the `System::create` function.
-    fn set_up(
-        &'s mut self,
-        shared:&mut Self::SharedData,
-        object_manager:ObjectManager<'a>,
-    )->Self::Objects;
-
-    /// Processes the system events.
-    fn handle(
-        &'s mut self,
-        objects:&mut Self::Objects,
-        event:SystemEvent,
-        window:&Window,
-        shared:&mut Self::SharedData,
-        manager:SystemManager<'a>
-    )->SystemStatus;
-
-    fn destroy(
-        &'s mut self,
-        shared:&mut Self::SharedData,
-        graphics:&mut Graphics
-    );
-}
-
-
-pub trait StartSystem<'s,'a>:System<'s,'a>{
-    type CreateParameters:'s;
-
-    fn create_shared_data(create_parameters:&mut Self::CreateParameters)->Self::SharedData;
-
-    fn create(
-        create_parameters:&mut Self::CreateParameters,
-        window:&Window,
-        shared:&mut Self::SharedData,
-    )->Self;
 }
 
 

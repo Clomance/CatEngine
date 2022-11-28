@@ -49,17 +49,19 @@ impl Program{
         unsafe{
             ProgramFunctions::link(self.id);
 
-            let mut result:i32=MaybeUninit::uninit().assume_init();
-            ProgramFunctions::get_parameter(self.id,ProgramParameter::LinkStatus,&mut result);
+            let mut result=MaybeUninit::uninit();
+            ProgramFunctions::get_parameter(self.id,ProgramParameter::LinkStatus,result.as_mut_ptr());
 
-            if result==0{
-                let mut len:i32=MaybeUninit::uninit().assume_init();
-                ProgramFunctions::get_parameter(self.id,ProgramParameter::InfoLogLength,&mut len);
-                let mut log=String::with_capacity(len as usize);
+            if result.assume_init()==0{
+                let mut len=MaybeUninit::uninit();
+                ProgramFunctions::get_parameter(self.id,ProgramParameter::InfoLogLength,len.as_mut_ptr());
+                let len=len.assume_init() as usize;
+
+                let mut log=String::with_capacity(len);
 
                 ProgramFunctions::get_info_log(self.id,log.len() as i32,null_mut(),log.as_mut_ptr() as *mut _);
 
-                log.as_mut_vec().set_len(len as usize);
+                log.as_mut_vec().set_len(len);
 
                 return Err(log);
             }

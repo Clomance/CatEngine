@@ -1,10 +1,7 @@
 mod mesh;
 pub (crate) use mesh::{
     BufferedMesh,
-};
-
-pub (crate) use mesh::{
-    ObjectAttributes,
+    ObjectAttributes
 };
 
 pub use mesh::{
@@ -13,6 +10,9 @@ pub use mesh::{
     RenderData,
     MeshAttributes,
 };
+
+mod camera;
+pub use camera::Camera;
 
 mod simple;
 pub use simple::{
@@ -47,16 +47,11 @@ use cat_engine_basement::{
             },
             ClearMask,
         },
-        buffer::{
-            UniformBuffer,
-            BufferUsage,
-        },
     },
     winapi::{
         OpenGraphicsLibrary,
         OpenGLRenderContext,
     },
-    support::math::matrix::Matrix
 };
 
 pub use cat_engine_basement::opengl::{
@@ -71,58 +66,6 @@ pub type ElementIndexType=u16;
 
 pub (crate) trait Layer{
     fn draw(&mut self);
-}
-
-pub struct Camera{
-    pub (crate) viewport:[f32;2],
-    pub (crate) view_space_size:[f32;3],
-    pub (crate) view_space_offset:[f32;3],
-    pub (crate) matrix:Matrix,
-    pub (crate) uniform_buffer:UniformBuffer<Matrix>,
-}
-
-impl Camera{
-    pub (crate) fn new(viewport:[f32;2],view_space_size:[f32;3])->Camera{
-        Self{
-            viewport,
-            view_space_size,
-            view_space_offset:[0f32;3],
-            matrix:Matrix::new(),
-            uniform_buffer:UniformBuffer::empty(BufferUsage::DynamicDraw),
-        }
-    }
-
-    pub (crate) fn reset(&mut self){
-        self.matrix.reset();
-
-        self.matrix.translate(self.view_space_offset)
-    }
-
-    pub fn shift(&mut self,[dx,dy,dz]:[f32;3]){
-        self.view_space_offset[0]+=dx;
-        self.view_space_offset[1]+=dy;
-        self.view_space_offset[2]+=dz;
-
-        self.matrix.translate([dx,dy,dz])
-    }
-
-    pub fn move_to(&mut self,[x,y,z]:[f32;3]){
-        let dx=x-self.view_space_offset[0];
-        let dy=y-self.view_space_offset[1];
-        let dz=z-self.view_space_offset[2];
-
-        self.view_space_offset[0]=x;
-        self.view_space_offset[1]=y;
-        self.view_space_offset[2]=z;
-
-        self.matrix.translate([dx,dy,dz])
-    }
-
-    pub (crate) fn set_viewport(&mut self,[width,height]:[f32;2]){
-        self.reset();
-        self.matrix.scale([2f32/width,-2f32/height,1f32]);
-        self.matrix.translate([-width/2f32,-height/2f32,0f32])
-    }
 }
 
 pub (crate) enum LayerType{

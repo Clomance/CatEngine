@@ -142,7 +142,7 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
                 let [w,h,d]=[
                     w as f32,
                     h as f32,
-                    1f32
+                    10f32
                 ];
 
                 let graphics=Graphics::new(

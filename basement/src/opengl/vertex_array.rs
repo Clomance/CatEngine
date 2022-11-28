@@ -20,12 +20,12 @@ pub struct VertexArray{
 impl VertexArray{
     pub fn new()->VertexArray{
         unsafe{
-            let mut id:u32=MaybeUninit::uninit().assume_init();
+            let mut id=MaybeUninit::uninit();
 
-            VertexArrayFunctions::generate(1,&mut id);
+            VertexArrayFunctions::generate(1,id.as_mut_ptr());
 
             Self{
-                id
+                id:id.assume_init()
             }
         }
     }

@@ -47,14 +47,15 @@ impl Shader{
         unsafe{
             let shader=Shader::new_unchecked(source,shader_type);
 
-            let mut result:i32=MaybeUninit::uninit().assume_init();
-            ShaderFunctions::get(shader.id,ShaderParameter::CompileStatus,&mut result);
+            let mut result=MaybeUninit::uninit();
+            ShaderFunctions::get(shader.id,ShaderParameter::CompileStatus,result.as_mut_ptr());
 
-            if result==0{
-                let mut length=MaybeUninit::uninit().assume_init();
-                ShaderFunctions::get(shader.id,ShaderParameter::InfoLogLength,&mut length);
+            if result.assume_init()==0{
+                let mut len=MaybeUninit::uninit();
+                ShaderFunctions::get(shader.id,ShaderParameter::InfoLogLength,len.as_mut_ptr());
+                let len=len.assume_init() as usize;
 
-                let mut log=String::with_capacity(length as usize);
+                let mut log=String::with_capacity(len);
 
                 ShaderFunctions::get_info_log(shader.id,log.len() as i32,null_mut(),log.as_mut_ptr() as *mut _);
 
@@ -81,12 +82,13 @@ impl Shader{
 
     pub fn get_info_log(&self,log:&mut String)->Error{
         unsafe{
-            let mut length=MaybeUninit::uninit().assume_init();
-            ShaderFunctions::get(self.id,ShaderParameter::InfoLogLength,&mut length);
+            let mut len=MaybeUninit::uninit();
+            ShaderFunctions::get(self.id,ShaderParameter::InfoLogLength,len.as_mut_ptr());
+            let len=len.assume_init() as usize;
 
             log.clear();
-            if log.capacity()<length as usize{
-                log.reserve(length as usize-log.capacity())
+            if log.capacity()<len{
+                log.reserve(len-log.capacity())
             }
 
             ShaderFunctions::get_info_log(self.id,log.len() as i32,null_mut(),log.as_mut_ptr() as *mut _);
