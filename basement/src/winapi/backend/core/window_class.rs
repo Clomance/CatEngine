@@ -6,20 +6,19 @@ use super::{
     },
     icon::IconHandle,
     cursor::CursorHandle,
-    brush::BrushHandle,
+    brush::BrushHandle
 };
 
 use core::{
     mem::{
         size_of,
-        transmute,
-        transmute_copy,
+        transmute
     },
     ptr::null_mut,
     num::{
         NonZeroU16,
-        NonZeroIsize,
-    },
+        NonZeroIsize
+    }
 };
 
 use winapi::{
@@ -61,10 +60,12 @@ use winapi::{
             COLOR_SCROLLBAR,
             COLOR_WINDOW,
             COLOR_WINDOWFRAME,
-            COLOR_WINDOWTEXT,
-        },
+            COLOR_WINDOWTEXT
+        }
     }
 };
+
+
 
 #[repr(u32)]
 #[derive(Copy,Clone,Debug)]
@@ -102,9 +103,10 @@ pub enum WindowClassStyle{
     ClassDeviceContext=CS_CLASSDC,
 
     /// Sets the clipping rectangle of the child window to that of the parent window so that the child can draw on the parent.
-    /// A window with the CS_PARENTDC style bit receives a regular device context from the system's cache of device contexts.
+    /// A window with the `WindowClassStyle::ParentDeviceContext` style bit
+    /// receives a regular device context from the system's cache of device contexts.
     /// It does not give the child the parent's device context or device context settings.
-    /// Specifying CS_PARENTDC enhances an application's performance.
+    /// Specifying `WindowClassStyle::ParentDeviceContext` enhances an application's performance.
     /// 
     /// 0x0080
     ParentDeviceContext=CS_PARENTDC,
@@ -155,6 +157,8 @@ pub enum WindowClassStyle{
     DropShadow=CS_DROPSHADOW,
 }
 
+
+
 /// Represents class styles.
 #[derive(Clone,Copy,Debug)]
 pub struct WindowClassStyles{
@@ -182,13 +186,15 @@ impl WindowClassStyles{
     }
 }
 
+
+
 /// A class identifier.
 /// Contains a null-terminated string (it specifies the window class name)
 /// or a class atom.
 #[derive(Clone,Copy,Debug)]
 #[repr(transparent)]
 pub struct ClassIdentifier{
-    identifier:isize,
+    inner:isize,
 }
 
 impl ClassIdentifier{
@@ -196,21 +202,23 @@ impl ClassIdentifier{
     #[inline(always)]
     pub fn from_name(name:*const u16)->ClassIdentifier{
         Self{
-            identifier:name as isize,
+            inner:name as isize,
         }
     }
 
     #[inline(always)]
     pub fn from_atom(atom:ClassAtom)->ClassIdentifier{
         Self{
-            identifier:atom.as_raw() as isize,
+            inner:atom.as_raw() as isize,
         }
     }
 
     pub (crate) const fn as_ptr(&self)->*const u16{
-        self.identifier as *const u16
+        self.inner as *const u16
     }
 }
+
+
 
 #[derive(Clone,Copy)]
 #[repr(transparent)]
@@ -239,7 +247,7 @@ impl ClassAtom{
     #[inline(always)]
     pub fn as_raw(&self)->u16{
         unsafe{
-            transmute_copy(self)
+            transmute(self.0)
         }
     }
 }
@@ -268,6 +276,8 @@ pub enum WindowBackgroundSystemColour{
     WindowText=COLOR_WINDOWTEXT,
 }
 
+
+
 /// A handle to the class background brush.
 /// This member can be a handle to the brush to be used for painting the background,
 /// or it can be a colour value.
@@ -287,8 +297,10 @@ impl WindowBackgroundColour{
     }
 }
 
+
+
 /// Contains window class information.
-/// It is used with the RegisterClassEx and GetClassInfoEx functions.
+/// It is used with the `WindowClass::register` and `WindowClass::get_info` functions.
 #[derive(Clone)]
 #[repr(C)]
 pub struct WindowClassInfo{
@@ -390,7 +402,7 @@ pub struct WindowClassInfo{
 }
 
 impl WindowClassInfo{
-    pub fn new()->WindowClassInfo{
+    pub const fn new()->WindowClassInfo{
         Self{
             size:size_of::<WindowClassInfo>() as u32,
             styles:WindowClassStyles::new(),
@@ -407,6 +419,8 @@ impl WindowClassInfo{
         }
     }
 }
+
+
 
 /// All window classes that an application registers are unregistered when it terminates.
 /// 
@@ -435,7 +449,7 @@ impl WindowClass{
     #[inline(always)]
     pub fn register_indirect(info:&WindowClassInfo)->Option<ClassAtom>{
         unsafe{
-            ClassAtom::from_raw(RegisterClassExW(transmute(&info)))
+            ClassAtom::from_raw(RegisterClassExW(transmute(info)))
         }
     }
 
@@ -450,7 +464,7 @@ impl WindowClass{
     #[inline(always)]
     pub fn unregister(class:ClassIdentifier,instance:Option<InstanceHandle>)->bool{
         unsafe{
-            UnregisterClassW(class.identifier as *const _,InstanceHandle::to_raw(instance))!=0
+            UnregisterClassW(class.inner as *const _,InstanceHandle::to_raw(instance))!=0
         }
     }
 
@@ -472,7 +486,7 @@ impl WindowClass{
         unsafe{
             GetClassInfoExW(
                 InstanceHandle::to_raw(instance),
-                class.identifier as *const _,
+                class.inner as *const _,
                 transmute(info)
             )!=0
         }

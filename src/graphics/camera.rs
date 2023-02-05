@@ -1,5 +1,5 @@
 use cat_engine_basement::{
-    support::math::matrix::Matrix,
+    utility::math::matrix::Matrix,
     opengl::buffer::{UniformBuffer,BufferUsage}
 };
 

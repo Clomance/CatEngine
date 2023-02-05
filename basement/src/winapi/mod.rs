@@ -36,6 +36,7 @@ pub use event_loop::{
     EventLoop,
     LoopControl,
     EventInterval,
+    EventLoopManager,
     EventLoopAttributes,
 };
 

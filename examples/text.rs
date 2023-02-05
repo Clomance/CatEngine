@@ -7,11 +7,16 @@ use cat_engine::{
     },
 
     graphics::{
-        Graphics,
         TextVertex,
         MeshAttributes,
         PrimitiveType,
-        ElementIndexType
+        ElementIndexType,
+        TextObject,
+        ObjectEvent,
+        Vertices,
+        Indices,
+        TextRenderDataInterface,
+        GraphicsManager,
     },
 
     system::{
@@ -20,15 +25,12 @@ use cat_engine::{
         SystemManager,
         SystemEvent,
         SystemStatus,
+        ResourceManager,
+        ComponentManager,
     },
 
     object::{
-        ObjectManager,
-        TextObject,
-        ObjectEvent,
-        Vertices,
-        Indices,
-        TextRenderDataInterface
+        ObjectManager
     },
 
     text::{
@@ -45,30 +47,35 @@ impl<'s, 'a> System<'s, 'a> for ExampleSystem {
     type SharedData = ();
     type Objects = ();
 
-    fn set_up(&mut self, _shared: &mut Self::SharedData, mut object_manager: ObjectManager) -> Self::Objects {
-        let graphics = object_manager.graphics();
+    fn set_up(
+        &mut self,
+        _shared: &mut Self::SharedData,
+        mut objects: ObjectManager,
+        _resources: ResourceManager,
+        mut components: ComponentManager
+    ) -> Self::Objects {
+        components.graphics.parameters.set_clear_colour(Some([1f32; 4]));
 
-        graphics.parameters.set_clear_colour(Some([1f32; 4]));
-
-        let font = FontOwner::load("resources/font1").unwrap();
+        // Loading a font
+        let font = FontOwner::load("resources/arial.ttf").unwrap();
+        // Creating a glyph cache with an alphabet exact for the word `Something`
         let glyph_cache = GlyphCache::new("Something", 60f32, &font);
-        let font = graphics.text.push_font(glyph_cache).unwrap();
+        let font = components.graphics.text.manager().glyphs.push_glyphs(glyph_cache).unwrap();
 
         let attributes = MeshAttributes::new(PrimitiveType::Triangles);
-        let layer = graphics.text.create_layer(attributes).unwrap();
+        let layer = components.graphics.text.create_layer(attributes).unwrap();
 
-        graphics.push_text_layer(layer, font);
+        components.graphics.push_text_layer(layer, font);
 
         let text = TextView::new([100f32; 2], [0f32, 0f32, 0f32, 1f32], 60f32, "Something".to_string());
-        let (vertices,indices)=text.attributes(object_manager.graphics().text.get_font(0).unwrap());
-        object_manager.push_text_object(text, Vertices::new(&vertices), Indices::new(&indices), layer).unwrap();
+        let (vertices, indices) = text.attributes(components.graphics.text.manager().glyphs.get_glyphs(0).unwrap());
+        objects.graphics.push_text_object(text, Vertices::new(&vertices), Indices::new(&indices), layer, components.graphics.text).unwrap();
     }
 
     fn handle(
         &mut self,
-        _objects: &mut Self::Objects,
         _event: SystemEvent,
-        _window: &Window,
+        _objects: &mut Self::Objects,
         _shared: &mut Self::SharedData,
         _system_manager: SystemManager
     ) -> SystemStatus {
@@ -77,8 +84,8 @@ impl<'s, 'a> System<'s, 'a> for ExampleSystem {
 
     fn destroy(
         &mut self,
-        _shared:&mut Self::SharedData,
-        _graphics:&mut Graphics
+        _shared: &mut Self::SharedData,
+        _graphics: GraphicsManager
     ) {
 
     }

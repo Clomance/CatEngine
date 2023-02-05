@@ -17,7 +17,7 @@ use cat_engine_basement::{
         },
         vertex_array::VertexArray,
     },
-    support::storage::DynamicStorage,
+    utility::storage::DynamicStorage,
 };
 
 use std::{

@@ -1,5 +1,5 @@
 use crate::{
-    text::GlyphCache,
+    text::{GlyphCacheUnitReference, GlyphCacheManager, Glyphs},
 };
 
 use super::{
@@ -9,7 +9,8 @@ use super::{
     BufferedMesh,
     Layer,
     MeshAttributes,
-    MeshError, ObjectAttributes,
+    MeshError,
+    ObjectAttributes,
 };
 
 use cat_engine_basement::{
@@ -33,13 +34,13 @@ use cat_engine_basement::{
             Program,
         },
     },
-    support::{
+    utility::{
         storage::StaticStorage,
         math::matrix::Matrix
-    },
+    }
 };
 
-use std::ptr::null_mut;
+use std::{ptr::null_mut};
 
 const VERTEX_SHADER_SOURCE:&'static str=include_str!("shaders/text/vertex.glsl");
 const FRAGMENT_SHADER_SOURCE:&'static str=include_str!("shaders/text/fragment.glsl");
@@ -90,7 +91,7 @@ struct TextLayer{
     draw_parameters:Matrix,
     parameters_location:i32,
 
-    font:*mut GlyphCache,
+    glyph_cache:Option<GlyphCacheUnitReference>,
     mesh:BufferedMesh<TextVertex,ElementIndexType>,
 }
 
@@ -98,14 +99,14 @@ impl TextLayer{
     pub fn new(
         program:u32,
         parameters_location:i32,
-        font:*mut GlyphCache,
+        glyph_cache:Option<GlyphCacheUnitReference>,
         mesh:BufferedMesh<TextVertex,ElementIndexType>
     )->TextLayer{
         Self{
             program,
             draw_parameters:Matrix::new(),
             parameters_location,
-            font,
+            glyph_cache,
             mesh
         }
     }
@@ -121,7 +122,9 @@ impl Layer for TextLayer{
         self.mesh.flush_vertices();
         self.mesh.flush_indices();
 
-        unsafe{&*self.font}.bind();
+        if let Some(glyph_cache)=&mut self.glyph_cache{
+            glyph_cache.cache().bind()
+        }
 
         self.mesh.draw();
 
@@ -130,6 +133,14 @@ impl Layer for TextLayer{
         }
     }
 }
+
+
+
+pub struct TextGraphicsManager<'m>{
+    pub glyphs:GlyphCacheManager<'m>
+}
+
+
 
 pub struct TextGraphicsAttributes{
     pub fonts_limit:usize,
@@ -145,15 +156,15 @@ impl TextGraphicsAttributes{
     }
 }
 
+
+
 pub struct TextGraphics{
-    font_usage:Vec<u8>,
-    font_storage:StaticStorage<GlyphCache>,
+    glyphs:Glyphs,
 
     program:Program,
     layer_draw_parameters_location:i32,
 
     valid:Vec<u8>,
-    font_attached:Vec<usize>,
     layers:StaticStorage<TextLayer>
 }
 
@@ -172,15 +183,19 @@ impl TextGraphics{
         let layer_draw_parameters_location=program.get_uniform_location("LayerDrawParameters\0").unwrap();
 
         Self{
-            font_usage:vec![0u8;attributes.fonts_limit],
-            font_storage:StaticStorage::new(attributes.fonts_limit),
+            glyphs:Glyphs::new(attributes.fonts_limit),
 
             program,
             layer_draw_parameters_location,
 
             valid:vec![0u8;attributes.layers_limit],
-            font_attached:vec![0usize;attributes.layers_limit],
             layers:StaticStorage::new(attributes.layers_limit),
+        }
+    }
+
+    pub fn manager(&mut self)->TextGraphicsManager{
+        TextGraphicsManager{
+            glyphs:self.glyphs.manager()
         }
     }
 
@@ -209,7 +224,7 @@ impl TextGraphics{
             TextLayer::new(
                 self.program.id(),
                 self.layer_draw_parameters_location,
-                null_mut(),
+                None,
                 BufferedMesh::new(attributes)
             )
         )
@@ -218,12 +233,10 @@ impl TextGraphics{
     pub (crate) fn attach_layer(&mut self,layer:usize,font:usize)->Option<&'static mut dyn Layer>{
         unsafe{
             if let Some(mesh)=self.layers.get_mut(layer){
-                if let Some(glyph_cache)=self.font_storage.get_mut(font){
-                    self.font_usage[font]+=1;
-                    mesh.font=glyph_cache;
+                if let Some(reference)=self.glyphs.get_reference(font){
+                    mesh.glyph_cache=Some(reference);
 
                     self.valid[layer]+=1;
-                    self.font_attached[layer]=font;
 
                     return Some(std::mem::transmute(mesh as &mut dyn Layer))
                 }
@@ -236,13 +249,13 @@ impl TextGraphics{
     /// Косвенно открепляет слой от рендеринга и шрифта.
     /// 
     /// Используется только внутри движка: layer - всегда существует.
-    pub (crate) fn detach_layer(&mut self,layer:usize){
+    pub (crate) fn detach_layer(&mut self,id:usize){
         unsafe{
-            let font=self.font_attached.get_unchecked(layer).clone();
+            let layer=self.layers.get_unchecked_mut(id);
 
-            *self.font_usage.get_unchecked_mut(font)-=1;
+            layer.glyph_cache.take();
 
-            *self.valid.get_unchecked_mut(layer)-=1;
+            *self.valid.get_unchecked_mut(id)-=1;
         }
     }
 
@@ -264,43 +277,16 @@ impl TextGraphics{
             None
         }
     }
-}
 
-
-
-impl TextGraphics{
-    pub fn push_font(&mut self,font:GlyphCache)->Option<usize>{
-        self.font_storage.add(font)
-    }
-
-    pub fn get_font(&mut self,font:usize)->Option<&mut GlyphCache>{
-        self.font_storage.get_mut(font)
-    }
-
-    pub fn get_layer_font(&mut self,layer:usize)->Option<&mut GlyphCache>{
-        if let Some(mesh)=self.layers.get(layer){
-            Some(unsafe{&mut *mesh.font})
+    pub fn get_layer_font(&mut self,layer:usize)->Option<&GlyphCacheUnitReference>{
+        if let Some(layer)=self.layers.get(layer){
+            layer.glyph_cache.as_ref()
         }
         else{
             None
         }
     }
-
-    pub (crate) fn get_layer_font_raw(&mut self,layer:usize)->*mut GlyphCache{
-        self.layers.get(layer).unwrap().font
-    }
-
-    pub fn remove_font(&mut self,font:usize)->Option<GlyphCache>{
-        if let Some(&usage)=self.font_usage.get(font){
-            if usage==0{
-                return self.font_storage.remove(font)
-            }
-        }
-        None
-    }
 }
-
-
 
 impl TextGraphics{
     pub (crate) fn push_object(&mut self,attributes:ObjectAttributes<TextVertex,u16>,layer:usize)->Result<usize,MeshError>{

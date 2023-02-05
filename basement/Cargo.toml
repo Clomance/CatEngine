@@ -26,6 +26,7 @@ wnd_proc_catch_panic = []
 wnd_proc_catch_panic_default = ["wnd_proc_catch_panic"]
 
 
+
 [target.'cfg(any(target_os="windows",doc))'.dependencies.winapi]
 version = "0.3.9"
 features = [
@@ -37,6 +38,7 @@ features = [
     "errhandlingapi",
     "profileapi",
     "winbase",
+    "winerror"
 ]
 
 

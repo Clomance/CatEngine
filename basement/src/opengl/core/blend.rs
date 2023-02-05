@@ -230,7 +230,7 @@ impl Blend{
 }
 
 impl Blend{
-    /// Sets the blend color
+    /// Sets the blend color.
     #[inline(always)]
     pub fn set_blending_colour([red,greed,blue,alpha]:Colour){
         unsafe{

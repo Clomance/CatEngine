@@ -1,6 +1,6 @@
 [package]
 name = "cat_audio"
-version = "0.0.5"
+version = "0.1.0"
 authors = ["Clomance <Hisoskar@gmail.com>"]
 edition = "2021"
 
@@ -17,14 +17,7 @@ exclude = [
     "examples",
 ]
 
-[package.metadata.docs.rs]
-features = ["extended"]
-rustdoc-args = ["--no-deps"]
 
-[features]
-extended = []
-raw = ["extended"]
-# audio_post_processing = []
 
 [dependencies.cat_engine_basement]
 path = "../basement"
@@ -32,6 +25,12 @@ version = "0.0.0"
 features = []
 default-features = false
 
-[dependencies]
-cpal = "0.11.0"
-minimp3 = "0.5.1"
+
+[dependencies.winapi]
+version = "0.3.9"
+features = [
+    "mmdeviceapi",
+    "audioclient",
+    "combaseapi",
+    "synchapi"
+]

@@ -2,6 +2,13 @@ macro_rules! implement_handle_wrapper{
     ($wrapper:ty,$raw_handle:ty) => {
         impl $wrapper{
             #[inline(always)]
+            pub fn raw(raw:isize)->Option<$wrapper>{
+                unsafe{
+                    transmute(raw)
+                }
+            }
+
+            #[inline(always)]
             pub fn from_raw(raw_handle:$raw_handle)->Option<$wrapper>{
                 unsafe{
                     transmute(raw_handle)
@@ -33,26 +40,30 @@ macro_rules! implement_handle_wrapper{
     };
 }
 
+pub mod device_context;
+
+pub mod window;
+
 pub mod bitmap;
 
 pub mod brush;
 
 pub mod cursor;
 
-pub mod device_context;
-
 pub mod icon;
 
 pub mod menu;
+
+pub mod message;
 
 // pub mod monitor;
 // use monitor::Monitor;
 
 pub mod render_context;
 
-pub mod window_class;
+pub mod timer;
 
-pub mod window;
+pub mod window_class;
 
 use core::{
     mem::{
@@ -72,10 +83,14 @@ use winapi::{
     },
 };
 
+
+
 #[derive(Clone,Copy)]
 #[repr(transparent)]
 pub struct InstanceHandle(NonNull<()>);
 implement_handle_wrapper!(InstanceHandle,HINSTANCE);
+
+
 
 /// Represents the Windows colour.
 /// 
@@ -118,6 +133,8 @@ impl Colour{
     }
 }
 
+
+
 #[repr(transparent)]
 pub struct ColourResult{
     inner:Colour,
@@ -138,6 +155,8 @@ impl ColourResult{
         self.inner
     }
 }
+
+
 
 /// Wrapper for some winapi functions.
 pub struct WindowsCore;

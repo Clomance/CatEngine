@@ -34,7 +34,7 @@ use cat_engine_basement::{
             TextureTarget
         },
     },
-    support::{
+    utility::{
         storage::StaticStorage,
         math::matrix::Matrix
     },

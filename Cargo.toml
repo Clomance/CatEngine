@@ -28,15 +28,24 @@ exclude = [
 ]
 
 
+[workspace]
+members = [
+    "basement",
+    "cat_audio"
+]
+
+
 [dependencies.cat_engine_basement]
 default-features = false
 features = ["wnd_proc_catch_panic"]
 path = "basement"
 version = "0.0.0"
 
+
 [dependencies.cat_audio]
 path = "cat_audio"
-version = "0.0.5"
+version = "0.1.0"
+
 
 [dependencies]
 # text
@@ -46,3 +55,4 @@ ab_glyph_rasterizer = { version = "0.1.6" }
 
 [dev-dependencies]
 image = "0.23.14"
+minimp3 = "0.5.1"

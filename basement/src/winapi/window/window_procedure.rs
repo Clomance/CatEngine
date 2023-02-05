@@ -7,7 +7,7 @@ use crate::winapi::{
         WindowHandle,
 
         default_window_procedure_wide,
-    },
+    }, Error,
 };
 
 use super::{
@@ -365,7 +365,7 @@ unsafe extern "system" fn wrap_window_procedure<W:WindowProcedure>(window:&Windo
             let result=std::panic::catch_unwind(||{W::create(window,transmute(parameters))});
 
             #[cfg(not(feature="wnd_proc_catch_panic"))]
-            let result=Ok(W::create(window,transmute(parameters)));
+            let result:Result<Result<W::Data,Error>,()>=Ok(W::create(window,transmute(parameters)));
 
             match result{
                 Ok(result)=>{
@@ -391,10 +391,12 @@ unsafe extern "system" fn wrap_window_procedure<W:WindowProcedure>(window:&Windo
                     }
                 }
 
+                #[allow(unused_variables)]
                 Err(error)=>{
                     // Чтобы при `WindowMessage::Destroy` не вызывать дескруктор для пустых данных
                     WindowFunctions::set_window_long_ptr(window.handle(),WindowData::UserData,0isize);
 
+                    #[cfg(feature="wnd_proc_catch_panic")]
                     W::catch_panic(window,None,error);
 
                     // Возвращение ошибки обратно

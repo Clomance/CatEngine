@@ -6,7 +6,7 @@ use cat_engine::{
         Window,
     },
 
-    graphics::Graphics,
+    graphics::GraphicsManager,
 
     system::{
         System,
@@ -14,11 +14,11 @@ use cat_engine::{
         SystemManager,
         SystemEvent,
         SystemStatus,
+        ResourceManager,
+        ComponentManager,
     },
 
-    object::{
-        ObjectManager,
-    }
+    object::ObjectManager
 };
 
 pub struct ExampleSystem;
@@ -30,16 +30,17 @@ impl<'s, 'a> System<'s, 'a> for ExampleSystem{
     fn set_up(
         &mut self,
         _shared: &mut Self::SharedData,
-        _object_manager: ObjectManager
+        _objects:ObjectManager,
+        _resources:ResourceManager,
+        _components:ComponentManager
     ) -> Self::Objects {
 
     }
 
     fn handle(
         &mut self,
-        _objects: &mut Self::Objects,
         _event: SystemEvent,
-        _window: &Window,
+        _objects: &mut Self::Objects,
         _shared: &mut Self::SharedData,
         _system_manager: SystemManager
     ) -> SystemStatus {
@@ -50,7 +51,7 @@ impl<'s, 'a> System<'s, 'a> for ExampleSystem{
     fn destroy(
         &mut self,
         _shared: &mut Self::SharedData,
-        _graphics: &mut Graphics
+        _graphics: GraphicsManager
     ) {
 
     }

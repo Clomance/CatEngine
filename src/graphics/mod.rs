@@ -1,3 +1,31 @@
+mod layer;
+use layer::{
+    Layer,
+    Layers,
+    LayerType,
+    LayerInfo,
+};
+
+mod object;
+pub use object::{
+    ObjectReference,
+    ArrayReference,
+    ObjectEvent,
+    SystemObjectManager,
+    TextObject,
+    SimpleObject,
+    TextureObject,
+    Vertices,
+    Indices,
+    TextRenderDataInterface,
+    SimpleRenderDataInterface,
+    TextureRenderDataInterface,
+};
+pub (crate) use object::{
+    Objects,
+    SystemObjectStorage
+};
+
 mod mesh;
 pub (crate) use mesh::{
     BufferedMesh,
@@ -64,63 +92,6 @@ pub use cat_engine_basement::opengl::{
 
 pub type ElementIndexType=u16;
 
-pub (crate) trait Layer{
-    fn draw(&mut self);
-}
-
-pub (crate) enum LayerType{
-    Simple,
-    Textured,
-    Text,
-}
-
-pub (crate) struct LayerInfo{
-    layer_type:LayerType,
-    index:usize,
-}
-
-pub (crate) struct Layers{
-    layer_info:Vec<LayerInfo>,
-    layers:Vec<&'static mut dyn Layer>
-}
-
-impl Layers{
-    pub fn new()->Layers{
-        Self{
-            layer_info:Vec::new(),
-            layers:Vec::new(),
-        }
-    }
-
-    pub fn len(&self)->usize{
-        self.layers.len()
-    }
-
-    pub fn push(&mut self,layer:&'static mut dyn Layer,info:LayerInfo){
-        self.layer_info.push(info);
-        self.layers.push(layer);
-    }
-
-    pub fn insert(&mut self,location:usize,layer:&mut dyn Layer,info:LayerInfo){
-        self.layer_info.insert(location,info);
-        self.layers.insert(location,unsafe{std::mem::transmute(layer)});
-    }
-
-    pub fn remove(&mut self,layer:usize)->LayerInfo{
-        self.layers.remove(layer);
-        self.layer_info.remove(layer)
-    }
-
-    pub fn pop(&mut self)->LayerInfo{
-        self.layers.pop();
-        self.layer_info.pop().unwrap()
-    }
-
-    pub fn layers(&mut self)->&mut Vec<&'static mut dyn Layer>{
-        &mut self.layers
-    }
-}
-
 
 
 pub struct GraphicsParameters{
@@ -168,73 +139,32 @@ impl GraphicsAttributes{
 
 
 
+pub struct GraphicsCoreManager<'m>{
+    pub camera:&'m mut Camera,
+    pub parameters:&'m mut GraphicsParameters,
 
-pub struct Graphics{
-    pub (crate) render_context:OpenGLRenderContext,
+    pub simple:&'m mut SimpleGraphics,
+    pub texture:&'m mut TextureGraphics,
+    pub text:&'m mut TextGraphics,
 
-    pub camera:Camera,
-
-    pub simple:SimpleGraphics,
-    pub texture:TextureGraphics,
-    pub text:TextGraphics,
-
-    pub parameters:GraphicsParameters,
-
-    pub (crate) layers:Layers,
+    pub layers:&'m mut Layers,
+    pub objects:&'m mut Objects
 }
 
-impl Graphics{
-    pub (crate) fn new(
-        viewport:[f32;2],
-        view_space_size:[f32;3],
-        attribites:&GraphicsAttributes,
-        render_context:OpenGLRenderContext,
-        module:OpenGraphicsLibrary
-    )->Graphics{
-        unsafe{
-            GLCore::load_functions(&module);
 
-            GLCore::enable(CoreCapability::Blend);
-            Blend::set_function(
-                BlendingFunction::SourceAlpha,
-                BlendingFunction::OneMinusSourceAlpha
-            );
 
-            // GLCore::enable(CoreCapability::DepthTest);
-            // GLCore::set_clear_depth(0f64);
-            // Depth::set_function(DepthFunction::GreaterEqual);
-            // Depth::set_mask(true);
-        }
+pub struct GraphicsManager<'m>{
+    pub camera:&'m mut Camera,
+    pub parameters:&'m mut GraphicsParameters,
 
-        let simple=SimpleGraphics::new(&attribites.simple);
+    pub simple:&'m mut SimpleGraphics,
+    pub texture:&'m mut TextureGraphics,
+    pub text:&'m mut TextGraphics,
 
-        let texture=TextureGraphics::new(&attribites.texture);
-
-        let text=TextGraphics::new(&attribites.text);
-
-        Self{
-            render_context,
-
-            camera:Camera::new(viewport,view_space_size),
-
-            simple,
-            texture,
-            text,
-
-            parameters:GraphicsParameters::new(),
-
-            layers:Layers::new(),
-        }
-    }
-
-    pub (crate) fn draw(&mut self){
-        for layer in self.layers.layers(){
-            layer.draw();
-        }
-    }
+    pub (crate) layers:&'m mut Layers,
 }
 
-impl Graphics{
+impl<'m> GraphicsManager<'m>{
     pub fn layer_len(&self)->usize{
         self.layers.len()
     }
@@ -362,6 +292,89 @@ impl Graphics{
             LayerType::Text=>{
                 self.text.detach_layer(info.index)
             }
+        }
+    }
+}
+
+
+
+pub struct GraphicsCore{
+    pub (crate) render_context:OpenGLRenderContext,
+
+    pub camera:Camera,
+
+    pub simple:SimpleGraphics,
+    pub texture:TextureGraphics,
+    pub text:TextGraphics,
+
+    pub parameters:GraphicsParameters,
+
+    pub (crate) layers:Layers,
+
+    pub (crate) objects:Objects,
+}
+
+impl GraphicsCore{
+    pub (crate) fn new(
+        viewport:[f32;2],
+        view_space_size:[f32;3],
+        attribites:&GraphicsAttributes,
+        render_context:OpenGLRenderContext,
+        module:OpenGraphicsLibrary
+    )->GraphicsCore{
+        unsafe{
+            GLCore::load_functions(&module);
+
+            GLCore::enable(CoreCapability::Blend);
+            Blend::set_function(
+                BlendingFunction::SourceAlpha,
+                BlendingFunction::OneMinusSourceAlpha
+            );
+
+            // GLCore::enable(CoreCapability::DepthTest);
+            // GLCore::set_clear_depth(0f64);
+            // Depth::set_function(DepthFunction::GreaterEqual);
+            // Depth::set_mask(true);
+        }
+
+        let simple=SimpleGraphics::new(&attribites.simple);
+
+        let texture=TextureGraphics::new(&attribites.texture);
+
+        let text=TextGraphics::new(&attribites.text);
+
+        Self{
+            render_context,
+
+            camera:Camera::new(viewport,view_space_size),
+
+            simple,
+            texture,
+            text,
+
+            parameters:GraphicsParameters::new(),
+
+            layers:Layers::new(),
+
+            objects:Objects::new()
+        }
+    }
+
+    pub fn manager(&mut self)->GraphicsCoreManager{
+        GraphicsCoreManager{
+            camera:&mut self.camera,
+            parameters:&mut self.parameters,
+            simple:&mut self.simple,
+            texture:&mut self.texture,
+            text:&mut self.text,
+            layers:&mut self.layers,
+            objects:&mut self.objects,
+        }
+    }
+
+    pub (crate) fn draw(&mut self){
+        for layer in self.layers.layers(){
+            layer.draw();
         }
     }
 }

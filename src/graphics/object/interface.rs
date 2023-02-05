@@ -1,19 +1,36 @@
-use crate::{graphics::{Graphics, RenderData, ElementIndexType, TexturedVertex, TextVertex, SimpleVertex}, texture::Texture2D, text::GlyphCache};
+use crate::{
+    texture::Texture2D,
+    graphics::{
+        RenderData,
+        ElementIndexType,
+        TexturedVertex,
+        TextVertex,
+        SimpleVertex,
+        SimpleGraphics,
+        TextureGraphics,
+        TextGraphics,
+    },
+    text::GlyphCacheUnitReference
+};
 
 use super::ObjectEvent;
 
+use std::mem::transmute;
+
+
+
 #[derive(Clone)]
 pub struct RenderDataInterface{
-    graphics:*mut Graphics,
+    graphics:*mut (),
     layer:usize,
-    object:usize,
+    object:usize
 }
 
 impl RenderDataInterface{
-    pub (crate) fn new(
-        graphics:*mut Graphics,
+    pub fn new(
+        graphics:*mut (),
         layer:usize,
-        object:usize,
+        object:usize
     )->RenderDataInterface{
         Self{
             graphics,
@@ -31,18 +48,18 @@ pub struct SimpleRenderDataInterface{
 }
 
 impl SimpleRenderDataInterface{
-    pub (crate) fn new(
-        render_data:RenderDataInterface,
-    )->SimpleRenderDataInterface{
+    pub (crate) fn new(render_data:RenderDataInterface)->SimpleRenderDataInterface{
         Self{
             inner:render_data
         }
     }
 
     pub fn get_render_data(&self)->RenderData<SimpleVertex,ElementIndexType>{
-        unsafe{&mut *self.inner.graphics}.simple.get_render_data(self.inner.layer,self.inner.object).unwrap()
+        unsafe{transmute::<*mut (),&mut SimpleGraphics>(self.inner.graphics)}.get_render_data(self.inner.layer,self.inner.object).unwrap()
     }
 }
+
+
 
 pub trait SimpleObject:Sized+'static{
     fn event(&mut self,event:ObjectEvent,render_data:SimpleRenderDataInterface);
@@ -55,24 +72,24 @@ pub struct TextureRenderDataInterface{
 }
 
 impl TextureRenderDataInterface{
-    pub (crate) fn new(
-        render_data:RenderDataInterface,
-    )->TextureRenderDataInterface{
+    pub (crate) fn new(render_data:RenderDataInterface)->TextureRenderDataInterface{
         Self{
             inner:render_data
         }
     }
 
     pub fn get_render_data(&self)->RenderData<TexturedVertex,ElementIndexType>{
-        unsafe{&mut *self.inner.graphics}.texture.get_render_data(self.inner.layer,self.inner.object)
+        unsafe{transmute::<*mut (),&mut TextureGraphics>(self.inner.graphics)}.get_render_data(self.inner.layer,self.inner.object)
     }
 
     pub fn get_texture(&self)->&Texture2D{
         unsafe{
-            &*(&mut *self.inner.graphics).texture.get_layer_texture_raw(self.inner.layer)
+            &*transmute::<*mut (),&mut TextureGraphics>(self.inner.graphics).get_layer_texture_raw(self.inner.layer)
         }
     }
 }
+
+
 
 pub trait TextureObject:Sized+'static{
     fn event(&mut self,event:ObjectEvent,render_data:TextureRenderDataInterface);
@@ -85,24 +102,26 @@ pub struct TextRenderDataInterface{
 }
 
 impl TextRenderDataInterface{
-    pub (crate) fn new(
-        render_data:RenderDataInterface,
-    )->TextRenderDataInterface{
+    pub (crate) fn new(render_data:RenderDataInterface)->TextRenderDataInterface{
         Self{
             inner:render_data
         }
     }
 
     pub fn get_render_data(&self)->RenderData<TextVertex,ElementIndexType>{
-        unsafe{&mut *self.inner.graphics}.text.get_render_data(self.inner.layer,self.inner.object)
+        unsafe{
+            transmute::<*mut (),&mut TextGraphics>(self.inner.graphics).get_render_data(self.inner.layer,self.inner.object)
+        }
     }
 
-    pub fn get_font(&self)->&GlyphCache{
+    pub fn get_font(&self)->&GlyphCacheUnitReference{
         unsafe{
-            &*(&mut *self.inner.graphics).text.get_layer_font_raw(self.inner.layer)
+            transmute::<*mut (),&mut TextGraphics>(self.inner.graphics).get_layer_font(self.inner.layer).unwrap()
         }
     }
 }
+
+
 
 pub trait TextObject:Sized+'static{
     fn event(&mut self,event:ObjectEvent,render_data:TextRenderDataInterface);
@@ -113,6 +132,8 @@ pub trait TextObject:Sized+'static{
 pub (crate) trait ObjectInterface{
     fn event(&mut self,event:ObjectEvent,render_data:RenderDataInterface);
 }
+
+
 
 pub struct SimpleWrapper<O>(pub O);
 
@@ -126,6 +147,8 @@ impl<O:SimpleObject> ObjectInterface for SimpleWrapper<O>{
     }
 }
 
+
+
 pub struct TextureWrapper<O>(pub O);
 
 impl<O:TextureObject> ObjectInterface for TextureWrapper<O>{
@@ -137,6 +160,8 @@ impl<O:TextureObject> ObjectInterface for TextureWrapper<O>{
         }
     }
 }
+
+
 
 pub struct TextWrapper<O>(pub O);
 
@@ -154,18 +179,18 @@ impl<O:TextObject> ObjectInterface for TextWrapper<O>{
 
 pub fn drop_simple_object(render_data:RenderDataInterface){
     unsafe{
-        (*render_data.graphics).simple.remove_object(render_data.layer,render_data.object)
+        transmute::<*mut (),&mut SimpleGraphics>(render_data.graphics).remove_object(render_data.layer,render_data.object)
     }
 }
 
 pub fn drop_texture_object(render_data:RenderDataInterface){
     unsafe{
-        (*render_data.graphics).texture.remove_object(render_data.layer,render_data.object)
+        transmute::<*mut (),&mut TextureGraphics>(render_data.graphics).remove_object(render_data.layer,render_data.object)
     }
 }
 
 pub fn drop_text_object(render_data:RenderDataInterface){
     unsafe{
-        (*render_data.graphics).text.remove_object(render_data.layer,render_data.object)
+        transmute::<*mut (),&mut TextGraphics>(render_data.graphics).remove_object(render_data.layer,render_data.object)
     }
 }

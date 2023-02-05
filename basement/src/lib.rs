@@ -11,7 +11,7 @@
 
 pub mod opengl;
 
-pub mod support;
+pub mod utility;
 
 #[cfg(target_os="windows")]
 pub mod winapi;

@@ -56,9 +56,9 @@ pub use app::{
     AppAttributes,
 };
 
-pub mod system;
-
 pub mod object;
+
+pub mod system;
 
 pub mod graphics;
 

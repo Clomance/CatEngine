@@ -5,7 +5,8 @@ use super::{
     RenderData,
     Layer,
     mesh::MeshAttributes,
-    MeshError, ObjectAttributes
+    MeshError,
+    ObjectAttributes
 };
 
 use cat_engine_basement::{
@@ -29,8 +30,8 @@ use cat_engine_basement::{
             Program,
         },
     },
-    support::storage::StaticStorage,
-    support::math::matrix::Matrix
+    utility::storage::StaticStorage,
+    utility::math::matrix::Matrix
 };
 
 const VERTEX_SHADER_SOURCE:&'static str=include_str!("shaders/simple/vertex.glsl");
@@ -82,10 +83,6 @@ impl SimpleLayer{
             mesh
         }
     }
-
-    // pub fn push_object(&mut self)->Result<usize,MeshError>{
-
-    // }
 }
 
 impl Layer for SimpleLayer{

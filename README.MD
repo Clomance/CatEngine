@@ -19,12 +19,8 @@ Compatible with OpenGL 3.3 and greater.
  - Fonts - [ttf-parser](https://github.com/RazrFalcon/ttf-parser) and [ab_glyph_rasterizer](https://github.com/alexheretic/ab-glyph)
  - Audio - [cat_audio](https://github.com/Clomance/CatEngine/tree/master/cat_audio)
 
-If you use audio feature, alsa delevopment libraries are required for Linux: `libasound2-dev` for Debian and Ubuntu, `alsa-lib-devel` for Fedora (see [cpal](https://github.com/RustAudio/cpal)).
-
-
-<!-- ## [The book](book/README.MD) -->
-
-<!-- ## [My own game](https://github.com/Clomance/Visual-Novel) -->
+#### Supported platforms
+ - Windows
 
 ## [Release notes](RELEASE-NOTES.MD)
 

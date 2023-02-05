@@ -1,19 +1,25 @@
+mod app_system;
+pub use app_system::AppSystem;
+use cat_audio::{
+    AudioSystem,
+    AudioClientError,
+    OutputStream,
+    AudioSystemStatus,
+    AudioCore
+};
+
 use crate::{
     window::WinError,
     system::{
         Systems,
         SystemEvent,
-        StartSystem,
-    },
-
-    object::{
-        Objects,
-        ObjectEvent,
+        StartSystem
     },
 
     graphics::{
-        Graphics,
+        GraphicsCore,
         GraphicsAttributes,
+        ObjectEvent,
     },
 };
 
@@ -31,23 +37,41 @@ use cat_engine_basement::{
             WindowClass,
             WindowAttributes,
             Window,
-            WindowResizeType,
-            quit,
+            WindowResizeType
         },
         Error,
         WindowEvent,
         Event,
-        ProcessEvent,
+        ProcessEvent, backend::core::message::Message,
     }
 };
 
-use std::{marker::PhantomData};
+use std::marker::PhantomData;
+
+
+
+pub struct AppAudioSystem;
+
+impl AudioSystem for AppAudioSystem{
+    fn error(&mut self,error:AudioClientError,stream:&mut OutputStream)->AudioSystemStatus{
+        let AudioClientError::None=error else{
+            *stream=OutputStream::new().unwrap();
+            return AudioSystemStatus::Processed
+        };
+
+        AudioSystemStatus::Processed
+    }
+}
+
+
 
 pub (crate) struct AppCreateParameters<P>{
     pub context:OpenGLRenderContextAttributes,
     pub graphics:GraphicsAttributes,
     pub create_parameters:P
 }
+
+
 
 pub struct AppAttributes{
     pub class:WindowClassAttributes,
@@ -59,7 +83,7 @@ pub struct AppAttributes{
 
 impl AppAttributes{
     pub fn new(window_title:&str)->AppAttributes{
-        Self {
+        Self{
             class:WindowClassAttributes::new(window_title),
             window:WindowAttributes::new(window_title),
             context:OpenGLRenderContextAttributes::new(),
@@ -68,6 +92,31 @@ impl AppAttributes{
         }
     }
 }
+
+
+
+pub (crate) struct AppData<S>{
+    pub audio:AudioCore<AppAudioSystem>,
+    pub graphics:GraphicsCore,
+    pub systems:Systems<S>
+}
+
+impl<S> AppData<S>{
+    pub fn new(
+        audio:AudioCore<AppAudioSystem>,
+        graphics:GraphicsCore,
+        systems:Systems<S>
+    )->AppData<S>{
+        
+        Self{
+            audio,
+            graphics,
+            systems
+        }
+    }
+}
+
+
 
 pub struct App{
     _window_class:WindowClass,
@@ -123,6 +172,8 @@ impl App{
     }
 }
 
+
+
 pub (crate) struct WinProc<'s,'a,S:StartSystem<'s,'a>+'s>{
     marker1:PhantomData<&'s S>,
     marker2:PhantomData<&'a S>
@@ -130,7 +181,7 @@ pub (crate) struct WinProc<'s,'a,S:StartSystem<'s,'a>+'s>{
 
 impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
     type CreateParameters=AppCreateParameters<&'s mut S::CreateParameters>;
-    type Data=AppSystem<S::SharedData>;
+    type Data=AppData<S::SharedData>;
 
     fn create(window:&Window,create_parameters:&mut Self::CreateParameters)->Result<Self::Data,Error>{
         match OpenGLRenderContext::new(window,create_parameters.context.clone()){
@@ -145,7 +196,7 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
                     10f32
                 ];
 
-                let graphics=Graphics::new(
+                let graphics=GraphicsCore::new(
                     [w,h],
                     [w,h,d],
                     &create_parameters.graphics,
@@ -155,8 +206,14 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
 
                 let shared_data=S::create_shared_data(create_parameters.create_parameters);
 
+                let audio=AudioCore::default(AppAudioSystem);
+
                 Ok(
-                    AppSystem::new(graphics,Systems::new(shared_data),Objects::new())
+                    AppData::new(
+                        audio,
+                        graphics,
+                        Systems::new(shared_data)
+                    )
                 )
             },
             Err(e)=>{
@@ -172,7 +229,7 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
             data.systems.shared_data(),
         );
 
-        data.systems.push(start_system,&mut data.objects,&mut data.graphics);
+        data.systems.push(start_system,window,&mut data.graphics,data.audio.core_manager());
     }
 
     fn close(window:&Window,_:&mut Self::Data){
@@ -181,12 +238,12 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
 
     fn destroy(window:&Window,data:&mut Self::Data){
         data.systems.handle(
-            SystemEvent::Destroy,
+            SystemEvent::WindowDestroy,
             window,
-            &mut data.objects,
-            &mut data.graphics
+            &mut data.graphics,
+            data.audio.core_manager()
         );
-        quit(0);
+        Message::post_quit(0)
     }
 
     fn paint(window:&Window,data:&mut Self::Data){
@@ -195,7 +252,7 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
         }
         data.graphics.render_context.swap_buffers().unwrap();
 
-        data.objects.event(ObjectEvent::Prerender);
+        data.graphics.objects.event(ObjectEvent::Prerender);
 
         data.graphics.camera.uniform_buffer.write(&data.graphics.camera.matrix).unwrap();
         data.graphics.camera.uniform_buffer.bind_base(0);
@@ -221,8 +278,8 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
         data.systems.handle(
             SystemEvent::Resize(size),
             window,
-            &mut data.objects,
-            &mut data.graphics
+            &mut data.graphics,
+            data.audio.core_manager()
         )
     }
 
@@ -230,8 +287,8 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
         data.systems.handle(
             SystemEvent::Move(position),
             window,
-            &mut data.objects,
-            &mut data.graphics
+            &mut data.graphics,
+            data.audio.core_manager()
         )
     }
 
@@ -244,8 +301,8 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
                         key,
                     },
                     window,
-                    &mut data.objects,
-                    &mut data.graphics
+                    &mut data.graphics,
+                    data.audio.core_manager()
                 )
             }
             WindowEvent::KeyRelease(key)=>{
@@ -255,16 +312,16 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
                         key,
                     },
                     window,
-                    &mut data.objects,
-                    &mut data.graphics
+                    &mut data.graphics,
+                    data.audio.core_manager()
                 )
             }
             WindowEvent::CharacterInput(character)=>{
                 data.systems.handle(
                     SystemEvent::CharacterInput(character),
                     window,
-                    &mut data.objects,
-                    &mut data.graphics
+                    &mut data.graphics,
+                    data.audio.core_manager()
                 )
             }
             WindowEvent::MousePress{cursor_position,button}=>{
@@ -275,8 +332,8 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
                         button,
                     },
                     window,
-                    &mut data.objects,
-                    &mut data.graphics
+                    &mut data.graphics,
+                    data.audio.core_manager()
                 )
             }
             WindowEvent::MouseRelease{cursor_position,button}=>{
@@ -287,16 +344,16 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
                         button,
                     },
                     window,
-                    &mut data.objects,
-                    &mut data.graphics
+                    &mut data.graphics,
+                    data.audio.core_manager()
                 )
             }
             WindowEvent::MouseMove(cursor_position)=>{
                 data.systems.handle(
                     SystemEvent::MouseMove(cursor_position),
                     window,
-                    &mut data.objects,
-                    &mut data.graphics
+                    &mut data.graphics,
+                    data.audio.core_manager()
                 )
             }
             _=>{}
@@ -304,32 +361,24 @@ impl<'s,'a,S:StartSystem<'s,'a>+'s> WindowProcedure for WinProc<'s,'a,S>{
     }
 
     fn user_event(_w_param:usize,_l_param:isize,window:&Window,data:&mut Self::Data){
-        data.objects.event(ObjectEvent::Update);
+        data.audio.render();
+        data.systems.handle(
+            SystemEvent::AudioRender,
+            window,
+            &mut data.graphics,
+            data.audio.core_manager()
+        );
+
+        data.graphics.objects.event(ObjectEvent::Update);
         data.systems.handle(
             SystemEvent::Update,
             &window,
-            &mut data.objects,
-            &mut data.graphics
+            &mut data.graphics,
+            data.audio.core_manager()
         )
     }
 
     fn catch_panic(_window:&Window,_data:Option<&mut Self::Data>,_error:Box<dyn std::any::Any+Send>){
-        quit(0)
-    }
-}
-
-pub (crate) struct AppSystem<S>{
-    pub systems:Systems<S>,
-    pub objects:Objects,
-    pub graphics:Graphics,
-}
-
-impl<S> AppSystem<S>{
-    pub fn new(graphics:Graphics,systems:Systems<S>,objects:Objects)->AppSystem<S>{
-        Self{
-            graphics,
-            systems,
-            objects,
-        }
+        Message::post_quit(0)
     }
 }

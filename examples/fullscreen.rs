@@ -9,7 +9,7 @@ use cat_engine::{
         VirtualKeyCode,
     },
 
-    graphics::Graphics,
+    graphics::GraphicsManager,
 
     system::{
         System,
@@ -17,12 +17,16 @@ use cat_engine::{
         SystemManager,
         SystemEvent,
         SystemStatus,
+        ResourceManager,
+        ComponentManager,
     },
 
     object::{
         ObjectManager,
     }
 };
+
+
 
 pub struct ExampleSystem;
 
@@ -33,26 +37,27 @@ impl<'s, 'a> System<'s, 'a> for ExampleSystem {
     fn set_up(
         &mut self,
         _shared: &mut Self::SharedData,
-        _object_manager: ObjectManager
+        _objects: ObjectManager,
+        _resources: ResourceManager,
+        _components: ComponentManager
     ) -> Self::Objects {
 
     }
 
     fn handle(
         &mut self,
-        _objects: &mut Self::Objects,
         event: SystemEvent,
-        window: &Window,
+        _objects: &mut Self::Objects,
         shared: &mut Self::SharedData,
-        _system_manager: SystemManager
+        manager: SystemManager
     ) -> SystemStatus {
-        match event{
+        match event {
             SystemEvent::Keyboard { state: true, key: VirtualKeyCode::F } => {
-                if *shared{
-                    window.set_fullscreen(Fullscreen::None);
+                if *shared {
+                    manager.window.set_fullscreen(Fullscreen::None);
                 }
-                else{
-                    window.set_fullscreen(Fullscreen::Monitor(Monitor::get_primary_monitor()));
+                else {
+                    manager.window.set_fullscreen(Fullscreen::Monitor(Monitor::get_primary_monitor()));
                 }
                 *shared = !*shared;
             }
@@ -65,8 +70,8 @@ impl<'s, 'a> System<'s, 'a> for ExampleSystem {
 
     fn destroy(
         &mut self,
-        _shared:&mut Self::SharedData,
-        _graphics:&mut Graphics
+        _shared: &mut Self::SharedData,
+        _graphics: GraphicsManager
     ) {
 
     }
@@ -87,6 +92,8 @@ impl<'s, 'a> StartSystem<'s, 'a> for ExampleSystem {
         false
     }
 }
+
+
 
 fn main() {
     let attributes = AppAttributes::new("ExampleWindow");

@@ -1,6 +1,6 @@
 use super::{
     Error,
-    WindowEvent,
+    WindowEvent, backend::core::message::Message,
 };
 
 mod messages;
@@ -122,12 +122,5 @@ pub trait WindowProcedure{
             println!("Destroying the window.");
             let _=window.destroy();
         }
-    }
-}
-
-/// Indicates to the event loop that it's thread has made a request to close.
-pub fn quit(exit_code:i32){
-    unsafe{
-        winapi::um::winuser::PostQuitMessage(exit_code);
     }
 }

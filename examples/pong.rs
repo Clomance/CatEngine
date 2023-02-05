@@ -12,28 +12,29 @@ use cat_engine::{
         SystemEvent,
         SystemManager,
         SystemStatus,
-        StartSystem,
+        StartSystem, ComponentManager, ResourceManager,
     },
 
     object::{
-        SimpleObject,
-        ObjectEvent,
         ObjectManager,
         ObjectReference,
+        
+    },
+
+    graphics::{
+        Colour,
+        SimpleVertex,
+        TexturedVertex,
+        MeshAttributes,
+        PrimitiveType,
+        SimpleObject,
+        ObjectEvent,
         Vertices,
         Indices,
         TextureObject,
         SimpleRenderDataInterface,
         TextureRenderDataInterface,
-    },
-
-    graphics::{
-        Colour,
-        Graphics,
-        SimpleVertex,
-        TexturedVertex,
-        MeshAttributes,
-        PrimitiveType,
+        GraphicsManager,
     },
 
     texture::{
@@ -45,7 +46,13 @@ use cat_engine::{
 
 use image::GenericImageView;
 
+
+
 const BLUE: Colour = [0f32, 0f32, 1f32, 1f32];
+
+const PADDLE_SPEED: f32 = 6f32;
+
+
 
 fn main() {
     let attributes = AppAttributes::new("WindowExample");
@@ -53,7 +60,7 @@ fn main() {
     app.run()
 }
 
-const PADDLE_SPEED: f32 = 6f32;
+
 
 enum PaddleMoving {
     None,
@@ -80,38 +87,40 @@ impl<'s, 'a> System<'s, 'a> for Pong {
     fn set_up(
         &mut self,
         _shared: &mut Self::SharedData,
-        mut objects: ObjectManager<'a>,
+        mut objects: ObjectManager,
+        _resources: ResourceManager,
+        mut components: ComponentManager
     ) -> Self::Objects {
-        objects.graphics().parameters.set_clear_colour(Some([1f32; 4]));
+        components.graphics.parameters.set_clear_colour(Some([1f32; 4]));
 
         let attributes = MeshAttributes::new(PrimitiveType::Triangles);
-        let simple_layer = objects.graphics().simple.create_layer(attributes).unwrap();
+        let simple_layer = components.graphics.simple.create_layer(attributes).unwrap();
 
-        objects.graphics().push_simple_layer(simple_layer);
-
-        let paddle = Paddle::new([0f32, 0f32], [20f32, 120f32], BLUE);
-        let vertices = paddle.vertices();
-        let indices = paddle.indices();
-        let left_paddle = objects.push_simple_object(paddle, Vertices::new(&vertices), Indices::new(&indices), simple_layer).unwrap();
+        components.graphics.push_simple_layer(simple_layer);
 
         let paddle = Paddle::new([0f32, 0f32], [20f32, 120f32], BLUE);
         let vertices = paddle.vertices();
         let indices = paddle.indices();
-        let right_paddle = objects.push_simple_object(paddle, Vertices::new(&vertices), Indices::new(&indices), simple_layer).unwrap();
+        let left_paddle = objects.graphics.push_simple_object(paddle, Vertices::new(&vertices), Indices::new(&indices), simple_layer, &mut components.graphics.simple).unwrap();
+
+        let paddle = Paddle::new([0f32, 0f32], [20f32, 120f32], BLUE);
+        let vertices = paddle.vertices();
+        let indices = paddle.indices();
+        let right_paddle = objects.graphics.push_simple_object(paddle, Vertices::new(&vertices), Indices::new(&indices), simple_layer, &mut components.graphics.simple).unwrap();
 
         let image = image::open("resources/ball.png").unwrap();
         let texture = Texture2D::new(TextureMinFilter::Linear, TextureMagFilter::Linear, [image.width(), image.height()], image.as_bytes());
-        let texture = objects.graphics().texture.push_texture(texture).unwrap();
+        let texture = components.graphics.texture.push_texture(texture).unwrap();
 
         let attributes = MeshAttributes::new(PrimitiveType::Triangles);
-        let textured_layer = objects.graphics().texture.create_layer(attributes).unwrap();
+        let textured_layer = components.graphics.texture.create_layer(attributes).unwrap();
 
-        objects.graphics().push_texture_layer(textured_layer, texture);
+        components.graphics.push_texture_layer(textured_layer, texture);
 
         let ball = Ball::new([100f32, 100f32], [40f32, 40f32]);
         let vertices = ball.vertices();
         let indices = ball.indices();
-        let ball = objects.push_texture_object(ball, Vertices::new(&vertices), Indices::new(&indices), simple_layer).unwrap();
+        let ball = objects.graphics.push_texture_object(ball, Vertices::new(&vertices), Indices::new(&indices), simple_layer, &mut components.graphics.texture).unwrap();
 
         (
             left_paddle,
@@ -122,11 +131,10 @@ impl<'s, 'a> System<'s, 'a> for Pong {
 
     fn handle(
         &mut self,
-        (paddle1, paddle2, ball): &mut Self::Objects,
         event: SystemEvent,
-        window: &Window,
-        _shared: &mut (),
-        _manager: SystemManager<'a>
+        (paddle1, paddle2, ball): &mut Self::Objects,
+        _shared: &mut Self::SharedData,
+        system_manager: SystemManager
     ) -> SystemStatus {
         match event {
             SystemEvent::Update => {
@@ -200,7 +208,7 @@ impl<'s, 'a> System<'s, 'a> for Pong {
                     }
                 }
 
-                let size = window.client_size();
+                let size = system_manager.window.client_size();
                 let field = [size[0] as f32, size[1] as f32];
 
                 paddle1.position[0] = 0f32;
@@ -279,7 +287,11 @@ impl<'s, 'a> System<'s, 'a> for Pong {
         SystemStatus::Next
     }
 
-    fn destroy(&mut self, _shared: &mut Self::SharedData, _graphics: &mut Graphics) {
+    fn destroy(
+        &mut self,
+        _shared: &mut Self::SharedData,
+        _graphics: GraphicsManager
+    ) {
         
     }
 }

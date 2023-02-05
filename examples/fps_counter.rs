@@ -7,10 +7,14 @@ use cat_engine::{
     },
 
     graphics::{
-        Graphics,
         TextVertex,
         MeshAttributes,
         PrimitiveType,
+        TextObject,
+        ObjectEvent,
+        Vertices,
+        Indices,
+        TextRenderDataInterface, GraphicsManager,
     },
 
     system::{
@@ -18,16 +22,11 @@ use cat_engine::{
         StartSystem,
         SystemManager,
         SystemEvent,
-        SystemStatus,
+        SystemStatus, ResourceManager, ComponentManager,
     },
 
     object::{
         ObjectManager,
-        TextObject,
-        ObjectEvent,
-        Vertices,
-        Indices,
-        TextRenderDataInterface,
     },
 
     text::{
@@ -47,19 +46,23 @@ impl<'s, 'a> System<'s, 'a> for ExampleSystem {
     type SharedData = ();
     type Objects = ();
 
-    fn set_up(&mut self, _shared: &mut Self::SharedData, mut object_manager: ObjectManager) -> Self::Objects {
-        let graphics = object_manager.graphics();
+    fn set_up(
+        &mut self,
+        _shared: &mut Self::SharedData,
+        mut objects: ObjectManager,
+        _resources: ResourceManager,
+        mut components: ComponentManager
+    ) -> Self::Objects {
+        components.graphics.parameters.set_clear_colour(Some([1f32; 4]));
 
-        graphics.parameters.set_clear_colour(Some([1f32; 4]));
-
-        let font = FontOwner::load("resources/font1").unwrap();
+        let font = FontOwner::load("resources/arial.ttf").unwrap();
         let glyph_cache = GlyphCache::new("9876543210", 60f32, &font);
-        let font = graphics.text.push_font(glyph_cache).unwrap();
+        let font = components.graphics.text.manager().glyphs.push_glyphs(glyph_cache).unwrap();
 
         let attributes = MeshAttributes::new(PrimitiveType::Triangles);
-        let layer = graphics.text.create_layer(attributes).unwrap();
+        let layer = components.graphics.text.create_layer(attributes).unwrap();
 
-        graphics.push_text_layer(layer, font);
+        components.graphics.push_text_layer(layer, font);
 
         let object = FpsCounter::new();
         let indices=[
@@ -70,21 +73,24 @@ impl<'s, 'a> System<'s, 'a> for ExampleSystem {
             8,9,10,
             9,10,11
         ];
-        object_manager.push_text_object(object, Vertices::empty(12), Indices::new(&indices), layer).unwrap();
+        objects.graphics.push_text_object(object, Vertices::empty(12), Indices::new(&indices), layer, &mut components.graphics.text).unwrap();
     }
 
     fn handle(
         &mut self,
-        _objects: &mut Self::Objects,
         _event: SystemEvent,
-        _window: &Window,
+        _objects: &mut Self::Objects,
         _shared: &mut Self::SharedData,
         _system_manager: SystemManager
     ) -> SystemStatus {
         SystemStatus::Next
     }
 
-    fn destroy(&mut self, _shared:&mut Self::SharedData, _graphics:&mut Graphics) {
+    fn destroy(
+        &mut self,
+        _shared: &mut Self::SharedData,
+        _graphics: GraphicsManager
+    ) {
 
     }
 }
@@ -144,13 +150,13 @@ impl TextObject for FpsCounter{
 
                     let mut position = [0f32; 2];
 
-                    let global_size = font.global_size();
-                    let global_offset = font.global_offset();
+                    let global_size = font.cache().global_size();
+                    let global_offset = font.cache().global_offset();
 
                     let mut vertices = Vec::with_capacity(12);
 
                     for n in self.frames.to_string().chars(){
-                        let glyph = font.glyph(&n).unwrap();
+                        let glyph = font.cache().glyph(&n).unwrap();
 
                         let x1 = position[0] + global_offset[0];
                         let y1 = position[1] - global_offset[1];

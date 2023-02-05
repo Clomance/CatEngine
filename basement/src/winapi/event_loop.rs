@@ -283,6 +283,8 @@ use std::{
     ptr::null_mut,
 };
 
+
+
 #[derive(Clone,Debug)]
 pub enum LoopControl{
     /// The loop is running with the defeault settings.
@@ -342,6 +344,8 @@ impl EventInterval{
     }
 }
 
+
+
 #[derive(Debug,Clone,Copy)]
 pub struct Ticks(pub u64);
 
@@ -363,6 +367,8 @@ impl Ticks{
     }
 }
 
+
+
 pub struct EventLoopManager{
     update_interval:i64,
     redraw_request_interval:i64,
@@ -381,6 +387,8 @@ impl EventLoopManager{
         }
     }
 }
+
+
 
 // Mister Programmer, may I have some loops?
 //      /\_____/\
@@ -518,6 +526,8 @@ impl EventLoop{
         self.redraw_request_interval=interval.into_ticks()
     }
 }
+
+
 
 #[derive(Clone,Debug)]
 pub struct EventLoopAttributes{
