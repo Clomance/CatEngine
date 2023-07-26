@@ -27,7 +27,7 @@ There is three variants of operating the engine:
 
 A simple interface. Good for usual playback.
 
-```
+```rust
 let settings=AudioSettings::new();
 let audio=Audio::default(settings).unwrap();
 
@@ -42,12 +42,12 @@ wrapper.set_track_volume("audio",0.5f32).unwrap();
 
 Additional features:
  - access to the lower level (see `Working with engine's functions`)
-```
+```rust
 // Pauses a track in the playlist
 wrapper.audio.pause_track(0).unwrap();
 ```
  - adding, receiving, editing sets
-```
+```rust
 let sets=vec![
     Set{
         index:0, // track's index in the storage
@@ -65,7 +65,7 @@ let new_sets=wrapper.get_track_sets("new").unwrap();
 Makes it possible to selectively operate tracks with both playlist and storage.
 
 For example, it's possible to load a two-channel track and play only one channel.
-```
+```rust
 let settings=AudioSettings::new();
 let audio=Audio::default(settings).unwrap();
 
